@@ -6,11 +6,6 @@
 
     <ItemGroup>
       <PackageReference Include="Mediator.Net" Version="4.0.0" />
-      <PackageReference Include="Mediator.Net.MicrosoftDependencyInjection" Version="4.0.0" />
-    </ItemGroup>
-
-    <ItemGroup>
-      <ProjectReference Include="..\SugarTalk.Messages\SugarTalk.Messages.csproj" />
     </ItemGroup>
 
 </Project>

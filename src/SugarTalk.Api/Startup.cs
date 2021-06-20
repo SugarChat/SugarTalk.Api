@@ -1,16 +1,13 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+using Mediator.Net;
+using Mediator.Net.MicrosoftDependencyInjection;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.HttpsPolicy;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
 using Microsoft.OpenApi.Models;
+using SugarTalk.Core.Handlers.CommandHandlers;
+using SugarTalk.Core.Middlewares;
 
 namespace SugarTalk.Api
 {
@@ -31,6 +28,7 @@ namespace SugarTalk.Api
             {
                 c.SwaggerDoc("v1", new OpenApiInfo {Title = "SugarTalk.Api", Version = "v1"});
             });
+            services.RegisterMediator(CreateMediatorBuilder());
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -50,6 +48,14 @@ namespace SugarTalk.Api
             app.UseAuthorization();
 
             app.UseEndpoints(endpoints => { endpoints.MapControllers(); });
+        }
+
+        private MediatorBuilder CreateMediatorBuilder()
+        {
+            var mediaBuilder = new MediatorBuilder();
+            mediaBuilder.RegisterHandlers(typeof(ScheduleMeetingCommandHandler).Assembly);
+            mediaBuilder.ConfigureGlobalReceivePipe(x => x.UseUnifyResponseMiddleware());
+            return mediaBuilder;
         }
     }
 }
