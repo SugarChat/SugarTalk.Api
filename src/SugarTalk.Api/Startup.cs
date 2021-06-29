@@ -6,8 +6,10 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.OpenApi.Models;
+using SugarTalk.Core;
 using SugarTalk.Core.Handlers.CommandHandlers;
 using SugarTalk.Core.Middlewares;
+using SugarTalk.Core.Services.Kurento;
 
 namespace SugarTalk.Api
 {
@@ -29,6 +31,12 @@ namespace SugarTalk.Api
                 c.SwaggerDoc("v1", new OpenApiInfo {Title = "SugarTalk.Api", Version = "v1"});
             });
             services.RegisterMediator(CreateMediatorBuilder());
+            services.LoadSugarTalkModule();
+            services.AddMvc(options => options.EnableEndpointRouting = false);
+            services.AddSignalR(config =>
+            {
+                config.EnableDetailedErrors = true;
+            });
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -46,8 +54,17 @@ namespace SugarTalk.Api
             app.UseRouting();
 
             app.UseAuthorization();
-
-            app.UseEndpoints(endpoints => { endpoints.MapControllers(); });
+            
+            app.UseEndpoints(endpoints =>
+            {
+                endpoints.MapControllers();
+                endpoints.MapHub<RoomHub>("/roomHub");
+            });
+            app.UseStaticFiles();
+            app.UseMvc(routes =>
+            {
+                routes.MapRoute(name: "Default", template: "{controller=Home}/{action=Index}/{id?}");
+            });
         }
 
         private MediatorBuilder CreateMediatorBuilder()

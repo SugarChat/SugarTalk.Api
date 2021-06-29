@@ -5,8 +5,13 @@
     </PropertyGroup>
 
     <ItemGroup>
+      <PackageReference Include="AutoMapper" Version="10.1.1" />
+      <PackageReference Include="AutoMapper.Extensions.Microsoft.DependencyInjection" Version="8.1.1" />
+      <PackageReference Include="Kurento.NET" Version="1.1.1" />
       <PackageReference Include="Mediator.Net" Version="4.0.0" />
       <PackageReference Include="Mediator.Net.MicrosoftDependencyInjection" Version="4.0.0" />
+      <PackageReference Include="Microsoft.AspNetCore.SignalR" Version="1.1.0" />
+      <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
     </ItemGroup>
 
     <ItemGroup>

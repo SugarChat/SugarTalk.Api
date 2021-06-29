@@ -1,0 +1,33 @@
+﻿
+@section _scripts{
+    <script>
+
+        var userSessions = {};
+        var server = new signalR.HubConnectionBuilder().withUrl("/roomHub" + location.search).build();
+        server.on("SetLocalUser", localUser => {
+            userSessions[localUser.id] = new UserSession(localUser, true);
+        });
+        server.on("SetOtherUsers", otherUsers => {
+            otherUsers.forEach(item => {
+                userSessions[item.id] = new UserSession(item, false);
+            });
+        });
+        server.on("OtherJoined", otherUser => {
+            userSessions[otherUser.id] = new UserSession(otherUser, false);
+        });
+        server.on("ProcessAnswer", (id, answerSDP) => {
+            userSessions[id].processAnswer(answerSDP);
+        });
+        server.on("AddCandidate", (id, candidate) => {
+            userSessions[id].addCandidate(candidate);
+        });
+        server.on("OtherLeft", id => {
+            let session = userSessions[id];
+            if (session) {
+                session.dispose();
+                delete userSessions[id];
+            }
+        });
+        server.start();
+    </script>
+}

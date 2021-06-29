@@ -7,11 +7,16 @@
     <ItemGroup>
         <PackageReference Include="Mediator.Net" Version="4.0.0" />
         <PackageReference Include="Mediator.Net.MicrosoftDependencyInjection" Version="4.0.0" />
+        <PackageReference Include="Microsoft.AspNetCore.SignalR" Version="1.1.0" />
         <PackageReference Include="Swashbuckle.AspNetCore" Version="5.6.3" />
     </ItemGroup>
 
     <ItemGroup>
       <ProjectReference Include="..\SugarTalk.Core\SugarTalk.Core.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Folder Include="Views" />
     </ItemGroup>
 
 </Project>

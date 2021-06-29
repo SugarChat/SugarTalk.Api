@@ -17,9 +17,9 @@ namespace SugarTalk.Api.Controllers
         }
         
         [Route("schedule"), HttpPost]
-        public async Task<SugarTalkResponse<MeetingScheduleResult>> ScheduleMeeting(ScheduleMeetingCommand scheduleMeetingCommand)
+        public async Task<SugarTalkResponse<MeetingDto>> ScheduleMeeting(ScheduleMeetingCommand scheduleMeetingCommand)
         {
-            return await _mediator.SendAsync<ScheduleMeetingCommand, SugarTalkResponse<MeetingScheduleResult>>(scheduleMeetingCommand);
+            return await _mediator.SendAsync<ScheduleMeetingCommand, SugarTalkResponse<MeetingDto>>(scheduleMeetingCommand);
         }
     }
 }

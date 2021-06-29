@@ -1,4 +1,5 @@
 
+using System;
 using Mediator.Net.Contracts;
 
 namespace SugarTalk.Messages
@@ -8,8 +9,8 @@ namespace SugarTalk.Messages
         
     }
 
-    public class MeetingScheduleResult
+    public class MeetingDto
     {
-        
+        public string MeetingId { get; set; }
     }
 }
