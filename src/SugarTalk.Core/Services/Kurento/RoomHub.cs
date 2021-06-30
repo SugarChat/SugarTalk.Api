@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using System.Threading.Tasks;
 using Kurento.NET;
 using Microsoft.AspNetCore.SignalR;
+using Newtonsoft.Json;
 
 namespace SugarTalk.Core.Services.Kurento
 {
@@ -17,7 +18,7 @@ namespace SugarTalk.Core.Services.Kurento
             _kurento = kurento;
        
         }
-        public string DisplayName => Context.GetHttpContext().Request.Query["userName"];
+        public string UserName => Context.GetHttpContext().Request.Query["userName"];
 
         public string RoomID => Context.GetHttpContext().Request.Query["roomId"];
 
@@ -30,7 +31,7 @@ namespace SugarTalk.Core.Services.Kurento
                 Id = Context.ConnectionId,
                 ReceviedEndPoints = new ConcurrentDictionary<string, WebRtcEndpoint>(),
                 SendEndPoint = null,
-                DisplayName = DisplayName
+                UserName = UserName
 
             };
             roomSession.UserSessions.TryAdd(Context.ConnectionId, userSession);
@@ -55,11 +56,15 @@ namespace SugarTalk.Core.Services.Kurento
                 {
                     if (selfSession.SendEndPoint == null)
                     {
-                        selfSession.SendEndPoint = await _kurento.CreateAsync(new WebRtcEndpoint(roomSession.Pipeline));
-                        selfSession.SendEndPoint.OnIceCandidate += arg =>
-                        {
-                            Clients.Caller.AddCandidate(id, arg.candidate);
-                        };
+                        
+                            var endPoint = new WebRtcEndpoint(roomSession.Pipeline);
+                            
+                            selfSession.SendEndPoint = await _kurento.CreateAsync(endPoint);
+                            selfSession.SendEndPoint.OnIceCandidate += arg =>
+                            {
+                                Clients.Caller.AddCandidate(id, JsonConvert.SerializeObject(arg.candidate));
+                            };
+
                     }
                     return selfSession.SendEndPoint;
                 }
@@ -72,7 +77,7 @@ namespace SugarTalk.Core.Services.Kurento
                             otherSession.SendEndPoint = await _kurento.CreateAsync(new WebRtcEndpoint(roomSession.Pipeline));
                             otherSession.SendEndPoint.OnIceCandidate += arg =>
                             {
-                                Clients.Client(id).AddCandidate(id, arg.candidate);
+                                Clients.Client(id).AddCandidate(id, JsonConvert.SerializeObject(arg.candidate));
                             };
                         }
                         if (!selfSession.ReceviedEndPoints.TryGetValue(id, out WebRtcEndpoint otherEndPoint))
@@ -80,7 +85,7 @@ namespace SugarTalk.Core.Services.Kurento
                             otherEndPoint = await _kurento.CreateAsync(new WebRtcEndpoint(roomSession.Pipeline));
                             otherEndPoint.OnIceCandidate += arg =>
                             {
-                                Clients.Caller.AddCandidate(id, arg.candidate);
+                                Clients.Caller.AddCandidate(id, JsonConvert.SerializeObject(arg.candidate));
                             };
                             await otherSession.SendEndPoint.ConnectAsync(otherEndPoint);
                             selfSession.ReceviedEndPoints.TryAdd(id, otherEndPoint);

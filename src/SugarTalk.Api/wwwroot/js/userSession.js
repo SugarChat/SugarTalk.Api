@@ -14,9 +14,12 @@ UserSession.prototype.getPlayer = function () {
     }
     return this.player;
 };
+
 UserSession.prototype.createPeerSendonly = function () {
     const rtcPeer = new RTCPeerConnection();
-    rtcPeer.addEventListener("icecandidate", candidate => server.invoke("ProcessCandidateAsync", this.id, candidate));
+    rtcPeer.addEventListener("icecandidate", candidate => {
+        server.invoke("ProcessCandidateAsync", this.id, candidate)
+    });
     navigator.mediaDevices.getUserMedia({ video: true, audio: true }).then(localStream => {
         this.getPlayer().srcObject = localStream;
         localStream.getTracks().forEach(track => rtcPeer.addTrack(track, localStream));
@@ -41,7 +44,8 @@ UserSession.prototype.processAnswer = function (answerSDP) {
     this.rtcPeer.setRemoteDescription(new RTCSessionDescription({ type: "answer", sdp: answerSDP }));
 };
 UserSession.prototype.addCandidate = function (candidate) {
-    this.rtcPeer.addIceCandidate(candidate);
+    let objCandidate = JSON.parse(candidate);
+    this.rtcPeer.addIceCandidate(objCandidate);
 };
 UserSession.prototype.dispose = function () {
     this.rtcPeer.close();

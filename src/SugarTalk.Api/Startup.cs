@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Mediator.Net;
 using Mediator.Net.MicrosoftDependencyInjection;
 using Microsoft.AspNetCore.Builder;
@@ -36,6 +37,13 @@ namespace SugarTalk.Api
             services.AddSignalR(config =>
             {
                 config.EnableDetailedErrors = true;
+            }).AddJsonProtocol(options =>
+            {
+                options.PayloadSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
+                // options.PayloadSerializerOptions = new JsonSerializerOptions()
+                // {
+                //     PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+                // };
             });
         }
 
@@ -51,6 +59,8 @@ namespace SugarTalk.Api
 
             app.UseHttpsRedirection();
 
+            app.UseStaticFiles();
+            
             app.UseRouting();
 
             app.UseAuthorization();
@@ -60,7 +70,7 @@ namespace SugarTalk.Api
                 endpoints.MapControllers();
                 endpoints.MapHub<RoomHub>("/roomHub");
             });
-            app.UseStaticFiles();
+            
             app.UseMvc(routes =>
             {
                 routes.MapRoute(name: "Default", template: "{controller=Home}/{action=Index}/{id?}");

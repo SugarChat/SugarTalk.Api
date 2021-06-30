@@ -1,7 +1,10 @@
 ﻿using System;
 using System.Reflection;
 using Kurento.NET;
+using Microsoft.AspNetCore.WebSockets;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Logging;
 using SugarTalk.Core.Services.Kurento;
 
 namespace SugarTalk.Core

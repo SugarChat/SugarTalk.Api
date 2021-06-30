@@ -21,6 +21,7 @@ namespace SugarTalk.Core.Services.Kurento
             if (!_roomSessions.TryGetValue(roomID, out RoomSession roomSession))
             {
                 var pipeline = await _client.CreateAsync(new MediaPipeline());
+                
                 roomSession = new RoomSession()
                 {
                     RoomID = roomID,
