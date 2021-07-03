@@ -10,7 +10,7 @@ namespace SugarTalk.Api.Controllers
     public class MeetingController: ControllerBase
     {
         private readonly IMediator _mediator;
-
+        
         public MeetingController(IMediator mediator)
         {
             _mediator = mediator;

@@ -1,6 +1,4 @@
 using System.Text.Json;
-using Mediator.Net;
-using Mediator.Net.MicrosoftDependencyInjection;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
@@ -8,8 +6,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.OpenApi.Models;
 using SugarTalk.Core;
-using SugarTalk.Core.Handlers.CommandHandlers;
-using SugarTalk.Core.Middlewares;
 using SugarTalk.Core.Services.Kurento;
 
 namespace SugarTalk.Api
@@ -31,8 +27,13 @@ namespace SugarTalk.Api
             {
                 c.SwaggerDoc("v1", new OpenApiInfo {Title = "SugarTalk.Api", Version = "v1"});
             });
-            services.RegisterMediator(CreateMediatorBuilder());
-            services.LoadSugarTalkModule();
+
+            services
+                .LoadSugarTalkModule()
+                .LoadSettings(Configuration)
+                .LoadMongoDb()
+                .LoadMediator();
+            
             services.AddMvc(options => options.EnableEndpointRouting = false);
             services.AddSignalR(config =>
             {
@@ -40,10 +41,6 @@ namespace SugarTalk.Api
             }).AddJsonProtocol(options =>
             {
                 options.PayloadSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
-                // options.PayloadSerializerOptions = new JsonSerializerOptions()
-                // {
-                //     PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-                // };
             });
         }
 
@@ -75,14 +72,6 @@ namespace SugarTalk.Api
             {
                 routes.MapRoute(name: "Default", template: "{controller=Home}/{action=Index}/{id?}");
             });
-        }
-
-        private MediatorBuilder CreateMediatorBuilder()
-        {
-            var mediaBuilder = new MediatorBuilder();
-            mediaBuilder.RegisterHandlers(typeof(ScheduleMeetingCommandHandler).Assembly);
-            mediaBuilder.ConfigureGlobalReceivePipe(x => x.UseUnifyResponseMiddleware());
-            return mediaBuilder;
         }
     }
 }
