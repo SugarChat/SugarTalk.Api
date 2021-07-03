@@ -34,7 +34,7 @@ namespace SugarTalk.Core
 
         public static IServiceCollection LoadMongoDb(this IServiceCollection services)
         {
-            services.AddScoped(serviceProvider =>
+            services.AddSingleton(serviceProvider =>
             {
                 var settings = serviceProvider.GetService<IOptions<MongoDbSettings>>();
                 
