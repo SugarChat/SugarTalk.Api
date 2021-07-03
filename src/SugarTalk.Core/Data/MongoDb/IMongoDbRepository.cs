@@ -1,6 +1,6 @@
 using MongoDB.Driver.Linq;
 
-namespace SugarTalk.Core.Data
+namespace SugarTalk.Core.Data.MongoDb
 {
     public interface IMongoDbRepository : IRepository
     {

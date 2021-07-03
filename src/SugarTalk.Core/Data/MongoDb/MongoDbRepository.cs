@@ -1,14 +1,14 @@
 using System;
-using System.Threading;
-using System.Threading.Tasks;
-using System.Linq.Expressions;
 using System.Collections.Generic;
 using System.Linq;
-using SugarTalk.Core.Entities;
+using System.Linq.Expressions;
+using System.Threading;
+using System.Threading.Tasks;
 using MongoDB.Driver;
 using MongoDB.Driver.Linq;
+using SugarTalk.Core.Entities;
 
-namespace SugarTalk.Core.Data
+namespace SugarTalk.Core.Data.MongoDb
 {
     public class MongoDbRepository : IMongoDbRepository
     {

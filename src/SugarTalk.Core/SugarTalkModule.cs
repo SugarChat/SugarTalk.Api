@@ -6,6 +6,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using MongoDB.Driver;
 using SugarTalk.Core.Data;
+using SugarTalk.Core.Data.MongoDb;
 using SugarTalk.Core.Middlewares;
 using SugarTalk.Core.Services.Kurento;
 using SugarTalk.Core.Settings;
