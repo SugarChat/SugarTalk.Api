@@ -10,7 +10,7 @@ using MongoDB.Driver.Linq;
 
 namespace SugarTalk.Core.Data
 {
-    public class MongoDbRepository : IRepository
+    public class MongoDbRepository : IMongoDbRepository
     {
         private readonly IMongoDatabase _database;
 
@@ -124,6 +124,11 @@ namespace SugarTalk.Core.Data
             });
             
             await GetCollection<T>().BulkWriteAsync(updates, cancellationToken: cancellationToken).ConfigureAwait(false);
+        }
+
+        public IMongoQueryable<T> Query<T>()
+        {
+            return GetCollection<T>().AsQueryable();
         }
 
         private IMongoCollection<T> GetCollection<T>() => _database.GetCollection<T>(typeof(T).Name);

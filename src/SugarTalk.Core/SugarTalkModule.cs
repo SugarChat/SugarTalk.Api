@@ -42,7 +42,8 @@ namespace SugarTalk.Core
             });
             
             services.AddScoped<IRepository, MongoDbRepository>();
-
+            services.AddScoped<IMongoDbRepository, MongoDbRepository>();
+            
             return services;
         }
 
