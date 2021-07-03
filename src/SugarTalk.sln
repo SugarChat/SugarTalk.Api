@@ -9,6 +9,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SugarTalk.Api", "SugarTalk.
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SugarTalk.Messages", "SugarTalk.Messages\SugarTalk.Messages.csproj", "{AE2B7F9A-4FA9-4E26-9CEE-DCD40B0B88C7}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SugarTalk.Tests", "SugarTalk.Tests\SugarTalk.Tests.csproj", "{B9D0D86D-C694-41BC-9AD8-5BBAB6EDCB8C}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -27,6 +29,10 @@ Global
 		{AE2B7F9A-4FA9-4E26-9CEE-DCD40B0B88C7}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{AE2B7F9A-4FA9-4E26-9CEE-DCD40B0B88C7}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{AE2B7F9A-4FA9-4E26-9CEE-DCD40B0B88C7}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B9D0D86D-C694-41BC-9AD8-5BBAB6EDCB8C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B9D0D86D-C694-41BC-9AD8-5BBAB6EDCB8C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B9D0D86D-C694-41BC-9AD8-5BBAB6EDCB8C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B9D0D86D-C694-41BC-9AD8-5BBAB6EDCB8C}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
