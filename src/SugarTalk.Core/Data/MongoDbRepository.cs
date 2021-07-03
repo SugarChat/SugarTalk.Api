@@ -5,6 +5,7 @@ using System.Linq.Expressions;
 using System.Collections.Generic;
 using SugarTalk.Core.Entities;
 using MongoDB.Driver;
+using MongoDB.Driver.Linq;
 
 namespace SugarTalk.Core.Data
 {
@@ -16,10 +17,17 @@ namespace SugarTalk.Core.Data
         {
             _database = database;
         }
-        
-        public Task<List<T>> ToListAsync<T>(Expression<Func<T, bool>> predicate = null, CancellationToken cancellationToken = default) where T : class, IEntity
+
+        public async Task<List<T>> ToListAsync<T>(Expression<Func<T, bool>> predicate = null,
+            CancellationToken cancellationToken = default) where T : class, IEntity
         {
-            return Task.FromResult(new List<T>());
+            return await GetCollection<T>()
+                .AsQueryable()
+                .Where(predicate ?? (_ => true))
+                .ToListAsync(cancellationToken)
+                .ConfigureAwait(false);
         }
+
+        private IMongoCollection<T> GetCollection<T>() => _database.GetCollection<T>(typeof(T).Name);
     }
 }
