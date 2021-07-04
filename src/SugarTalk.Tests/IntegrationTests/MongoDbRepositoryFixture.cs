@@ -15,9 +15,16 @@ namespace SugarTalk.Tests.IntegrationTests
         {
             await Run<IMongoDbRepository>(async repository =>
             {
+                var meetingId = Guid.NewGuid();
+
+                await repository.AddAsync(new Meeting
+                {
+                    Id = meetingId
+                });
+                
                 var meeting = await repository
                     .Query<Meeting>()
-                    .Where(x => x.Id == Guid.NewGuid())
+                    .Where(x => x.Id == meetingId)
                     .SingleOrDefaultAsync();
 
                 meeting.ShouldNotBeNull();
