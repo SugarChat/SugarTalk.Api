@@ -30,6 +30,6 @@ jobs:
       - name: Install dependencies
         run: dotnet restore src/SugarTalk.sln
       - name: Build
-        run: dotnet build --configuration Release --no-restore
+        run: dotnet build src/SugarTalk.sln --configuration Release --no-restore
       - name: Test
-        run: dotnet test --no-restore --verbosity normal
+        run: dotnet test src/SugarTalk.sln --no-restore --verbosity normal
