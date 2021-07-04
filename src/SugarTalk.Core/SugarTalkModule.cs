@@ -17,7 +17,6 @@ namespace SugarTalk.Core
     {
         public static IServiceCollection LoadSugarTalkModule(this IServiceCollection services)
         {
-            services.AddSingleton<IDatabaseProvider, InMemoryDatabaseProvider>();
             services.AddAutoMapper(typeof(SugarTalkModule).Assembly);
             
             services.AddSingleton(p => new KurentoClient("ws://54.183.208.235:8888/kurento"));
