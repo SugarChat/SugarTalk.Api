@@ -7,6 +7,10 @@ namespace SugarTalk.Messages.Dtos
     {
         public Guid Id { get; set; }
         
+        public DateTimeOffset CreatedDate { get; set; }
+        
+        public string MeetingNumber { get; set; }
+        
         public MeetingType MeetingType { get; set; }
     }
 }

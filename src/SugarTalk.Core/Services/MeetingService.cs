@@ -1,3 +1,5 @@
+using System;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using AutoMapper;
@@ -28,6 +30,8 @@ namespace SugarTalk.Core.Services
         public async Task<SugarTalkResponse<MeetingDto>> ScheduleMeeting(ScheduleMeetingCommand scheduleMeetingCommand, CancellationToken cancellationToken)
         {
             var meeting = _mapper.Map<Meeting>(scheduleMeetingCommand);
+
+            meeting.MeetingNumber = GenerateMeetingNumber();
             
             await _repository.AddAsync(meeting, cancellationToken).ConfigureAwait(false);
 
@@ -35,6 +39,17 @@ namespace SugarTalk.Core.Services
             {
                 Data = _mapper.Map<MeetingDto>(meeting)
             };
+        }
+
+        private string GenerateMeetingNumber()
+        {
+            var result = new StringBuilder();
+            for (var i = 0; i < 5; i++)
+            {
+                var r = new Random(Guid.NewGuid().GetHashCode());
+                result.Append(r.Next(0, 10));
+            }
+            return result.ToString();
         }
     }
 }
