@@ -2,6 +2,8 @@ using System.Threading.Tasks;
 using Mediator.Net;
 using Microsoft.AspNetCore.Mvc;
 using SugarTalk.Messages;
+using SugarTalk.Messages.Commands;
+using SugarTalk.Messages.Dtos;
 
 namespace SugarTalk.Api.Controllers
 {

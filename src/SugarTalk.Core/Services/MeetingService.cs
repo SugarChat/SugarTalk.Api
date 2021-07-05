@@ -5,6 +5,8 @@ using AutoMapper;
 using SugarTalk.Core.Data.MongoDb;
 using SugarTalk.Core.Entities;
 using SugarTalk.Messages;
+using SugarTalk.Messages.Commands;
+using SugarTalk.Messages.Dtos;
 
 namespace SugarTalk.Core.Services
 {
@@ -24,9 +26,16 @@ namespace SugarTalk.Core.Services
             _repository = repository;
         }
         
-        public Task<SugarTalkResponse<MeetingDto>> ScheduleMeeting(ScheduleMeetingCommand scheduleMeetingCommand, CancellationToken cancellationToken)
+        public async Task<SugarTalkResponse<MeetingDto>> ScheduleMeeting(ScheduleMeetingCommand scheduleMeetingCommand, CancellationToken cancellationToken)
         {
-            throw new NotImplementedException();
+            var meeting = _mapper.Map<Meeting>(scheduleMeetingCommand);
+            
+            await _repository.AddAsync(meeting, cancellationToken).ConfigureAwait(false);
+
+            return new SugarTalkResponse<MeetingDto>
+            {
+                Data = _mapper.Map<MeetingDto>(meeting)
+            };
         }
     }
 }
