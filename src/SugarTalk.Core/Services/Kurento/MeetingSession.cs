@@ -1,16 +1,21 @@
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Kurento.NET;
+using SugarTalk.Messages.Enums;
 
 namespace SugarTalk.Core.Services.Kurento
 {
-    public class RoomSession
+    public class MeetingSession
     {
-        public string RoomID { set; get; }
+        public Guid MeetingId { get; set; }
+        public string MeetingNumber { set; get; }
+        public MeetingType MeetingType { get; set; }
         public MediaPipeline Pipeline { set; get; }
         public ConcurrentDictionary<string, UserSession> UserSessions { set; get; }
+        
         public async Task RemoveAsync(string id)
         {
             if (UserSessions.TryRemove(id, out UserSession user))

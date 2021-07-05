@@ -1,6 +1,7 @@
 using AutoMapper;
 using SugarTalk.Core.Entities;
-using SugarTalk.Messages;
+using SugarTalk.Messages.Commands;
+using SugarTalk.Messages.Dtos;
 
 namespace SugarTalk.Core.Mapping
 {
@@ -8,8 +9,8 @@ namespace SugarTalk.Core.Mapping
     {
         public MeetingMapping()
         {
-            CreateMap<ScheduleMeetingCommand, Meeting>();    
+            CreateMap<ScheduleMeetingCommand, Meeting>();
+            CreateMap<Meeting, MeetingDto>();
         }
-        
     }
 }

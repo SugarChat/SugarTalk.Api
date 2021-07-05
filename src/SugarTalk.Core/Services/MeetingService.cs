@@ -1,9 +1,13 @@
 using System;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using AutoMapper;
+using SugarTalk.Core.Data.MongoDb;
 using SugarTalk.Core.Entities;
 using SugarTalk.Messages;
+using SugarTalk.Messages.Commands;
+using SugarTalk.Messages.Dtos;
 
 namespace SugarTalk.Core.Services
 {
@@ -14,18 +18,38 @@ namespace SugarTalk.Core.Services
     
     public class MeetingService: IMeetingService
     {
-        private readonly IDatabaseProvider _databaseProvider;
         private readonly IMapper _mapper;
-
-        public MeetingService(IDatabaseProvider databaseProvider, IMapper mapper)
+        private readonly IMongoDbRepository _repository;
+        
+        public MeetingService(IMapper mapper, IMongoDbRepository repository)
         {
-            _databaseProvider = databaseProvider;
             _mapper = mapper;
+            _repository = repository;
         }
         
-        public Task<SugarTalkResponse<MeetingDto>> ScheduleMeeting(ScheduleMeetingCommand scheduleMeetingCommand, CancellationToken cancellationToken)
+        public async Task<SugarTalkResponse<MeetingDto>> ScheduleMeeting(ScheduleMeetingCommand scheduleMeetingCommand, CancellationToken cancellationToken)
         {
-            throw new NotImplementedException();
+            var meeting = _mapper.Map<Meeting>(scheduleMeetingCommand);
+
+            meeting.MeetingNumber = GenerateMeetingNumber();
+            
+            await _repository.AddAsync(meeting, cancellationToken).ConfigureAwait(false);
+
+            return new SugarTalkResponse<MeetingDto>
+            {
+                Data = _mapper.Map<MeetingDto>(meeting)
+            };
+        }
+
+        private string GenerateMeetingNumber()
+        {
+            var result = new StringBuilder();
+            for (var i = 0; i < 5; i++)
+            {
+                var r = new Random(Guid.NewGuid().GetHashCode());
+                result.Append(r.Next(0, 10));
+            }
+            return result.ToString();
         }
     }
 }

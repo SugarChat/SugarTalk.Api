@@ -10,8 +10,8 @@ namespace SugarTalk.Tests
     {
         private readonly IConfigurationRoot _configuration;
         private readonly IServiceCollection _serviceCollection;
-        
-        public TestBase()
+
+        protected TestBase()
         {
             _configuration = LoadConfiguration();
             _serviceCollection = RegisterServiceCollection();
@@ -40,6 +40,7 @@ namespace SugarTalk.Tests
         
         public void Dispose()
         {
+            _serviceCollection.Clear();
         }
     }
 }

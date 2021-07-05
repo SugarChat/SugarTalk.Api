@@ -4,32 +4,24 @@ using System.Threading.Tasks;
 using Mediator.Net.Context;
 using Mediator.Net.Contracts;
 using SugarTalk.Core.Services;
-using SugarTalk.Core.Services.Kurento;
 using SugarTalk.Messages;
+using SugarTalk.Messages.Commands;
+using SugarTalk.Messages.Dtos;
 
 namespace SugarTalk.Core.Handlers.CommandHandlers
 {
     public class ScheduleMeetingCommandHandler: ICommandHandler<ScheduleMeetingCommand, SugarTalkResponse<MeetingDto>>
     {
-        private readonly RoomSessionManager _roomSessionManager;
+        private readonly IMeetingService _meetingService;
 
-        public ScheduleMeetingCommandHandler(RoomSessionManager roomSessionManager)
+        public ScheduleMeetingCommandHandler(IMeetingService meetingService)
         {
-            _roomSessionManager = roomSessionManager;
+            _meetingService = meetingService;
         }
         
         public async Task<SugarTalkResponse<MeetingDto>> Handle(IReceiveContext<ScheduleMeetingCommand> context, CancellationToken cancellationToken)
         {
-            var random = new Random();
-            var meetingNumber = random.Next(1000, 2000).ToString();
-            await _roomSessionManager.GetRoomSessionAsync(meetingNumber);
-            return new SugarTalkResponse<MeetingDto>()
-            {
-                Data = new MeetingDto()
-                {
-                    MeetingId = meetingNumber
-                }
-            };
+            return await _meetingService.ScheduleMeeting(context.Message, cancellationToken).ConfigureAwait(false);
         }
     }
 }

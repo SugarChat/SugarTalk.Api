@@ -8,6 +8,7 @@ using MongoDB.Driver;
 using SugarTalk.Core.Data;
 using SugarTalk.Core.Data.MongoDb;
 using SugarTalk.Core.Middlewares;
+using SugarTalk.Core.Services;
 using SugarTalk.Core.Services.Kurento;
 using SugarTalk.Core.Settings;
 
@@ -17,11 +18,10 @@ namespace SugarTalk.Core
     {
         public static IServiceCollection LoadSugarTalkModule(this IServiceCollection services)
         {
-            services.AddSingleton<IDatabaseProvider, InMemoryDatabaseProvider>();
             services.AddAutoMapper(typeof(SugarTalkModule).Assembly);
             
             services.AddSingleton(p => new KurentoClient("ws://54.183.208.235:8888/kurento"));
-            services.AddSingleton<RoomSessionManager>();
+            services.AddSingleton<MeetingSessionManager>();
 
             return services;
         }
@@ -54,6 +54,13 @@ namespace SugarTalk.Core
             mediaBuilder.RegisterHandlers(typeof(SugarTalkModule).Assembly);
             mediaBuilder.ConfigureGlobalReceivePipe(x => x.UseUnifyResponseMiddleware());
             services.RegisterMediator(mediaBuilder);
+            return services;
+        }
+        
+        public static IServiceCollection LoadServices(this IServiceCollection services)
+        {
+            services.AddScoped<IMeetingDataProvider, MeetingDataProvider>();
+            services.AddScoped<IMeetingService, MeetingService>();
             return services;
         }
     }

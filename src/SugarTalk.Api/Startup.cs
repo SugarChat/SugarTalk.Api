@@ -32,7 +32,8 @@ namespace SugarTalk.Api
                 .LoadSugarTalkModule()
                 .LoadSettings(Configuration)
                 .LoadMongoDb()
-                .LoadMediator();
+                .LoadMediator()
+                .LoadServices();
             
             services.AddMvc(options => options.EnableEndpointRouting = false);
             services.AddSignalR(config =>
@@ -65,7 +66,7 @@ namespace SugarTalk.Api
             app.UseEndpoints(endpoints =>
             {
                 endpoints.MapControllers();
-                endpoints.MapHub<RoomHub>("/roomHub");
+                endpoints.MapHub<MeetingHub>("/meetingHub");
             });
             
             app.UseMvc(routes =>

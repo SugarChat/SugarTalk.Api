@@ -1,15 +1,10 @@
 using System;
 using SugarTalk.Messages.Enums;
 
-namespace SugarTalk.Core.Entities
+namespace SugarTalk.Messages.Dtos
 {
-    public class Meeting: IEntity
+    public class MeetingDto
     {
-        public Meeting()
-        {
-            CreatedDate = DateTimeOffset.Now;
-        }
-        
         public Guid Id { get; set; }
         
         public DateTimeOffset CreatedDate { get; set; }
