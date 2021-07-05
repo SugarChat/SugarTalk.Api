@@ -20,7 +20,7 @@ namespace SugarTalk.Core
             services.AddAutoMapper(typeof(SugarTalkModule).Assembly);
             
             services.AddSingleton(p => new KurentoClient("ws://54.183.208.235:8888/kurento"));
-            services.AddSingleton<RoomSessionManager>();
+            services.AddSingleton<MeetingSessionManager>();
 
             return services;
         }

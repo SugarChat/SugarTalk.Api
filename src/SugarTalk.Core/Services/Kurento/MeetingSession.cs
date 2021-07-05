@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
@@ -6,11 +7,12 @@ using Kurento.NET;
 
 namespace SugarTalk.Core.Services.Kurento
 {
-    public class RoomSession
+    public class MeetingSession
     {
-        public string RoomID { set; get; }
+        public Guid MeetingId { set; get; }
         public MediaPipeline Pipeline { set; get; }
         public ConcurrentDictionary<string, UserSession> UserSessions { set; get; }
+        
         public async Task RemoveAsync(string id)
         {
             if (UserSessions.TryRemove(id, out UserSession user))
