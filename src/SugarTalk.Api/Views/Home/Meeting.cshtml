@@ -3,7 +3,7 @@
     <script>
 
         var userSessions = {};
-        var server = new signalR.HubConnectionBuilder().withUrl("/roomHub" + location.search).build();
+        var server = new signalR.HubConnectionBuilder().withUrl("/meetingHub" + location.search).build();
         server.on("SetLocalUser", localUser => {
             userSessions[localUser.id] = new UserSession(localUser, true);
         });

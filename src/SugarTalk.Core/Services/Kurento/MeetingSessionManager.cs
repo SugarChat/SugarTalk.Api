@@ -1,42 +1,39 @@
 using System.Threading.Tasks;
 using System.Collections.Concurrent;
 using Kurento.NET;
+using SugarTalk.Core.Entities;
 
 namespace SugarTalk.Core.Services.Kurento
 {
     public class MeetingSessionManager
     {
         private readonly KurentoClient _client;
-        private readonly IMeetingDataProvider _meetingDataProvider;
         private readonly ConcurrentDictionary<string, MeetingSession> _meetingSessions;
 
-        public MeetingSessionManager(KurentoClient client, IMeetingDataProvider meetingDataProvider)
+        public MeetingSessionManager(KurentoClient client)
         {
             _client = client;
-            _meetingDataProvider = meetingDataProvider;
             _meetingSessions = new ConcurrentDictionary<string, MeetingSession>();
         }
         
-        public async Task<MeetingSession> GetMeetingSessionAsync(string meetingNumber)
+        public async Task<MeetingSession> GetOrCreateMeetingSessionAsync(Meeting meeting)
         {
-            _meetingSessions.TryGetValue(meetingNumber, out var meetingSession);
+            _meetingSessions.TryGetValue(meeting.MeetingNumber, out var meetingSession);
 
             if (meetingSession != null) return meetingSession;
             {
                 var pipeline = await _client.CreateAsync(new MediaPipeline());
 
-                var meeting = await _meetingDataProvider.GetMeetingByNumber(meetingNumber).ConfigureAwait(false);
-                
                 meetingSession = new MeetingSession
                 {
                     MeetingId = meeting.Id,
-                    MeetingNumber = meetingNumber,
                     MeetingType = meeting.MeetingType,
+                    MeetingNumber = meeting.MeetingNumber,
                     Pipeline = pipeline,
                     UserSessions = new ConcurrentDictionary<string, UserSession>()
                 };
                 
-                _meetingSessions.TryAdd(meetingNumber, meetingSession);
+                _meetingSessions.TryAdd(meeting.MeetingNumber, meetingSession);
             }
             
             return meetingSession;

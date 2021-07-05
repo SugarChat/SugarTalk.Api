@@ -10,7 +10,7 @@ namespace SugarTalk.Api.Controllers
             return View();
         }
         
-        public IActionResult Room()
+        public IActionResult Meeting()
         {
             return View();
         }

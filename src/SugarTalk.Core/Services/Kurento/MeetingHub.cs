@@ -10,11 +10,13 @@ namespace SugarTalk.Core.Services.Kurento
     public class MeetingHub : DynamicHub
     {
         private readonly KurentoClient _kurento;
+        private readonly IMeetingDataProvider _meetingDataProvider;
         private readonly MeetingSessionManager _meetingSessionManager;
 
-        public MeetingHub(KurentoClient kurento, MeetingSessionManager meetingSessionManager)
+        public MeetingHub(KurentoClient kurento, IMeetingDataProvider meetingDataProvider, MeetingSessionManager meetingSessionManager)
         {
             _kurento = kurento;
+            _meetingDataProvider = meetingDataProvider;
             _meetingSessionManager = meetingSessionManager;
         }
         
@@ -24,7 +26,10 @@ namespace SugarTalk.Core.Services.Kurento
 
         public override async Task OnConnectedAsync()
         {
-            var meetingSession = await _meetingSessionManager.GetMeetingSessionAsync(MeetingNumber)
+            var meeting = await _meetingDataProvider.GetMeetingByNumber(MeetingNumber)
+                .ConfigureAwait(false);
+            
+            var meetingSession = await _meetingSessionManager.GetOrCreateMeetingSessionAsync(meeting)
                 .ConfigureAwait(false);
             
             var userSession = new UserSession
@@ -44,7 +49,10 @@ namespace SugarTalk.Core.Services.Kurento
         
         public override async Task OnDisconnectedAsync(Exception exception)
         {
-            var meetingSession = await _meetingSessionManager.GetMeetingSessionAsync(MeetingNumber).ConfigureAwait(false);
+            var meeting = await _meetingDataProvider.GetMeetingByNumber(MeetingNumber)
+                .ConfigureAwait(false);
+            var meetingSession = await _meetingSessionManager.GetOrCreateMeetingSessionAsync(meeting)
+                .ConfigureAwait(false);
             await meetingSession.RemoveAsync(Context.ConnectionId).ConfigureAwait(false);
             Clients.OthersInGroup(MeetingNumber).OtherLeft(Context.ConnectionId);
             await base.OnDisconnectedAsync(exception).ConfigureAwait(false);
@@ -52,7 +60,9 @@ namespace SugarTalk.Core.Services.Kurento
         
         private async Task<WebRtcEndpoint> GetEndPointAsync(string id)
         {
-            var meetingSession = await _meetingSessionManager.GetMeetingSessionAsync(MeetingNumber)
+            var meeting = await _meetingDataProvider.GetMeetingByNumber(MeetingNumber)
+                .ConfigureAwait(false);
+            var meetingSession = await _meetingSessionManager.GetOrCreateMeetingSessionAsync(meeting)
                 .ConfigureAwait(false);
             
             if (meetingSession.UserSessions.TryGetValue(Context.ConnectionId, out var selfSession))

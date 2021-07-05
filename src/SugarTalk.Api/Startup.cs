@@ -32,7 +32,8 @@ namespace SugarTalk.Api
                 .LoadSugarTalkModule()
                 .LoadSettings(Configuration)
                 .LoadMongoDb()
-                .LoadMediator();
+                .LoadMediator()
+                .LoadServices();
             
             services.AddMvc(options => options.EnableEndpointRouting = false);
             services.AddSignalR(config =>
