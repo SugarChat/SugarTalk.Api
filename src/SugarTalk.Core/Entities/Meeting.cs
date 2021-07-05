@@ -14,6 +14,8 @@ namespace SugarTalk.Core.Entities
         
         public DateTimeOffset CreatedDate { get; set; }
         
+        public string MeetingNumber { get; set; }
+        
         public MeetingType MeetingType { get; set; }
     }
 }

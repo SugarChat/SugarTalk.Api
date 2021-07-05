@@ -20,11 +20,12 @@ namespace SugarTalk.Core.Services.Kurento
         
         public string UserName => Context.GetHttpContext().Request.Query["userName"];
 
-        public Guid MeetingId => Guid.Parse(Context.GetHttpContext().Request.Query["meetingId"]);
+        public string MeetingNumber => Context.GetHttpContext().Request.Query["meetingNumber"];
 
         public override async Task OnConnectedAsync()
         {
-            var meetingSession = await _meetingSessionManager.GetMeetingSessionAsync(MeetingId).ConfigureAwait(false);
+            var meetingSession = await _meetingSessionManager.GetMeetingSessionAsync(MeetingNumber)
+                .ConfigureAwait(false);
             
             var userSession = new UserSession
             {
@@ -35,23 +36,24 @@ namespace SugarTalk.Core.Services.Kurento
             };
             
             meetingSession.UserSessions.TryAdd(Context.ConnectionId, userSession);
-            await Groups.AddToGroupAsync(Context.ConnectionId, MeetingId.ToString()).ConfigureAwait(false);
+            await Groups.AddToGroupAsync(Context.ConnectionId, MeetingNumber).ConfigureAwait(false);
             Clients.Caller.SetLocalUser(userSession);
             Clients.Caller.SetOtherUsers(meetingSession.GetOtherUsers(Context.ConnectionId));
-            Clients.OthersInGroup(MeetingId.ToString()).OtherJoined(userSession);
+            Clients.OthersInGroup(MeetingNumber).OtherJoined(userSession);
         }
         
         public override async Task OnDisconnectedAsync(Exception exception)
         {
-            var meetingSession = await _meetingSessionManager.GetMeetingSessionAsync(MeetingId).ConfigureAwait(false);
+            var meetingSession = await _meetingSessionManager.GetMeetingSessionAsync(MeetingNumber).ConfigureAwait(false);
             await meetingSession.RemoveAsync(Context.ConnectionId).ConfigureAwait(false);
-            Clients.OthersInGroup(MeetingId.ToString()).OtherLeft(Context.ConnectionId);
+            Clients.OthersInGroup(MeetingNumber).OtherLeft(Context.ConnectionId);
             await base.OnDisconnectedAsync(exception).ConfigureAwait(false);
         }
         
         private async Task<WebRtcEndpoint> GetEndPointAsync(string id)
         {
-            var meetingSession = await _meetingSessionManager.GetMeetingSessionAsync(MeetingId).ConfigureAwait(false);
+            var meetingSession = await _meetingSessionManager.GetMeetingSessionAsync(MeetingNumber)
+                .ConfigureAwait(false);
             
             if (meetingSession.UserSessions.TryGetValue(Context.ConnectionId, out var selfSession))
             {
