@@ -2,6 +2,7 @@ using System.Threading.Tasks;
 using System.Collections.Concurrent;
 using Kurento.NET;
 using SugarTalk.Core.Entities;
+using SugarTalk.Messages.Dtos;
 
 namespace SugarTalk.Core.Services.Kurento
 {
@@ -16,7 +17,7 @@ namespace SugarTalk.Core.Services.Kurento
             _meetingSessions = new ConcurrentDictionary<string, MeetingSession>();
         }
         
-        public async Task<MeetingSession> GetOrCreateMeetingSessionAsync(Meeting meeting)
+        public async Task<MeetingSession> GetOrCreateMeetingSessionAsync(MeetingDto meeting)
         {
             _meetingSessions.TryGetValue(meeting.MeetingNumber, out var meetingSession);
 
@@ -44,7 +45,7 @@ namespace SugarTalk.Core.Services.Kurento
         /// </summary>
         /// <param name="meetingNumber"></param>
         /// <returns></returns>
-        public async Task TryRemoveRoomAsync(string meetingNumber)
+        public async Task TryRemoveMeetingAsync(string meetingNumber)
         {
             if (_meetingSessions.TryGetValue(meetingNumber, out var meetingSession))
             {
