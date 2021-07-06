@@ -1,5 +1,6 @@
 using System.Threading.Tasks;
 using Mediator.Net;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SugarTalk.Messages;
 using SugarTalk.Messages.Commands;
@@ -18,6 +19,7 @@ namespace SugarTalk.Api.Controllers
             _mediator = mediator;
         }
         
+        [Authorize]
         [Route("schedule"), HttpPost]
         public async Task<SugarTalkResponse<MeetingDto>> ScheduleMeeting(ScheduleMeetingCommand scheduleMeetingCommand)
         {
