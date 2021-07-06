@@ -2,36 +2,36 @@ using System;
 using System.Collections.Concurrent;
 using System.Threading.Tasks;
 using Kurento.NET;
+using Mediator.Net;
 using Microsoft.AspNetCore.SignalR;
 using Newtonsoft.Json;
+using SugarTalk.Messages;
+using SugarTalk.Messages.Dtos;
+using SugarTalk.Messages.Requests;
 
 namespace SugarTalk.Core.Services.Kurento
 {
     public class MeetingHub : DynamicHub
     {
+        private string UserName => Context.GetHttpContext().Request.Query["userName"];
+        private string MeetingNumber => Context.GetHttpContext().Request.Query["meetingNumber"];
+
+        private readonly IMediator _mediator;
         private readonly KurentoClient _kurento;
-        private readonly IMeetingDataProvider _meetingDataProvider;
         private readonly MeetingSessionManager _meetingSessionManager;
 
-        public MeetingHub(KurentoClient kurento, IMeetingDataProvider meetingDataProvider, MeetingSessionManager meetingSessionManager)
+        public MeetingHub(IMediator mediator, KurentoClient kurento, MeetingSessionManager meetingSessionManager)
         {
             _kurento = kurento;
-            _meetingDataProvider = meetingDataProvider;
+            _mediator = mediator;
             _meetingSessionManager = meetingSessionManager;
         }
-        
-        public string UserName => Context.GetHttpContext().Request.Query["userName"];
-
-        public string MeetingNumber => Context.GetHttpContext().Request.Query["meetingNumber"];
 
         public override async Task OnConnectedAsync()
         {
-            var meeting = await _meetingDataProvider.GetMeetingByNumber(MeetingNumber)
-                .ConfigureAwait(false);
-            
+            var meeting = await GetMeeting().ConfigureAwait(false);
             var meetingSession = await _meetingSessionManager.GetOrCreateMeetingSessionAsync(meeting)
                 .ConfigureAwait(false);
-            
             var userSession = new UserSession
             {
                 Id = Context.ConnectionId,
@@ -39,7 +39,6 @@ namespace SugarTalk.Core.Services.Kurento
                 SendEndPoint = null,
                 ReceviedEndPoints = new ConcurrentDictionary<string, WebRtcEndpoint>()
             };
-            
             meetingSession.UserSessions.TryAdd(Context.ConnectionId, userSession);
             await Groups.AddToGroupAsync(Context.ConnectionId, MeetingNumber).ConfigureAwait(false);
             Clients.Caller.SetLocalUser(userSession);
@@ -49,19 +48,28 @@ namespace SugarTalk.Core.Services.Kurento
         
         public override async Task OnDisconnectedAsync(Exception exception)
         {
-            var meeting = await _meetingDataProvider.GetMeetingByNumber(MeetingNumber)
-                .ConfigureAwait(false);
+            var meeting = await GetMeeting().ConfigureAwait(false);
             var meetingSession = await _meetingSessionManager.GetOrCreateMeetingSessionAsync(meeting)
                 .ConfigureAwait(false);
             await meetingSession.RemoveAsync(Context.ConnectionId).ConfigureAwait(false);
             Clients.OthersInGroup(MeetingNumber).OtherLeft(Context.ConnectionId);
             await base.OnDisconnectedAsync(exception).ConfigureAwait(false);
         }
+
+        private async Task<MeetingDto> GetMeeting()
+        {
+            var meeting = await _mediator.RequestAsync<GetMeetingByNumberRequest, SugarTalkResponse<MeetingDto>>(
+                new GetMeetingByNumberRequest
+                {
+                    MeetingNumber = MeetingNumber
+                }).ConfigureAwait(false);
+
+            return meeting.Data;
+        }
         
         private async Task<WebRtcEndpoint> GetEndPointAsync(string id)
         {
-            var meeting = await _meetingDataProvider.GetMeetingByNumber(MeetingNumber)
-                .ConfigureAwait(false);
+            var meeting = await GetMeeting().ConfigureAwait(false);
             var meetingSession = await _meetingSessionManager.GetOrCreateMeetingSessionAsync(meeting)
                 .ConfigureAwait(false);
             
@@ -119,8 +127,8 @@ namespace SugarTalk.Core.Services.Kurento
         public async Task ProcessOfferAsync(string id, string offerSdp)
         {
             var endPonit = await GetEndPointAsync(id).ConfigureAwait(false);
-            var answerSDP = await endPonit.ProcessOfferAsync(offerSdp).ConfigureAwait(false);
-            Clients.Caller.ProcessAnswer(id, answerSDP);
+            var answerSdp = await endPonit.ProcessOfferAsync(offerSdp).ConfigureAwait(false);
+            Clients.Caller.ProcessAnswer(id, answerSdp);
             await endPonit.GatherCandidatesAsync().ConfigureAwait(false);
         }
     }

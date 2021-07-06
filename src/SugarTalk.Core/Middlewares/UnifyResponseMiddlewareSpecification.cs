@@ -12,8 +12,6 @@ namespace SugarTalk.Core.Middlewares
     public class UnifyResponseMiddlewareSpecification<TContext> : IPipeSpecification<TContext>
          where TContext : IContext<IMessage>
     {
-
-        
         public Task AfterExecute(TContext context, CancellationToken cancellationToken)
         {
             return Task.CompletedTask;
@@ -31,12 +29,12 @@ namespace SugarTalk.Core.Middlewares
 
         public Task OnException(Exception ex, TContext context)
         {
-            if (!(ex is BusinessException) || context.Message is IEvent)
+            if (ex is not BusinessException businessException || context.Message is IEvent)
             {
                 ExceptionDispatchInfo.Capture(ex).Throw();
                 throw ex;
             }
-            var businessException = ex as BusinessException;
+
             if (context.Result is null)
             {
                 var unifiedTypeInstance = Activator.CreateInstance(context.ResultDataType);
