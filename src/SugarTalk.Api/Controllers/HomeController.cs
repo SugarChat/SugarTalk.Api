@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace SugarTalk.Api.Controllers
@@ -13,6 +14,12 @@ namespace SugarTalk.Api.Controllers
         public IActionResult Meeting()
         {
             return View();
+        }
+
+        [Authorize]
+        public IActionResult Foo()
+        {
+            return Ok("Bar");
         }
     }
 }

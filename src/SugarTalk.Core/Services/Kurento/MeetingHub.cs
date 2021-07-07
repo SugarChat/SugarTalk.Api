@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using System.Threading.Tasks;
 using Kurento.NET;
 using Mediator.Net;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
 using Newtonsoft.Json;
 using SugarTalk.Messages;
@@ -11,6 +12,7 @@ using SugarTalk.Messages.Requests;
 
 namespace SugarTalk.Core.Services.Kurento
 {
+    [Authorize]
     public class MeetingHub : DynamicHub
     {
         private string UserName => Context.GetHttpContext().Request.Query["userName"];
