@@ -12,7 +12,6 @@ using SugarTalk.Messages.Requests;
 
 namespace SugarTalk.Core.Services.Kurento
 {
-    [Authorize]
     public class MeetingHub : DynamicHub
     {
         private string UserName => Context.GetHttpContext().Request.Query["userName"];
