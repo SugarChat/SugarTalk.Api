@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using SugarTalk.Core;
 using static Google.Apis.Auth.GoogleJsonWebSignature;
 
 namespace SugarTalk.Api.Middlewares.Authentication
@@ -54,7 +55,7 @@ namespace SugarTalk.Api.Middlewares.Authentication
                 new ClaimsPrincipal(new ClaimsIdentity(new List<Claim>
                 {
                     new(ClaimTypes.Name, payload.Name),
-                    new(ClaimTypes.Email, payload.Email)
+                    new(SugarTalkClaimType.ThirdPartyId, payload.Subject)
                 }, "Google")
             ), new AuthenticationProperties {IsPersistent = false}, Scheme.Name));
         }
