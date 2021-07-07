@@ -7,6 +7,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.OpenApi.Models;
+using SugarTalk.Api.Middlewares;
 using SugarTalk.Api.Middlewares.Authentication;
 using SugarTalk.Core;
 using SugarTalk.Core.Services.Kurento;
@@ -76,7 +77,8 @@ namespace SugarTalk.Api
             app.UseStaticFiles();
             
             app.UseRouting();
-            
+
+            app.UseMiddleware<EnrichAccessTokenMiddleware>();
             app.UseAuthentication();
             app.UseAuthorization();
             
