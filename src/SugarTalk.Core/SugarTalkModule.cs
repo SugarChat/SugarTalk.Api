@@ -8,8 +8,9 @@ using MongoDB.Driver;
 using SugarTalk.Core.Data;
 using SugarTalk.Core.Data.MongoDb;
 using SugarTalk.Core.Middlewares;
-using SugarTalk.Core.Services;
 using SugarTalk.Core.Services.Kurento;
+using SugarTalk.Core.Services.Meetings;
+using SugarTalk.Core.Services.Users;
 using SugarTalk.Core.Settings;
 
 namespace SugarTalk.Core
@@ -61,6 +62,10 @@ namespace SugarTalk.Core
         {
             services.AddScoped<IMeetingDataProvider, MeetingDataProvider>();
             services.AddScoped<IMeetingService, MeetingService>();
+
+            services.AddScoped<IUserDataProvider, UserDataProvider>();
+            services.AddScoped<IUserService, UserService>();
+            
             return services;
         }
     }

@@ -1,0 +1,14 @@
+using AutoMapper;
+using SugarTalk.Core.Entities;
+using SugarTalk.Messages.Dtos.Users;
+
+namespace SugarTalk.Core.Mapping
+{
+    public class UserMapping : Profile
+    {
+        public UserMapping()
+        {
+            CreateMap<User, SignedInUserDto>();
+        }
+    }
+}

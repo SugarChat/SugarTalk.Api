@@ -5,9 +5,8 @@ using AutoMapper;
 using MongoDB.Driver.Linq;
 using SugarTalk.Core.Data.MongoDb;
 using SugarTalk.Core.Entities;
-using SugarTalk.Messages.Dtos;
 
-namespace SugarTalk.Core.Services
+namespace SugarTalk.Core.Services.Meetings
 {
     public interface IMeetingDataProvider
     {

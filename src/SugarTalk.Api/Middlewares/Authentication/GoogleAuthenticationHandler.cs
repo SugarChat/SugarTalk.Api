@@ -55,6 +55,7 @@ namespace SugarTalk.Api.Middlewares.Authentication
                 new ClaimsPrincipal(new ClaimsIdentity(new List<Claim>
                 {
                     new(ClaimTypes.Name, payload.Name),
+                    new(SugarTalkClaimType.Picture, payload.Picture),
                     new(SugarTalkClaimType.ThirdPartyId, payload.Subject)
                 }, "Google")
             ), new AuthenticationProperties {IsPersistent = false}, Scheme.Name));

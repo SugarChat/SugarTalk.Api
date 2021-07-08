@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using Kurento.NET;
 using SugarTalk.Core.Entities;
 using SugarTalk.Messages.Dtos;
+using SugarTalk.Messages.Dtos.Meetings;
 
 namespace SugarTalk.Core.Services.Kurento
 {

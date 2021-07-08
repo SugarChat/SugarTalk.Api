@@ -8,7 +8,9 @@ using Microsoft.AspNetCore.SignalR;
 using Newtonsoft.Json;
 using SugarTalk.Messages;
 using SugarTalk.Messages.Dtos;
+using SugarTalk.Messages.Dtos.Meetings;
 using SugarTalk.Messages.Requests;
+using SugarTalk.Messages.Requests.Meetings;
 
 namespace SugarTalk.Core.Services.Kurento
 {

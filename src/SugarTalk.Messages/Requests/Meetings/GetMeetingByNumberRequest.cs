@@ -1,7 +1,6 @@
 using Mediator.Net.Contracts;
-using SugarTalk.Messages.Dtos;
 
-namespace SugarTalk.Messages.Requests
+namespace SugarTalk.Messages.Requests.Meetings
 {
     public class GetMeetingByNumberRequest : IRequest
     {

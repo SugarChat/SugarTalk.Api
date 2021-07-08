@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SugarTalk.Messages;
 using SugarTalk.Messages.Commands;
-using SugarTalk.Messages.Dtos;
+using SugarTalk.Messages.Dtos.Meetings;
 
 namespace SugarTalk.Api.Controllers
 {

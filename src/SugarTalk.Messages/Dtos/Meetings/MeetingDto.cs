@@ -1,7 +1,7 @@
 using System;
 using SugarTalk.Messages.Enums;
 
-namespace SugarTalk.Messages.Dtos
+namespace SugarTalk.Messages.Dtos.Meetings
 {
     public class MeetingDto
     {

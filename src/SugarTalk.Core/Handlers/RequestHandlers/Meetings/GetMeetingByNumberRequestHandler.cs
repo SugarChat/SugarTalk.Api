@@ -2,12 +2,12 @@ using System.Threading;
 using System.Threading.Tasks;
 using Mediator.Net.Context;
 using Mediator.Net.Contracts;
-using SugarTalk.Core.Services;
+using SugarTalk.Core.Services.Meetings;
 using SugarTalk.Messages;
-using SugarTalk.Messages.Dtos;
-using SugarTalk.Messages.Requests;
+using SugarTalk.Messages.Dtos.Meetings;
+using SugarTalk.Messages.Requests.Meetings;
 
-namespace SugarTalk.Core.Handlers.RequestHandlers
+namespace SugarTalk.Core.Handlers.RequestHandlers.Meetings
 {
     public class GetMeetingByNumberRequestHandler : IRequestHandler<GetMeetingByNumberRequest, SugarTalkResponse<MeetingDto>>
     {
