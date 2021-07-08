@@ -1,5 +1,6 @@
 using System.Threading.Tasks;
 using Mediator.Net;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SugarTalk.Messages;
 using SugarTalk.Messages.Commands;
@@ -7,6 +8,7 @@ using SugarTalk.Messages.Dtos;
 
 namespace SugarTalk.Api.Controllers
 {
+    [Authorize]
     [ApiController]
     [Route("[controller]")]
     public class MeetingController: ControllerBase

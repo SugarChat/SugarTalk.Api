@@ -1,10 +1,14 @@
 using System.Text.Json;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.OpenApi.Models;
+using SugarTalk.Api.Middlewares;
+using SugarTalk.Api.Middlewares.Authentication;
 using SugarTalk.Core;
 using SugarTalk.Core.Services.Kurento;
 
@@ -28,6 +32,19 @@ namespace SugarTalk.Api
                 c.SwaggerDoc("v1", new OpenApiInfo {Title = "SugarTalk.Api", Version = "v1"});
             });
 
+            services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+                .AddScheme<GoogleAuthenticationOptions, GoogleAuthenticationHandler>("Google", option =>
+                {
+
+                });
+            
+            services.AddAuthorization(options =>
+            {
+                var builder = new AuthorizationPolicyBuilder("Google");
+                builder = builder.RequireAuthenticatedUser();
+                options.DefaultPolicy = builder.Build();
+            });
+            
             services
                 .LoadSugarTalkModule()
                 .LoadSettings(Configuration)
@@ -61,6 +78,8 @@ namespace SugarTalk.Api
             
             app.UseRouting();
 
+            app.UseMiddleware<EnrichAccessTokenMiddleware>();
+            app.UseAuthentication();
             app.UseAuthorization();
             
             app.UseEndpoints(endpoints =>
