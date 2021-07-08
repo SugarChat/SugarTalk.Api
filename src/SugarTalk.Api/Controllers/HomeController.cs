@@ -15,11 +15,5 @@ namespace SugarTalk.Api.Controllers
         {
             return View();
         }
-
-        [Authorize]
-        public IActionResult Foo()
-        {
-            return Ok("Bar");
-        }
     }
 }

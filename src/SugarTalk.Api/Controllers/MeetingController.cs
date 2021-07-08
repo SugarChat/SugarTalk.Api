@@ -8,6 +8,7 @@ using SugarTalk.Messages.Dtos;
 
 namespace SugarTalk.Api.Controllers
 {
+    [Authorize]
     [ApiController]
     [Route("[controller]")]
     public class MeetingController: ControllerBase
@@ -19,7 +20,6 @@ namespace SugarTalk.Api.Controllers
             _mediator = mediator;
         }
         
-        [Authorize]
         [Route("schedule"), HttpPost]
         public async Task<SugarTalkResponse<MeetingDto>> ScheduleMeeting(ScheduleMeetingCommand scheduleMeetingCommand)
         {
