@@ -15,7 +15,6 @@ namespace SugarTalk.Core.Services.Kurento
     [Authorize]
     public class MeetingHub : DynamicHub
     {
-        private string UserName => Context.GetHttpContext().Request.Query["userName"];
         private string MeetingNumber => Context.GetHttpContext().Request.Query["meetingNumber"];
 
         private readonly IMediator _mediator;
@@ -37,7 +36,7 @@ namespace SugarTalk.Core.Services.Kurento
             var userSession = new UserSession
             {
                 Id = Context.ConnectionId,
-                UserName = UserName,
+                UserName = Context.User.Identity.Name,
                 SendEndPoint = null,
                 ReceviedEndPoints = new ConcurrentDictionary<string, WebRtcEndpoint>()
             };
