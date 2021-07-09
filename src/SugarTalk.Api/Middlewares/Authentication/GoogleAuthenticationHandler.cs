@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using SugarTalk.Core;
+using SugarTalk.Messages.Enums;
 using static Google.Apis.Auth.GoogleJsonWebSignature;
 
 namespace SugarTalk.Api.Middlewares.Authentication
@@ -69,7 +70,7 @@ namespace SugarTalk.Api.Middlewares.Authentication
                 new(ClaimTypes.Email, email),
                 new(SugarTalkClaimType.Picture, picture),
                 new(SugarTalkClaimType.ThirdPartyId, thirdPartyId),
-                new(SugarTalkClaimType.ThirdPartyFrom, "Google")
+                new(SugarTalkClaimType.ThirdPartyFrom, ThirdPartyFrom.Google.ToString())
             };
         }
     }

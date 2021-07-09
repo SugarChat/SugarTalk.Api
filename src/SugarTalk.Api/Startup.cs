@@ -32,17 +32,16 @@ namespace SugarTalk.Api
                 c.SwaggerDoc("v1", new OpenApiInfo {Title = "SugarTalk.Api", Version = "v1"});
             });
 
+            services.AddHttpClient();
             services.AddHttpContextAccessor();
-            
-            services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-                .AddScheme<GoogleAuthenticationOptions, GoogleAuthenticationHandler>("Google", option =>
-                {
 
-                });
+            services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+                .AddScheme<GoogleAuthenticationOptions, GoogleAuthenticationHandler>("Google", _ => { })
+                .AddScheme<WechatAuthenticationOptions, WechatAuthenticationHandler>("Wechat", _ => { });
             
             services.AddAuthorization(options =>
             {
-                var builder = new AuthorizationPolicyBuilder("Google");
+                var builder = new AuthorizationPolicyBuilder("Google", "Wechat");
                 builder = builder.RequireAuthenticatedUser();
                 options.DefaultPolicy = builder.Build();
             });
