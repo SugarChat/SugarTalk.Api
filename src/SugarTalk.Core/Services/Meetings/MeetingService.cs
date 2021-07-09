@@ -8,10 +8,10 @@ using SugarTalk.Core.Entities;
 using SugarTalk.Core.Services.Exceptions;
 using SugarTalk.Messages;
 using SugarTalk.Messages.Commands;
-using SugarTalk.Messages.Dtos;
-using SugarTalk.Messages.Requests;
+using SugarTalk.Messages.Dtos.Meetings;
+using SugarTalk.Messages.Requests.Meetings;
 
-namespace SugarTalk.Core.Services
+namespace SugarTalk.Core.Services.Meetings
 {
     public interface IMeetingService
     {

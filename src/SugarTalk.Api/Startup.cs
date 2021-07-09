@@ -32,6 +32,8 @@ namespace SugarTalk.Api
                 c.SwaggerDoc("v1", new OpenApiInfo {Title = "SugarTalk.Api", Version = "v1"});
             });
 
+            services.AddHttpContextAccessor();
+            
             services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                 .AddScheme<GoogleAuthenticationOptions, GoogleAuthenticationHandler>("Google", option =>
                 {

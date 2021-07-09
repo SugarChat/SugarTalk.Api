@@ -52,12 +52,25 @@ namespace SugarTalk.Api.Middlewares.Authentication
 
             return AuthenticateResult.Success(new AuthenticationTicket
             (
-                new ClaimsPrincipal(new ClaimsIdentity(new List<Claim>
-                {
-                    new(ClaimTypes.Name, payload.Name),
-                    new(SugarTalkClaimType.ThirdPartyId, payload.Subject)
-                }, "Google")
+                new ClaimsPrincipal(new ClaimsIdentity(GetClaims(payload), "Google")
             ), new AuthenticationProperties {IsPersistent = false}, Scheme.Name));
+        }
+
+        private IEnumerable<Claim> GetClaims(Payload payload)
+        {
+            var name = payload.Name;
+            var email = payload.Email ?? "";
+            var picture = payload.Picture ?? "";
+            var thirdPartyId = payload.Subject;
+            
+            return new List<Claim>
+            {
+                new(ClaimTypes.Name, name),
+                new(ClaimTypes.Email, email),
+                new(SugarTalkClaimType.Picture, picture),
+                new(SugarTalkClaimType.ThirdPartyId, thirdPartyId),
+                new(SugarTalkClaimType.ThirdPartyFrom, "Google")
+            };
         }
     }
 }

@@ -2,6 +2,7 @@ using AutoMapper;
 using SugarTalk.Core.Entities;
 using SugarTalk.Messages.Commands;
 using SugarTalk.Messages.Dtos;
+using SugarTalk.Messages.Dtos.Meetings;
 
 namespace SugarTalk.Core.Mapping
 {

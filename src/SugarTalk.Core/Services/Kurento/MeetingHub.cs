@@ -8,13 +8,16 @@ using Microsoft.AspNetCore.SignalR;
 using Newtonsoft.Json;
 using SugarTalk.Messages;
 using SugarTalk.Messages.Dtos;
+using SugarTalk.Messages.Dtos.Meetings;
 using SugarTalk.Messages.Requests;
+using SugarTalk.Messages.Requests.Meetings;
 
 namespace SugarTalk.Core.Services.Kurento
 {
     [Authorize]
     public class MeetingHub : DynamicHub
     {
+        private string UserName => Context.GetHttpContext().Request.Query["userName"];
         private string MeetingNumber => Context.GetHttpContext().Request.Query["meetingNumber"];
 
         private readonly IMediator _mediator;
@@ -33,10 +36,11 @@ namespace SugarTalk.Core.Services.Kurento
             var meeting = await GetMeeting().ConfigureAwait(false);
             var meetingSession = await _meetingSessionManager.GetOrCreateMeetingSessionAsync(meeting)
                 .ConfigureAwait(false);
+            var userName = string.IsNullOrEmpty(UserName) ? Context.User.Identity.Name : UserName;
             var userSession = new UserSession
             {
                 Id = Context.ConnectionId,
-                UserName = Context.User.Identity.Name,
+                UserName = userName,
                 SendEndPoint = null,
                 ReceviedEndPoints = new ConcurrentDictionary<string, WebRtcEndpoint>()
             };
