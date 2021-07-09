@@ -4,5 +4,6 @@ namespace SugarTalk.Core
     {
         public const string Picture = "picture";
         public const string ThirdPartyId = "thirdpartyid";
+        public const string ThirdPartyFrom = "thirdpartyfrom";
     }
 }

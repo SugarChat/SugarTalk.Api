@@ -68,7 +68,8 @@ namespace SugarTalk.Api.Middlewares.Authentication
                 new(ClaimTypes.Name, name),
                 new(ClaimTypes.Email, email),
                 new(SugarTalkClaimType.Picture, picture),
-                new(SugarTalkClaimType.ThirdPartyId, thirdPartyId)
+                new(SugarTalkClaimType.ThirdPartyId, thirdPartyId),
+                new(SugarTalkClaimType.ThirdPartyFrom, "Google")
             };
         }
     }

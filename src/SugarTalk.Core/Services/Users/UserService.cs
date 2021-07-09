@@ -41,7 +41,7 @@ namespace SugarTalk.Core.Services.Users
 
             var user = await GetOrCreateUser(GetCurrentPrincipal(), cancellationToken)
                 .ConfigureAwait(false);
-            
+
             return new SugarTalkResponse<SignedInUserDto>
             {
                 Data = _mapper.Map<SignedInUserDto>(user)
