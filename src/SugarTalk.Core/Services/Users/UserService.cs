@@ -74,7 +74,7 @@ namespace SugarTalk.Core.Services.Users
         {
             var currentPrincipal = GetCurrentPrincipal();
 
-            if (currentPrincipal?.Identity == null || currentPrincipal.Identity.IsAuthenticated)
+            if (currentPrincipal?.Identity == null || !currentPrincipal.Identity.IsAuthenticated)
                 throw new UnauthorizedAccessException();
         }
     }
