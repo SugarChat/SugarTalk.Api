@@ -8,6 +8,7 @@ using MongoDB.Driver;
 using SugarTalk.Core.Data;
 using SugarTalk.Core.Data.MongoDb;
 using SugarTalk.Core.Middlewares;
+using SugarTalk.Core.Services.Authentication;
 using SugarTalk.Core.Services.Kurento;
 using SugarTalk.Core.Services.Meetings;
 using SugarTalk.Core.Services.Users;
@@ -30,7 +31,9 @@ namespace SugarTalk.Core
         public static IServiceCollection LoadSettings(this IServiceCollection services, IConfiguration configuration)
         {
             services.Configure<MongoDbSettings>(configuration.GetSection(nameof(MongoDbSettings)));
-
+            services.Configure<GoogleSettings>(configuration.GetSection(nameof(GoogleSettings)));
+            services.Configure<FacebookSettings>(configuration.GetSection(nameof(FacebookSettings)));
+            
             return services;
         }
 
@@ -65,6 +68,8 @@ namespace SugarTalk.Core
 
             services.AddScoped<IUserDataProvider, UserDataProvider>();
             services.AddScoped<IUserService, UserService>();
+
+            services.AddScoped<IAuthenticationService, AuthenticationService>();
             
             return services;
         }
