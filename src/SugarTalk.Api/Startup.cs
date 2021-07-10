@@ -56,6 +56,11 @@ namespace SugarTalk.Api
             {
                 options.PayloadSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
             });
+            
+            services.AddCors(c =>  
+            {  
+                c.AddPolicy("AllowOrigin", options => options.AllowAnyOrigin());  
+            }); 
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -88,6 +93,7 @@ namespace SugarTalk.Api
             {
                 routes.MapRoute(name: "Default", template: "{controller=Home}/{action=Index}/{id?}");
             });
+            app.UseCors(options => options.AllowAnyOrigin()); 
         }
     }
 }
