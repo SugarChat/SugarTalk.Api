@@ -54,7 +54,7 @@ namespace SugarTalk.Core.Services.Authentication
             CancellationToken cancellationToken)
         {
             var requestUrl =
-                $"https://graph.facebook.com/oauth/access_token?code={request.Code}&client_id={_facebookSettings.Value.ClientId}&redirect_uri={request.RedirectUri}&client_secret={_facebookSettings.Value.ClientSecret}";
+                $"https://graph.facebook.com/oauth/access_token?code={request.Code}&client_id={_facebookSettings.Value.ClientId}&client_secret={_facebookSettings.Value.ClientSecret}";
             
             var response = await _httpClientFactory.CreateClient("facebook").GetStringAsync(requestUrl);
 

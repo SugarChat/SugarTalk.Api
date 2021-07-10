@@ -6,8 +6,6 @@ namespace SugarTalk.Messages.Requests.Authentication
     public class GetFacebookAccessTokenRequest : IRequest
     {
         public string Code { get; set; }
-        
-        public string RedirectUri { get; set; }
     }
     
     public class GetFacebookAccessTokenResponse : IResponse
