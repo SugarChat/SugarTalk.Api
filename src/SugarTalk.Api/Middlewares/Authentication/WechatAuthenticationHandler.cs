@@ -34,6 +34,9 @@ namespace SugarTalk.Api.Middlewares.Authentication
             
             var authHeaderValue = auth.Split(' ');
             
+            if (authHeaderValue.Length != 4)
+                return AuthenticateResult.NoResult();
+            
             var bearerToken = authHeaderValue[1];
             var openId = authHeaderValue[3];
             
@@ -46,21 +49,14 @@ namespace SugarTalk.Api.Middlewares.Authentication
             var payloadJsonStr = await _httpClientFactory.CreateClient().GetStringAsync(wechatUserInfoUrl)
                 .ConfigureAwait(false);
 
-            if (!payloadJsonStr.Contains("errcode"))
-            {
-                var payload = JsonConvert.DeserializeObject<WechatPayload>(payloadJsonStr);
-                
-                return AuthenticateResult.Success(new AuthenticationTicket
-                (
-                    new ClaimsPrincipal(new ClaimsIdentity(GetClaims(payload), "Wechat")
-                ), new AuthenticationProperties {IsPersistent = false}, Scheme.Name));
-            }
-            else
-            {
-                //TODO. LOG
-            }
+            if (payloadJsonStr.Contains("errcode")) return AuthenticateResult.NoResult();
             
-            return AuthenticateResult.NoResult();
+            var payload = JsonConvert.DeserializeObject<WechatPayload>(payloadJsonStr);
+
+            return AuthenticateResult.Success(new AuthenticationTicket
+            (
+                new ClaimsPrincipal(new ClaimsIdentity(GetClaims(payload), "Wechat")
+            ), new AuthenticationProperties {IsPersistent = false}, Scheme.Name));
         }
         
         private IEnumerable<Claim> GetClaims(WechatPayload payload)
