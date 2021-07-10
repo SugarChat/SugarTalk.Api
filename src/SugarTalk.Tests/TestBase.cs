@@ -27,10 +27,7 @@ namespace SugarTalk.Tests
         private IServiceCollection RegisterServiceCollection()
         {
             return new ServiceCollection()
-                .LoadSugarTalkModule()
-                .LoadSettings(_configuration)
-                .LoadMongoDb()
-                .LoadMediator();
+                .LoadSugarTalkModule(_configuration);
         }
 
         protected async Task Run<T>(Func<T, Task> action)
