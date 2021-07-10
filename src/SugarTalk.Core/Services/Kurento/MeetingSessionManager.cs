@@ -1,6 +1,7 @@
 using System.Threading.Tasks;
 using System.Collections.Concurrent;
 using Kurento.NET;
+using Serilog;
 using SugarTalk.Core.Entities;
 using SugarTalk.Messages.Dtos;
 using SugarTalk.Messages.Dtos.Meetings;
@@ -24,8 +25,11 @@ namespace SugarTalk.Core.Services.Kurento
 
             if (meetingSession != null) return meetingSession;
             {
+                Log.Information("Creating pipeline to server");
                 var pipeline = await _client.CreateAsync(new MediaPipeline());
 
+                Log.Information("Pipeline created {@pipeline}", pipeline);
+                
                 meetingSession = new MeetingSession
                 {
                     MeetingId = meeting.Id,
