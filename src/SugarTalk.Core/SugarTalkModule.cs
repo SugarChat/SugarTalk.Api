@@ -60,6 +60,8 @@ namespace SugarTalk.Core
             {
                 var settings = serviceProvider.GetService<IOptions<MongoDbSettings>>();
                 
+                Log.Information("Connecting to mongodb {url}", settings?.Value.ConnectionString);
+                
                 return new MongoClient(settings?.Value.ConnectionString).GetDatabase(settings?.Value.DatabaseName);
             });
             
