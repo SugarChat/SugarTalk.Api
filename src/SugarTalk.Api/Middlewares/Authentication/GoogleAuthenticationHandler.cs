@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Serilog;
 using SugarTalk.Core;
 using SugarTalk.Core.Services.Authentication;
 using SugarTalk.Messages.Enums;
@@ -39,16 +40,24 @@ namespace SugarTalk.Api.Middlewares.Authentication
             
             var bearerToken = authHeaderValue[1];
 
-            Payload payload;
-            
-            try
+            var payload = await _tokenService.GetPayloadFromMemoryOrDb<Payload>(bearerToken, ThirdPartyFrom.Google)
+                .ConfigureAwait(false);
+
+            if (payload == null)
             {
-                payload = await ValidateAsync(bearerToken).ConfigureAwait(false);
-            }
-            catch (Exception)
-            {
-                //TODO. LOG
-                return null;
+                try
+                {
+                    payload = await ValidateAsync(bearerToken).ConfigureAwait(false);
+
+                    await _tokenService.PersistPayloadToMemoryAndDb(bearerToken, ThirdPartyFrom.Google, payload)
+                        .ConfigureAwait(false);
+                }
+                catch (Exception ex)
+                {
+                    Log.Error(ex, "Google authentication failed: {Exception}", ex.Message);
+                    
+                    return null;
+                }
             }
             
             if (payload == null)
