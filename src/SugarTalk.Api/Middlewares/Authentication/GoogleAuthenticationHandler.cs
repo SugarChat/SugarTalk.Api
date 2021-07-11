@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using SugarTalk.Core;
+using SugarTalk.Core.Services.Authentication;
 using SugarTalk.Messages.Enums;
 using static Google.Apis.Auth.GoogleJsonWebSignature;
 
@@ -14,9 +15,11 @@ namespace SugarTalk.Api.Middlewares.Authentication
 {
     public class GoogleAuthenticationHandler : AuthenticationHandler<GoogleAuthenticationOptions>
     {
+        private readonly ITokenService _tokenService;
         public GoogleAuthenticationHandler(IOptionsMonitor<GoogleAuthenticationOptions> options, ILoggerFactory logger,
-            UrlEncoder encoder, ISystemClock clock) : base(options, logger, encoder, clock)
+            UrlEncoder encoder, ISystemClock clock, ITokenService tokenService) : base(options, logger, encoder, clock)
         {
+            _tokenService = tokenService;
         }
 
         protected override async Task<AuthenticateResult> HandleAuthenticateAsync()

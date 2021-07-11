@@ -8,17 +8,20 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 using SugarTalk.Core;
+using SugarTalk.Core.Services.Authentication;
 using SugarTalk.Messages.Enums;
 
 namespace SugarTalk.Api.Middlewares.Authentication
 {
     public class WechatAuthenticationHandler : AuthenticationHandler<WechatAuthenticationOptions>
     {
+        private readonly ITokenService _tokenService;
         private readonly IHttpClientFactory _httpClientFactory;
         
         public WechatAuthenticationHandler(IOptionsMonitor<WechatAuthenticationOptions> options, ILoggerFactory logger,
-            UrlEncoder encoder, ISystemClock clock, IHttpClientFactory httpClientFactory) : base(options, logger, encoder, clock)
+            UrlEncoder encoder, ISystemClock clock, IHttpClientFactory httpClientFactory, ITokenService tokenService) : base(options, logger, encoder, clock)
         {
+            _tokenService = tokenService;
             _httpClientFactory = httpClientFactory;
         }
 

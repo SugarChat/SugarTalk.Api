@@ -88,6 +88,8 @@ namespace SugarTalk.Core
             services.AddScoped<IUserDataProvider, UserDataProvider>();
             services.AddScoped<IUserService, UserService>();
 
+            services.AddScoped<ITokenDataProvider, TokenDataProvider>();
+            services.AddScoped<ITokenService, TokenService>();
             services.AddScoped<IAuthenticationService, AuthenticationService>();
             
             return services;
