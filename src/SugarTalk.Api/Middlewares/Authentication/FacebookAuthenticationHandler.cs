@@ -15,7 +15,7 @@ using SugarTalk.Messages.Enums;
 
 namespace SugarTalk.Api.Middlewares.Authentication
 {
-    public class FacebookAuthenticationHandler : AuthenticationHandler<FacebookAuthenticationOptions>
+    public class FacebookAuthenticationHandler : AuthenticationHandlerBase<FacebookAuthenticationOptions>
     {
         private readonly ITokenService _tokenService;
         private readonly IHttpClientFactory _httpClientFactory;
@@ -29,6 +29,9 @@ namespace SugarTalk.Api.Middlewares.Authentication
 
         protected override async Task<AuthenticateResult> HandleAuthenticateAsync()
         {
+            if (Request.HttpContext.User.Identity == null || Request.HttpContext.User.Identity.IsAuthenticated)
+                return AuthenticateResult.NoResult();
+            
             if (!Request.Headers.ContainsKey("Authorization"))
                 return AuthenticateResult.NoResult();
             
@@ -72,27 +75,11 @@ namespace SugarTalk.Api.Middlewares.Authentication
             
             if (payload == null) return AuthenticateResult.NoResult();
             
-            return AuthenticateResult.Success(new AuthenticationTicket
-            (
-                new ClaimsPrincipal(new ClaimsIdentity(GetClaims(payload), "Facebook")
-            ), new AuthenticationProperties {IsPersistent = false}, Scheme.Name));
-        }
-        
-        private IEnumerable<Claim> GetClaims(FacebookPayload payload)
-        {
-            var name = payload.Name;
-            var email = payload.Email ?? "";
-            var picture = payload.Picture?.Data?.Url ?? "";
-            var thirdPartyId = payload.Id;
-            
-            return new List<Claim>
-            {
-                new(ClaimTypes.Name, name),
-                new(ClaimTypes.Email, email),
-                new(SugarTalkClaimType.Picture, picture),
-                new(SugarTalkClaimType.ThirdPartyId, thirdPartyId),
-                new(SugarTalkClaimType.ThirdPartyFrom, ThirdPartyFrom.Facebook.ToString())
-            };
+            var principal =
+                new ClaimsPrincipal(new ClaimsIdentity(GetClaims(payload), ThirdPartyFrom.Facebook.ToString()));
+
+            return AuthenticateResult.Success(new AuthenticationTicket(principal,
+                new AuthenticationProperties {IsPersistent = false}, Scheme.Name));
         }
     }
 }

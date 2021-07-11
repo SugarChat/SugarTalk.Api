@@ -14,9 +14,10 @@ using static Google.Apis.Auth.GoogleJsonWebSignature;
 
 namespace SugarTalk.Api.Middlewares.Authentication
 {
-    public class GoogleAuthenticationHandler : AuthenticationHandler<GoogleAuthenticationOptions>
+    public class GoogleAuthenticationHandler : AuthenticationHandlerBase<GoogleAuthenticationOptions>
     {
         private readonly ITokenService _tokenService;
+        
         public GoogleAuthenticationHandler(IOptionsMonitor<GoogleAuthenticationOptions> options, ILoggerFactory logger,
             UrlEncoder encoder, ISystemClock clock, ITokenService tokenService) : base(options, logger, encoder, clock)
         {
@@ -25,6 +26,9 @@ namespace SugarTalk.Api.Middlewares.Authentication
 
         protected override async Task<AuthenticateResult> HandleAuthenticateAsync()
         {
+            if (Request.HttpContext.User.Identity == null || Request.HttpContext.User.Identity.IsAuthenticated)
+                return AuthenticateResult.NoResult();
+            
             if (!Request.Headers.ContainsKey("Authorization"))
                 return AuthenticateResult.NoResult();
             
@@ -63,27 +67,13 @@ namespace SugarTalk.Api.Middlewares.Authentication
             if (payload == null)
                 return AuthenticateResult.NoResult();
 
-            return AuthenticateResult.Success(new AuthenticationTicket
-            (
-                new ClaimsPrincipal(new ClaimsIdentity(GetClaims(payload), "Google")
-            ), new AuthenticationProperties {IsPersistent = false}, Scheme.Name));
-        }
+            var principal =
+                new ClaimsPrincipal(new ClaimsIdentity(GetClaims(payload), ThirdPartyFrom.Google.ToString()));
 
-        private IEnumerable<Claim> GetClaims(Payload payload)
-        {
-            var name = payload.Name;
-            var email = payload.Email ?? "";
-            var picture = payload.Picture ?? "";
-            var thirdPartyId = payload.Subject;
+            SetupPrincipal(principal);
             
-            return new List<Claim>
-            {
-                new(ClaimTypes.Name, name),
-                new(ClaimTypes.Email, email),
-                new(SugarTalkClaimType.Picture, picture),
-                new(SugarTalkClaimType.ThirdPartyId, thirdPartyId),
-                new(SugarTalkClaimType.ThirdPartyFrom, ThirdPartyFrom.Google.ToString())
-            };
+            return AuthenticateResult.Success(new AuthenticationTicket(principal,
+                new AuthenticationProperties {IsPersistent = false}, Scheme.Name));
         }
     }
 }

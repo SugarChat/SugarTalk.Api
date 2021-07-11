@@ -16,7 +16,7 @@ using SugarTalk.Messages.Enums;
 
 namespace SugarTalk.Api.Middlewares.Authentication
 {
-    public class WechatAuthenticationHandler : AuthenticationHandler<WechatAuthenticationOptions>
+    public class WechatAuthenticationHandler : AuthenticationHandlerBase<WechatAuthenticationOptions>
     {
         private readonly ITokenService _tokenService;
         private readonly IHttpClientFactory _httpClientFactory;
@@ -30,6 +30,9 @@ namespace SugarTalk.Api.Middlewares.Authentication
 
         protected override async Task<AuthenticateResult> HandleAuthenticateAsync()
         {
+            if (Request.HttpContext.User.Identity == null || Request.HttpContext.User.Identity.IsAuthenticated)
+                return AuthenticateResult.NoResult();
+            
             if (!Request.Headers.ContainsKey("Authorization"))
                 return AuthenticateResult.NoResult();
             
@@ -76,28 +79,14 @@ namespace SugarTalk.Api.Middlewares.Authentication
 
             if (payload == null)
                 return AuthenticateResult.NoResult();
+
+            var principal =
+                new ClaimsPrincipal(new ClaimsIdentity(GetClaims(payload), ThirdPartyFrom.Wechat.ToString()));
             
-            return AuthenticateResult.Success(new AuthenticationTicket
-            (
-                new ClaimsPrincipal(new ClaimsIdentity(GetClaims(payload), "Wechat")
-            ), new AuthenticationProperties {IsPersistent = false}, Scheme.Name));
-        }
-        
-        private IEnumerable<Claim> GetClaims(WechatPayload payload)
-        {
-            var name = payload.NickName;
-            var email = payload.OpenId ?? "";
-            var picture = payload.HeadImgUrl ?? "";
-            var thirdPartyId = payload.UnionId;
-            
-            return new List<Claim>
-            {
-                new(ClaimTypes.Name, name),
-                new(ClaimTypes.Email, email),
-                new(SugarTalkClaimType.Picture, picture),
-                new(SugarTalkClaimType.ThirdPartyId, thirdPartyId),
-                new(SugarTalkClaimType.ThirdPartyFrom, ThirdPartyFrom.Wechat.ToString())
-            };
+            SetupPrincipal(principal);
+
+            return AuthenticateResult.Success(new AuthenticationTicket(principal,
+                new AuthenticationProperties {IsPersistent = false}, Scheme.Name));
         }
     }
 }
