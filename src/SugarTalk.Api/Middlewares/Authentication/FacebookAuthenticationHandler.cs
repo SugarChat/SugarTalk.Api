@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Net.Http;
 using System.Net.Http.Json;
@@ -7,18 +8,22 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Serilog;
 using SugarTalk.Core;
+using SugarTalk.Core.Services.Authentication;
 using SugarTalk.Messages.Enums;
 
 namespace SugarTalk.Api.Middlewares.Authentication
 {
     public class FacebookAuthenticationHandler : AuthenticationHandler<FacebookAuthenticationOptions>
     {
+        private readonly ITokenService _tokenService;
         private readonly IHttpClientFactory _httpClientFactory;
-
+        
         public FacebookAuthenticationHandler(IOptionsMonitor<FacebookAuthenticationOptions> options,
-            ILoggerFactory logger, UrlEncoder encoder, ISystemClock clock, IHttpClientFactory httpClientFactory) : base(options, logger, encoder, clock)
+            ILoggerFactory logger, UrlEncoder encoder, ISystemClock clock, IHttpClientFactory httpClientFactory, ITokenService tokenService) : base(options, logger, encoder, clock)
         {
+            _tokenService = tokenService;
             _httpClientFactory = httpClientFactory;
         }
 
@@ -39,12 +44,31 @@ namespace SugarTalk.Api.Middlewares.Authentication
             
             var bearerToken = authHeaderValue[1];
 
-            var facebookUserInfoUrl =
-                $"https://graph.facebook.com/me?access_token={bearerToken}&fields=id,name,email,picture";
-
-            var payload = await _httpClientFactory.CreateClient()
-                .GetFromJsonAsync<FacebookPayload>(facebookUserInfoUrl)
+            var payload = await _tokenService
+                .GetPayloadFromMemoryOrDb<FacebookPayload>(bearerToken, ThirdPartyFrom.Facebook)
                 .ConfigureAwait(false);
+
+            if (payload == null)
+            {
+                var facebookUserInfoUrl =
+                    $"https://graph.facebook.com/me?access_token={bearerToken}&fields=id,name,email,picture";
+
+                try
+                {
+                    payload = await _httpClientFactory.CreateClient()
+                        .GetFromJsonAsync<FacebookPayload>(facebookUserInfoUrl)
+                        .ConfigureAwait(false);
+
+                    await _tokenService.PersistPayloadToMemoryAndDb(bearerToken, ThirdPartyFrom.Facebook, payload)
+                        .ConfigureAwait(false);
+                }
+                catch (Exception ex)
+                {
+                    Log.Error(ex, "Facebook authentication failed: {Exception}", ex.Message);
+                    
+                    return null;
+                }
+            }
             
             if (payload == null) return AuthenticateResult.NoResult();
             

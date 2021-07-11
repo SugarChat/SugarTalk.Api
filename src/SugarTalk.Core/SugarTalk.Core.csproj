@@ -12,6 +12,7 @@
       <PackageReference Include="Mediator.Net" Version="4.0.0" />
       <PackageReference Include="Mediator.Net.MicrosoftDependencyInjection" Version="4.0.0" />
       <PackageReference Include="Microsoft.AspNetCore.SignalR" Version="1.1.0" />
+      <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="5.0.0" />
       <PackageReference Include="Microsoft.Extensions.Http" Version="5.0.0" />
       <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="5.0.0" />
       <PackageReference Include="MongoDB.Driver" Version="2.12.4" />

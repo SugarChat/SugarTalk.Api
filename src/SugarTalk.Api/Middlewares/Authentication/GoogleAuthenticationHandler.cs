@@ -6,7 +6,9 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Serilog;
 using SugarTalk.Core;
+using SugarTalk.Core.Services.Authentication;
 using SugarTalk.Messages.Enums;
 using static Google.Apis.Auth.GoogleJsonWebSignature;
 
@@ -14,9 +16,11 @@ namespace SugarTalk.Api.Middlewares.Authentication
 {
     public class GoogleAuthenticationHandler : AuthenticationHandler<GoogleAuthenticationOptions>
     {
+        private readonly ITokenService _tokenService;
         public GoogleAuthenticationHandler(IOptionsMonitor<GoogleAuthenticationOptions> options, ILoggerFactory logger,
-            UrlEncoder encoder, ISystemClock clock) : base(options, logger, encoder, clock)
+            UrlEncoder encoder, ISystemClock clock, ITokenService tokenService) : base(options, logger, encoder, clock)
         {
+            _tokenService = tokenService;
         }
 
         protected override async Task<AuthenticateResult> HandleAuthenticateAsync()
@@ -36,16 +40,24 @@ namespace SugarTalk.Api.Middlewares.Authentication
             
             var bearerToken = authHeaderValue[1];
 
-            Payload payload;
-            
-            try
+            var payload = await _tokenService.GetPayloadFromMemoryOrDb<Payload>(bearerToken, ThirdPartyFrom.Google)
+                .ConfigureAwait(false);
+
+            if (payload == null)
             {
-                payload = await ValidateAsync(bearerToken).ConfigureAwait(false);
-            }
-            catch (Exception)
-            {
-                //TODO. LOG
-                return null;
+                try
+                {
+                    payload = await ValidateAsync(bearerToken).ConfigureAwait(false);
+
+                    await _tokenService.PersistPayloadToMemoryAndDb(bearerToken, ThirdPartyFrom.Google, payload)
+                        .ConfigureAwait(false);
+                }
+                catch (Exception ex)
+                {
+                    Log.Error(ex, "Google authentication failed: {Exception}", ex.Message);
+                    
+                    return null;
+                }
             }
             
             if (payload == null)
