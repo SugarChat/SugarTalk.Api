@@ -1,5 +1,7 @@
+using System;
 using System.Collections.Generic;
 using System.Net.Http;
+using System.Net.Http.Json;
 using System.Security.Claims;
 using System.Text.Encodings.Web;
 using System.Threading.Tasks;
@@ -7,6 +9,7 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
+using Serilog;
 using SugarTalk.Core;
 using SugarTalk.Core.Services.Authentication;
 using SugarTalk.Messages.Enums;
@@ -46,16 +49,34 @@ namespace SugarTalk.Api.Middlewares.Authentication
             if (string.IsNullOrEmpty(bearerToken) || string.IsNullOrEmpty(openId) || bearerToken.Contains("undefined"))
                 return AuthenticateResult.NoResult();
 
-            var wechatUserInfoUrl =
-                $"https://api.weixin.qq.com/sns/userinfo?access_token={bearerToken}&openid={openId}&lang=zh_CN";
-
-            var payloadJsonStr = await _httpClientFactory.CreateClient().GetStringAsync(wechatUserInfoUrl)
+            var payload = await _tokenService
+                .GetPayloadFromMemoryOrDb<WechatPayload>(openId, ThirdPartyFrom.Wechat)
                 .ConfigureAwait(false);
 
-            if (payloadJsonStr.Contains("errcode")) return AuthenticateResult.NoResult();
-            
-            var payload = JsonConvert.DeserializeObject<WechatPayload>(payloadJsonStr);
+            if (payload == null)
+            {
+                var wechatUserInfoUrl =
+                    $"https://api.weixin.qq.com/sns/userinfo?access_token={bearerToken}&openid={openId}&lang=zh_CN";
 
+                try
+                {
+                    payload = await _httpClientFactory.CreateClient().GetFromJsonAsync<WechatPayload>(wechatUserInfoUrl)
+                        .ConfigureAwait(false);
+                    
+                    await _tokenService.PersistPayloadToMemoryAndDb(openId, ThirdPartyFrom.Wechat, payload)
+                        .ConfigureAwait(false);
+                }
+                catch (Exception ex)
+                {
+                    Log.Error(ex, "Wechat authentication failed: {Exception}", ex.Message);
+                    
+                    return null;
+                }
+            }
+
+            if (payload == null)
+                return AuthenticateResult.NoResult();
+            
             return AuthenticateResult.Success(new AuthenticationTicket
             (
                 new ClaimsPrincipal(new ClaimsIdentity(GetClaims(payload), "Wechat")
