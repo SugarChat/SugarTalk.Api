@@ -47,12 +47,7 @@ namespace SugarTalk.Api
                 options.DefaultPolicy = builder.Build();
             });
             
-            services
-                .LoadSugarTalkModule()
-                .LoadSettings(Configuration)
-                .LoadMongoDb()
-                .LoadMediator()
-                .LoadServices();
+            services.LoadSugarTalkModule(Configuration);
             
             services.AddMvc(options => options.EnableEndpointRouting = false);
             services.AddSignalR(config =>
