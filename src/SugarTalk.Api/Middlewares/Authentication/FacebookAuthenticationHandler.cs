@@ -1,23 +1,23 @@
 using System.Collections.Generic;
 using System.Net.Http;
+using System.Net.Http.Json;
 using System.Security.Claims;
 using System.Text.Encodings.Web;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using Newtonsoft.Json;
 using SugarTalk.Core;
 using SugarTalk.Messages.Enums;
 
 namespace SugarTalk.Api.Middlewares.Authentication
 {
-    public class WechatAuthenticationHandler : AuthenticationHandler<WechatAuthenticationOptions>
+    public class FacebookAuthenticationHandler : AuthenticationHandler<FacebookAuthenticationOptions>
     {
         private readonly IHttpClientFactory _httpClientFactory;
-        
-        public WechatAuthenticationHandler(IOptionsMonitor<WechatAuthenticationOptions> options, ILoggerFactory logger,
-            UrlEncoder encoder, ISystemClock clock, IHttpClientFactory httpClientFactory) : base(options, logger, encoder, clock)
+
+        public FacebookAuthenticationHandler(IOptionsMonitor<FacebookAuthenticationOptions> options,
+            ILoggerFactory logger, UrlEncoder encoder, ISystemClock clock, IHttpClientFactory httpClientFactory) : base(options, logger, encoder, clock)
         {
             _httpClientFactory = httpClientFactory;
         }
@@ -29,42 +29,37 @@ namespace SugarTalk.Api.Middlewares.Authentication
             
             var auth = Request.Headers["Authorization"].ToString();
             
-            if (string.IsNullOrWhiteSpace(auth) || !auth.Contains("Bearer") || !auth.Contains("OpenId"))
+            if (string.IsNullOrWhiteSpace(auth) || !auth.Contains("Bearer"))
                 return AuthenticateResult.NoResult();
             
             var authHeaderValue = auth.Split(' ');
             
-            if (authHeaderValue.Length != 4)
+            if (authHeaderValue.Length < 2)
                 return AuthenticateResult.NoResult();
             
             var bearerToken = authHeaderValue[1];
-            var openId = authHeaderValue[3];
-            
-            if (string.IsNullOrEmpty(bearerToken) || string.IsNullOrEmpty(openId) || bearerToken.Contains("undefined"))
-                return AuthenticateResult.NoResult();
 
-            var wechatUserInfoUrl =
-                $"https://api.weixin.qq.com/sns/userinfo?access_token={bearerToken}&openid={openId}&lang=zh_CN";
+            var facebookUserInfoUrl =
+                $"https://graph.facebook.com/me?access_token={bearerToken}&fields=id,name,email,picture";
 
-            var payloadJsonStr = await _httpClientFactory.CreateClient().GetStringAsync(wechatUserInfoUrl)
+            var payload = await _httpClientFactory.CreateClient()
+                .GetFromJsonAsync<FacebookPayload>(facebookUserInfoUrl)
                 .ConfigureAwait(false);
-
-            if (payloadJsonStr.Contains("errcode")) return AuthenticateResult.NoResult();
             
-            var payload = JsonConvert.DeserializeObject<WechatPayload>(payloadJsonStr);
-
+            if (payload == null) return AuthenticateResult.NoResult();
+            
             return AuthenticateResult.Success(new AuthenticationTicket
             (
-                new ClaimsPrincipal(new ClaimsIdentity(GetClaims(payload), "Wechat")
+                new ClaimsPrincipal(new ClaimsIdentity(GetClaims(payload), "Facebook")
             ), new AuthenticationProperties {IsPersistent = false}, Scheme.Name));
         }
         
-        private IEnumerable<Claim> GetClaims(WechatPayload payload)
+        private IEnumerable<Claim> GetClaims(FacebookPayload payload)
         {
-            var name = payload.NickName;
-            var email = payload.OpenId ?? "";
-            var picture = payload.HeadImgUrl ?? "";
-            var thirdPartyId = payload.UnionId;
+            var name = payload.Name;
+            var email = payload.Email ?? "";
+            var picture = payload.Picture?.Data?.Url ?? "";
+            var thirdPartyId = payload.Id;
             
             return new List<Claim>
             {
@@ -72,7 +67,7 @@ namespace SugarTalk.Api.Middlewares.Authentication
                 new(ClaimTypes.Email, email),
                 new(SugarTalkClaimType.Picture, picture),
                 new(SugarTalkClaimType.ThirdPartyId, thirdPartyId),
-                new(SugarTalkClaimType.ThirdPartyFrom, ThirdPartyFrom.Wechat.ToString())
+                new(SugarTalkClaimType.ThirdPartyFrom, ThirdPartyFrom.Facebook.ToString())
             };
         }
     }
