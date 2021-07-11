@@ -37,11 +37,12 @@ namespace SugarTalk.Api
 
             services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                 .AddScheme<GoogleAuthenticationOptions, GoogleAuthenticationHandler>("Google", _ => { })
-                .AddScheme<WechatAuthenticationOptions, WechatAuthenticationHandler>("Wechat", _ => { });
+                .AddScheme<WechatAuthenticationOptions, WechatAuthenticationHandler>("Wechat", _ => { })
+                .AddScheme<FacebookAuthenticationOptions, FacebookAuthenticationHandler>("Facebook", _ => { });
             
             services.AddAuthorization(options =>
             {
-                var builder = new AuthorizationPolicyBuilder("Google", "Wechat");
+                var builder = new AuthorizationPolicyBuilder("Google", "Wechat", "Facebook");
                 builder = builder.RequireAuthenticatedUser();
                 options.DefaultPolicy = builder.Build();
             });
