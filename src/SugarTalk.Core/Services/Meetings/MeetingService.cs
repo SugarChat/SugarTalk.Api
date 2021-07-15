@@ -89,7 +89,7 @@ namespace SugarTalk.Core.Services.Meetings
 
             var meetingSession = _meetingSessionManager.TryGetMeetingSession(meeting.MeetingNumber);
 
-            if (meetingSession.UserSessions.All(x => x.Value.UserId != user.Id))
+            if (meetingSession != null && meetingSession.UserSessions.All(x => x.Value.UserId != user.Id))
                 throw new UnauthorizedAccessException();
                 
             return new SugarTalkResponse<MeetingSession>
