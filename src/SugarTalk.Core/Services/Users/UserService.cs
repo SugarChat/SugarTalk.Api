@@ -18,6 +18,8 @@ namespace SugarTalk.Core.Services.Users
 
         Task<SugarTalkResponse<SignedInUserDto>> SignInFromThirdParty(SignInFromThirdPartyRequest request,
             CancellationToken cancellationToken);
+
+        Task<User> GetCurrentLoggedInUser(CancellationToken cancellationToken = default);
     }
     
     public class UserService : IUserService
@@ -48,6 +50,14 @@ namespace SugarTalk.Core.Services.Users
             };
         }
 
+        public async Task<User> GetCurrentLoggedInUser(CancellationToken cancellationToken = default)
+        {
+            var thirdPartyId = GetCurrentPrincipal().Claims.Single(x => x.Type == SugarTalkClaimType.ThirdPartyId).Value;
+
+            return await _userDataProvider.GetUserByThirdPartyId(thirdPartyId, cancellationToken)
+                .ConfigureAwait(false);
+        }
+        
         public ClaimsPrincipal GetCurrentPrincipal()
         {
             return _httpContextAccessor.HttpContext.User;

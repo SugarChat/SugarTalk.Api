@@ -2,8 +2,6 @@ using System.Threading.Tasks;
 using System.Collections.Concurrent;
 using Kurento.NET;
 using Serilog;
-using SugarTalk.Core.Entities;
-using SugarTalk.Messages.Dtos;
 using SugarTalk.Messages.Dtos.Meetings;
 
 namespace SugarTalk.Core.Services.Kurento
@@ -45,6 +43,13 @@ namespace SugarTalk.Core.Services.Kurento
             return meetingSession;
         }
 
+        public MeetingSession TryGetMeetingSession(string meetingNumber)
+        {
+            _meetingSessions.TryGetValue(meetingNumber, out var meetingSession);
+
+            return meetingSession;
+        }
+        
         /// <summary>
         /// 若没有人员则释放房间资源
         /// </summary>
