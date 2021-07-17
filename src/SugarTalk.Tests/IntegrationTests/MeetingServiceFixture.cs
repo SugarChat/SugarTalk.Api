@@ -2,6 +2,7 @@ using System;
 using System.Threading.Tasks;
 using Mediator.Net;
 using Shouldly;
+using SugarTalk.Core.Services.Users;
 using SugarTalk.Messages;
 using SugarTalk.Messages.Commands;
 using SugarTalk.Messages.Dtos.Meetings;
