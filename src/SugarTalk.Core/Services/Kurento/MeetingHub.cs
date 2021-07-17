@@ -140,11 +140,6 @@ namespace SugarTalk.Core.Services.Kurento
         public async Task ProcessOfferAsync(string id, string offerSdp)
         {
             var endPonit = await GetEndPointAsync(id).ConfigureAwait(false);
-            
-            Log.Information("Endpoint in ProcessOfferAsync {endPoint}", endPonit);
-            Log.Information("Id in ProcessOfferAsync {id}", id);
-            Log.Information("offerSdp in ProcessOfferAsync {offer}", offerSdp);
-            
             var answerSdp = await endPonit.ProcessOfferAsync(offerSdp).ConfigureAwait(false);
             Clients.Caller.ProcessAnswer(id, answerSdp);
             await endPonit.GatherCandidatesAsync().ConfigureAwait(false);
