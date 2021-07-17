@@ -1,5 +1,6 @@
 using System;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using SugarTalk.Core;
@@ -14,7 +15,10 @@ namespace SugarTalk.Tests
         protected TestBase()
         {
             _configuration = LoadConfiguration();
-            _serviceCollection = RegisterServiceCollection();
+            _serviceCollection = new ServiceCollection();
+
+            RegisterSugarTalkModule(_serviceCollection);
+            RegisterHttpContextAccessor(_serviceCollection);
         }
 
         private IConfigurationRoot LoadConfiguration()
@@ -24,12 +28,17 @@ namespace SugarTalk.Tests
                 .Build();
         }
         
-        private IServiceCollection RegisterServiceCollection()
+        private void RegisterSugarTalkModule(IServiceCollection services)
         {
-            return new ServiceCollection()
-                .LoadSugarTalkModule(_configuration);
+            services.LoadSugarTalkModule(_configuration);
         }
 
+        private void RegisterHttpContextAccessor(IServiceCollection services)
+        {
+            var httpContextAccessor = new HttpContextAccessor {HttpContext = new DefaultHttpContext()};
+            services.AddSingleton<IHttpContextAccessor>(httpContextAccessor);
+        }
+        
         protected async Task Run<T>(Func<T, Task> action)
         {
             await action(_serviceCollection.BuildServiceProvider().GetService<T>());
