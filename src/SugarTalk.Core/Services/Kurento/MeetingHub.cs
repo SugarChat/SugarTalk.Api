@@ -6,10 +6,9 @@ using Mediator.Net;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
 using Newtonsoft.Json;
+using SugarTalk.Core.Services.Users;
 using SugarTalk.Messages;
-using SugarTalk.Messages.Dtos;
 using SugarTalk.Messages.Dtos.Meetings;
-using SugarTalk.Messages.Requests;
 using SugarTalk.Messages.Requests.Meetings;
 
 namespace SugarTalk.Core.Services.Kurento
@@ -22,27 +21,31 @@ namespace SugarTalk.Core.Services.Kurento
 
         private readonly IMediator _mediator;
         private readonly KurentoClient _kurento;
+        private readonly IUserService _userService;
         private readonly MeetingSessionManager _meetingSessionManager;
 
-        public MeetingHub(IMediator mediator, KurentoClient kurento, MeetingSessionManager meetingSessionManager)
+        public MeetingHub(IMediator mediator, KurentoClient kurento, MeetingSessionManager meetingSessionManager, IUserService userService)
         {
             _kurento = kurento;
             _mediator = mediator;
+            _userService = userService;
             _meetingSessionManager = meetingSessionManager;
         }
 
         public override async Task OnConnectedAsync()
         {
+            var user = await _userService.GetCurrentLoggedInUser().ConfigureAwait(false);
             var meeting = await GetMeeting().ConfigureAwait(false);
             var meetingSession = await _meetingSessionManager.GetOrCreateMeetingSessionAsync(meeting)
                 .ConfigureAwait(false);
-            var userName = string.IsNullOrEmpty(UserName) ? Context.User.Identity.Name : UserName;
+            var userName = string.IsNullOrEmpty(UserName) ? user.DisplayName : UserName;
             var userSession = new UserSession
             {
                 Id = Context.ConnectionId,
+                UserId = user.Id,
                 UserName = userName,
                 SendEndPoint = null,
-                ReceviedEndPoints = new ConcurrentDictionary<string, WebRtcEndpoint>()
+                ReceivedEndPoints = new ConcurrentDictionary<string, WebRtcEndpoint>()
             };
             meetingSession.UserSessions.TryAdd(Context.ConnectionId, userSession);
             await Groups.AddToGroupAsync(Context.ConnectionId, MeetingNumber).ConfigureAwait(false);
@@ -106,7 +109,7 @@ namespace SugarTalk.Core.Services.Kurento
                                 Clients.Client(id).AddCandidate(id, JsonConvert.SerializeObject(arg.candidate));
                             };
                         }
-                        if (!selfSession.ReceviedEndPoints.TryGetValue(id, out WebRtcEndpoint otherEndPoint))
+                        if (!selfSession.ReceivedEndPoints.TryGetValue(id, out WebRtcEndpoint otherEndPoint))
                         {
                             otherEndPoint = await _kurento.CreateAsync(new WebRtcEndpoint(meetingSession.Pipeline)).ConfigureAwait(false);
                             otherEndPoint.OnIceCandidate += arg =>
@@ -114,7 +117,7 @@ namespace SugarTalk.Core.Services.Kurento
                                 Clients.Caller.AddCandidate(id, JsonConvert.SerializeObject(arg.candidate));
                             };
                             await otherSession.SendEndPoint.ConnectAsync(otherEndPoint).ConfigureAwait(false);
-                            selfSession.ReceviedEndPoints.TryAdd(id, otherEndPoint);
+                            selfSession.ReceivedEndPoints.TryAdd(id, otherEndPoint);
                         }
                         return otherEndPoint;
                     }

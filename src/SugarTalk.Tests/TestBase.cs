@@ -1,8 +1,16 @@
 using System;
+using System.Collections.Generic;
+using System.Security.Claims;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using MongoDB.Driver;
 using SugarTalk.Core;
+using SugarTalk.Core.Entities;
+using SugarTalk.Core.Services.Users;
+using SugarTalk.Messages.Enums;
+using SugarTalk.Messages.Requests.Users;
 
 namespace SugarTalk.Tests
 {
@@ -11,10 +19,18 @@ namespace SugarTalk.Tests
         private readonly IConfigurationRoot _configuration;
         private readonly IServiceCollection _serviceCollection;
 
-        protected TestBase()
+        public User DefaultUser => CreateDefaultUser();
+
+        protected TestBase(bool shouldLoggedInDefaultUser = true)
         {
             _configuration = LoadConfiguration();
-            _serviceCollection = RegisterServiceCollection();
+            _serviceCollection = new ServiceCollection();
+
+            RegisterSugarTalkModule(_serviceCollection);
+            RegisterHttpContextAccessor(_serviceCollection);
+
+            if (shouldLoggedInDefaultUser)
+                Signin(DefaultUser);
         }
 
         private IConfigurationRoot LoadConfiguration()
@@ -24,19 +40,81 @@ namespace SugarTalk.Tests
                 .Build();
         }
         
-        private IServiceCollection RegisterServiceCollection()
+        private void RegisterSugarTalkModule(IServiceCollection services)
         {
-            return new ServiceCollection()
-                .LoadSugarTalkModule(_configuration);
+            services.LoadSugarTalkModule(_configuration);
         }
 
+        private void RegisterHttpContextAccessor(IServiceCollection services)
+        {
+            var httpContextAccessor = new HttpContextAccessor {HttpContext = new DefaultHttpContext()};
+            services.AddSingleton<IHttpContextAccessor>(httpContextAccessor);
+        }
+        
+        protected void Signin(User user)
+        {
+            Run<IHttpContextAccessor>(accessor =>
+            {
+                accessor.HttpContext.User = new ClaimsPrincipal(new ClaimsIdentity(new List<Claim>
+                {
+                    new(ClaimTypes.Name, user.DisplayName),
+                    new(ClaimTypes.Email, user.Email),
+                    new(SugarTalkClaimType.Picture, user.Picture),
+                    new(SugarTalkClaimType.ThirdPartyId, user.ThirdPartyId),
+                    new(SugarTalkClaimType.ThirdPartyFrom, user.ThirdPartyFrom.ToString())
+                }, user.ThirdPartyFrom.ToString()));
+            });
+
+            Run<IUserService>(userService =>
+            {
+                Task.Run(async () =>
+                    await userService.SignInFromThirdParty(new SignInFromThirdPartyRequest(), default));
+            });
+        }
+        
+        protected void Run<T>(Action<T> action)
+        {
+            action(_serviceCollection.BuildServiceProvider().GetService<T>());
+        }
+        
         protected async Task Run<T>(Func<T, Task> action)
         {
             await action(_serviceCollection.BuildServiceProvider().GetService<T>());
         }
         
+        private User CreateDefaultUser()
+        {
+            return new()
+            {
+                Id = Guid.NewGuid(),
+                ThirdPartyId = "TestThirdPartyId",
+                ThirdPartyFrom = ThirdPartyFrom.Google,
+                DisplayName = "TestName",
+                Email = "test@email.com",
+                Picture = "https://www.sugartalk.com/test-picture.png"
+            };
+        }
+
+        private void ClearDatabaseRecords()
+        {
+            Run<IMongoDatabase>(db =>
+            {
+                using var cursor = db.ListCollectionNames();
+                
+                while (cursor.MoveNext())
+                {
+                    foreach (var collectionName in cursor.Current)
+                    {
+                        db.DropCollection(collectionName);
+                    }
+                }
+            });
+        }
+        
         public void Dispose()
         {
+            ClearDatabaseRecords();
+            
             _serviceCollection.Clear();
         }
     }

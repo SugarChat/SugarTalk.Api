@@ -5,7 +5,6 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using MongoDB.Driver;
-using Serilog;
 using SugarTalk.Core.Data;
 using SugarTalk.Core.Data.MongoDb;
 using SugarTalk.Core.Middlewares;
@@ -36,7 +35,6 @@ namespace SugarTalk.Core
             services.AddSingleton(serviceProvider =>
             {
                 var settings = serviceProvider.GetService<IOptions<WebRtcServerSettings>>();
-                Log.Information("The server url is {url}", settings?.Value.ServerUrl);
                 return new KurentoClient(settings?.Value.ServerUrl);
             });
             services.AddSingleton<MeetingSessionManager>();
@@ -59,9 +57,6 @@ namespace SugarTalk.Core
             services.AddSingleton(serviceProvider =>
             {
                 var settings = serviceProvider.GetService<IOptions<MongoDbSettings>>();
-                
-                Log.Information("Connecting to mongodb {url}", settings?.Value.ConnectionString);
-                
                 return new MongoClient(settings?.Value.ConnectionString).GetDatabase(settings?.Value.DatabaseName);
             });
             
