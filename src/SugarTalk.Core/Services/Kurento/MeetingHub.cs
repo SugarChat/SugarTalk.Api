@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Concurrent;
+using System.Threading;
 using System.Threading.Tasks;
 using Kurento.NET;
 using Mediator.Net;
@@ -11,6 +12,7 @@ using SugarTalk.Core.Services.Users;
 using SugarTalk.Messages;
 using SugarTalk.Messages.Dtos.Meetings;
 using SugarTalk.Messages.Requests.Meetings;
+using SugarTalk.Messages.Requests.Users;
 
 namespace SugarTalk.Core.Services.Kurento
 {
@@ -35,6 +37,8 @@ namespace SugarTalk.Core.Services.Kurento
 
         public override async Task OnConnectedAsync()
         {
+            // For the time being
+            await _userService.SignInFromThirdParty(new SignInFromThirdPartyRequest(), CancellationToken.None).ConfigureAwait(false);
             var user = await _userService.GetCurrentLoggedInUser().ConfigureAwait(false);
             var meeting = await GetMeeting().ConfigureAwait(false);
             var meetingSession = await _meetingSessionManager.GetOrCreateMeetingSessionAsync(meeting)
