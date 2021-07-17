@@ -37,7 +37,6 @@ namespace SugarTalk.Core.Services.Kurento
 
         public override async Task OnConnectedAsync()
         {
-            // For the time being
             await _userService.SignInFromThirdParty(new SignInFromThirdPartyRequest(), CancellationToken.None).ConfigureAwait(false);
             var user = await _userService.GetCurrentLoggedInUser().ConfigureAwait(false);
             var meeting = await GetMeeting().ConfigureAwait(false);
