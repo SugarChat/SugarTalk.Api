@@ -1,13 +1,11 @@
 using System;
 using System.Collections.Concurrent;
-using System.Threading;
 using System.Threading.Tasks;
 using Kurento.NET;
 using Mediator.Net;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
 using Newtonsoft.Json;
-using Serilog;
 using SugarTalk.Core.Services.Users;
 using SugarTalk.Messages;
 using SugarTalk.Messages.Dtos.Meetings;
@@ -37,8 +35,9 @@ namespace SugarTalk.Core.Services.Kurento
 
         public override async Task OnConnectedAsync()
         {
-            await _userService.SignInFromThirdParty(new SignInFromThirdPartyRequest(), CancellationToken.None).ConfigureAwait(false);
-            var user = await _userService.GetCurrentLoggedInUser().ConfigureAwait(false);
+            var response = await _userService.SignInFromThirdParty(new SignInFromThirdPartyRequest(), default)
+                .ConfigureAwait(false);
+            var user = response.Data;
             var meeting = await GetMeeting().ConfigureAwait(false);
             var meetingSession = await _meetingSessionManager.GetOrCreateMeetingSessionAsync(meeting)
                 .ConfigureAwait(false);
