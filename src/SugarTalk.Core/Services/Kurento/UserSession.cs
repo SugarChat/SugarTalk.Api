@@ -16,7 +16,7 @@ namespace SugarTalk.Core.Services.Kurento
         [JsonProperty("username")]
         public string UserName { set; get; }
         
-        [JsonIgnore]
+        [JsonProperty("sendEndPoint")]
         public WebRtcEndpoint SendEndPoint { set; get; }
         
         [JsonIgnore]
