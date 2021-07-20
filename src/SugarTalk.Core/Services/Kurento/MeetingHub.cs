@@ -6,6 +6,7 @@ using Mediator.Net;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
 using Newtonsoft.Json;
+using Serilog;
 using SugarTalk.Core.Services.Users;
 using SugarTalk.Messages;
 using SugarTalk.Messages.Dtos.Meetings;
@@ -84,12 +85,21 @@ namespace SugarTalk.Core.Services.Kurento
             var meetingSession = await _meetingSessionManager.GetOrCreateMeetingSessionAsync(meeting)
                 .ConfigureAwait(false);
             
+            Log.Information("GetEndPointAsync {id}, connectionId {connectionId}", id, Context.ConnectionId);
+            Log.Information("meeting info {@meeting}", meeting);
+            Log.Information("meetingSession info {@meetingSession}", meetingSession);
             if (meetingSession.UserSessions.TryGetValue(Context.ConnectionId, out var selfSession))
             {
+                Log.Information("SelfSession retrieved {@selfSession}", selfSession);
+                
                 if (Context.ConnectionId == id)
                 {
+                    Log.Information("ConnectionId and id are the same");
+                    
                     if (selfSession.SendEndPoint == null)
                     {
+                        Log.Information("selftSession has no endPoint, creating new");
+                        
                         var endPoint = new WebRtcEndpoint(meetingSession.Pipeline);
                         
                         selfSession.SendEndPoint = await _kurento.CreateAsync(endPoint).ConfigureAwait(false);
@@ -102,6 +112,8 @@ namespace SugarTalk.Core.Services.Kurento
                 }
                 else
                 {
+                    Log.Information("ConnectionId and id are not the same");
+                    
                     if (meetingSession.UserSessions.TryGetValue(id, out var otherSession))
                     {
                         if (otherSession.SendEndPoint == null)
@@ -138,6 +150,9 @@ namespace SugarTalk.Core.Services.Kurento
         public async Task ProcessOfferAsync(string id, string offerSdp)
         {
             var endPonit = await GetEndPointAsync(id).ConfigureAwait(false);
+            
+            Log.Information("endPoint {@endPonit}", endPonit);
+            
             var answerSdp = await endPonit.ProcessOfferAsync(offerSdp).ConfigureAwait(false);
             Clients.Caller.ProcessAnswer(id, answerSdp);
             await endPonit.GatherCandidatesAsync().ConfigureAwait(false);
