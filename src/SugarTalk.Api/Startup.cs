@@ -58,6 +58,7 @@ namespace SugarTalk.Api
             services.AddSignalR(config =>
             {
                 config.EnableDetailedErrors = true;
+                config.MaximumReceiveMessageSize =  null;
             }).AddJsonProtocol(options =>
             {
                 options.PayloadSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
