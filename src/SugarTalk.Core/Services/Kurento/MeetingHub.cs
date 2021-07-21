@@ -96,8 +96,8 @@ namespace SugarTalk.Core.Services.Kurento
                 {
                     Log.Information("ConnectionId and id are the same");
                     
-                    // if (selfSession.SendEndPoint == null)
-                    // {
+                    if (selfSession.SendEndPoint == null)
+                    {
                         Log.Information("selftSession has no endPoint, creating new");
                         
                         var endPoint = new WebRtcEndpoint(meetingSession.Pipeline);
@@ -107,7 +107,7 @@ namespace SugarTalk.Core.Services.Kurento
                         {
                             Clients.Caller.AddCandidate(id, JsonConvert.SerializeObject(arg.candidate));
                         };
-                    // }
+                    }
                     return selfSession.SendEndPoint;
                 }
                 else
