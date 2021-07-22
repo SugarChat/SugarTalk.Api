@@ -79,60 +79,48 @@ namespace SugarTalk.Core.Services.Kurento
             return meeting.Data;
         }
         
-        private async Task<WebRtcEndpoint> GetEndPointAsync(string id)
+        private async Task<WebRtcEndpoint> GetEndPointAsync(string connectionId, bool shouldRecreateSendEndPoint)
         {
             var meeting = await GetMeeting().ConfigureAwait(false);
             var meetingSession = await _meetingSessionManager.GetOrCreateMeetingSessionAsync(meeting)
                 .ConfigureAwait(false);
             
-            Log.Information("GetEndPointAsync {id}, connectionId {connectionId}", id, Context.ConnectionId);
-            Log.Information("meeting info {@meeting}", meeting);
-            Log.Information("meetingSession info {@meetingSession}", meetingSession);
             if (meetingSession.UserSessions.TryGetValue(Context.ConnectionId, out var selfSession))
             {
-                Log.Information("SelfSession retrieved {@selfSession}", selfSession);
-                
-                if (Context.ConnectionId == id)
+                if (Context.ConnectionId == connectionId)
                 {
-                    Log.Information("ConnectionId and id are the same");
-                    
                     if (selfSession.SendEndPoint == null)
                     {
-                        Log.Information("selftSession has no endPoint, creating new");
-                        
-                        var endPoint = new WebRtcEndpoint(meetingSession.Pipeline);
-                        
-                        selfSession.SendEndPoint = await _kurento.CreateAsync(endPoint).ConfigureAwait(false);
-                        selfSession.SendEndPoint.OnIceCandidate += arg =>
-                        {
-                            Clients.Caller.AddCandidate(id, JsonConvert.SerializeObject(arg.candidate));
-                        };
+                        await CreateEndPoint(connectionId, selfSession, meetingSession);
+                    }
+                    else
+                    {
+                        if (shouldRecreateSendEndPoint)
+                            await CreateEndPoint(connectionId, selfSession, meetingSession);
                     }
                     return selfSession.SendEndPoint;
                 }
                 else
                 {
-                    Log.Information("ConnectionId and id are not the same");
-                    
-                    if (meetingSession.UserSessions.TryGetValue(id, out var otherSession))
+                    if (meetingSession.UserSessions.TryGetValue(connectionId, out var otherSession))
                     {
                         if (otherSession.SendEndPoint == null)
                         {
                             otherSession.SendEndPoint = await _kurento.CreateAsync(new WebRtcEndpoint(meetingSession.Pipeline)).ConfigureAwait(false);
                             otherSession.SendEndPoint.OnIceCandidate += arg =>
                             {
-                                Clients.Client(id).AddCandidate(id, JsonConvert.SerializeObject(arg.candidate));
+                                Clients.Client(connectionId).AddCandidate(connectionId, JsonConvert.SerializeObject(arg.candidate));
                             };
                         }
-                        if (!selfSession.ReceivedEndPoints.TryGetValue(id, out WebRtcEndpoint otherEndPoint))
+                        if (!selfSession.ReceivedEndPoints.TryGetValue(connectionId, out WebRtcEndpoint otherEndPoint))
                         {
                             otherEndPoint = await _kurento.CreateAsync(new WebRtcEndpoint(meetingSession.Pipeline)).ConfigureAwait(false);
                             otherEndPoint.OnIceCandidate += arg =>
                             {
-                                Clients.Caller.AddCandidate(id, JsonConvert.SerializeObject(arg.candidate));
+                                Clients.Caller.AddCandidate(connectionId, JsonConvert.SerializeObject(arg.candidate));
                             };
                             await otherSession.SendEndPoint.ConnectAsync(otherEndPoint).ConfigureAwait(false);
-                            selfSession.ReceivedEndPoints.TryAdd(id, otherEndPoint);
+                            selfSession.ReceivedEndPoints.TryAdd(connectionId, otherEndPoint);
                         }
                         return otherEndPoint;
                     }
@@ -141,21 +129,32 @@ namespace SugarTalk.Core.Services.Kurento
             return default(WebRtcEndpoint);
         }
         
-        public async Task ProcessCandidateAsync(string id, IceCandidate candidate)
+        public async Task ProcessCandidateAsync(string connectionId, IceCandidate candidate)
         {
-            var endPonit = await GetEndPointAsync(id).ConfigureAwait(false);
+            var endPonit = await GetEndPointAsync(connectionId, false).ConfigureAwait(false);
             await endPonit.AddIceCandidateAsync(candidate);
         }
         
-        public async Task ProcessOfferAsync(string id, string offerSdp)
+        public async Task ProcessOfferAsync(string connectionId, string offerSdp)
         {
-            var endPonit = await GetEndPointAsync(id).ConfigureAwait(false);
+            var endPonit = await GetEndPointAsync(connectionId, true).ConfigureAwait(false);
 
-            Log.Information("endPoint {@endPonit}", endPonit);
-            
             var answerSdp = await endPonit.ProcessOfferAsync(offerSdp).ConfigureAwait(false);
-            Clients.Caller.ProcessAnswer(id, answerSdp);
+            Clients.Caller.ProcessAnswer(connectionId, answerSdp);
             await endPonit.GatherCandidatesAsync().ConfigureAwait(false);
+        }
+
+        private async Task<WebRtcEndpoint> CreateEndPoint(string connectionId, UserSession selfSession, MeetingSession meetingSession)
+        {
+            var endPoint = new WebRtcEndpoint(meetingSession.Pipeline);
+            var endPointId = Guid.NewGuid();
+            
+            selfSession.SendEndPoint = await _kurento.CreateAsync(endPoint).ConfigureAwait(false);
+            selfSession.SendEndPoint.OnIceCandidate += arg =>
+            {
+                Clients.Caller.AddCandidate(connectionId, endPointId.ToString(), JsonConvert.SerializeObject(arg.candidate));
+            };
+            return endPoint;
         }
     }
 }

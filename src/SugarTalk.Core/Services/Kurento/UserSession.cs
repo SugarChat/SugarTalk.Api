@@ -7,6 +7,7 @@ namespace SugarTalk.Core.Services.Kurento
 {
     public class UserSession
     {
+        
         [JsonProperty("id")]
         public string Id { set; get; }
         
@@ -16,7 +17,8 @@ namespace SugarTalk.Core.Services.Kurento
         [JsonProperty("username")]
         public string UserName { set; get; }
         
-        [JsonProperty("sendEndPoint")]
+        
+        [JsonIgnore]
         public WebRtcEndpoint SendEndPoint { set; get; }
         
         [JsonIgnore]
