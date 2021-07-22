@@ -147,12 +147,11 @@ namespace SugarTalk.Core.Services.Kurento
         private async Task<WebRtcEndpoint> CreateEndPoint(string connectionId, UserSession selfSession, MeetingSession meetingSession)
         {
             var endPoint = new WebRtcEndpoint(meetingSession.Pipeline);
-            var endPointId = Guid.NewGuid();
             
             selfSession.SendEndPoint = await _kurento.CreateAsync(endPoint).ConfigureAwait(false);
             selfSession.SendEndPoint.OnIceCandidate += arg =>
             {
-                Clients.Caller.AddCandidate(connectionId, endPointId.ToString(), JsonConvert.SerializeObject(arg.candidate));
+                Clients.Caller.AddCandidate(connectionId, JsonConvert.SerializeObject(arg.candidate));
             };
             return endPoint;
         }
