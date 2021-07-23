@@ -141,6 +141,7 @@ namespace SugarTalk.Core.Services.Kurento
 
             var answerSdp = await endPonit.ProcessOfferAsync(offerSdp).ConfigureAwait(false);
             Clients.Caller.ProcessAnswer(connectionId, answerSdp);
+            Clients.OthersInGroup(MeetingNumber).NewOfferCreated(offerSdp);
             await endPonit.GatherCandidatesAsync().ConfigureAwait(false);
         }
 
