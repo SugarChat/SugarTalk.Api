@@ -106,11 +106,7 @@ namespace SugarTalk.Core.Services.Kurento
                     {
                         if (otherSession.SendEndPoint == null)
                         {
-                            otherSession.SendEndPoint = await _kurento.CreateAsync(new WebRtcEndpoint(meetingSession.Pipeline)).ConfigureAwait(false);
-                            otherSession.SendEndPoint.OnIceCandidate += arg =>
-                            {
-                                Clients.Client(connectionId).AddCandidate(connectionId, JsonConvert.SerializeObject(arg.candidate));
-                            };
+                            await CreateEndPoint(connectionId, otherSession, meetingSession);
                         }
                         if (!selfSession.ReceivedEndPoints.TryGetValue(connectionId, out WebRtcEndpoint otherEndPoint))
                         {
@@ -121,6 +117,19 @@ namespace SugarTalk.Core.Services.Kurento
                             };
                             await otherSession.SendEndPoint.ConnectAsync(otherEndPoint).ConfigureAwait(false);
                             selfSession.ReceivedEndPoints.TryAdd(connectionId, otherEndPoint);
+                        }
+                        else
+                        {
+                            if (shouldRecreateSendEndPoint)
+                            {
+                                otherEndPoint = await _kurento.CreateAsync(new WebRtcEndpoint(meetingSession.Pipeline)).ConfigureAwait(false);
+                                otherEndPoint.OnIceCandidate += arg =>
+                                {
+                                    Clients.Caller.AddCandidate(connectionId, JsonConvert.SerializeObject(arg.candidate));
+                                };
+                                await otherSession.SendEndPoint.ConnectAsync(otherEndPoint).ConfigureAwait(false);
+                                selfSession.ReceivedEndPoints.TryAdd(connectionId, otherEndPoint);
+                            }
                         }
                         return otherEndPoint;
                     }
