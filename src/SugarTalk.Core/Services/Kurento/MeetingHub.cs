@@ -144,13 +144,14 @@ namespace SugarTalk.Core.Services.Kurento
             await endPonit.AddIceCandidateAsync(candidate);
         }
         
-        public async Task ProcessOfferAsync(string connectionId, string offerSdp)
+        public async Task ProcessOfferAsync(string connectionId, string offerSdp, bool isNew)
         {
             var endPonit = await GetEndPointAsync(connectionId, true).ConfigureAwait(false);
 
             var answerSdp = await endPonit.ProcessOfferAsync(offerSdp).ConfigureAwait(false);
             Clients.Caller.ProcessAnswer(connectionId, answerSdp);
-            Clients.OthersInGroup(MeetingNumber).NewOfferCreated(connectionId, offerSdp);
+            if (isNew)
+                Clients.OthersInGroup(MeetingNumber).NewOfferCreated(connectionId, offerSdp);
             await endPonit.GatherCandidatesAsync().ConfigureAwait(false);
         }
 
