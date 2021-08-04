@@ -144,12 +144,12 @@ namespace SugarTalk.Core.Services.Kurento
             await endPonit.AddIceCandidateAsync(candidate);
         }
         
-        public async Task ProcessOfferAsync(string connectionId, string offerSdp, bool isNew)
+        public async Task ProcessOfferAsync(string connectionId, string offerSdp, bool isNew, bool isSharingCamera, bool isSharingScreen)
         {
             var endPonit = await GetEndPointAsync(connectionId, true).ConfigureAwait(false);
 
             var answerSdp = await endPonit.ProcessOfferAsync(offerSdp).ConfigureAwait(false);
-            Clients.Caller.ProcessAnswer(connectionId, answerSdp);
+            Clients.Caller.ProcessAnswer(connectionId, answerSdp, isSharingCamera, isSharingScreen);
             if (isNew)
                 Clients.OthersInGroup(MeetingNumber).NewOfferCreated(connectionId, offerSdp);
             await endPonit.GatherCandidatesAsync().ConfigureAwait(false);
