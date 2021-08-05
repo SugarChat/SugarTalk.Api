@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Concurrent;
+using System.Linq;
 using System.Threading.Tasks;
 using Kurento.NET;
 using Mediator.Net;
@@ -79,11 +80,9 @@ namespace SugarTalk.Core.Services.Kurento
             return meeting.Data;
         }
         
-        private async Task<WebRtcEndpoint> GetEndPointAsync(string connectionId, bool shouldRecreateSendEndPoint)
+        private async Task<WebRtcEndpoint> GetEndPointAsync(string connectionId, bool shouldRecreateSendEndPoint, MeetingSession meetingSession)
         {
-            var meeting = await GetMeeting().ConfigureAwait(false);
-            var meetingSession = await _meetingSessionManager.GetOrCreateMeetingSessionAsync(meeting)
-                .ConfigureAwait(false);
+            
             
             if (meetingSession.UserSessions.TryGetValue(Context.ConnectionId, out var selfSession))
             {
@@ -140,15 +139,27 @@ namespace SugarTalk.Core.Services.Kurento
         
         public async Task ProcessCandidateAsync(string connectionId, IceCandidate candidate)
         {
-            var endPonit = await GetEndPointAsync(connectionId, false).ConfigureAwait(false);
+            var meeting = await GetMeeting().ConfigureAwait(false);
+            var meetingSession = await _meetingSessionManager.GetOrCreateMeetingSessionAsync(meeting)
+                .ConfigureAwait(false);
+            
+            var endPonit = await GetEndPointAsync(connectionId, false, meetingSession).ConfigureAwait(false);
             await endPonit.AddIceCandidateAsync(candidate);
         }
         
         public async Task ProcessOfferAsync(string connectionId, string offerSdp, bool isNew, bool isSharingCamera, bool isSharingScreen)
         {
-            var endPonit = await GetEndPointAsync(connectionId, true).ConfigureAwait(false);
+            var meeting = await GetMeeting().ConfigureAwait(false);
+            var meetingSession = await _meetingSessionManager.GetOrCreateMeetingSessionAsync(meeting)
+                .ConfigureAwait(false);
+
+            meetingSession.UserSessions[connectionId].IsSharingCamera = isSharingCamera;
+            meetingSession.UserSessions[connectionId].IsSharingScreen = isSharingScreen;
+
+            var endPonit = await GetEndPointAsync(connectionId, true, meetingSession).ConfigureAwait(false);
 
             var answerSdp = await endPonit.ProcessOfferAsync(offerSdp).ConfigureAwait(false);
+
             Clients.Caller.ProcessAnswer(connectionId, answerSdp, isSharingCamera, isSharingScreen);
             if (isNew)
                 Clients.OthersInGroup(MeetingNumber).NewOfferCreated(connectionId, offerSdp);
