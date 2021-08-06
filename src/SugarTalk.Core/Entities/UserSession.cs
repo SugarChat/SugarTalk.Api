@@ -1,34 +1,33 @@
 using System;
 using System.Collections.Concurrent;
-using Kurento.NET;
-using Newtonsoft.Json;
 
 namespace SugarTalk.Core.Entities
 {
-    public class UserSession
+    public class UserSession : IEntity
     {
-        [JsonProperty("id")]
-        public string Id { set; get; }
+        public UserSession()
+        {
+            ReceivedEndPointIds = new ConcurrentDictionary<string, string>();
+        }
         
-        [JsonProperty("userid")]
+        public Guid Id { set; get; }
+        
+        public Guid MeetingSessionId { get; set; }
+        
+        public string ConnectionId { get; set; }
+        
         public Guid UserId { get; set; }
         
-        [JsonProperty("username")]
         public string UserName { set; get; }
         
-        [JsonProperty("avatar")]
-        public string Avatar { get; set; }
+        public string UserPicture { get; set; }
         
-        [JsonProperty("isSharingScreen")]
         public bool IsSharingScreen { get; set; }
         
-        [JsonProperty("isSharingCamera")]
         public bool IsSharingCamera { get; set; }
         
-        [JsonIgnore]
-        public WebRtcEndpoint SendEndPoint { set; get; }
+        public string WebRtcEndpointId { get; set; }
         
-        [JsonIgnore]
-        public ConcurrentDictionary<string, WebRtcEndpoint> ReceivedEndPoints { set; get; }
+        public ConcurrentDictionary<string, string> ReceivedEndPointIds { get; set; }
     }
 }

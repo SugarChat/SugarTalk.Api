@@ -47,11 +47,10 @@ namespace SugarTalk.Core.Services.Meetings
 
             meeting.MeetingNumber = GenerateMeetingNumber();
 
-            var meetingSession = await _meetingSessionService.GenerateNewMeetingSession(meeting, cancellationToken)
-                .ConfigureAwait(false);
-            
             await _repository.AddAsync(meeting, cancellationToken).ConfigureAwait(false);
-            await _repository.AddAsync(meetingSession, cancellationToken).ConfigureAwait(false);
+            
+            await _meetingSessionService.GenerateNewMeetingSession(meeting, cancellationToken)
+                .ConfigureAwait(false);
 
             return new SugarTalkResponse<MeetingDto>
             {
@@ -59,6 +58,11 @@ namespace SugarTalk.Core.Services.Meetings
             };
         }
 
+        public async Task JoinMeeting()
+        {
+            
+        }
+        
         public async Task<SugarTalkResponse<MeetingDto>> GetMeetingByNumber(GetMeetingByNumberRequest request,
             CancellationToken cancellationToken)
         {

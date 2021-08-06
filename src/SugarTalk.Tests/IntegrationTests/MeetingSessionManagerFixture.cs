@@ -29,43 +29,6 @@ namespace SugarTalk.Tests.IntegrationTests
                 {
                     MeetingNumber = meeting.MeetingNumber
                 });
-
-                meetingSession.Data.UserSessions.TryAdd(userSessionIndex, new UserSession
-                {
-                    Id = userSessionId,
-                    UserId = DefaultUser.Id,
-                    UserName = "test",
-                    SendEndPoint = null,
-                    ReceivedEndPoints = null
-                });
-                
-                meetingSession.Data.UserSessions.Count.ShouldBe(1);
-
-                await meetingSessionService.UpdateMeetingSession(meetingSession.Data);
-            });
-            
-            await Run<IMeetingSessionService>(async meetingSessionService =>
-            {
-                var meetingSession = await meetingSessionService.GetMeetingSession(new GetMeetingSessionRequest
-                {
-                    MeetingNumber = meeting.MeetingNumber
-                });
-
-                meetingSession.Data.UserSessions[userSessionIndex].IsSharingCamera = true;
-                
-                await meetingSessionService.UpdateMeetingSession(meetingSession.Data);
-            });
-
-            await Run<IMediator>(async mediator =>
-            {
-                var response = await mediator.RequestAsync<GetMeetingSessionRequest, SugarTalkResponse<MeetingSession>>(
-                    new GetMeetingSessionRequest
-                    {
-                        MeetingNumber = meeting.MeetingNumber
-                    });
-
-                response.Data.ShouldNotBeNull();
-                response.Data.UserSessions[userSessionIndex].IsSharingCamera.ShouldBeTrue();
             });
         }
 

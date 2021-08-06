@@ -29,9 +29,9 @@ namespace SugarTalk.Api.Controllers
         }
         
         [Route("session"), HttpGet]
-        public async Task<SugarTalkResponse<MeetingSession>> GetMeetingSession([FromQuery] GetMeetingSessionRequest request)
+        public async Task<SugarTalkResponse<MeetingSessionDto>> GetMeetingSession([FromQuery] GetMeetingSessionRequest request)
         {
-            return await _mediator.RequestAsync<GetMeetingSessionRequest, SugarTalkResponse<MeetingSession>>(request);
+            return await _mediator.RequestAsync<GetMeetingSessionRequest, SugarTalkResponse<MeetingSessionDto>>(request);
         }
     }
 }
