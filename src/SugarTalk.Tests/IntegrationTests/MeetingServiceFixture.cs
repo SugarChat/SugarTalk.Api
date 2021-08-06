@@ -2,11 +2,12 @@ using System;
 using System.Threading.Tasks;
 using Mediator.Net;
 using Shouldly;
-using SugarTalk.Core.Services.Users;
+using SugarTalk.Core.Entities;
 using SugarTalk.Messages;
 using SugarTalk.Messages.Commands;
 using SugarTalk.Messages.Dtos.Meetings;
 using SugarTalk.Messages.Enums;
+using SugarTalk.Messages.Requests.Meetings;
 using Xunit;
 
 namespace SugarTalk.Tests.IntegrationTests
@@ -31,6 +32,15 @@ namespace SugarTalk.Tests.IntegrationTests
                 response.Data.ShouldNotBeNull();
                 response.Data.Id.ShouldBe(meetingId);
                 response.Data.MeetingType.ShouldBe(MeetingType.Adhoc);
+
+                var meetingSessionResponse =
+                    await mediator.RequestAsync<GetMeetingSessionRequest, SugarTalkResponse<MeetingSession>>(
+                        new GetMeetingSessionRequest
+                        {
+                            MeetingNumber = response.Data.MeetingNumber
+                        });
+
+                meetingSessionResponse.Data.ShouldNotBeNull();
             });
         }
     }

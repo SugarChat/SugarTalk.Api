@@ -11,7 +11,7 @@ using Serilog;
 using SugarTalk.Api.Middlewares;
 using SugarTalk.Api.Middlewares.Authentication;
 using SugarTalk.Core;
-using SugarTalk.Core.Services.Kurento;
+using SugarTalk.Core.Hubs;
 
 namespace SugarTalk.Api
 {

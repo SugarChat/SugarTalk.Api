@@ -3,7 +3,7 @@ using System.Collections.Concurrent;
 using Kurento.NET;
 using Newtonsoft.Json;
 
-namespace SugarTalk.Core.Services.Kurento
+namespace SugarTalk.Core.Entities
 {
     public class UserSession
     {
