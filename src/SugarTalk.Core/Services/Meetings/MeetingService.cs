@@ -1,5 +1,4 @@
 using System;
-using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -7,7 +6,6 @@ using AutoMapper;
 using SugarTalk.Core.Data.MongoDb;
 using SugarTalk.Core.Entities;
 using SugarTalk.Core.Services.Exceptions;
-using SugarTalk.Core.Services.Kurento;
 using SugarTalk.Core.Services.Users;
 using SugarTalk.Messages;
 using SugarTalk.Messages.Commands;
@@ -22,9 +20,6 @@ namespace SugarTalk.Core.Services.Meetings
 
         Task<SugarTalkResponse<MeetingDto>> GetMeetingByNumber(GetMeetingByNumberRequest request,
             CancellationToken cancellationToken);
-
-        Task<SugarTalkResponse<MeetingSession>> GetMeetingSession(GetMeetingSessionRequest request,
-            CancellationToken cancellationToken);
     }
     
     public class MeetingService: IMeetingService
@@ -33,15 +28,17 @@ namespace SugarTalk.Core.Services.Meetings
         private readonly IUserService _userService;
         private readonly IMongoDbRepository _repository;
         private readonly IMeetingDataProvider _meetingDataProvider;
-        private readonly MeetingSessionManager _meetingSessionManager;
+
+        private readonly IMeetingSessionService _meetingSessionService;
         
-        public MeetingService(IMapper mapper, IMongoDbRepository repository, IMeetingDataProvider meetingDataProvider, IUserService userService, MeetingSessionManager meetingSessionManager)
+        public MeetingService(IMapper mapper, IMongoDbRepository repository,
+            IMeetingDataProvider meetingDataProvider, IUserService userService, IMeetingSessionService meetingSessionService)
         {
             _mapper = mapper;
             _repository = repository;
             _userService = userService;
+            _meetingSessionService = meetingSessionService;
             _meetingDataProvider = meetingDataProvider;
-            _meetingSessionManager = meetingSessionManager;
         }
         
         public async Task<SugarTalkResponse<MeetingDto>> ScheduleMeeting(ScheduleMeetingCommand scheduleMeetingCommand, CancellationToken cancellationToken)
@@ -49,8 +46,12 @@ namespace SugarTalk.Core.Services.Meetings
             var meeting = _mapper.Map<Meeting>(scheduleMeetingCommand);
 
             meeting.MeetingNumber = GenerateMeetingNumber();
+
+            var meetingSession = await _meetingSessionService.GenerateNewMeetingSession(meeting, cancellationToken)
+                .ConfigureAwait(false);
             
             await _repository.AddAsync(meeting, cancellationToken).ConfigureAwait(false);
+            await _repository.AddAsync(meetingSession, cancellationToken).ConfigureAwait(false);
 
             return new SugarTalkResponse<MeetingDto>
             {
@@ -73,31 +74,6 @@ namespace SugarTalk.Core.Services.Meetings
             };
         }
 
-        public async Task<SugarTalkResponse<MeetingSession>> GetMeetingSession(GetMeetingSessionRequest request,
-            CancellationToken cancellationToken)
-        {
-            var user = await _userService.GetCurrentLoggedInUser(cancellationToken).ConfigureAwait(false);
-
-            if (user == null)
-                throw new UnauthorizedAccessException();
-            
-            var meeting = await _meetingDataProvider.GetMeetingByNumber(request.MeetingNumber, cancellationToken)
-                .ConfigureAwait(false);
-
-            if (meeting == null)
-                throw new MeetingNotFoundException();
-
-            var meetingSession = _meetingSessionManager.TryGetMeetingSession(meeting.MeetingNumber);
-
-            if (meetingSession != null && meetingSession.UserSessions.All(x => x.Value.UserId != user.Id))
-                throw new UnauthorizedAccessException();
-                
-            return new SugarTalkResponse<MeetingSession>
-            {
-                Data = meetingSession
-            };
-        }
-        
         private string GenerateMeetingNumber()
         {
             var result = new StringBuilder();

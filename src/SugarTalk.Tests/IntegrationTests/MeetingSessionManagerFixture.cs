@@ -2,7 +2,8 @@ using System;
 using System.Threading.Tasks;
 using Mediator.Net;
 using Shouldly;
-using SugarTalk.Core.Services.Kurento;
+using SugarTalk.Core.Entities;
+using SugarTalk.Core.Services.Meetings;
 using SugarTalk.Messages;
 using SugarTalk.Messages.Commands;
 using SugarTalk.Messages.Dtos.Meetings;
@@ -22,11 +23,14 @@ namespace SugarTalk.Tests.IntegrationTests
 
             var meeting = await CreateMeeting();
             
-            await Run<MeetingSessionManager>(async meetingSessionManager =>
+            await Run<IMeetingSessionService>(async meetingSessionService =>
             {
-                var meetingSession = await meetingSessionManager.GetOrCreateMeetingSessionAsync(meeting);
+                var meetingSession = await meetingSessionService.GetMeetingSession(new GetMeetingSessionRequest
+                {
+                    MeetingNumber = meeting.MeetingNumber
+                });
 
-                meetingSession.UserSessions.TryAdd(userSessionIndex, new UserSession
+                meetingSession.Data.UserSessions.TryAdd(userSessionIndex, new UserSession
                 {
                     Id = userSessionId,
                     UserId = DefaultUser.Id,
@@ -35,14 +39,21 @@ namespace SugarTalk.Tests.IntegrationTests
                     ReceivedEndPoints = null
                 });
                 
-                meetingSession.UserSessions.Count.ShouldBe(1);
+                meetingSession.Data.UserSessions.Count.ShouldBe(1);
+
+                await meetingSessionService.UpdateMeetingSession(meetingSession.Data);
             });
             
-            await Run<MeetingSessionManager>(async meetingSessionManager =>
+            await Run<IMeetingSessionService>(async meetingSessionService =>
             {
-                var meetingSession = await meetingSessionManager.GetOrCreateMeetingSessionAsync(meeting);
+                var meetingSession = await meetingSessionService.GetMeetingSession(new GetMeetingSessionRequest
+                {
+                    MeetingNumber = meeting.MeetingNumber
+                });
 
-                meetingSession.UserSessions[userSessionIndex].IsSharingCamera = true;
+                meetingSession.Data.UserSessions[userSessionIndex].IsSharingCamera = true;
+                
+                await meetingSessionService.UpdateMeetingSession(meetingSession.Data);
             });
 
             await Run<IMediator>(async mediator =>

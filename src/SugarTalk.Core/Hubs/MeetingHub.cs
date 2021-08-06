@@ -1,20 +1,18 @@
 using System;
 using System.Collections.Concurrent;
-using System.Linq;
 using System.Threading.Tasks;
 using Kurento.NET;
 using Mediator.Net;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
 using Newtonsoft.Json;
-using Serilog;
+using SugarTalk.Core.Entities;
+using SugarTalk.Core.Services.Meetings;
 using SugarTalk.Core.Services.Users;
-using SugarTalk.Messages;
-using SugarTalk.Messages.Dtos.Meetings;
 using SugarTalk.Messages.Requests.Meetings;
 using SugarTalk.Messages.Requests.Users;
 
-namespace SugarTalk.Core.Services.Kurento
+namespace SugarTalk.Core.Hubs
 {
     [Authorize]
     public class MeetingHub : DynamicHub
@@ -25,14 +23,14 @@ namespace SugarTalk.Core.Services.Kurento
         private readonly IMediator _mediator;
         private readonly KurentoClient _kurento;
         private readonly IUserService _userService;
-        private readonly MeetingSessionManager _meetingSessionManager;
-
-        public MeetingHub(IMediator mediator, KurentoClient kurento, MeetingSessionManager meetingSessionManager, IUserService userService)
+        private readonly IMeetingSessionService _meetingSessionService;
+        
+        public MeetingHub(IMediator mediator, KurentoClient kurento, IUserService userService, IMeetingSessionService meetingSessionService)
         {
             _kurento = kurento;
             _mediator = mediator;
             _userService = userService;
-            _meetingSessionManager = meetingSessionManager;
+            _meetingSessionService = meetingSessionService;
         }
 
         public override async Task OnConnectedAsync()
@@ -40,9 +38,7 @@ namespace SugarTalk.Core.Services.Kurento
             var response = await _userService.SignInFromThirdParty(new SignInFromThirdPartyRequest(), default)
                 .ConfigureAwait(false);
             var user = response.Data;
-            var meeting = await GetMeeting().ConfigureAwait(false);
-            var meetingSession = await _meetingSessionManager.GetOrCreateMeetingSessionAsync(meeting)
-                .ConfigureAwait(false);
+            var meetingSession = await GetMeetingSession().ConfigureAwait(false);
             var userName = string.IsNullOrEmpty(UserName) ? user.DisplayName : UserName;
             var userSession = new UserSession
             {
@@ -53,6 +49,7 @@ namespace SugarTalk.Core.Services.Kurento
                 ReceivedEndPoints = new ConcurrentDictionary<string, WebRtcEndpoint>()
             };
             meetingSession.UserSessions.TryAdd(Context.ConnectionId, userSession);
+            await _meetingSessionService.UpdateMeetingSession(meetingSession).ConfigureAwait(false);
             await Groups.AddToGroupAsync(Context.ConnectionId, MeetingNumber).ConfigureAwait(false);
             Clients.Caller.SetLocalUser(userSession);
             Clients.Caller.SetOtherUsers(meetingSession.GetOtherUsers(Context.ConnectionId));
@@ -61,29 +58,15 @@ namespace SugarTalk.Core.Services.Kurento
         
         public override async Task OnDisconnectedAsync(Exception exception)
         {
-            var meeting = await GetMeeting().ConfigureAwait(false);
-            var meetingSession = await _meetingSessionManager.GetOrCreateMeetingSessionAsync(meeting)
-                .ConfigureAwait(false);
+            var meetingSession = await GetMeetingSession().ConfigureAwait(false);
             await meetingSession.RemoveAsync(Context.ConnectionId).ConfigureAwait(false);
+            await _meetingSessionService.UpdateMeetingSession(meetingSession).ConfigureAwait(false);
             Clients.OthersInGroup(MeetingNumber).OtherLeft(Context.ConnectionId);
             await base.OnDisconnectedAsync(exception).ConfigureAwait(false);
         }
 
-        private async Task<MeetingDto> GetMeeting()
-        {
-            var meeting = await _mediator.RequestAsync<GetMeetingByNumberRequest, SugarTalkResponse<MeetingDto>>(
-                new GetMeetingByNumberRequest
-                {
-                    MeetingNumber = MeetingNumber
-                }).ConfigureAwait(false);
-
-            return meeting.Data;
-        }
-        
         private async Task<WebRtcEndpoint> GetEndPointAsync(string connectionId, bool shouldRecreateSendEndPoint, MeetingSession meetingSession)
         {
-            
-            
             if (meetingSession.UserSessions.TryGetValue(Context.ConnectionId, out var selfSession))
             {
                 if (Context.ConnectionId == connectionId)
@@ -134,36 +117,37 @@ namespace SugarTalk.Core.Services.Kurento
                     }
                 }
             }
-            return default(WebRtcEndpoint);
+            
+            return default;
         }
         
         public async Task ProcessCandidateAsync(string connectionId, IceCandidate candidate)
         {
-            var meeting = await GetMeeting().ConfigureAwait(false);
-            var meetingSession = await _meetingSessionManager.GetOrCreateMeetingSessionAsync(meeting)
+            var meetingSession = await GetMeetingSession().ConfigureAwait(false);
+            
+            var endPoint = await GetEndPointAsync(connectionId, false, meetingSession)
                 .ConfigureAwait(false);
             
-            var endPonit = await GetEndPointAsync(connectionId, false, meetingSession).ConfigureAwait(false);
-            await endPonit.AddIceCandidateAsync(candidate);
+            await endPoint.AddIceCandidateAsync(candidate);
         }
         
         public async Task ProcessOfferAsync(string connectionId, string offerSdp, bool isNew, bool isSharingCamera, bool isSharingScreen)
         {
-            var meeting = await GetMeeting().ConfigureAwait(false);
-            var meetingSession = await _meetingSessionManager.GetOrCreateMeetingSessionAsync(meeting)
-                .ConfigureAwait(false);
+            var meetingSession = await GetMeetingSession().ConfigureAwait(false);
 
             meetingSession.UserSessions[connectionId].IsSharingCamera = isSharingCamera;
             meetingSession.UserSessions[connectionId].IsSharingScreen = isSharingScreen;
 
-            var endPonit = await GetEndPointAsync(connectionId, true, meetingSession).ConfigureAwait(false);
+            await _meetingSessionService.UpdateMeetingSession(meetingSession).ConfigureAwait(false);
+            
+            var endPoint = await GetEndPointAsync(connectionId, true, meetingSession).ConfigureAwait(false);
 
-            var answerSdp = await endPonit.ProcessOfferAsync(offerSdp).ConfigureAwait(false);
+            var answerSdp = await endPoint.ProcessOfferAsync(offerSdp).ConfigureAwait(false);
 
             Clients.Caller.ProcessAnswer(connectionId, answerSdp, isSharingCamera, isSharingScreen);
             if (isNew)
                 Clients.OthersInGroup(MeetingNumber).NewOfferCreated(connectionId, offerSdp);
-            await endPonit.GatherCandidatesAsync().ConfigureAwait(false);
+            await endPoint.GatherCandidatesAsync().ConfigureAwait(false);
         }
 
         private async Task<WebRtcEndpoint> CreateEndPoint(string connectionId, UserSession selfSession, MeetingSession meetingSession)
@@ -176,6 +160,16 @@ namespace SugarTalk.Core.Services.Kurento
                 Clients.Caller.AddCandidate(connectionId, JsonConvert.SerializeObject(arg.candidate));
             };
             return endPoint;
+        }
+        
+        private async Task<MeetingSession> GetMeetingSession()
+        {
+            var meetingSession = await _meetingSessionService.GetMeetingSession(new GetMeetingSessionRequest
+            {
+                MeetingNumber = MeetingNumber
+            }).ConfigureAwait(false);
+            
+            return meetingSession.Data;
         }
     }
 }

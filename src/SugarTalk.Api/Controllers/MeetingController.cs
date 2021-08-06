@@ -2,7 +2,7 @@ using System.Threading.Tasks;
 using Mediator.Net;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using SugarTalk.Core.Services.Kurento;
+using SugarTalk.Core.Entities;
 using SugarTalk.Messages;
 using SugarTalk.Messages.Commands;
 using SugarTalk.Messages.Dtos.Meetings;

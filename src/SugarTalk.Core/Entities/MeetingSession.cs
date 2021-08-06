@@ -6,10 +6,11 @@ using System.Threading.Tasks;
 using Kurento.NET;
 using SugarTalk.Messages.Enums;
 
-namespace SugarTalk.Core.Services.Kurento
+namespace SugarTalk.Core.Entities
 {
-    public class MeetingSession
+    public class MeetingSession: IEntity
     {
+        public Guid Id { get; set; }
         public Guid MeetingId { get; set; }
         public string MeetingNumber { set; get; }
         public MeetingType MeetingType { get; set; }
@@ -42,6 +43,7 @@ namespace SugarTalk.Core.Services.Kurento
                 }
             }
         }
+        
         public IEnumerable<UserSession> GetOtherUsers(string connectionId) => UserSessions.Values.Where(x => x.Id != connectionId);
     }
 }
