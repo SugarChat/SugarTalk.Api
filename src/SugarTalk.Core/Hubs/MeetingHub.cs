@@ -146,7 +146,7 @@ namespace SugarTalk.Core.Hubs
 
             Clients.Caller.ProcessAnswer(connectionId, answerSdp, isSharingCamera, isSharingScreen);
             if (isNew)
-                Clients.OthersInGroup(MeetingNumber).NewOfferCreated(connectionId, offerSdp);
+                Clients.OthersInGroup(MeetingNumber).NewOfferCreated(connectionId, offerSdp, isSharingCamera, isSharingScreen);
             await endPoint.GatherCandidatesAsync().ConfigureAwait(false);
         }
 
