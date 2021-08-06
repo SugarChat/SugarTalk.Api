@@ -59,6 +59,9 @@ namespace SugarTalk.Core.Services.Meetings
                 meetingSession.UserSessions.Any() &&
                 meetingSession.UserSessions.All(x => x.Value.UserId != user.Id))
                 throw new UnauthorizedAccessException();
+
+            if (meetingSession != null)
+                meetingSession.Pipeline = _client.GetObjectById(meetingSession.PipelineId) as MediaPipeline;
             
             return new SugarTalkResponse<MeetingSession>
             {
@@ -75,12 +78,14 @@ namespace SugarTalk.Core.Services.Meetings
         public async Task<MeetingSession> GenerateNewMeetingSession(Meeting meeting,
             CancellationToken cancellationToken)
         {
-            return new()
+            var pipeline = await _client.CreateAsync(new MediaPipeline());
+            
+            return new MeetingSession
             {
+                PipelineId = pipeline.id,
                 MeetingId = meeting.Id,
                 MeetingType = meeting.MeetingType,
                 MeetingNumber = meeting.MeetingNumber,
-                Pipeline = await _client.CreateAsync(new MediaPipeline()),
                 UserSessions = new ConcurrentDictionary<string, UserSession>()
             };
         }
