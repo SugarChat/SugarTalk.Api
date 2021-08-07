@@ -1,15 +1,14 @@
 using System;
-using System.Collections.Concurrent;
+using System.Linq;
 using System.Threading.Tasks;
 using Kurento.NET;
-using Mediator.Net;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
 using Newtonsoft.Json;
 using SugarTalk.Core.Entities;
 using SugarTalk.Core.Services.Meetings;
 using SugarTalk.Core.Services.Users;
-using SugarTalk.Messages.Requests.Meetings;
+using SugarTalk.Messages.Dtos.Meetings;
 using SugarTalk.Messages.Requests.Users;
 
 namespace SugarTalk.Core.Hubs
@@ -20,156 +19,153 @@ namespace SugarTalk.Core.Hubs
         private string UserName => Context.GetHttpContext().Request.Query["userName"];
         private string MeetingNumber => Context.GetHttpContext().Request.Query["meetingNumber"];
 
-        private readonly IMediator _mediator;
         private readonly KurentoClient _kurento;
         private readonly IUserService _userService;
         private readonly IMeetingSessionService _meetingSessionService;
+        private readonly IMeetingSessionDataProvider _meetingSessionDataProvider;
         
-        public MeetingHub(IMediator mediator, KurentoClient kurento, IUserService userService, IMeetingSessionService meetingSessionService)
+        public MeetingHub(KurentoClient kurento, IUserService userService,
+            IMeetingSessionService meetingSessionService, IMeetingSessionDataProvider meetingSessionDataProvider)
         {
             _kurento = kurento;
-            _mediator = mediator;
             _userService = userService;
             _meetingSessionService = meetingSessionService;
+            _meetingSessionDataProvider = meetingSessionDataProvider;
         }
 
         public override async Task OnConnectedAsync()
         {
             var response = await _userService.SignInFromThirdParty(new SignInFromThirdPartyRequest(), default)
                 .ConfigureAwait(false);
+            
             var user = response.Data;
-            var meetingSession = await GetMeetingSession().ConfigureAwait(false);
-            var userName = string.IsNullOrEmpty(UserName) ? user.DisplayName : UserName;
-            var userSession = new UserSession
+            var displayName = string.IsNullOrEmpty(UserName) ? user.DisplayName : UserName;
+
+            var meetingSession = await _meetingSessionDataProvider.GetMeetingSession(MeetingNumber, false)
+                .ConfigureAwait(false);
+            
+            await _meetingSessionService.AddUserSession(new UserSession
             {
-                Id = Context.ConnectionId,
                 UserId = user.Id,
-                UserName = userName,
-                SendEndPoint = null,
-                ReceivedEndPoints = new ConcurrentDictionary<string, WebRtcEndpoint>()
-            };
-            meetingSession.UserSessions.TryAdd(Context.ConnectionId, userSession);
-            await _meetingSessionService.UpdateMeetingSession(meetingSession).ConfigureAwait(false);
+                UserName = displayName,
+                UserPicture = user.Picture,
+                ConnectionId = Context.ConnectionId,
+                MeetingSessionId = meetingSession.Id
+            }).ConfigureAwait(false);
+
+            var allUserSessions = await _meetingSessionDataProvider
+                .GetUserSessions(meetingSession.Id).ConfigureAwait(false);
+            
+            var userSession = allUserSessions.SingleOrDefault(x => x.ConnectionId == Context.ConnectionId);
+            var otherUserSessions = allUserSessions.Where(x => x.ConnectionId != Context.ConnectionId).ToList();
+            
             await Groups.AddToGroupAsync(Context.ConnectionId, MeetingNumber).ConfigureAwait(false);
+            
             Clients.Caller.SetLocalUser(userSession);
-            Clients.Caller.SetOtherUsers(meetingSession.GetOtherUsers(Context.ConnectionId));
+            Clients.Caller.SetOtherUsers(otherUserSessions);
             Clients.OthersInGroup(MeetingNumber).OtherJoined(userSession);
         }
         
         public override async Task OnDisconnectedAsync(Exception exception)
         {
-            var meetingSession = await GetMeetingSession().ConfigureAwait(false);
-            await meetingSession.RemoveAsync(Context.ConnectionId).ConfigureAwait(false);
-            await _meetingSessionService.UpdateMeetingSession(meetingSession).ConfigureAwait(false);
+            await _meetingSessionService.RemoveUserSession(Context.ConnectionId).ConfigureAwait(false);
+            
             Clients.OthersInGroup(MeetingNumber).OtherLeft(Context.ConnectionId);
+            
             await base.OnDisconnectedAsync(exception).ConfigureAwait(false);
         }
 
-        private async Task<WebRtcEndpoint> GetEndPointAsync(string connectionId, bool shouldRecreateSendEndPoint, MeetingSession meetingSession)
-        {
-            if (meetingSession.UserSessions.TryGetValue(Context.ConnectionId, out var selfSession))
-            {
-                if (Context.ConnectionId == connectionId)
-                {
-                    if (selfSession.SendEndPoint == null)
-                    {
-                        await CreateEndPoint(connectionId, selfSession, meetingSession);
-                    }
-                    else
-                    {
-                        if (shouldRecreateSendEndPoint)
-                            await CreateEndPoint(connectionId, selfSession, meetingSession);
-                    }
-                    return selfSession.SendEndPoint;
-                }
-                else
-                {
-                    if (meetingSession.UserSessions.TryGetValue(connectionId, out var otherSession))
-                    {
-                        if (otherSession.SendEndPoint == null)
-                        {
-                            await CreateEndPoint(connectionId, otherSession, meetingSession);
-                        }
-                        if (!selfSession.ReceivedEndPoints.TryGetValue(connectionId, out WebRtcEndpoint otherEndPoint))
-                        {
-                            otherEndPoint = await _kurento.CreateAsync(new WebRtcEndpoint(meetingSession.Pipeline)).ConfigureAwait(false);
-                            otherEndPoint.OnIceCandidate += arg =>
-                            {
-                                Clients.Caller.AddCandidate(connectionId, JsonConvert.SerializeObject(arg.candidate));
-                            };
-                            await otherSession.SendEndPoint.ConnectAsync(otherEndPoint).ConfigureAwait(false);
-                            selfSession.ReceivedEndPoints.TryAdd(connectionId, otherEndPoint);
-                        }
-                        else
-                        {
-                            if (shouldRecreateSendEndPoint)
-                            {
-                                otherEndPoint = await _kurento.CreateAsync(new WebRtcEndpoint(meetingSession.Pipeline)).ConfigureAwait(false);
-                                otherEndPoint.OnIceCandidate += arg =>
-                                {
-                                    Clients.Caller.AddCandidate(connectionId, JsonConvert.SerializeObject(arg.candidate));
-                                };
-                                await otherSession.SendEndPoint.ConnectAsync(otherEndPoint).ConfigureAwait(false);
-                                selfSession.ReceivedEndPoints.TryAdd(connectionId, otherEndPoint);
-                            }
-                        }
-                        return otherEndPoint;
-                    }
-                }
-            }
-            
-            return default;
-        }
-        
         public async Task ProcessCandidateAsync(string connectionId, IceCandidate candidate)
         {
-            var meetingSession = await GetMeetingSession().ConfigureAwait(false);
-            
-            var endPoint = await GetEndPointAsync(connectionId, false, meetingSession)
+            var meetingSession = await _meetingSessionDataProvider.GetMeetingSession(MeetingNumber)
                 .ConfigureAwait(false);
             
+            var endPoint = await CreateOrUpdateEndpointAsync(connectionId, meetingSession, false)
+                .ConfigureAwait(false);
+
             await endPoint.AddIceCandidateAsync(candidate);
         }
         
         public async Task ProcessOfferAsync(string connectionId, string offerSdp, bool isNew, bool isSharingCamera, bool isSharingScreen)
         {
-            var meetingSession = await GetMeetingSession().ConfigureAwait(false);
+            var meetingSession = await _meetingSessionDataProvider.GetMeetingSession(MeetingNumber)
+                .ConfigureAwait(false);
 
-            meetingSession.UserSessions[connectionId].IsSharingCamera = isSharingCamera;
-            meetingSession.UserSessions[connectionId].IsSharingScreen = isSharingScreen;
+            meetingSession.UserSessions.TryGetValue(connectionId, out var userSession);
 
-            await _meetingSessionService.UpdateMeetingSession(meetingSession).ConfigureAwait(false);
-            
-            var endPoint = await GetEndPointAsync(connectionId, true, meetingSession).ConfigureAwait(false);
+            if (userSession != null)
+            {
+                userSession.IsSharingCamera = isSharingCamera;
+                userSession.IsSharingScreen = isSharingScreen;
+            }
+
+            var endPoint = await CreateOrUpdateEndpointAsync(connectionId, meetingSession, true)
+                .ConfigureAwait(false);
 
             var answerSdp = await endPoint.ProcessOfferAsync(offerSdp).ConfigureAwait(false);
 
             Clients.Caller.ProcessAnswer(connectionId, answerSdp, isSharingCamera, isSharingScreen);
+            
             if (isNew)
                 Clients.OthersInGroup(MeetingNumber).NewOfferCreated(connectionId, offerSdp, isSharingCamera, isSharingScreen);
+            
             await endPoint.GatherCandidatesAsync().ConfigureAwait(false);
         }
-
-        private async Task<WebRtcEndpoint> CreateEndPoint(string connectionId, UserSession selfSession, MeetingSession meetingSession)
+        
+        private async Task<WebRtcEndpoint> CreateOrUpdateEndpointAsync(string connectionId,
+            MeetingSessionDto meetingSession, bool shouldRecreateSendEndPoint)
         {
-            var endPoint = new WebRtcEndpoint(meetingSession.Pipeline);
+            meetingSession.UserSessions.TryGetValue(Context.ConnectionId, out var selfSession);
+
+            if (selfSession == null) return default;
+
+            if (selfSession.ConnectionId == connectionId)
+            {
+                if (selfSession.SendEndPoint == null ||
+                    selfSession.SendEndPoint != null && shouldRecreateSendEndPoint)
+                {
+                    selfSession.SendEndPoint =
+                        await CreateEndPoint(connectionId, meetingSession.Pipeline).ConfigureAwait(false);
+                    await _meetingSessionService
+                        .UpdateUserSessionEndpoints(selfSession.Id, selfSession.SendEndPoint, selfSession.ReceivedEndPoints).ConfigureAwait(false);
+                }
+
+                return selfSession.SendEndPoint;
+            }
+
+            meetingSession.UserSessions.TryGetValue(connectionId, out var otherSession);
             
-            selfSession.SendEndPoint = await _kurento.CreateAsync(endPoint).ConfigureAwait(false);
-            selfSession.SendEndPoint.OnIceCandidate += arg =>
+            if (otherSession == null) return default;
+            
+            otherSession.SendEndPoint ??= await CreateEndPoint(connectionId, meetingSession.Pipeline).ConfigureAwait(false);
+
+            selfSession.ReceivedEndPoints.TryGetValue(connectionId, out var otherEndPoint);
+
+            if (otherEndPoint == null || shouldRecreateSendEndPoint)
+            {
+                otherEndPoint = await CreateEndPoint(connectionId, meetingSession.Pipeline).ConfigureAwait(false);
+                selfSession.ReceivedEndPoints.TryAdd(connectionId, otherEndPoint);
+                await otherSession.SendEndPoint.ConnectAsync(otherEndPoint).ConfigureAwait(false);
+                await _meetingSessionService
+                    .UpdateUserSessionEndpoints(selfSession.Id, selfSession.SendEndPoint, selfSession.ReceivedEndPoints).ConfigureAwait(false);
+            }
+            
+            await _meetingSessionService
+                .UpdateUserSessionEndpoints(otherSession.Id, otherSession.SendEndPoint, otherSession.ReceivedEndPoints).ConfigureAwait(false);
+            
+            return otherEndPoint;
+        }
+        
+        private async Task<WebRtcEndpoint> CreateEndPoint(string connectionId, MediaPipeline pipeline)
+        {
+            var endPoint = await _kurento.CreateAsync(new WebRtcEndpoint(pipeline)).ConfigureAwait(false);
+            
+            endPoint.OnIceCandidate += arg =>
             {
                 Clients.Caller.AddCandidate(connectionId, JsonConvert.SerializeObject(arg.candidate));
             };
-            return endPoint;
-        }
-        
-        private async Task<MeetingSession> GetMeetingSession()
-        {
-            var meetingSession = await _meetingSessionService.GetMeetingSession(new GetMeetingSessionRequest
-            {
-                MeetingNumber = MeetingNumber
-            }).ConfigureAwait(false);
             
-            return meetingSession.Data;
+            return endPoint;
         }
     }
 }
