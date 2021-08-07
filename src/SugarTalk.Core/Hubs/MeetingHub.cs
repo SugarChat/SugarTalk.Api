@@ -20,20 +20,20 @@ namespace SugarTalk.Core.Hubs
         private string UserName => Context.GetHttpContext().Request.Query["userName"];
         private string MeetingNumber => Context.GetHttpContext().Request.Query["meetingNumber"];
 
+        private readonly IMapper _mapper;
         private readonly KurentoClient _kurento;
         private readonly IUserService _userService;
         private readonly IMeetingSessionService _meetingSessionService;
         private readonly IMeetingSessionDataProvider _meetingSessionDataProvider;
-        private readonly IMapper _mapper;
 
-        public MeetingHub(KurentoClient kurento, IUserService userService,
-            IMeetingSessionService meetingSessionService, IMeetingSessionDataProvider meetingSessionDataProvider, IMapper mapper)
+        public MeetingHub(IMapper mapper, KurentoClient kurento, IUserService userService,
+            IMeetingSessionService meetingSessionService, IMeetingSessionDataProvider meetingSessionDataProvider)
         {
+            _mapper = mapper;
             _kurento = kurento;
             _userService = userService;
             _meetingSessionService = meetingSessionService;
             _meetingSessionDataProvider = meetingSessionDataProvider;
-            _mapper = mapper;
         }
 
         public override async Task OnConnectedAsync()
@@ -100,7 +100,9 @@ namespace SugarTalk.Core.Hubs
             {
                 userSession.IsSharingCamera = isSharingCamera;
                 userSession.IsSharingScreen = isSharingScreen;
-                await _meetingSessionService.UpdateUserSession(_mapper.Map<UserSession>(userSession)).ConfigureAwait(false);
+
+                await _meetingSessionService.UpdateUserSession(_mapper.Map<UserSession>(userSession))
+                    .ConfigureAwait(false);
             }
 
             var endPoint = await CreateOrUpdateEndpointAsync(connectionId, meetingSession, true)
