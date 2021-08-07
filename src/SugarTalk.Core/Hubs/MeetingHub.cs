@@ -144,10 +144,12 @@ namespace SugarTalk.Core.Hubs
             if (otherEndPoint == null || shouldRecreateSendEndPoint)
             {
                 otherEndPoint = await CreateEndPoint(connectionId, meetingSession.Pipeline).ConfigureAwait(false);
-                await otherSession.SendEndPoint.ConnectAsync(otherEndPoint).ConfigureAwait(false);
                 selfSession.ReceivedEndPoints.TryAdd(connectionId, otherEndPoint);
+                await otherSession.SendEndPoint.ConnectAsync(otherEndPoint).ConfigureAwait(false);
+                await _meetingSessionService
+                    .UpdateUserSessionEndpoints(selfSession.Id, selfSession.SendEndPoint, selfSession.ReceivedEndPoints).ConfigureAwait(false);
             }
-
+            
             await _meetingSessionService
                 .UpdateUserSessionEndpoints(otherSession.Id, otherSession.SendEndPoint, otherSession.ReceivedEndPoints).ConfigureAwait(false);
             
