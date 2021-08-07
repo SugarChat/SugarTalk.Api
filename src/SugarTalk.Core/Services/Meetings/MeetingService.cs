@@ -57,11 +57,6 @@ namespace SugarTalk.Core.Services.Meetings
                 Data = _mapper.Map<MeetingDto>(meeting)
             };
         }
-
-        public async Task JoinMeeting()
-        {
-            
-        }
         
         public async Task<SugarTalkResponse<MeetingDto>> GetMeetingByNumber(GetMeetingByNumberRequest request,
             CancellationToken cancellationToken)
