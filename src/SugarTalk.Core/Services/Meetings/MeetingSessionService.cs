@@ -25,6 +25,8 @@ namespace SugarTalk.Core.Services.Meetings
 
         Task AddUserSession(UserSession userSession, CancellationToken cancellationToken = default);
 
+        Task UpdateUserSession(UserSession userSession, CancellationToken cancellationToken = default);
+        
         Task UpdateUserSessionEndpoints(Guid userSessionId, WebRtcEndpoint endpoint,
             ConcurrentDictionary<string, WebRtcEndpoint> receivedEndPoints, CancellationToken cancellationToken = default);
         
@@ -103,6 +105,11 @@ namespace SugarTalk.Core.Services.Meetings
             await _repository.AddAsync(userSession, cancellationToken).ConfigureAwait(false);
         }
 
+        public async Task UpdateUserSession(UserSession userSession, CancellationToken cancellationToken = default)
+        {
+            await _repository.UpdateAsync(userSession, cancellationToken).ConfigureAwait(false);
+        }
+
         public async Task UpdateUserSessionEndpoints(Guid userSessionId, WebRtcEndpoint endpoint,
             ConcurrentDictionary<string, WebRtcEndpoint> receivedEndPoints, CancellationToken cancellationToken = default)
         {
@@ -127,5 +134,7 @@ namespace SugarTalk.Core.Services.Meetings
 
             await _repository.RemoveAsync(userSession, cancellationToken).ConfigureAwait(false);
         }
+        
+        
     }
 }

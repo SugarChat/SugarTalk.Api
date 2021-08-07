@@ -1,6 +1,7 @@
 using System;
 using System.Linq;
 using System.Threading.Tasks;
+using AutoMapper;
 using Kurento.NET;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
@@ -23,14 +24,16 @@ namespace SugarTalk.Core.Hubs
         private readonly IUserService _userService;
         private readonly IMeetingSessionService _meetingSessionService;
         private readonly IMeetingSessionDataProvider _meetingSessionDataProvider;
-        
+        private readonly IMapper _mapper;
+
         public MeetingHub(KurentoClient kurento, IUserService userService,
-            IMeetingSessionService meetingSessionService, IMeetingSessionDataProvider meetingSessionDataProvider)
+            IMeetingSessionService meetingSessionService, IMeetingSessionDataProvider meetingSessionDataProvider, IMapper mapper)
         {
             _kurento = kurento;
             _userService = userService;
             _meetingSessionService = meetingSessionService;
             _meetingSessionDataProvider = meetingSessionDataProvider;
+            _mapper = mapper;
         }
 
         public override async Task OnConnectedAsync()
@@ -97,6 +100,7 @@ namespace SugarTalk.Core.Hubs
             {
                 userSession.IsSharingCamera = isSharingCamera;
                 userSession.IsSharingScreen = isSharingScreen;
+                await _meetingSessionService.UpdateUserSession(_mapper.Map<UserSession>(userSession)).ConfigureAwait(false);
             }
 
             var endPoint = await CreateOrUpdateEndpointAsync(connectionId, meetingSession, true)
