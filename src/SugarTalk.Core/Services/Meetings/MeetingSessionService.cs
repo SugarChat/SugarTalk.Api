@@ -25,6 +25,9 @@ namespace SugarTalk.Core.Services.Meetings
 
         Task AddUserSession(UserSession userSession, CancellationToken cancellationToken = default);
 
+        Task AddUserSessionToMeeting(UserSession userSession, Meeting meeting,
+            CancellationToken cancellationToken);
+        
         Task UpdateUserSession(UserSession userSession, CancellationToken cancellationToken = default);
         
         Task UpdateUserSessionEndpoints(Guid userSessionId, WebRtcEndpoint endpoint,
@@ -34,6 +37,8 @@ namespace SugarTalk.Core.Services.Meetings
         
         Task<MeetingSession> GenerateNewMeetingSession(Meeting meeting,
             CancellationToken cancellationToken);
+
+        UserSession GenerateNewUserSessionFromUser(User user);
     }
     
     public class MeetingSessionService : IMeetingSessionService
@@ -95,6 +100,16 @@ namespace SugarTalk.Core.Services.Meetings
             return meetingSession;
         }
         
+        public UserSession GenerateNewUserSessionFromUser(User user)
+        {
+            return new()
+            {
+                UserId = user.Id,
+                UserName = user.DisplayName,
+                UserPicture = user.Picture
+            };
+        }
+        
         public async Task UpdateMeetingSession(MeetingSession meetingSession, CancellationToken cancellationToken = default)
         {
             await _repository.UpdateAsync(meetingSession, cancellationToken).ConfigureAwait(false);
@@ -105,6 +120,19 @@ namespace SugarTalk.Core.Services.Meetings
             await _repository.AddAsync(userSession, cancellationToken).ConfigureAwait(false);
         }
 
+        public async Task AddUserSessionToMeeting(UserSession userSession, Meeting meeting,
+            CancellationToken cancellationToken)
+        {
+            var meetingSession = await _meetingSessionDataProvider
+                .GetMeetingSessionByNumber(meeting.MeetingNumber, cancellationToken).ConfigureAwait(false);
+
+            if (meetingSession != null)
+            {
+                userSession.MeetingSessionId = meetingSession.Id;
+                await _repository.AddAsync(userSession, cancellationToken).ConfigureAwait(false);
+            }
+        }
+        
         public async Task UpdateUserSession(UserSession userSession, CancellationToken cancellationToken = default)
         {
             await _repository.UpdateAsync(userSession, cancellationToken).ConfigureAwait(false);
@@ -134,7 +162,5 @@ namespace SugarTalk.Core.Services.Meetings
 
             await _repository.RemoveAsync(userSession, cancellationToken).ConfigureAwait(false);
         }
-        
-        
     }
 }
