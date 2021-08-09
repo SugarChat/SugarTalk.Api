@@ -11,6 +11,7 @@ using SugarTalk.Core.Entities;
 using SugarTalk.Core.Services.Users;
 using SugarTalk.Messages;
 using SugarTalk.Messages.Dtos.Meetings;
+using SugarTalk.Messages.Dtos.Users;
 using SugarTalk.Messages.Requests.Meetings;
 
 namespace SugarTalk.Core.Services.Meetings
@@ -20,14 +21,12 @@ namespace SugarTalk.Core.Services.Meetings
         Task<SugarTalkResponse<MeetingSessionDto>> GetMeetingSession(GetMeetingSessionRequest request,
             CancellationToken cancellationToken = default);
 
+        Task ConnectUserToMeetingSession(User user, MeetingSessionDto meetingSession, string connectionId,
+            CancellationToken cancellationToken = default);
+        
         Task UpdateMeetingSession(MeetingSession meetingSession,
             CancellationToken cancellationToken = default);
 
-        Task AddUserSession(UserSession userSession, CancellationToken cancellationToken = default);
-
-        Task AddUserSessionToMeeting(UserSession userSession, Meeting meeting,
-            CancellationToken cancellationToken);
-        
         Task UpdateUserSession(UserSession userSession, CancellationToken cancellationToken = default);
         
         Task UpdateUserSessionEndpoints(Guid userSessionId, WebRtcEndpoint endpoint,
@@ -37,8 +36,6 @@ namespace SugarTalk.Core.Services.Meetings
         
         Task<MeetingSession> GenerateNewMeetingSession(Meeting meeting,
             CancellationToken cancellationToken);
-
-        UserSession GenerateNewUserSessionFromUser(User user);
     }
     
     public class MeetingSessionService : IMeetingSessionService
@@ -82,54 +79,34 @@ namespace SugarTalk.Core.Services.Meetings
             };
         }
 
-        public async Task<MeetingSession> GenerateNewMeetingSession(Meeting meeting,
-            CancellationToken cancellationToken)
-        {
-            var pipeline = await _client.CreateAsync(new MediaPipeline());
-            
-            var meetingSession = new MeetingSession
-            {
-                PipelineId = pipeline.id,
-                MeetingId = meeting.Id,
-                MeetingType = meeting.MeetingType,
-                MeetingNumber = meeting.MeetingNumber
-            };
-
-            await _repository.AddAsync(meetingSession, cancellationToken).ConfigureAwait(false);
-
-            return meetingSession;
-        }
-        
-        public UserSession GenerateNewUserSessionFromUser(User user)
-        {
-            return new()
-            {
-                UserId = user.Id,
-                UserName = user.DisplayName,
-                UserPicture = user.Picture
-            };
-        }
-        
         public async Task UpdateMeetingSession(MeetingSession meetingSession, CancellationToken cancellationToken = default)
         {
             await _repository.UpdateAsync(meetingSession, cancellationToken).ConfigureAwait(false);
         }
 
-        public async Task AddUserSession(UserSession userSession, CancellationToken cancellationToken = default)
+        public async Task ConnectUserToMeetingSession(User user, MeetingSessionDto meetingSession, string connectionId, 
+            CancellationToken cancellationToken = default)
         {
-            await _repository.AddAsync(userSession, cancellationToken).ConfigureAwait(false);
-        }
+            var userSession = meetingSession.AllUserSessions
+                .Where(x => x.UserId == user.Id)
+                .Select(x => _mapper.Map<UserSession>(x))
+                .FirstOrDefault();
 
-        public async Task AddUserSessionToMeeting(UserSession userSession, Meeting meeting,
-            CancellationToken cancellationToken)
-        {
-            var meetingSession = await _meetingSessionDataProvider
-                .GetMeetingSessionByNumber(meeting.MeetingNumber, cancellationToken).ConfigureAwait(false);
-
-            if (meetingSession != null)
+            if (userSession == null)
             {
-                userSession.MeetingSessionId = meetingSession.Id;
+                userSession = GenerateNewUserSessionFromUser(user, meetingSession.Id, connectionId);
+                
+                meetingSession.AddUserSession(_mapper.Map<UserSessionDto>(userSession));
+                
                 await _repository.AddAsync(userSession, cancellationToken).ConfigureAwait(false);
+            }
+            else
+            {
+                userSession.ConnectionId = connectionId;
+
+                meetingSession.UpdateUserSession(_mapper.Map<UserSessionDto>(userSession));
+                
+                await _repository.UpdateAsync(userSession, cancellationToken).ConfigureAwait(false);
             }
         }
         
@@ -161,6 +138,36 @@ namespace SugarTalk.Core.Services.Meetings
                 .GetUserSessionByConnectionId(connectionId, cancellationToken).ConfigureAwait(false);
 
             await _repository.RemoveAsync(userSession, cancellationToken).ConfigureAwait(false);
+        }
+        
+        public async Task<MeetingSession> GenerateNewMeetingSession(Meeting meeting,
+            CancellationToken cancellationToken)
+        {
+            var pipeline = await _client.CreateAsync(new MediaPipeline());
+            
+            var meetingSession = new MeetingSession
+            {
+                PipelineId = pipeline.id,
+                MeetingId = meeting.Id,
+                MeetingType = meeting.MeetingType,
+                MeetingNumber = meeting.MeetingNumber
+            };
+
+            await _repository.AddAsync(meetingSession, cancellationToken).ConfigureAwait(false);
+
+            return meetingSession;
+        }
+        
+        private UserSession GenerateNewUserSessionFromUser(User user, Guid meetingSessionId, string connectionId)
+        {
+            return new()
+            {
+                UserId = user.Id,
+                UserName = user.DisplayName,
+                UserPicture = user.Picture,
+                MeetingSessionId = meetingSessionId,
+                ConnectionId = connectionId
+            };
         }
     }
 }

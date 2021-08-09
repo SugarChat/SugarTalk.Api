@@ -38,29 +38,16 @@ namespace SugarTalk.Core.Hubs
 
         public override async Task OnConnectedAsync()
         {
-            var response = await _userService.SignInFromThirdParty(new SignInFromThirdPartyRequest(), default)
+            var user = await _userService.GetCurrentLoggedInUser().ConfigureAwait(false);
+            
+            var meetingSession = await _meetingSessionDataProvider.GetMeetingSession(MeetingNumber)
+                .ConfigureAwait(false);
+
+            await _meetingSessionService.ConnectUserToMeetingSession(user, meetingSession, Context.ConnectionId)
                 .ConfigureAwait(false);
             
-            var user = response.Data;
-            var displayName = string.IsNullOrEmpty(UserName) ? user.DisplayName : UserName;
-
-            var meetingSession = await _meetingSessionDataProvider.GetMeetingSession(MeetingNumber, false)
-                .ConfigureAwait(false);
-            
-            await _meetingSessionService.AddUserSession(new UserSession
-            {
-                UserId = user.Id,
-                UserName = displayName,
-                UserPicture = user.Picture,
-                ConnectionId = Context.ConnectionId,
-                MeetingSessionId = meetingSession.Id
-            }).ConfigureAwait(false);
-
-            var allUserSessions = await _meetingSessionDataProvider
-                .GetUserSessions(meetingSession.Id).ConfigureAwait(false);
-            
-            var userSession = allUserSessions.SingleOrDefault(x => x.ConnectionId == Context.ConnectionId);
-            var otherUserSessions = allUserSessions.Where(x => x.ConnectionId != Context.ConnectionId).ToList();
+            var userSession = meetingSession.AllUserSessions.SingleOrDefault(x => x.ConnectionId == Context.ConnectionId);
+            var otherUserSessions = meetingSession.AllUserSessions.Where(x => x.ConnectionId != Context.ConnectionId).ToList();
             
             await Groups.AddToGroupAsync(Context.ConnectionId, MeetingNumber).ConfigureAwait(false);
             

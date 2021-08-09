@@ -71,21 +71,19 @@ namespace SugarTalk.Core.Services.Meetings
             if (user == null)
                 throw new UnauthorizedAccessException();
 
-            var meeting = await _meetingDataProvider
-                .GetMeetingByNumber(joinMeetingCommand.MeetingNumber, cancellationToken).ConfigureAwait(false);
+            var meetingSession = await _meetingSessionDataProvider
+                .GetMeetingSession(joinMeetingCommand.MeetingNumber, cancellationToken: cancellationToken)
+                .ConfigureAwait(false);
 
-            if (meeting == null)
+            if (meetingSession == null)
                 throw new MeetingNotFoundException();
 
-            var newUserSession = _meetingSessionService.GenerateNewUserSessionFromUser(user);
-
-            await _meetingSessionService.AddUserSessionToMeeting(newUserSession, meeting, cancellationToken)
+            await _meetingSessionService.ConnectUserToMeetingSession(user, meetingSession, null, cancellationToken)
                 .ConfigureAwait(false);
 
             return new SugarTalkResponse<MeetingSessionDto>
             {
-                Data = await _meetingSessionDataProvider
-                    .GetMeetingSession(meeting.MeetingNumber, cancellationToken: cancellationToken).ConfigureAwait(false)
+                Data = meetingSession
             };
         }
         

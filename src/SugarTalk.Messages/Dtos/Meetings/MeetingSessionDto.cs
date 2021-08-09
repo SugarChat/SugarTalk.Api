@@ -31,5 +31,18 @@ namespace SugarTalk.Messages.Dtos.Meetings
         public List<UserSessionDto> AllUserSessions { get; set; }
 
         public ConcurrentDictionary<string, UserSessionDto> UserSessions { get; set; }
+
+        public void AddUserSession(UserSessionDto userSession)
+        {
+            AllUserSessions.Add(userSession);
+        }
+
+        public void UpdateUserSession(UserSessionDto userSession)
+        {
+            var index = AllUserSessions.FindIndex(x => x.Id == userSession.Id);
+
+            if (index > -1)
+                AllUserSessions[index] = userSession;
+        }
     }
 }
