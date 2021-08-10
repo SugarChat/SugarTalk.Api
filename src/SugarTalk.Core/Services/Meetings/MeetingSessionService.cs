@@ -89,6 +89,7 @@ namespace SugarTalk.Core.Services.Meetings
         {
             var userSession = meetingSession.AllUserSessions
                 .Where(x => x.UserId == user.Id)
+                .OrderByDescending(x => x.CreatedDate)
                 .Select(x => _mapper.Map<UserSession>(x))
                 .FirstOrDefault();
 
@@ -96,17 +97,17 @@ namespace SugarTalk.Core.Services.Meetings
             {
                 userSession = GenerateNewUserSessionFromUser(user, meetingSession.Id, connectionId);
                 
-                meetingSession.AddUserSession(_mapper.Map<UserSessionDto>(userSession));
-                
                 await _repository.AddAsync(userSession, cancellationToken).ConfigureAwait(false);
+                
+                meetingSession.AddUserSession(_mapper.Map<UserSessionDto>(userSession));
             }
             else
             {
                 userSession.ConnectionId = connectionId;
-
-                meetingSession.UpdateUserSession(_mapper.Map<UserSessionDto>(userSession));
                 
                 await _repository.UpdateAsync(userSession, cancellationToken).ConfigureAwait(false);
+                
+                meetingSession.UpdateUserSession(_mapper.Map<UserSessionDto>(userSession));
             }
         }
         

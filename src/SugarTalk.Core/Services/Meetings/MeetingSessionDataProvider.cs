@@ -65,7 +65,10 @@ namespace SugarTalk.Core.Services.Meetings
                 meetingSession.AllUserSessions =
                     await GetUserSessions(meetingSession.Id, cancellationToken).ConfigureAwait(false);
                 meetingSession.AllUserSessions.ForEach(userSession =>
-                    meetingSession.UserSessions.TryAdd(userSession.ConnectionId, userSession));
+                    meetingSession.UserSessions.TryAdd(
+                        !string.IsNullOrEmpty(userSession.ConnectionId)
+                            ? userSession.ConnectionId
+                            : userSession.Id.ToString(), userSession));
             }
             
             return meetingSession;
