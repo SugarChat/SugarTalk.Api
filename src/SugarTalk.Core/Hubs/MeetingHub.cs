@@ -10,7 +10,6 @@ using SugarTalk.Core.Entities;
 using SugarTalk.Core.Services.Meetings;
 using SugarTalk.Core.Services.Users;
 using SugarTalk.Messages.Dtos.Meetings;
-using SugarTalk.Messages.Requests.Users;
 
 namespace SugarTalk.Core.Hubs
 {
@@ -53,7 +52,6 @@ namespace SugarTalk.Core.Hubs
             
             Clients.Caller.SetLocalUser(userSession);
             Clients.Caller.SetOtherUsers(otherUserSessions);
-            
         }
         
         public override async Task OnDisconnectedAsync(Exception exception)
@@ -69,8 +67,9 @@ namespace SugarTalk.Core.Hubs
         {
             var meetingSession = await _meetingSessionDataProvider.GetMeetingSession(MeetingNumber)
                 .ConfigureAwait(false);
-            
-            var userSession = meetingSession.AllUserSessions.SingleOrDefault(x => x.ConnectionId == Context.ConnectionId);
+
+            var userSession =
+                meetingSession.AllUserSessions.SingleOrDefault(x => x.ConnectionId == Context.ConnectionId);
             
             Clients.OthersInGroup(MeetingNumber).OtherJoined(userSession);
         }
