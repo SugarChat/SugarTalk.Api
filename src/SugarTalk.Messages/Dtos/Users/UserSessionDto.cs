@@ -33,6 +33,9 @@ namespace SugarTalk.Messages.Dtos.Users
         [JsonProperty("picture")]
         public string UserPicture { get; set; }
         
+        [JsonProperty("isMuted")]
+        public bool IsMuted { get; set; }
+        
         [JsonProperty("isSharingScreen")]
         public bool IsSharingScreen { get; set; }
         

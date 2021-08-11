@@ -22,7 +22,7 @@ namespace SugarTalk.Core.Services.Meetings
             CancellationToken cancellationToken = default);
 
         Task ConnectUserToMeetingSession(User user, MeetingSessionDto meetingSession, string connectionId,
-            CancellationToken cancellationToken = default);
+            bool? isMuted = null, CancellationToken cancellationToken = default);
         
         Task UpdateMeetingSession(MeetingSession meetingSession,
             CancellationToken cancellationToken = default);
@@ -85,7 +85,7 @@ namespace SugarTalk.Core.Services.Meetings
         }
 
         public async Task ConnectUserToMeetingSession(User user, MeetingSessionDto meetingSession, string connectionId, 
-            CancellationToken cancellationToken = default)
+            bool? isMuted = null, CancellationToken cancellationToken = default)
         {
             var userSession = meetingSession.AllUserSessions
                 .Where(x => x.UserId == user.Id)
@@ -95,7 +95,7 @@ namespace SugarTalk.Core.Services.Meetings
 
             if (userSession == null)
             {
-                userSession = GenerateNewUserSessionFromUser(user, meetingSession.Id, connectionId);
+                userSession = GenerateNewUserSessionFromUser(user, meetingSession.Id, connectionId, isMuted ?? false);
                 
                 await _repository.AddAsync(userSession, cancellationToken).ConfigureAwait(false);
                 
@@ -103,6 +103,9 @@ namespace SugarTalk.Core.Services.Meetings
             }
             else
             {
+                if (isMuted.HasValue)
+                    userSession.IsMuted = isMuted.Value;
+                
                 userSession.ConnectionId = connectionId;
                 
                 await _repository.UpdateAsync(userSession, cancellationToken).ConfigureAwait(false);
@@ -159,7 +162,7 @@ namespace SugarTalk.Core.Services.Meetings
             return meetingSession;
         }
         
-        private UserSession GenerateNewUserSessionFromUser(User user, Guid meetingSessionId, string connectionId)
+        private UserSession GenerateNewUserSessionFromUser(User user, Guid meetingSessionId, string connectionId, bool isMuted)
         {
             return new()
             {
@@ -167,7 +170,8 @@ namespace SugarTalk.Core.Services.Meetings
                 UserName = user.DisplayName,
                 UserPicture = user.Picture,
                 MeetingSessionId = meetingSessionId,
-                ConnectionId = connectionId
+                ConnectionId = connectionId,
+                IsMuted = isMuted
             };
         }
     }
