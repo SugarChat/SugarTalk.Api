@@ -15,6 +15,9 @@ namespace SugarTalk.Messages.Dtos.Users
         [JsonProperty("id")]
         public Guid Id { set; get; }
         
+        [JsonProperty("createdDate")]
+        public DateTimeOffset CreatedDate { get; set; }
+        
         [JsonProperty("meetingSessionId")]
         public Guid MeetingSessionId { get; set; }
         

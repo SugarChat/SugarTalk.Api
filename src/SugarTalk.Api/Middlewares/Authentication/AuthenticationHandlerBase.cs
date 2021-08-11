@@ -24,7 +24,7 @@ namespace SugarTalk.Api.Middlewares.Authentication
         
         protected IEnumerable<Claim> GetClaims(Payload payload)
         {
-            var name = payload.Name;
+            var name = payload.Name ?? "";
             var email = payload.Email ?? "";
             var picture = payload.Picture ?? "";
             var thirdPartyId = payload.Subject;

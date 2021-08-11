@@ -7,10 +7,13 @@ namespace SugarTalk.Core.Entities
     {
         public UserSession()
         {
+            CreatedDate = DateTimeOffset.Now;
             ReceivedEndPointIds = new ConcurrentDictionary<string, string>();
         }
         
         public Guid Id { set; get; }
+        
+        public DateTimeOffset CreatedDate { get; set; }
         
         public Guid MeetingSessionId { get; set; }
         
