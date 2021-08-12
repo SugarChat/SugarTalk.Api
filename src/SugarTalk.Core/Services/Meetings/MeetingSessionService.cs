@@ -61,7 +61,7 @@ namespace SugarTalk.Core.Services.Meetings
 
             if (meetingSession != null && 
                 meetingSession.UserSessions.Any() &&
-                meetingSession.UserSessions.All(x => x.Value.UserId != user.Id))
+                meetingSession.UserSessions.All(x => x.UserId != user.Id))
                 throw new UnauthorizedAccessException();
 
             return new SugarTalkResponse<MeetingSessionDto>
@@ -78,7 +78,7 @@ namespace SugarTalk.Core.Services.Meetings
         public async Task ConnectUserToMeetingSession(User user, MeetingSessionDto meetingSession, string connectionId, 
             bool? isMuted = null, CancellationToken cancellationToken = default)
         {
-            var userSession = meetingSession.AllUserSessions
+            var userSession = meetingSession.UserSessions
                 .Where(x => x.UserId == user.Id)
                 .OrderByDescending(x => x.CreatedDate)
                 .Select(x => _mapper.Map<UserSession>(x))

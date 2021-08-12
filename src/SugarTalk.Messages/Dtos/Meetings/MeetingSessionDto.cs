@@ -12,8 +12,7 @@ namespace SugarTalk.Messages.Dtos.Meetings
     {
         public MeetingSessionDto()
         {
-            AllUserSessions = new List<UserSessionDto>();
-            UserSessions = new ConcurrentDictionary<string, UserSessionDto>();
+            UserSessions = new List<UserSessionDto>();
         }
         
         public Guid Id { get; set; }
@@ -28,21 +27,19 @@ namespace SugarTalk.Messages.Dtos.Meetings
         
         public MediaPipeline Pipeline { get; set; }
         
-        public List<UserSessionDto> AllUserSessions { get; set; }
-
-        public ConcurrentDictionary<string, UserSessionDto> UserSessions { get; set; }
+        public List<UserSessionDto> UserSessions { get; set; }
 
         public void AddUserSession(UserSessionDto userSession)
         {
-            AllUserSessions.Add(userSession);
+            UserSessions.Add(userSession);
         }
 
         public void UpdateUserSession(UserSessionDto userSession)
         {
-            var index = AllUserSessions.FindIndex(x => x.Id == userSession.Id);
+            var index = UserSessions.FindIndex(x => x.Id == userSession.Id);
 
             if (index > -1)
-                AllUserSessions[index] = userSession;
+                UserSessions[index] = userSession;
         }
     }
 }
