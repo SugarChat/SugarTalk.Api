@@ -1,6 +1,4 @@
 using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -22,18 +20,11 @@ namespace SugarTalk.Core.Services.Meetings
             CancellationToken cancellationToken = default);
 
         Task ConnectUserToMeetingSession(User user, MeetingSessionDto meetingSession, string connectionId,
-            CancellationToken cancellationToken = default);
+            bool? isMuted = null, CancellationToken cancellationToken = default);
         
         Task UpdateMeetingSession(MeetingSession meetingSession,
             CancellationToken cancellationToken = default);
 
-        Task UpdateUserSession(UserSession userSession, CancellationToken cancellationToken = default);
-        
-        Task UpdateUserSessionEndpoints(Guid userSessionId, WebRtcEndpoint endpoint,
-            ConcurrentDictionary<string, WebRtcEndpoint> receivedEndPoints, CancellationToken cancellationToken = default);
-        
-        Task RemoveUserSession(string connectionId, CancellationToken cancellationToken = default);
-        
         Task<MeetingSession> GenerateNewMeetingSession(Meeting meeting,
             CancellationToken cancellationToken);
     }
@@ -85,7 +76,7 @@ namespace SugarTalk.Core.Services.Meetings
         }
 
         public async Task ConnectUserToMeetingSession(User user, MeetingSessionDto meetingSession, string connectionId, 
-            CancellationToken cancellationToken = default)
+            bool? isMuted = null, CancellationToken cancellationToken = default)
         {
             var userSession = meetingSession.AllUserSessions
                 .Where(x => x.UserId == user.Id)
@@ -95,7 +86,7 @@ namespace SugarTalk.Core.Services.Meetings
 
             if (userSession == null)
             {
-                userSession = GenerateNewUserSessionFromUser(user, meetingSession.Id, connectionId);
+                userSession = GenerateNewUserSessionFromUser(user, meetingSession.Id, connectionId, isMuted ?? false);
                 
                 await _repository.AddAsync(userSession, cancellationToken).ConfigureAwait(false);
                 
@@ -103,42 +94,15 @@ namespace SugarTalk.Core.Services.Meetings
             }
             else
             {
+                if (isMuted.HasValue)
+                    userSession.IsMuted = isMuted.Value;
+                
                 userSession.ConnectionId = connectionId;
                 
                 await _repository.UpdateAsync(userSession, cancellationToken).ConfigureAwait(false);
                 
                 meetingSession.UpdateUserSession(_mapper.Map<UserSessionDto>(userSession));
             }
-        }
-        
-        public async Task UpdateUserSession(UserSession userSession, CancellationToken cancellationToken = default)
-        {
-            await _repository.UpdateAsync(userSession, cancellationToken).ConfigureAwait(false);
-        }
-
-        public async Task UpdateUserSessionEndpoints(Guid userSessionId, WebRtcEndpoint endpoint,
-            ConcurrentDictionary<string, WebRtcEndpoint> receivedEndPoints, CancellationToken cancellationToken = default)
-        {
-            var userSession = await _meetingSessionDataProvider.GetUserSessionById(userSessionId, cancellationToken)
-                .ConfigureAwait(false);
-            
-            if (userSession == null) return;
-
-            if (endpoint != null)
-                userSession.WebRtcEndpointId = endpoint.id;
-            if (receivedEndPoints != null && receivedEndPoints.Any())
-                foreach (var (key, value) in receivedEndPoints)
-                    userSession.ReceivedEndPointIds.TryAdd(key, value.id);
-            
-            await _repository.UpdateAsync(userSession, cancellationToken).ConfigureAwait(false);
-        }
-        
-        public async Task RemoveUserSession(string connectionId, CancellationToken cancellationToken = default)
-        {
-            var userSession = await _meetingSessionDataProvider
-                .GetUserSessionByConnectionId(connectionId, cancellationToken).ConfigureAwait(false);
-
-            await _repository.RemoveAsync(userSession, cancellationToken).ConfigureAwait(false);
         }
         
         public async Task<MeetingSession> GenerateNewMeetingSession(Meeting meeting,
@@ -159,7 +123,7 @@ namespace SugarTalk.Core.Services.Meetings
             return meetingSession;
         }
         
-        private UserSession GenerateNewUserSessionFromUser(User user, Guid meetingSessionId, string connectionId)
+        private UserSession GenerateNewUserSessionFromUser(User user, Guid meetingSessionId, string connectionId, bool isMuted)
         {
             return new()
             {
@@ -167,7 +131,8 @@ namespace SugarTalk.Core.Services.Meetings
                 UserName = user.DisplayName,
                 UserPicture = user.Picture,
                 MeetingSessionId = meetingSessionId,
-                ConnectionId = connectionId
+                ConnectionId = connectionId,
+                IsMuted = isMuted
             };
         }
     }

@@ -81,6 +81,8 @@ namespace SugarTalk.Core
             services.AddScoped<IMeetingSessionService, MeetingSessionService>();
             services.AddScoped<IMeetingService, MeetingService>();
 
+            services.AddScoped<IUserSessionDataProvider, UserSessionDataProvider>();
+            services.AddScoped<IUserSessionService, UserSessionService>();
             services.AddScoped<IUserDataProvider, UserDataProvider>();
             services.AddScoped<IUserService, UserService>();
 

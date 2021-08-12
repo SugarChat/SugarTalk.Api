@@ -25,6 +25,8 @@ namespace SugarTalk.Core.Entities
         
         public string UserPicture { get; set; }
         
+        public bool IsMuted { get; set; }
+        
         public bool IsSharingScreen { get; set; }
         
         public bool IsSharingCamera { get; set; }

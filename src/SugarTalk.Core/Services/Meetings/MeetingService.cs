@@ -9,6 +9,7 @@ using SugarTalk.Core.Services.Exceptions;
 using SugarTalk.Core.Services.Users;
 using SugarTalk.Messages;
 using SugarTalk.Messages.Commands;
+using SugarTalk.Messages.Commands.Meetings;
 using SugarTalk.Messages.Dtos.Meetings;
 using SugarTalk.Messages.Requests.Meetings;
 
@@ -78,7 +79,7 @@ namespace SugarTalk.Core.Services.Meetings
             if (meetingSession == null)
                 throw new MeetingNotFoundException();
 
-            await _meetingSessionService.ConnectUserToMeetingSession(user, meetingSession, null, cancellationToken)
+            await _meetingSessionService.ConnectUserToMeetingSession(user, meetingSession, null, joinMeetingCommand.IsMuted, cancellationToken)
                 .ConfigureAwait(false);
 
             return new SugarTalkResponse<MeetingSessionDto>
