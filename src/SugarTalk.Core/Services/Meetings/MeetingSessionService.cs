@@ -1,6 +1,4 @@
 using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -27,13 +25,6 @@ namespace SugarTalk.Core.Services.Meetings
         Task UpdateMeetingSession(MeetingSession meetingSession,
             CancellationToken cancellationToken = default);
 
-        Task UpdateUserSession(UserSession userSession, CancellationToken cancellationToken = default);
-        
-        Task UpdateUserSessionEndpoints(Guid userSessionId, WebRtcEndpoint endpoint,
-            ConcurrentDictionary<string, WebRtcEndpoint> receivedEndPoints, CancellationToken cancellationToken = default);
-        
-        Task RemoveUserSession(string connectionId, CancellationToken cancellationToken = default);
-        
         Task<MeetingSession> GenerateNewMeetingSession(Meeting meeting,
             CancellationToken cancellationToken);
     }
@@ -112,36 +103,6 @@ namespace SugarTalk.Core.Services.Meetings
                 
                 meetingSession.UpdateUserSession(_mapper.Map<UserSessionDto>(userSession));
             }
-        }
-        
-        public async Task UpdateUserSession(UserSession userSession, CancellationToken cancellationToken = default)
-        {
-            await _repository.UpdateAsync(userSession, cancellationToken).ConfigureAwait(false);
-        }
-
-        public async Task UpdateUserSessionEndpoints(Guid userSessionId, WebRtcEndpoint endpoint,
-            ConcurrentDictionary<string, WebRtcEndpoint> receivedEndPoints, CancellationToken cancellationToken = default)
-        {
-            var userSession = await _meetingSessionDataProvider.GetUserSessionById(userSessionId, cancellationToken)
-                .ConfigureAwait(false);
-            
-            if (userSession == null) return;
-
-            if (endpoint != null)
-                userSession.WebRtcEndpointId = endpoint.id;
-            if (receivedEndPoints != null && receivedEndPoints.Any())
-                foreach (var (key, value) in receivedEndPoints)
-                    userSession.ReceivedEndPointIds.TryAdd(key, value.id);
-            
-            await _repository.UpdateAsync(userSession, cancellationToken).ConfigureAwait(false);
-        }
-        
-        public async Task RemoveUserSession(string connectionId, CancellationToken cancellationToken = default)
-        {
-            var userSession = await _meetingSessionDataProvider
-                .GetUserSessionByConnectionId(connectionId, cancellationToken).ConfigureAwait(false);
-
-            await _repository.RemoveAsync(userSession, cancellationToken).ConfigureAwait(false);
         }
         
         public async Task<MeetingSession> GenerateNewMeetingSession(Meeting meeting,

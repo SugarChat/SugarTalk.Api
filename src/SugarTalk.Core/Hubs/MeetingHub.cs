@@ -22,15 +22,17 @@ namespace SugarTalk.Core.Hubs
         private readonly IMapper _mapper;
         private readonly KurentoClient _kurento;
         private readonly IUserService _userService;
+        private readonly IUserSessionService _userSessionService;
         private readonly IMeetingSessionService _meetingSessionService;
         private readonly IMeetingSessionDataProvider _meetingSessionDataProvider;
 
         public MeetingHub(IMapper mapper, KurentoClient kurento, IUserService userService,
-            IMeetingSessionService meetingSessionService, IMeetingSessionDataProvider meetingSessionDataProvider)
+            IUserSessionService userSessionService, IMeetingSessionService meetingSessionService, IMeetingSessionDataProvider meetingSessionDataProvider)
         {
             _mapper = mapper;
             _kurento = kurento;
             _userService = userService;
+            _userSessionService = userSessionService;
             _meetingSessionService = meetingSessionService;
             _meetingSessionDataProvider = meetingSessionDataProvider;
         }
@@ -56,7 +58,7 @@ namespace SugarTalk.Core.Hubs
         
         public override async Task OnDisconnectedAsync(Exception exception)
         {
-            await _meetingSessionService.RemoveUserSession(Context.ConnectionId).ConfigureAwait(false);
+            await _userSessionService.RemoveUserSession(Context.ConnectionId).ConfigureAwait(false);
             
             Clients.OthersInGroup(MeetingNumber).OtherLeft(Context.ConnectionId);
             
@@ -97,7 +99,7 @@ namespace SugarTalk.Core.Hubs
                 userSession.IsSharingCamera = isSharingCamera;
                 userSession.IsSharingScreen = isSharingScreen;
 
-                await _meetingSessionService.UpdateUserSession(_mapper.Map<UserSession>(userSession))
+                await _userSessionService.UpdateUserSession(_mapper.Map<UserSession>(userSession))
                     .ConfigureAwait(false);
             }
 
@@ -128,7 +130,7 @@ namespace SugarTalk.Core.Hubs
                 {
                     selfSession.SendEndPoint =
                         await CreateEndPoint(connectionId, meetingSession.Pipeline).ConfigureAwait(false);
-                    await _meetingSessionService
+                    await _userSessionService
                         .UpdateUserSessionEndpoints(selfSession.Id, selfSession.SendEndPoint, selfSession.ReceivedEndPoints).ConfigureAwait(false);
                 }
 
@@ -148,11 +150,11 @@ namespace SugarTalk.Core.Hubs
                 otherEndPoint = await CreateEndPoint(connectionId, meetingSession.Pipeline).ConfigureAwait(false);
                 selfSession.ReceivedEndPoints.TryAdd(connectionId, otherEndPoint);
                 await otherSession.SendEndPoint.ConnectAsync(otherEndPoint).ConfigureAwait(false);
-                await _meetingSessionService
+                await _userSessionService
                     .UpdateUserSessionEndpoints(selfSession.Id, selfSession.SendEndPoint, selfSession.ReceivedEndPoints).ConfigureAwait(false);
             }
             
-            await _meetingSessionService
+            await _userSessionService
                 .UpdateUserSessionEndpoints(otherSession.Id, otherSession.SendEndPoint, otherSession.ReceivedEndPoints).ConfigureAwait(false);
             
             return otherEndPoint;

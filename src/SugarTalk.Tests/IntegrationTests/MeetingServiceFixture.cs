@@ -5,6 +5,7 @@ using Shouldly;
 using SugarTalk.Core.Entities;
 using SugarTalk.Messages;
 using SugarTalk.Messages.Commands;
+using SugarTalk.Messages.Commands.Meetings;
 using SugarTalk.Messages.Dtos.Meetings;
 using SugarTalk.Messages.Enums;
 using SugarTalk.Messages.Requests.Meetings;
