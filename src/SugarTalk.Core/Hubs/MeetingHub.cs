@@ -47,8 +47,8 @@ namespace SugarTalk.Core.Hubs
             await _meetingSessionService.ConnectUserToMeetingSession(user, meetingSession, Context.ConnectionId)
                 .ConfigureAwait(false);
             
-            var userSession = meetingSession.AllUserSessions.SingleOrDefault(x => x.ConnectionId == Context.ConnectionId);
-            var otherUserSessions = meetingSession.AllUserSessions.Where(x => x.ConnectionId != Context.ConnectionId).ToList();
+            var userSession = meetingSession.UserSessions.SingleOrDefault(x => x.ConnectionId == Context.ConnectionId);
+            var otherUserSessions = meetingSession.UserSessions.Where(x => x.ConnectionId != Context.ConnectionId).ToList();
             
             await Groups.AddToGroupAsync(Context.ConnectionId, MeetingNumber).ConfigureAwait(false);
             
@@ -71,7 +71,7 @@ namespace SugarTalk.Core.Hubs
                 .ConfigureAwait(false);
 
             var userSession =
-                meetingSession.AllUserSessions.SingleOrDefault(x => x.ConnectionId == Context.ConnectionId);
+                meetingSession.UserSessions.SingleOrDefault(x => x.ConnectionId == Context.ConnectionId);
             
             Clients.OthersInGroup(MeetingNumber).OtherJoined(userSession);
         }
@@ -92,7 +92,7 @@ namespace SugarTalk.Core.Hubs
             var meetingSession = await _meetingSessionDataProvider.GetMeetingSession(MeetingNumber)
                 .ConfigureAwait(false);
 
-            meetingSession.UserSessions.TryGetValue(connectionId, out var userSession);
+            var userSession = meetingSession.UserSessions.SingleOrDefault(x => x.ConnectionId == connectionId);
 
             if (userSession != null)
             {
@@ -119,7 +119,7 @@ namespace SugarTalk.Core.Hubs
         private async Task<WebRtcEndpoint> CreateOrUpdateEndpointAsync(string connectionId,
             MeetingSessionDto meetingSession, bool shouldRecreateSendEndPoint)
         {
-            meetingSession.UserSessions.TryGetValue(Context.ConnectionId, out var selfSession);
+            var selfSession = meetingSession.UserSessions.SingleOrDefault(x => x.ConnectionId == connectionId);
 
             if (selfSession == null) return default;
 
@@ -137,7 +137,7 @@ namespace SugarTalk.Core.Hubs
                 return selfSession.SendEndPoint;
             }
 
-            meetingSession.UserSessions.TryGetValue(connectionId, out var otherSession);
+            var otherSession = meetingSession.UserSessions.SingleOrDefault(x => x.ConnectionId == connectionId);
             
             if (otherSession == null) return default;
             
