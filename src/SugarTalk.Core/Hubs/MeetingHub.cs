@@ -92,7 +92,7 @@ namespace SugarTalk.Core.Hubs
             var meetingSession = await _meetingSessionDataProvider.GetMeetingSession(MeetingNumber)
                 .ConfigureAwait(false);
 
-            var userSession = meetingSession.UserSessions.SingleOrDefault(x => x.ConnectionId == connectionId);
+            var userSession = meetingSession.UserSessions.SingleOrDefault(x => x.ConnectionId == Context.ConnectionId);
 
             if (userSession != null)
             {
