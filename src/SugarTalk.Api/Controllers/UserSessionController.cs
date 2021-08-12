@@ -2,7 +2,9 @@ using System.Threading.Tasks;
 using Mediator.Net;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using SugarTalk.Messages;
 using SugarTalk.Messages.Commands.UserSessions;
+using SugarTalk.Messages.Dtos.Users;
 
 namespace SugarTalk.Api.Controllers
 {
@@ -19,11 +21,9 @@ namespace SugarTalk.Api.Controllers
         }
         
         [Route("changeAudio"), HttpPost]
-        public async Task<IActionResult> ChangeAudio(ChangeAudioCommand changeAudioCommand)
+        public async Task<SugarTalkResponse<UserSessionDto>> ChangeAudio(ChangeAudioCommand changeAudioCommand)
         {
-            await _mediator.SendAsync(changeAudioCommand);
-
-            return Ok();
+            return await _mediator.SendAsync<ChangeAudioCommand, SugarTalkResponse<UserSessionDto>>(changeAudioCommand);
         }
     }
 }
