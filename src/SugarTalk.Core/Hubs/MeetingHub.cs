@@ -90,7 +90,7 @@ namespace SugarTalk.Core.Hubs
             await endPoint.AddIceCandidateAsync(candidate);
         }
         
-        public async Task ProcessOfferAsync(string connectionId, string offerSdp, bool isNew, bool isSharingCamera, bool isSharingScreen, string peerConnectionId)
+        public async Task ProcessOfferAsync(string connectionId, string offerSdp, bool isSharingCamera, bool isSharingScreen, string peerConnectionId)
         {
             var meetingSession = await _meetingSessionDataProvider.GetMeetingSession(MeetingNumber)
                 .ConfigureAwait(false);
@@ -112,9 +112,6 @@ namespace SugarTalk.Core.Hubs
             var answerSdp = await endPoint.ProcessOfferAsync(offerSdp).ConfigureAwait(false);
 
             Clients.Caller.ProcessAnswer(connectionId, answerSdp, isSharingCamera, isSharingScreen, peerConnectionId);
-            
-            if (isNew)
-                Clients.OthersInGroup(MeetingNumber).NewOfferCreated(connectionId, offerSdp, isSharingCamera, isSharingScreen);
             
             await endPoint.GatherCandidatesAsync().ConfigureAwait(false);
         }
