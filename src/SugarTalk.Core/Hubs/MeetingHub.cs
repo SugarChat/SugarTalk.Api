@@ -65,7 +65,7 @@ namespace SugarTalk.Core.Hubs
             await base.OnDisconnectedAsync(exception).ConfigureAwait(false);
         }
 
-        public async Task OnNewUserFinishedSetup()
+        public async Task OnLocalUserConnectionCreated(bool isRecreated)
         {
             var meetingSession = await _meetingSessionDataProvider.GetMeetingSession(MeetingNumber)
                 .ConfigureAwait(false);
@@ -73,26 +73,29 @@ namespace SugarTalk.Core.Hubs
             var userSession =
                 meetingSession.UserSessions.SingleOrDefault(x => x.ConnectionId == Context.ConnectionId);
             
-            Clients.OthersInGroup(MeetingNumber).OtherJoined(userSession);
+            if (isRecreated)
+                Clients.OthersInGroup(MeetingNumber).OtherConnectionRecreated(userSession);
+            else
+                Clients.OthersInGroup(MeetingNumber).OtherJoined(userSession);
         }
 
-        public async Task ProcessCandidateAsync(string connectionId, IceCandidate candidate)
+        public async Task ProcessCandidateAsync(string connectionId, string peerConnectionId, IceCandidate candidate)
         {
             var meetingSession = await _meetingSessionDataProvider.GetMeetingSession(MeetingNumber)
                 .ConfigureAwait(false);
             
-            var endPoint = await CreateOrUpdateEndpointAsync(connectionId, meetingSession, false)
+            var endPoint = await CreateOrUpdateEndpointAsync(connectionId, peerConnectionId, meetingSession, false)
                 .ConfigureAwait(false);
 
             await endPoint.AddIceCandidateAsync(candidate);
         }
         
-        public async Task ProcessOfferAsync(string connectionId, string offerSdp, bool isNew, bool isSharingCamera, bool isSharingScreen)
+        public async Task ProcessOfferAsync(string connectionId, string offerSdp, bool isNew, bool isSharingCamera, bool isSharingScreen, string peerConnectionId)
         {
             var meetingSession = await _meetingSessionDataProvider.GetMeetingSession(MeetingNumber)
                 .ConfigureAwait(false);
 
-            var userSession = meetingSession.UserSessions.SingleOrDefault(x => x.ConnectionId == Context.ConnectionId);
+            var userSession = meetingSession.UserSessions.SingleOrDefault(x => x.ConnectionId == connectionId);
 
             if (userSession != null)
             {
@@ -103,12 +106,12 @@ namespace SugarTalk.Core.Hubs
                     .ConfigureAwait(false);
             }
 
-            var endPoint = await CreateOrUpdateEndpointAsync(connectionId, meetingSession, true)
+            var endPoint = await CreateOrUpdateEndpointAsync(connectionId, peerConnectionId, meetingSession, true)
                 .ConfigureAwait(false);
 
             var answerSdp = await endPoint.ProcessOfferAsync(offerSdp).ConfigureAwait(false);
 
-            Clients.Caller.ProcessAnswer(connectionId, answerSdp, isSharingCamera, isSharingScreen);
+            Clients.Caller.ProcessAnswer(connectionId, answerSdp, isSharingCamera, isSharingScreen, peerConnectionId);
             
             if (isNew)
                 Clients.OthersInGroup(MeetingNumber).NewOfferCreated(connectionId, offerSdp, isSharingCamera, isSharingScreen);
@@ -117,9 +120,9 @@ namespace SugarTalk.Core.Hubs
         }
         
         private async Task<WebRtcEndpoint> CreateOrUpdateEndpointAsync(string connectionId,
-            MeetingSessionDto meetingSession, bool shouldRecreateSendEndPoint)
+            string peerConnectionId, MeetingSessionDto meetingSession, bool shouldRecreateSendEndPoint)
         {
-            var selfSession = meetingSession.UserSessions.SingleOrDefault(x => x.ConnectionId == connectionId);
+            var selfSession = meetingSession.UserSessions.SingleOrDefault(x => x.ConnectionId == Context.ConnectionId);
 
             if (selfSession == null) return default;
 
@@ -129,7 +132,7 @@ namespace SugarTalk.Core.Hubs
                     selfSession.SendEndPoint != null && shouldRecreateSendEndPoint)
                 {
                     selfSession.SendEndPoint =
-                        await CreateEndPoint(connectionId, meetingSession.Pipeline).ConfigureAwait(false);
+                        await CreateEndPoint(connectionId, peerConnectionId, meetingSession.Pipeline).ConfigureAwait(false);
                     await _userSessionService
                         .UpdateUserSessionEndpoints(selfSession.Id, selfSession.SendEndPoint, selfSession.ReceivedEndPoints).ConfigureAwait(false);
                 }
@@ -141,13 +144,13 @@ namespace SugarTalk.Core.Hubs
             
             if (otherSession == null) return default;
             
-            otherSession.SendEndPoint ??= await CreateEndPoint(connectionId, meetingSession.Pipeline).ConfigureAwait(false);
+            otherSession.SendEndPoint ??= await CreateEndPoint(connectionId, peerConnectionId, meetingSession.Pipeline).ConfigureAwait(false);
 
             selfSession.ReceivedEndPoints.TryGetValue(connectionId, out var otherEndPoint);
 
             if (otherEndPoint == null || shouldRecreateSendEndPoint)
             {
-                otherEndPoint = await CreateEndPoint(connectionId, meetingSession.Pipeline).ConfigureAwait(false);
+                otherEndPoint = await CreateEndPoint(connectionId, peerConnectionId, meetingSession.Pipeline).ConfigureAwait(false);
                 selfSession.ReceivedEndPoints.TryAdd(connectionId, otherEndPoint);
                 await otherSession.SendEndPoint.ConnectAsync(otherEndPoint).ConfigureAwait(false);
                 await _userSessionService
@@ -160,13 +163,13 @@ namespace SugarTalk.Core.Hubs
             return otherEndPoint;
         }
         
-        private async Task<WebRtcEndpoint> CreateEndPoint(string connectionId, MediaPipeline pipeline)
+        private async Task<WebRtcEndpoint> CreateEndPoint(string connectionId, string peerConnectionId, MediaPipeline pipeline)
         {
             var endPoint = await _kurento.CreateAsync(new WebRtcEndpoint(pipeline)).ConfigureAwait(false);
             
             endPoint.OnIceCandidate += arg =>
             {
-                Clients.Caller.AddCandidate(connectionId, JsonConvert.SerializeObject(arg.candidate));
+                Clients.Caller.AddCandidate(connectionId, JsonConvert.SerializeObject(arg.candidate), peerConnectionId);
             };
             
             return endPoint;
