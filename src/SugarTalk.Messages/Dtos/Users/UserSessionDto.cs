@@ -2,6 +2,7 @@ using System;
 using System.Collections.Concurrent;
 using Kurento.NET;
 using Newtonsoft.Json;
+using SugarTalk.Messages.Enums;
 
 namespace SugarTalk.Messages.Dtos.Users
 {
@@ -41,6 +42,9 @@ namespace SugarTalk.Messages.Dtos.Users
         
         [JsonProperty("isSharingCamera")]
         public bool IsSharingCamera { get; set; }
+        
+        [JsonProperty("connectionStatus")]
+        public UserSessionConnectionStatus ConnectionStatus { get; set; }
         
         [JsonProperty("webRtcEndpointId")]
         public string WebRtcEndpointId { get; set; }
