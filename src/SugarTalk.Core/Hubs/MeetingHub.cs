@@ -54,6 +54,7 @@ namespace SugarTalk.Core.Hubs
             
             Clients.Caller.SetLocalUser(userSession);
             Clients.Caller.SetOtherUsers(otherUserSessions);
+            Clients.OthersInGroup(MeetingNumber).OtherJoined(userSession);
         }
         
         public override async Task OnDisconnectedAsync(Exception exception)
