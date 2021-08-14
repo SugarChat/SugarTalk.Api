@@ -54,6 +54,7 @@ namespace SugarTalk.Core.Hubs
             
             Clients.Caller.SetLocalUser(userSession);
             Clients.Caller.SetOtherUsers(otherUserSessions);
+            Clients.OthersInGroup(MeetingNumber).OtherJoined(userSession);
         }
         
         public override async Task OnDisconnectedAsync(Exception exception)
@@ -63,20 +64,6 @@ namespace SugarTalk.Core.Hubs
             Clients.OthersInGroup(MeetingNumber).OtherLeft(Context.ConnectionId);
             
             await base.OnDisconnectedAsync(exception).ConfigureAwait(false);
-        }
-
-        public async Task OnLocalUserConnectionCreated(bool isRecreated)
-        {
-            var meetingSession = await _meetingSessionDataProvider.GetMeetingSession(MeetingNumber)
-                .ConfigureAwait(false);
-
-            var userSession =
-                meetingSession.UserSessions.SingleOrDefault(x => x.ConnectionId == Context.ConnectionId);
-            
-            if (isRecreated)
-                Clients.OthersInGroup(MeetingNumber).OtherConnectionRecreated(userSession);
-            else
-                Clients.OthersInGroup(MeetingNumber).OtherJoined(userSession);
         }
 
         public async Task ProcessCandidateAsync(string connectionId, string peerConnectionId, IceCandidate candidate)

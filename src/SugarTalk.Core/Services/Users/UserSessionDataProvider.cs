@@ -17,6 +17,8 @@ namespace SugarTalk.Core.Services.Users
     {
         Task<UserSession> GetUserSessionById(Guid id, CancellationToken cancellationToken = default);
         
+        Task<UserSession> GetUserSessionByIdOrConnectionId(Guid id, string connectionId, CancellationToken cancellationToken = default);
+        
         Task<UserSession> GetUserSessionByConnectionId(string connectionId,
             CancellationToken cancellationToken = default);
         
@@ -40,6 +42,13 @@ namespace SugarTalk.Core.Services.Users
         {
             return await _repository.Query<UserSession>()
                 .SingleOrDefaultAsync(x => x.Id == id, cancellationToken)
+                .ConfigureAwait(false);
+        }
+
+        public async Task<UserSession> GetUserSessionByIdOrConnectionId(Guid id, string connectionId, CancellationToken cancellationToken = default)
+        {
+            return await _repository.Query<UserSession>()
+                .SingleOrDefaultAsync(x => x.Id == id || x.ConnectionId == connectionId, cancellationToken)
                 .ConfigureAwait(false);
         }
 
