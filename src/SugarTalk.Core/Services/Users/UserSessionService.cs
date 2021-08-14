@@ -17,10 +17,10 @@ namespace SugarTalk.Core.Services.Users
     {
         Task UpdateUserSession(UserSession userSession, CancellationToken cancellationToken = default);
         
+        Task RemoveUserSession(UserSession userSession, CancellationToken cancellationToken = default);
+
         Task UpdateUserSessionEndpoints(Guid userSessionId, WebRtcEndpoint endpoint,
             ConcurrentDictionary<string, WebRtcEndpoint> receivedEndPoints, CancellationToken cancellationToken = default);
-        
-        Task RemoveUserSession(string connectionId, CancellationToken cancellationToken = default);
 
         Task<StatusUpdatedEvent> UpdateStatus(UpdateStatusCommand updateStatusCommand,
             CancellationToken cancellationToken);
@@ -63,12 +63,10 @@ namespace SugarTalk.Core.Services.Users
             await _repository.UpdateAsync(userSession, cancellationToken).ConfigureAwait(false);
         }
         
-        public async Task RemoveUserSession(string connectionId, CancellationToken cancellationToken = default)
+        public async Task RemoveUserSession(UserSession userSession, CancellationToken cancellationToken = default)
         {
-            var userSession = await _userSessionDataProvider
-                .GetUserSessionByConnectionId(connectionId, cancellationToken).ConfigureAwait(false);
-
-            await _repository.RemoveAsync(userSession, cancellationToken).ConfigureAwait(false);
+            if (userSession != null)
+                await _repository.RemoveAsync(userSession, cancellationToken).ConfigureAwait(false);
         }
 
         public async Task<StatusUpdatedEvent> UpdateStatus(UpdateStatusCommand updateStatusCommand, CancellationToken cancellationToken)

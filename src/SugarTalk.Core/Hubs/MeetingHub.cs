@@ -24,16 +24,19 @@ namespace SugarTalk.Core.Hubs
         private readonly IUserService _userService;
         private readonly IUserSessionService _userSessionService;
         private readonly IMeetingSessionService _meetingSessionService;
+        private readonly IUserSessionDataProvider _userSessionDataProvider;
         private readonly IMeetingSessionDataProvider _meetingSessionDataProvider;
-
+        
         public MeetingHub(IMapper mapper, KurentoClient kurento, IUserService userService,
-            IUserSessionService userSessionService, IMeetingSessionService meetingSessionService, IMeetingSessionDataProvider meetingSessionDataProvider)
+            IUserSessionService userSessionService, IMeetingSessionService meetingSessionService, 
+            IUserSessionDataProvider userSessionDataProvider, IMeetingSessionDataProvider meetingSessionDataProvider)
         {
             _mapper = mapper;
             _kurento = kurento;
             _userService = userService;
             _userSessionService = userSessionService;
             _meetingSessionService = meetingSessionService;
+            _userSessionDataProvider = userSessionDataProvider;
             _meetingSessionDataProvider = meetingSessionDataProvider;
         }
 
@@ -59,9 +62,12 @@ namespace SugarTalk.Core.Hubs
         
         public override async Task OnDisconnectedAsync(Exception exception)
         {
-            await _userSessionService.RemoveUserSession(Context.ConnectionId).ConfigureAwait(false);
+            var userSession = await _userSessionDataProvider.GetUserSessionByConnectionId(Context.ConnectionId)
+                .ConfigureAwait(false);
             
-            Clients.OthersInGroup(MeetingNumber).OtherLeft(Context.ConnectionId);
+            await _userSessionService.RemoveUserSession(userSession).ConfigureAwait(false);
+            
+            Clients.OthersInGroup(MeetingNumber).OtherLeft(userSession);
             
             await base.OnDisconnectedAsync(exception).ConfigureAwait(false);
         }
