@@ -9,17 +9,18 @@ using SugarTalk.Messages.Events.UserSessions;
 
 namespace SugarTalk.Core.Handlers.EventHandlers.UserSessions
 {
-    public class StatusUpdatedEventHandler : IEventHandler<StatusUpdatedEvent>
+    public class UserSessionConnectionStatusUpdatedEventHandler : IEventHandler<UserSessionConnectionStatusUpdatedEvent>
     {
         private readonly IHubContext<MeetingHub> _meetingHub;
         private readonly IMeetingSessionDataProvider _meetingSessionDataProvider;
-        public StatusUpdatedEventHandler(IHubContext<MeetingHub> meetingHub, IMeetingSessionDataProvider meetingSessionDataProvider)
+        
+        public UserSessionConnectionStatusUpdatedEventHandler(IHubContext<MeetingHub> meetingHub, IMeetingSessionDataProvider meetingSessionDataProvider)
         {
             _meetingHub = meetingHub;
             _meetingSessionDataProvider = meetingSessionDataProvider;
         }
 
-        public async Task Handle(IReceiveContext<StatusUpdatedEvent> context, CancellationToken cancellationToken)
+        public async Task Handle(IReceiveContext<UserSessionConnectionStatusUpdatedEvent> context, CancellationToken cancellationToken)
         {
             var meetingSession = await _meetingSessionDataProvider
                 .GetMeetingSessionById(context.Message.UserSession.MeetingSessionId, cancellationToken)
@@ -27,7 +28,7 @@ namespace SugarTalk.Core.Handlers.EventHandlers.UserSessions
             
             await _meetingHub.Clients
                 .GroupExcept(meetingSession.MeetingNumber, context.Message.UserSession.ConnectionId)
-                .SendAsync("OtherUserSessionStatusChanged", context.Message.UserSession, cancellationToken).ConfigureAwait(false);
+                .SendAsync("OtherUserSessionConnectionStatusUpdated", context.Message.UserSession, cancellationToken).ConfigureAwait(false);
         }
     }
 }

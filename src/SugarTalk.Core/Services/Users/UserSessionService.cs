@@ -22,7 +22,7 @@ namespace SugarTalk.Core.Services.Users
         Task UpdateUserSessionEndpoints(Guid userSessionId, WebRtcEndpoint endpoint,
             ConcurrentDictionary<string, WebRtcEndpoint> receivedEndPoints, CancellationToken cancellationToken = default);
 
-        Task<StatusUpdatedEvent> UpdateStatus(UpdateStatusCommand updateStatusCommand,
+        Task<UserSessionConnectionStatusUpdatedEvent> UpdateUserSessionConnectionStatus(UpdateUserSessionConnectionStatusCommand updateStatusCommand, 
             CancellationToken cancellationToken);
         
         Task<AudioChangedEvent> ChangeAudio(ChangeAudioCommand changeAudioCommand, CancellationToken cancellationToken = default);
@@ -69,7 +69,8 @@ namespace SugarTalk.Core.Services.Users
                 await _repository.RemoveAsync(userSession, cancellationToken).ConfigureAwait(false);
         }
 
-        public async Task<StatusUpdatedEvent> UpdateStatus(UpdateStatusCommand updateStatusCommand, CancellationToken cancellationToken)
+        public async Task<UserSessionConnectionStatusUpdatedEvent> UpdateUserSessionConnectionStatus(UpdateUserSessionConnectionStatusCommand updateStatusCommand, 
+            CancellationToken cancellationToken)
         {
             var userSession = await _userSessionDataProvider
                 .GetUserSessionByIdOrConnectionId(updateStatusCommand.UserSessionId, updateStatusCommand.ConnectionId, cancellationToken).ConfigureAwait(false);
@@ -78,7 +79,7 @@ namespace SugarTalk.Core.Services.Users
             
             await _repository.UpdateAsync(userSession, cancellationToken).ConfigureAwait(false);
 
-            return new StatusUpdatedEvent
+            return new UserSessionConnectionStatusUpdatedEvent
             {
                 UserSession = _mapper.Map<UserSessionDto>(userSession)
             };

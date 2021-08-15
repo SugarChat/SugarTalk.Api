@@ -26,10 +26,10 @@ namespace SugarTalk.Api.Controllers
             return await _mediator.SendAsync<ChangeAudioCommand, SugarTalkResponse<UserSessionDto>>(changeAudioCommand);
         }
         
-        [Route("status/update"), HttpPost]
-        public async Task<SugarTalkResponse<UserSessionDto>> ChangeAudio(UpdateStatusCommand updateStatusCommand)
+        [Route("connection/status/update"), HttpPost]
+        public async Task<SugarTalkResponse<UserSessionDto>> ChangeAudio(UpdateUserSessionConnectionStatusCommand updateUserSessionConnectionStatusCommand)
         {
-            return await _mediator.SendAsync<UpdateStatusCommand, SugarTalkResponse<UserSessionDto>>(updateStatusCommand);
+            return await _mediator.SendAsync<UpdateUserSessionConnectionStatusCommand, SugarTalkResponse<UserSessionDto>>(updateUserSessionConnectionStatusCommand);
         }
     }
 }

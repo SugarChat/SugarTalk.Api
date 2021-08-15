@@ -3,7 +3,7 @@ using SugarTalk.Messages.Dtos.Users;
 
 namespace SugarTalk.Messages.Events.UserSessions
 {
-    public class StatusUpdatedEvent : IEvent
+    public class UserSessionConnectionStatusUpdatedEvent : IEvent
     {
         public UserSessionDto UserSession { get; set; }
     }

@@ -4,7 +4,7 @@ using SugarTalk.Messages.Enums;
 
 namespace SugarTalk.Messages.Commands.UserSessions
 {
-    public class UpdateStatusCommand : ICommand
+    public class UpdateUserSessionConnectionStatusCommand : ICommand
     {
         public Guid UserSessionId { get; set; }
         
