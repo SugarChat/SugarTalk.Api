@@ -162,8 +162,8 @@ namespace SugarTalk.Core.Hubs
                 Clients.Caller.AddCandidate(connectionId, JsonConvert.SerializeObject(arg.candidate), peerConnectionId);
             };
 
-            await endPoint.SetMinVideoSendBandwidthAsync(1024);
-            await endPoint.SetMinVideoRecvBandwidthAsync(1024);
+            await endPoint.SetMinVideoSendBandwidthAsync(2048);
+            await endPoint.SetMinVideoRecvBandwidthAsync(2048);
             
             return endPoint;
         }
