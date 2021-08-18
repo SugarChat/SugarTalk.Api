@@ -1,6 +1,8 @@
+using System.Runtime.Serialization.Formatters;
 using System.Threading;
 using System.Threading.Tasks;
 using AutoMapper;
+using MongoDB.Driver.Linq;
 using SugarTalk.Core.Data.MongoDb;
 using SugarTalk.Core.Entities;
 using SugarTalk.Messages.Commands.UserSessions;
@@ -22,6 +24,9 @@ namespace SugarTalk.Core.Services.Users
             UpdateUserSessionWebRtcConnectionStatusCommand command, CancellationToken cancellationToken);
         
         Task<AudioChangedEvent> ChangeAudio(ChangeAudioCommand changeAudioCommand, CancellationToken cancellationToken = default);
+
+        Task<ScreenSharedEvent> ShareScreen(ShareScreenCommand shareScreenCommand,
+            CancellationToken cancellationToken = default);
     }
     
     public class UserSessionService : IUserSessionService
@@ -55,6 +60,12 @@ namespace SugarTalk.Core.Services.Users
             }
         }
 
+        public async Task AddUserSessionWebRtcConnection(UserSessionWebRtcConnection webRtcConnection,
+            CancellationToken cancellationToken = default)
+        {
+            await _repository.AddAsync(webRtcConnection, cancellationToken).ConfigureAwait(false);
+        }
+        
         public async Task<UserSessionWebRtcConnectionStatusUpdatedEvent> UpdateUserSessionWebRtcConnectionStatus(
             UpdateUserSessionWebRtcConnectionStatusCommand command, CancellationToken cancellationToken)
         {
@@ -72,10 +83,35 @@ namespace SugarTalk.Core.Services.Users
             };
         }
 
-        public async Task AddUserSessionWebRtcConnection(UserSessionWebRtcConnection webRtcConnection,
+        public async Task<ScreenSharedEvent> ShareScreen(ShareScreenCommand shareScreenCommand,
             CancellationToken cancellationToken = default)
         {
-            await _repository.AddAsync(webRtcConnection, cancellationToken).ConfigureAwait(false);
+            var userSession = await _userSessionDataProvider
+                .GetUserSessionById(shareScreenCommand.UserSessionId, cancellationToken).ConfigureAwait(false);
+
+            if (shareScreenCommand.IsShared)
+            {
+                var otherSharing = await _repository.Query<UserSession>()
+                    .Where(x => x.Id != userSession.Id)
+                    .Where(x => x.MeetingSessionId == userSession.MeetingSessionId)
+                    .AnyAsync(x => x.IsSharingScreen, cancellationToken).ConfigureAwait(false);
+                
+                if (!otherSharing)
+                {
+                    userSession.IsSharingScreen = true;
+                    await _repository.UpdateAsync(userSession, cancellationToken).ConfigureAwait(false);
+                }
+            }
+            else
+            {
+                userSession.IsSharingScreen = false;
+                await _repository.UpdateAsync(userSession, cancellationToken).ConfigureAwait(false);
+            }
+            
+            return new ScreenSharedEvent
+            {
+                UserSession = _mapper.Map<UserSessionDto>(userSession)
+            };
         }
         
         public async Task<AudioChangedEvent> ChangeAudio(ChangeAudioCommand changeAudioCommand, CancellationToken cancellationToken = default)

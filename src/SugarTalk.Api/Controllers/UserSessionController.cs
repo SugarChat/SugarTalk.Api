@@ -20,10 +20,16 @@ namespace SugarTalk.Api.Controllers
             _mediator = mediator;
         }
         
-        [Route("changeAudio"), HttpPost]
+        [Route("audio/change"), HttpPost]
         public async Task<SugarTalkResponse<UserSessionDto>> ChangeAudio(ChangeAudioCommand changeAudioCommand)
         {
             return await _mediator.SendAsync<ChangeAudioCommand, SugarTalkResponse<UserSessionDto>>(changeAudioCommand);
+        }
+        
+        [Route("screen/share"), HttpPost]
+        public async Task<SugarTalkResponse<UserSessionDto>> ChangeAudio(ShareScreenCommand shareScreenCommand)
+        {
+            return await _mediator.SendAsync<ShareScreenCommand, SugarTalkResponse<UserSessionDto>>(shareScreenCommand);
         }
         
         [Route("connection/status/update"), HttpPost]
