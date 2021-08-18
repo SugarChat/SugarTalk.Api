@@ -5,12 +5,10 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using MongoDB.Driver;
-using Serilog;
 using SugarTalk.Core.Data;
 using SugarTalk.Core.Data.MongoDb;
 using SugarTalk.Core.Middlewares;
 using SugarTalk.Core.Services.Authentication;
-using SugarTalk.Core.Services.Kurento;
 using SugarTalk.Core.Services.Meetings;
 using SugarTalk.Core.Services.Users;
 using SugarTalk.Core.Settings;
@@ -39,7 +37,6 @@ namespace SugarTalk.Core
                 var logger = serviceProvider.GetService<Microsoft.Extensions.Logging.ILogger>();
                 return new KurentoClient(settings?.Value.ServerUrl, logger);
             });
-            services.AddSingleton<MeetingSessionManager>();
             
             return services;
         }
@@ -80,8 +77,12 @@ namespace SugarTalk.Core
         private static IServiceCollection LoadServices(this IServiceCollection services)
         {
             services.AddScoped<IMeetingDataProvider, MeetingDataProvider>();
+            services.AddScoped<IMeetingSessionDataProvider, MeetingSessionDataProvider>();
+            services.AddScoped<IMeetingSessionService, MeetingSessionService>();
             services.AddScoped<IMeetingService, MeetingService>();
 
+            services.AddScoped<IUserSessionDataProvider, UserSessionDataProvider>();
+            services.AddScoped<IUserSessionService, UserSessionService>();
             services.AddScoped<IUserDataProvider, UserDataProvider>();
             services.AddScoped<IUserService, UserService>();
 

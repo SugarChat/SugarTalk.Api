@@ -18,8 +18,9 @@ namespace SugarTalk.Tests
     {
         private readonly IConfigurationRoot _configuration;
         private readonly IServiceCollection _serviceCollection;
+        private readonly ServiceProvider _serviceProvider;
 
-        public User DefaultUser => CreateDefaultUser();
+        protected readonly User DefaultUser;
 
         protected TestBase(bool shouldLoggedInDefaultUser = true)
         {
@@ -29,6 +30,10 @@ namespace SugarTalk.Tests
             RegisterSugarTalkModule(_serviceCollection);
             RegisterHttpContextAccessor(_serviceCollection);
 
+            _serviceProvider = _serviceCollection.BuildServiceProvider();
+
+            DefaultUser = CreateDefaultUser();
+            
             if (shouldLoggedInDefaultUser)
                 Signin(DefaultUser);
         }
@@ -68,25 +73,29 @@ namespace SugarTalk.Tests
             Run<IUserService>(userService =>
             {
                 Task.Run(async () =>
-                    await userService.SignInFromThirdParty(new SignInFromThirdPartyRequest(), default));
+                {
+                    var response =
+                        await userService.SignInFromThirdParty(new SignInFromThirdPartyRequest(), default);
+                    
+                    user.Id = response.Data.Id;
+                });
             });
         }
         
         protected void Run<T>(Action<T> action)
         {
-            action(_serviceCollection.BuildServiceProvider().GetService<T>());
+            action(_serviceProvider.GetService<T>());
         }
         
         protected async Task Run<T>(Func<T, Task> action)
         {
-            await action(_serviceCollection.BuildServiceProvider().GetService<T>());
+            await action(_serviceProvider.GetService<T>());
         }
         
         private User CreateDefaultUser()
         {
             return new()
             {
-                Id = Guid.NewGuid(),
                 ThirdPartyId = "TestThirdPartyId",
                 ThirdPartyFrom = ThirdPartyFrom.Google,
                 DisplayName = "TestName",

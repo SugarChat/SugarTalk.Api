@@ -2,25 +2,25 @@ using System.Threading;
 using System.Threading.Tasks;
 using Mediator.Net.Context;
 using Mediator.Net.Contracts;
-using SugarTalk.Core.Services.Kurento;
 using SugarTalk.Core.Services.Meetings;
 using SugarTalk.Messages;
+using SugarTalk.Messages.Dtos.Meetings;
 using SugarTalk.Messages.Requests.Meetings;
 
 namespace SugarTalk.Core.Handlers.RequestHandlers.Meetings
 {
-    public class GetMeetingSessionRequestHandler : IRequestHandler<GetMeetingSessionRequest, SugarTalkResponse<MeetingSession>>
+    public class GetMeetingSessionRequestHandler : IRequestHandler<GetMeetingSessionRequest, SugarTalkResponse<MeetingSessionDto>>
     {
-        private readonly IMeetingService _meetingService;
+        private readonly IMeetingSessionService _meetingSessionService;
 
-        public GetMeetingSessionRequestHandler(IMeetingService meetingService)
+        public GetMeetingSessionRequestHandler(IMeetingSessionService meetingSessionService)
         {
-            _meetingService = meetingService;
+            _meetingSessionService = meetingSessionService;
         }
 
-        public async Task<SugarTalkResponse<MeetingSession>> Handle(IReceiveContext<GetMeetingSessionRequest> context, CancellationToken cancellationToken)
+        public async Task<SugarTalkResponse<MeetingSessionDto>> Handle(IReceiveContext<GetMeetingSessionRequest> context, CancellationToken cancellationToken)
         {
-            return await _meetingService.GetMeetingSession(context.Message, cancellationToken).ConfigureAwait(false);
+            return await _meetingSessionService.GetMeetingSession(context.Message, cancellationToken).ConfigureAwait(false);
         }
     }
 }
