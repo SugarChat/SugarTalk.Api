@@ -3,6 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using AutoMapper;
 using Kurento.NET;
+using MongoDB.Driver;
 using MongoDB.Driver.Linq;
 using SugarTalk.Core.Data.MongoDb;
 using SugarTalk.Core.Entities;

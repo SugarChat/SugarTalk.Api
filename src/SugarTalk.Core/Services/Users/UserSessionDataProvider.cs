@@ -27,6 +27,9 @@ namespace SugarTalk.Core.Services.Users
         Task<UserSessionWebRtcConnection> GetUserSessionWebRtcConnectionById(Guid id,
             CancellationToken cancellationToken = default);
         
+        Task<UserSessionWebRtcConnection> GetUserSessionWebRtcConnectionById(Guid id, string webRtcPeerConnectionId,
+            CancellationToken cancellationToken = default);
+        
         Task<List<UserSessionWebRtcConnection>> GetUserSessionWebRtcConnectionsByUserSessionId(Guid userSessionId,
             CancellationToken cancellationToken = default);
         
@@ -65,6 +68,15 @@ namespace SugarTalk.Core.Services.Users
         {
             return await _repository.Query<UserSessionWebRtcConnection>()
                 .SingleOrDefaultAsync(x => x.Id == id, cancellationToken)
+                .ConfigureAwait(false);
+        }
+
+        public async Task<UserSessionWebRtcConnection> GetUserSessionWebRtcConnectionById(Guid id, string webRtcPeerConnectionId,
+            CancellationToken cancellationToken = default)
+        {
+            return await _repository.Query<UserSessionWebRtcConnection>()
+                .SingleOrDefaultAsync(x => x.Id == id || x.WebRtcPeerConnectionId == webRtcPeerConnectionId,
+                    cancellationToken)
                 .ConfigureAwait(false);
         }
 

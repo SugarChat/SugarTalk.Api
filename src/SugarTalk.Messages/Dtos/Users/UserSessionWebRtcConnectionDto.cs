@@ -25,6 +25,9 @@ namespace SugarTalk.Messages.Dtos.Users
         [JsonProperty("receiveWebRtcConnectionId")]
         public Guid? ReceiveWebRtcConnectionId { get; set; }
         
+        [JsonProperty("mediaType")]
+        public UserSessionWebRtcConnectionMediaType MediaType { get; set; }
+        
         [JsonProperty("connectionType")]
         public UserSessionWebRtcConnectionType ConnectionType { get; set; }
         

@@ -20,8 +20,11 @@ namespace SugarTalk.Core.Entities
         
         public Guid? ReceiveWebRtcConnectionId { get; set; }
         
+        public UserSessionWebRtcConnectionMediaType MediaType { get; set; }
+        
         public UserSessionWebRtcConnectionType ConnectionType { get; set; }
         
         public UserSessionWebRtcConnectionStatus ConnectionStatus { get; set; }
+        
     }
 }

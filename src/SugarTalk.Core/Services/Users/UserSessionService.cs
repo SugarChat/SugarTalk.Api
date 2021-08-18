@@ -1,3 +1,4 @@
+using System;
 using System.Runtime.Serialization.Formatters;
 using System.Threading;
 using System.Threading.Tasks;
@@ -19,6 +20,9 @@ namespace SugarTalk.Core.Services.Users
 
         Task AddUserSessionWebRtcConnection(UserSessionWebRtcConnection webRtcConnection,
             CancellationToken cancellationToken = default);
+
+        Task<UserSessionWebRtcConnectionRemovedEvent> RemoveUserSessionWebRtcConnection(
+            RemoveUserSessionWebRtcConnectionCommand command, CancellationToken cancellationToken);
         
         Task<UserSessionWebRtcConnectionStatusUpdatedEvent> UpdateUserSessionWebRtcConnectionStatus(
             UpdateUserSessionWebRtcConnectionStatusCommand command, CancellationToken cancellationToken);
@@ -64,6 +68,23 @@ namespace SugarTalk.Core.Services.Users
             CancellationToken cancellationToken = default)
         {
             await _repository.AddAsync(webRtcConnection, cancellationToken).ConfigureAwait(false);
+        }
+
+        public async Task<UserSessionWebRtcConnectionRemovedEvent> RemoveUserSessionWebRtcConnection(
+            RemoveUserSessionWebRtcConnectionCommand command, CancellationToken cancellationToken)
+        {
+            var webRtcConnection = await _userSessionDataProvider
+                .GetUserSessionWebRtcConnectionById(Guid.Empty, command.WebRtcPeerConnectionId, cancellationToken).ConfigureAwait(false);
+
+            if (webRtcConnection == null)
+                throw new ArgumentNullException(nameof(webRtcConnection));
+            
+            await _repository.RemoveAsync(webRtcConnection, cancellationToken).ConfigureAwait(false);
+            
+            return new UserSessionWebRtcConnectionRemovedEvent
+            {
+                RemovedConnection = _mapper.Map<UserSessionWebRtcConnectionDto>(webRtcConnection)
+            };
         }
         
         public async Task<UserSessionWebRtcConnectionStatusUpdatedEvent> UpdateUserSessionWebRtcConnectionStatus(

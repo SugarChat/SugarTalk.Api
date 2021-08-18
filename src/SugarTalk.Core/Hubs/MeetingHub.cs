@@ -75,25 +75,27 @@ namespace SugarTalk.Core.Hubs
             await base.OnDisconnectedAsync(exception).ConfigureAwait(false);
         }
 
-        public async Task ProcessCandidateAsync(Guid userSessionId, string peerConnectionId, IceCandidate candidate, Guid? receiveWebRtcConnectionId)
+        public async Task ProcessCandidateAsync(Guid userSessionId, string peerConnectionId, IceCandidate candidate, 
+            UserSessionWebRtcConnectionMediaType mediaType, Guid? receiveWebRtcConnectionId)
         {
             var meetingSession = await _meetingSessionDataProvider.GetMeetingSession(MeetingNumber)
                 .ConfigureAwait(false);
             
             var connection =
-                await GetOrCreateWebRtcConnection(meetingSession, userSessionId, peerConnectionId, receiveWebRtcConnectionId)
+                await GetOrCreateWebRtcConnection(meetingSession, userSessionId, peerConnectionId, mediaType, receiveWebRtcConnectionId)
                     .ConfigureAwait(false);
 
             await connection.WebRtcEndpoint.AddIceCandidateAsync(candidate);
         }
         
-        public async Task ProcessOfferAsync(Guid userSessionId, string peerConnectionId, string offerSdp, Guid? receiveWebRtcConnectionId)
+        public async Task ProcessOfferAsync(Guid userSessionId, string peerConnectionId, string offerSdp, 
+            UserSessionWebRtcConnectionMediaType mediaType, Guid? receiveWebRtcConnectionId)
         {
             var meetingSession = await _meetingSessionDataProvider.GetMeetingSession(MeetingNumber)
                 .ConfigureAwait(false);
 
             var connection =
-                await GetOrCreateWebRtcConnection(meetingSession, userSessionId, peerConnectionId, receiveWebRtcConnectionId)
+                await GetOrCreateWebRtcConnection(meetingSession, userSessionId, peerConnectionId, mediaType, receiveWebRtcConnectionId)
                     .ConfigureAwait(false);
 
             var answerSdp = await connection.WebRtcEndpoint.ProcessOfferAsync(offerSdp).ConfigureAwait(false);
@@ -103,8 +105,9 @@ namespace SugarTalk.Core.Hubs
             await connection.WebRtcEndpoint.GatherCandidatesAsync().ConfigureAwait(false);
         }
         
-        private async Task<UserSessionWebRtcConnectionDto> GetOrCreateWebRtcConnection(MeetingSessionDto meetingSession, Guid userSessionId, string peerConnectionId,
-            Guid? receiveWebRtcConnectionId)
+        private async Task<UserSessionWebRtcConnectionDto> GetOrCreateWebRtcConnection(
+            MeetingSessionDto meetingSession, Guid userSessionId, string peerConnectionId,
+            UserSessionWebRtcConnectionMediaType mediaType, Guid? receiveWebRtcConnectionId)
         {
             var selfUserSession = meetingSession.UserSessions.Single(x => x.ConnectionId == Context.ConnectionId);
             
@@ -123,6 +126,7 @@ namespace SugarTalk.Core.Hubs
                 webRtcConnection = new UserSessionWebRtcConnectionDto
                 {
                     Id = Guid.NewGuid(),
+                    MediaType = mediaType,
                     UserSessionId = selfUserSession.Id,
                     WebRtcEndpoint = selfEndpoint,
                     WebRtcEndpointId = selfEndpoint.id,
@@ -161,6 +165,7 @@ namespace SugarTalk.Core.Hubs
             receiveThisUserSessionEndpointConnection = new UserSessionWebRtcConnectionDto
             {
                 Id = Guid.NewGuid(),
+                MediaType = mediaType,
                 UserSessionId = selfUserSession.Id,
                 WebRtcPeerConnectionId = peerConnectionId,
                 WebRtcEndpoint = receiveThisUserSessionEndpoint,

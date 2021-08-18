@@ -32,6 +32,14 @@ namespace SugarTalk.Api.Controllers
             return await _mediator.SendAsync<ShareScreenCommand, SugarTalkResponse<UserSessionDto>>(shareScreenCommand);
         }
         
+        [Route("connection/remove"), HttpPost]
+        public async Task<IActionResult> UpdateUserSessionWebRtcConnectionStatus(RemoveUserSessionWebRtcConnectionCommand removeUserSessionWebRtcConnectionCommand)
+        {
+            await _mediator.SendAsync(removeUserSessionWebRtcConnectionCommand);
+
+            return Ok();
+        }
+        
         [Route("connection/status/update"), HttpPost]
         public async Task<SugarTalkResponse<UserSessionDto>> UpdateUserSessionWebRtcConnectionStatus(UpdateUserSessionWebRtcConnectionStatusCommand updateUserSessionWebRtcConnectionStatusCommand)
         {
