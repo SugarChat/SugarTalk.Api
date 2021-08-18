@@ -183,6 +183,9 @@ namespace SugarTalk.Core.Hubs
         private async Task<WebRtcEndpoint> CreateEndPoint(MediaPipeline pipeline, string peerConnectionId)
         {
             var endPoint = await _kurento.CreateAsync(new WebRtcEndpoint(pipeline)).ConfigureAwait(false);
+
+            await endPoint.SetMinVideoSendBandwidthAsync(20000).ConfigureAwait(false);
+            await endPoint.SetMinVideoSendBandwidthAsync(20000).ConfigureAwait(false);
             
             endPoint.OnIceCandidate += arg =>
             {
