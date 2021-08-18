@@ -1,10 +1,6 @@
-using System;
-using System.Collections.Concurrent;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using AutoMapper;
-using Kurento.NET;
 using SugarTalk.Core.Data.MongoDb;
 using SugarTalk.Core.Entities;
 using SugarTalk.Messages.Commands.UserSessions;
@@ -19,11 +15,11 @@ namespace SugarTalk.Core.Services.Users
         
         Task RemoveUserSession(UserSession userSession, CancellationToken cancellationToken = default);
 
-        Task UpdateUserSessionEndpoints(Guid userSessionId, WebRtcEndpoint endpoint,
-            ConcurrentDictionary<string, WebRtcEndpoint> receivedEndPoints, CancellationToken cancellationToken = default);
-
-        Task<UserSessionConnectionStatusUpdatedEvent> UpdateUserSessionConnectionStatus(UpdateUserSessionConnectionStatusCommand updateStatusCommand, 
-            CancellationToken cancellationToken);
+        Task AddUserSessionWebRtcConnection(UserSessionWebRtcConnection webRtcConnection,
+            CancellationToken cancellationToken = default);
+        
+        Task<UserSessionWebRtcConnectionStatusUpdatedEvent> UpdateUserSessionWebRtcConnectionStatus(
+            UpdateUserSessionWebRtcConnectionStatusCommand command, CancellationToken cancellationToken);
         
         Task<AudioChangedEvent> ChangeAudio(ChangeAudioCommand changeAudioCommand, CancellationToken cancellationToken = default);
     }
@@ -45,44 +41,41 @@ namespace SugarTalk.Core.Services.Users
         {
             await _repository.UpdateAsync(userSession, cancellationToken).ConfigureAwait(false);
         }
-
-        public async Task UpdateUserSessionEndpoints(Guid userSessionId, WebRtcEndpoint endpoint,
-            ConcurrentDictionary<string, WebRtcEndpoint> receivedEndPoints, CancellationToken cancellationToken = default)
-        {
-            var userSession = await _userSessionDataProvider.GetUserSessionById(userSessionId, cancellationToken)
-                .ConfigureAwait(false);
-            
-            if (userSession == null) return;
-
-            if (endpoint != null)
-                userSession.WebRtcEndpointId = endpoint.id;
-            if (receivedEndPoints != null && receivedEndPoints.Any())
-                foreach (var (key, value) in receivedEndPoints)
-                    userSession.ReceivedEndPointIds.TryAdd(key, value.id);
-            
-            await _repository.UpdateAsync(userSession, cancellationToken).ConfigureAwait(false);
-        }
         
         public async Task RemoveUserSession(UserSession userSession, CancellationToken cancellationToken = default)
         {
             if (userSession != null)
+            {
+                var userSessionWebRtcConnections = await _userSessionDataProvider
+                    .GetUserSessionWebRtcConnectionsByUserSessionId(userSession.Id, cancellationToken).ConfigureAwait(false);
+                
                 await _repository.RemoveAsync(userSession, cancellationToken).ConfigureAwait(false);
+                await _repository.RemoveRangeAsync(userSessionWebRtcConnections, cancellationToken)
+                    .ConfigureAwait(false);
+            }
         }
 
-        public async Task<UserSessionConnectionStatusUpdatedEvent> UpdateUserSessionConnectionStatus(UpdateUserSessionConnectionStatusCommand updateStatusCommand, 
-            CancellationToken cancellationToken)
+        public async Task<UserSessionWebRtcConnectionStatusUpdatedEvent> UpdateUserSessionWebRtcConnectionStatus(
+            UpdateUserSessionWebRtcConnectionStatusCommand command, CancellationToken cancellationToken)
         {
-            var userSession = await _userSessionDataProvider
-                .GetUserSessionByIdOrConnectionId(updateStatusCommand.UserSessionId, updateStatusCommand.ConnectionId, cancellationToken).ConfigureAwait(false);
+            var webRtcConnection = await _userSessionDataProvider
+                .GetUserSessionWebRtcConnectionById(command.UserSessionWebRtcConnectionId, cancellationToken).ConfigureAwait(false);
 
-            userSession.ConnectionStatus = updateStatusCommand.ConnectionStatus;
+            webRtcConnection.ConnectionStatus = command.ConnectionStatus;
             
-            await _repository.UpdateAsync(userSession, cancellationToken).ConfigureAwait(false);
+            await _repository.UpdateAsync(webRtcConnection, cancellationToken).ConfigureAwait(false);
 
-            return new UserSessionConnectionStatusUpdatedEvent
+            return new UserSessionWebRtcConnectionStatusUpdatedEvent
             {
-                UserSession = _mapper.Map<UserSessionDto>(userSession)
+                UserSession = await _userSessionDataProvider
+                    .GetUserSessionById(webRtcConnection.UserSessionId, true, cancellationToken).ConfigureAwait(false)
             };
+        }
+
+        public async Task AddUserSessionWebRtcConnection(UserSessionWebRtcConnection webRtcConnection,
+            CancellationToken cancellationToken = default)
+        {
+            await _repository.AddAsync(webRtcConnection, cancellationToken).ConfigureAwait(false);
         }
         
         public async Task<AudioChangedEvent> ChangeAudio(ChangeAudioCommand changeAudioCommand, CancellationToken cancellationToken = default)

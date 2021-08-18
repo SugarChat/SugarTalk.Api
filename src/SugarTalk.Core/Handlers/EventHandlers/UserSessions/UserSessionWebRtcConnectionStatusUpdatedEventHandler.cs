@@ -9,18 +9,18 @@ using SugarTalk.Messages.Events.UserSessions;
 
 namespace SugarTalk.Core.Handlers.EventHandlers.UserSessions
 {
-    public class UserSessionConnectionStatusUpdatedEventHandler : IEventHandler<UserSessionConnectionStatusUpdatedEvent>
+    public class UserSessionWebRtcConnectionStatusUpdatedEventHandler : IEventHandler<UserSessionWebRtcConnectionStatusUpdatedEvent>
     {
         private readonly IHubContext<MeetingHub> _meetingHub;
         private readonly IMeetingSessionDataProvider _meetingSessionDataProvider;
         
-        public UserSessionConnectionStatusUpdatedEventHandler(IHubContext<MeetingHub> meetingHub, IMeetingSessionDataProvider meetingSessionDataProvider)
+        public UserSessionWebRtcConnectionStatusUpdatedEventHandler(IHubContext<MeetingHub> meetingHub, IMeetingSessionDataProvider meetingSessionDataProvider)
         {
             _meetingHub = meetingHub;
             _meetingSessionDataProvider = meetingSessionDataProvider;
         }
 
-        public async Task Handle(IReceiveContext<UserSessionConnectionStatusUpdatedEvent> context, CancellationToken cancellationToken)
+        public async Task Handle(IReceiveContext<UserSessionWebRtcConnectionStatusUpdatedEvent> context, CancellationToken cancellationToken)
         {
             var meetingSession = await _meetingSessionDataProvider
                 .GetMeetingSessionById(context.Message.UserSession.MeetingSessionId, cancellationToken)
@@ -28,7 +28,7 @@ namespace SugarTalk.Core.Handlers.EventHandlers.UserSessions
             
             await _meetingHub.Clients
                 .GroupExcept(meetingSession.MeetingNumber, context.Message.UserSession.ConnectionId)
-                .SendAsync("OtherUserSessionConnectionStatusUpdated", context.Message.UserSession, cancellationToken).ConfigureAwait(false);
+                .SendAsync("OtherUserSessionWebRtcConnectionStatusUpdated", context.Message.UserSession, cancellationToken).ConfigureAwait(false);
         }
     }
 }

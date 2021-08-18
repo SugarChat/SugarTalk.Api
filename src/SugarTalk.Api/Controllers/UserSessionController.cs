@@ -27,9 +27,11 @@ namespace SugarTalk.Api.Controllers
         }
         
         [Route("connection/status/update"), HttpPost]
-        public async Task<SugarTalkResponse<UserSessionDto>> ChangeAudio(UpdateUserSessionConnectionStatusCommand updateUserSessionConnectionStatusCommand)
+        public async Task<SugarTalkResponse<UserSessionDto>> UpdateUserSessionWebRtcConnectionStatus(UpdateUserSessionWebRtcConnectionStatusCommand updateUserSessionWebRtcConnectionStatusCommand)
         {
-            return await _mediator.SendAsync<UpdateUserSessionConnectionStatusCommand, SugarTalkResponse<UserSessionDto>>(updateUserSessionConnectionStatusCommand);
+            return await _mediator
+                .SendAsync<UpdateUserSessionWebRtcConnectionStatusCommand, SugarTalkResponse<UserSessionDto>>(
+                    updateUserSessionWebRtcConnectionStatusCommand);
         }
     }
 }

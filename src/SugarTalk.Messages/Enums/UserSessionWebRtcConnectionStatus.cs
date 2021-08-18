@@ -1,6 +1,6 @@
 namespace SugarTalk.Messages.Enums
 {
-    public enum UserSessionConnectionStatus
+    public enum UserSessionWebRtcConnectionStatus
     {
         Connecting,
         Connected,

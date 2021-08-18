@@ -63,7 +63,7 @@ namespace SugarTalk.Core.Services.Meetings
             if (includeUserSessions)
             {
                 meetingSession.UserSessions =
-                    await _userSessionDataProvider.GetUserSessions(meetingSession.Id, cancellationToken).ConfigureAwait(false);
+                    await _userSessionDataProvider.GetUserSessionsByMeetingSessionId(meetingSession.Id, cancellationToken).ConfigureAwait(false);
             }
             
             return meetingSession;
