@@ -120,7 +120,7 @@ namespace SugarTalk.Core.Hubs
                 if (webRtcConnection != null)
                     return webRtcConnection;
 
-                var selfEndpoint = await CreateEndPoint(meetingSession.Pipeline, peerConnectionId)
+                var selfEndpoint = await CreateEndPoint(meetingSession.Pipeline, peerConnectionId, mediaType)
                     .ConfigureAwait(false);
 
                 webRtcConnection = new UserSessionWebRtcConnectionDto
@@ -157,7 +157,7 @@ namespace SugarTalk.Core.Hubs
             if (receiveThisUserSessionEndpointConnection != null)
                 return receiveThisUserSessionEndpointConnection;
             
-            var receiveThisUserSessionEndpoint = await CreateEndPoint(meetingSession.Pipeline, peerConnectionId).ConfigureAwait(false);
+            var receiveThisUserSessionEndpoint = await CreateEndPoint(meetingSession.Pipeline, peerConnectionId, mediaType).ConfigureAwait(false);
 
             await otherUserSessionSendEndpointConnection.WebRtcEndpoint.ConnectAsync(receiveThisUserSessionEndpoint)
                 .ConfigureAwait(false);
@@ -180,12 +180,15 @@ namespace SugarTalk.Core.Hubs
             return receiveThisUserSessionEndpointConnection;
         }
         
-        private async Task<WebRtcEndpoint> CreateEndPoint(MediaPipeline pipeline, string peerConnectionId)
+        private async Task<WebRtcEndpoint> CreateEndPoint(MediaPipeline pipeline, string peerConnectionId, UserSessionWebRtcConnectionMediaType mediaType)
         {
             var endPoint = await _kurento.CreateAsync(new WebRtcEndpoint(pipeline)).ConfigureAwait(false);
 
-            await endPoint.SetMinVideoSendBandwidthAsync(20000).ConfigureAwait(false);
-            await endPoint.SetMinVideoSendBandwidthAsync(20000).ConfigureAwait(false);
+            if (mediaType == UserSessionWebRtcConnectionMediaType.Screen)
+            {
+                await endPoint.SetMinVideoSendBandwidthAsync(20000).ConfigureAwait(false);
+                await endPoint.SetMinVideoSendBandwidthAsync(20000).ConfigureAwait(false);    
+            }
             
             endPoint.OnIceCandidate += arg =>
             {
