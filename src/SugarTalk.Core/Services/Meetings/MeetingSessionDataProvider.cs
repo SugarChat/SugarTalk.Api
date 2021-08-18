@@ -3,6 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using AutoMapper;
 using Kurento.NET;
+using MongoDB.Driver;
 using MongoDB.Driver.Linq;
 using SugarTalk.Core.Data.MongoDb;
 using SugarTalk.Core.Entities;
@@ -63,7 +64,7 @@ namespace SugarTalk.Core.Services.Meetings
             if (includeUserSessions)
             {
                 meetingSession.UserSessions =
-                    await _userSessionDataProvider.GetUserSessions(meetingSession.Id, cancellationToken).ConfigureAwait(false);
+                    await _userSessionDataProvider.GetUserSessionsByMeetingSessionId(meetingSession.Id, cancellationToken).ConfigureAwait(false);
             }
             
             return meetingSession;

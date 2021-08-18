@@ -20,16 +20,32 @@ namespace SugarTalk.Api.Controllers
             _mediator = mediator;
         }
         
-        [Route("changeAudio"), HttpPost]
+        [Route("audio/change"), HttpPost]
         public async Task<SugarTalkResponse<UserSessionDto>> ChangeAudio(ChangeAudioCommand changeAudioCommand)
         {
             return await _mediator.SendAsync<ChangeAudioCommand, SugarTalkResponse<UserSessionDto>>(changeAudioCommand);
         }
         
-        [Route("connection/status/update"), HttpPost]
-        public async Task<SugarTalkResponse<UserSessionDto>> ChangeAudio(UpdateUserSessionConnectionStatusCommand updateUserSessionConnectionStatusCommand)
+        [Route("screen/share"), HttpPost]
+        public async Task<SugarTalkResponse<UserSessionDto>> ChangeAudio(ShareScreenCommand shareScreenCommand)
         {
-            return await _mediator.SendAsync<UpdateUserSessionConnectionStatusCommand, SugarTalkResponse<UserSessionDto>>(updateUserSessionConnectionStatusCommand);
+            return await _mediator.SendAsync<ShareScreenCommand, SugarTalkResponse<UserSessionDto>>(shareScreenCommand);
+        }
+        
+        [Route("connection/remove"), HttpPost]
+        public async Task<IActionResult> UpdateUserSessionWebRtcConnectionStatus(RemoveUserSessionWebRtcConnectionCommand removeUserSessionWebRtcConnectionCommand)
+        {
+            await _mediator.SendAsync(removeUserSessionWebRtcConnectionCommand);
+
+            return Ok();
+        }
+        
+        [Route("connection/status/update"), HttpPost]
+        public async Task<SugarTalkResponse<UserSessionDto>> UpdateUserSessionWebRtcConnectionStatus(UpdateUserSessionWebRtcConnectionStatusCommand updateUserSessionWebRtcConnectionStatusCommand)
+        {
+            return await _mediator
+                .SendAsync<UpdateUserSessionWebRtcConnectionStatusCommand, SugarTalkResponse<UserSessionDto>>(
+                    updateUserSessionWebRtcConnectionStatusCommand);
         }
     }
 }

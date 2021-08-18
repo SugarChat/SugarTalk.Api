@@ -1,8 +1,6 @@
 using System;
-using System.Collections.Concurrent;
-using Kurento.NET;
+using System.Collections.Generic;
 using Newtonsoft.Json;
-using SugarTalk.Messages.Enums;
 
 namespace SugarTalk.Messages.Dtos.Users
 {
@@ -10,7 +8,7 @@ namespace SugarTalk.Messages.Dtos.Users
     {
         public UserSessionDto()
         {
-            ReceivedEndPoints = new ConcurrentDictionary<string, WebRtcEndpoint>();
+            WebRtcConnections = new List<UserSessionWebRtcConnectionDto>();
         }
         
         [JsonProperty("id")]
@@ -42,20 +40,8 @@ namespace SugarTalk.Messages.Dtos.Users
         
         [JsonProperty("isSharingCamera")]
         public bool IsSharingCamera { get; set; }
-        
-        [JsonProperty("connectionStatus")]
-        public UserSessionConnectionStatus ConnectionStatus { get; set; }
-        
-        [JsonProperty("webRtcEndpointId")]
-        public string WebRtcEndpointId { get; set; }
-        
-        [JsonProperty("receivedEndPointIds")]
-        public ConcurrentDictionary<string, string> ReceivedEndPointIds { get; set; }
 
-        [JsonIgnore]
-        public WebRtcEndpoint SendEndPoint { set; get; }
-        
-        [JsonIgnore]
-        public ConcurrentDictionary<string, WebRtcEndpoint> ReceivedEndPoints { set; get; }
+        [JsonProperty("webRtcConnections")]
+        public List<UserSessionWebRtcConnectionDto> WebRtcConnections { get; set; }
     }
 }

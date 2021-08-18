@@ -16,7 +16,6 @@ namespace SugarTalk.Core.Mapping
             CreateMap<Meeting, MeetingDto>();
 
             CreateMap<MeetingSession, MeetingSessionDto>();
-            CreateMap<UserSession, UserSessionDto>();
         }
     }
 }
