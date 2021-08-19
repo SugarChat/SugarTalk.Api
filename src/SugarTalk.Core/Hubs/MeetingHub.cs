@@ -6,6 +6,7 @@ using Kurento.NET;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
 using Newtonsoft.Json;
+using Serilog;
 using SugarTalk.Core.Entities;
 using SugarTalk.Core.Hubs.Exceptions;
 using SugarTalk.Core.Services.Meetings;
@@ -188,6 +189,11 @@ namespace SugarTalk.Core.Hubs
             {
                 await endPoint.SetMinVideoSendBandwidthAsync(20000).ConfigureAwait(false);
                 await endPoint.SetMinVideoRecvBandwidthAsync(20000).ConfigureAwait(false);
+
+                var bitrate = await endPoint.GetMinOutputBitrateAsync();
+                
+                Log.Information($"Share screen MinOutputBitrate is {bitrate}");
+                
                 await endPoint.SetMinOutputBitrateAsync(4096).ConfigureAwait(false);
             }
             
