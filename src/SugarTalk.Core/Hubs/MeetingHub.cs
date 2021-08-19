@@ -190,9 +190,8 @@ namespace SugarTalk.Core.Hubs
                 await endPoint.SetMinVideoSendBandwidthAsync(20000).ConfigureAwait(false);
                 await endPoint.SetMinVideoRecvBandwidthAsync(20000).ConfigureAwait(false);
 
-                var bitrate = await endPoint.GetMinOutputBitrateAsync();
-                
-                Log.Information($"Share screen MinOutputBitrate is {bitrate}");
+                Log.Information($"Share screen MinOutputBitrate is {await endPoint.GetMinOutputBitrateAsync()}");
+                Log.Information($"Share screen MaxOutputBitrate is {await endPoint.GetMaxOutputBitrateAsync()}");
                 
                 await endPoint.SetMinOutputBitrateAsync(4096).ConfigureAwait(false);
             }
