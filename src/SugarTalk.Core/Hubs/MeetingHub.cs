@@ -188,6 +188,7 @@ namespace SugarTalk.Core.Hubs
             {
                 await endPoint.SetMinVideoSendBandwidthAsync(20000).ConfigureAwait(false);
                 await endPoint.SetMinVideoRecvBandwidthAsync(20000).ConfigureAwait(false);
+                await endPoint.SetMinOutputBitrateAsync(4096).ConfigureAwait(false);
             }
             
             endPoint.OnIceCandidate += arg =>
