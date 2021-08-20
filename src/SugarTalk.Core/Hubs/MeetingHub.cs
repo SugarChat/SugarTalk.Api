@@ -85,7 +85,8 @@ namespace SugarTalk.Core.Hubs
                 await GetOrCreateWebRtcConnection(meetingSession, userSessionId, peerConnectionId, mediaType, receiveWebRtcConnectionId)
                     .ConfigureAwait(false);
 
-            if (connection == null) return;
+            // endpoint is null maybe connection closed
+            if (connection?.WebRtcEndpoint == null) return;
             
             await connection.WebRtcEndpoint.AddIceCandidateAsync(candidate);
         }
@@ -100,7 +101,8 @@ namespace SugarTalk.Core.Hubs
                 await GetOrCreateWebRtcConnection(meetingSession, userSessionId, peerConnectionId, mediaType, receiveWebRtcConnectionId)
                     .ConfigureAwait(false);
 
-            if (connection == null) return;
+            // endpoint is null maybe connection closed
+            if (connection?.WebRtcEndpoint == null) return;
             
             var answerSdp = await connection.WebRtcEndpoint.ProcessOfferAsync(offerSdp).ConfigureAwait(false);
 
@@ -146,16 +148,14 @@ namespace SugarTalk.Core.Hubs
             
             var otherUserSession = meetingSession.UserSessions.SingleOrDefault(x => x.Id == userSessionId);
 
-            if (otherUserSession == null) return null;
-            
             var otherUserSessionSendEndpointConnection =
-                otherUserSession.WebRtcConnections.SingleOrDefault(x =>
+                otherUserSession?.WebRtcConnections.SingleOrDefault(x =>
                     x.Id == receiveWebRtcConnectionId && 
                     x.ConnectionType == UserSessionWebRtcConnectionType.Send &&
                     x.ConnectionStatus == UserSessionWebRtcConnectionStatus.Connected);
 
-            if (otherUserSessionSendEndpointConnection == null)
-                throw new UserSessionWebRtcConnectionNotFoundException();
+            // maybe leave, should reconnect
+            if (otherUserSessionSendEndpointConnection == null) return null;
             
             var receiveThisUserSessionEndpointConnection = selfUserSession.WebRtcConnections
                 .SingleOrDefault(x => x.ReceiveWebRtcConnectionId == otherUserSessionSendEndpointConnection.Id);
