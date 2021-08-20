@@ -115,7 +115,10 @@ namespace SugarTalk.Core.Hubs
             MeetingSessionDto meetingSession, Guid userSessionId, string peerConnectionId,
             UserSessionWebRtcConnectionMediaType mediaType, Guid? receiveWebRtcConnectionId, bool shouldRecreateEndpoint)
         {
-            var selfUserSession = meetingSession.UserSessions.Single(x => x.ConnectionId == Context.ConnectionId);
+            var selfUserSession = meetingSession.UserSessions.SingleOrDefault(x => x.ConnectionId == Context.ConnectionId);
+
+            // maybe self user leave the meeting
+            if (selfUserSession == null) return null;
             
             if (selfUserSession.Id == userSessionId)
             {
