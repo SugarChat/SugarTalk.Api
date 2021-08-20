@@ -203,9 +203,9 @@ namespace SugarTalk.Core.Hubs
 
             if (mediaType == UserSessionWebRtcConnectionMediaType.Screen)
             {
-                await endPoint.SetMinVideoSendBandwidthAsync(250000).ConfigureAwait(false);
-                await endPoint.SetMinVideoRecvBandwidthAsync(250000).ConfigureAwait(false);
-                await endPoint.SetMinOutputBitrateAsync(250000).ConfigureAwait(false);
+                await endPoint.SetMinVideoSendBandwidthAsync(20000).ConfigureAwait(false);
+                await endPoint.SetMinVideoRecvBandwidthAsync(20000).ConfigureAwait(false);
+                await endPoint.SetMinOutputBitrateAsync(20000).ConfigureAwait(false);
             }
             
             endPoint.OnIceCandidate += arg =>
