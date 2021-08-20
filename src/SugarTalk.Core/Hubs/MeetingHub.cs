@@ -6,7 +6,6 @@ using Kurento.NET;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
 using Newtonsoft.Json;
-using Serilog;
 using SugarTalk.Core.Entities;
 using SugarTalk.Core.Hubs.Exceptions;
 using SugarTalk.Core.Services.Meetings;
@@ -86,6 +85,8 @@ namespace SugarTalk.Core.Hubs
                 await GetOrCreateWebRtcConnection(meetingSession, userSessionId, peerConnectionId, mediaType, receiveWebRtcConnectionId)
                     .ConfigureAwait(false);
 
+            if (connection == null) return;
+            
             await connection.WebRtcEndpoint.AddIceCandidateAsync(candidate);
         }
         
@@ -99,6 +100,8 @@ namespace SugarTalk.Core.Hubs
                 await GetOrCreateWebRtcConnection(meetingSession, userSessionId, peerConnectionId, mediaType, receiveWebRtcConnectionId)
                     .ConfigureAwait(false);
 
+            if (connection == null) return;
+            
             var answerSdp = await connection.WebRtcEndpoint.ProcessOfferAsync(offerSdp).ConfigureAwait(false);
 
             Clients.Caller.ProcessAnswer(connection.Id, peerConnectionId, answerSdp);
@@ -141,8 +144,10 @@ namespace SugarTalk.Core.Hubs
                 return webRtcConnection;
             }
             
-            var otherUserSession = meetingSession.UserSessions.Single(x => x.Id == userSessionId);
+            var otherUserSession = meetingSession.UserSessions.SingleOrDefault(x => x.Id == userSessionId);
 
+            if (otherUserSession == null) return null;
+            
             var otherUserSessionSendEndpointConnection =
                 otherUserSession.WebRtcConnections.SingleOrDefault(x =>
                     x.Id == receiveWebRtcConnectionId && 
@@ -189,10 +194,6 @@ namespace SugarTalk.Core.Hubs
             {
                 await endPoint.SetMinVideoSendBandwidthAsync(250000).ConfigureAwait(false);
                 await endPoint.SetMinVideoRecvBandwidthAsync(250000).ConfigureAwait(false);
-
-                Log.Information($"Share screen MinOutputBitrate is {await endPoint.GetMinOutputBitrateAsync()}");
-                Log.Information($"Share screen MaxOutputBitrate is {await endPoint.GetMaxOutputBitrateAsync()}");
-                
                 await endPoint.SetMinOutputBitrateAsync(250000).ConfigureAwait(false);
             }
             
