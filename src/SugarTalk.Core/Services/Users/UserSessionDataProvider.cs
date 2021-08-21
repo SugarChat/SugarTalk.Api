@@ -35,6 +35,10 @@ namespace SugarTalk.Core.Services.Users
         
         Task<List<UserSessionWebRtcConnection>> GetUserSessionWebRtcConnectionsByUserSessionIds(IEnumerable<Guid> userSessionIds,
             CancellationToken cancellationToken = default);
+
+        Task<List<UserSessionWebRtcConnectionIceCandidate>>
+            GetUserSessionWebRtcConnectionIceCandidatesByPeerConnectionId(string peerConnectionId,
+                CancellationToken cancellationToken = default);
     }
     
     public class UserSessionDataProvider : IUserSessionDataProvider
@@ -95,6 +99,14 @@ namespace SugarTalk.Core.Services.Users
                 .ToListAsync(cancellationToken).ConfigureAwait(false);
         }
 
+        public async Task<List<UserSessionWebRtcConnectionIceCandidate>> GetUserSessionWebRtcConnectionIceCandidatesByPeerConnectionId(string peerConnectionId,
+            CancellationToken cancellationToken = default)
+        {
+            return await _repository.Query<UserSessionWebRtcConnectionIceCandidate>()
+                .Where(x => x.WebRtcPeerConnectionId == peerConnectionId)
+                .ToListAsync(cancellationToken).ConfigureAwait(false);
+        }
+
         public async Task<List<UserSessionDto>> GetUserSessionsByMeetingSessionId(Guid meetingSessionId, CancellationToken cancellationToken = default)
         {
             var userSessions = await _repository.Query<UserSession>()
@@ -146,7 +158,6 @@ namespace SugarTalk.Core.Services.Users
             var userSessionWebRtcConnections =
                 webRtcConnections.Where(x => x.UserSessionId == userSession.Id)
                     .Select(x => _mapper.Map<UserSessionWebRtcConnectionDto>(x)).ToList();
-            userSessionWebRtcConnections.ForEach(connection => connection.WebRtcEndpoint = GetEndpointById(connection.WebRtcEndpointId));
             userSession.WebRtcConnections = userSessionWebRtcConnections;
         }
         

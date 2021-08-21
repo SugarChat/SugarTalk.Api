@@ -1,5 +1,4 @@
 using System;
-using Kurento.NET;
 using Newtonsoft.Json;
 using SugarTalk.Messages.Enums;
 
@@ -13,14 +12,11 @@ namespace SugarTalk.Messages.Dtos.Users
         [JsonProperty("userSessionId")]
         public Guid UserSessionId { get; set; }
         
-        [JsonProperty("webRtcEndpointId")]
-        public string WebRtcEndpointId { get; set; }
-        
-        [JsonIgnore]
-        public WebRtcEndpoint WebRtcEndpoint { get; set; }
-        
         [JsonProperty("webRtcPeerConnectionId")]
         public string WebRtcPeerConnectionId { get; set; }
+        
+        [JsonProperty("webRtcPeerConnectionOfferSdp")]
+        public string WebRtcPeerConnectionOfferSdp { get; set; }
         
         [JsonProperty("receiveWebRtcConnectionId")]
         public Guid? ReceiveWebRtcConnectionId { get; set; }

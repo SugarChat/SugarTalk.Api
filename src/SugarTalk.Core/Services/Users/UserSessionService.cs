@@ -6,6 +6,7 @@ using AutoMapper;
 using MongoDB.Driver.Linq;
 using SugarTalk.Core.Data.MongoDb;
 using SugarTalk.Core.Entities;
+using SugarTalk.Core.Services.Users.Exceptions;
 using SugarTalk.Messages.Commands.UserSessions;
 using SugarTalk.Messages.Dtos.Users;
 using SugarTalk.Messages.Events.UserSessions;
@@ -21,6 +22,9 @@ namespace SugarTalk.Core.Services.Users
         Task AddUserSessionWebRtcConnection(UserSessionWebRtcConnection webRtcConnection,
             CancellationToken cancellationToken = default);
 
+        Task AddUserSessionWebRtcConnectionIceCandidate(
+            UserSessionWebRtcConnectionIceCandidate iceCandidate, CancellationToken cancellationToken = default);
+        
         Task RemoveUserSessionWebRtcConnection(Guid id, CancellationToken cancellationToken = default);
         
         Task<UserSessionWebRtcConnectionRemovedEvent> RemoveUserSessionWebRtcConnection(
@@ -72,6 +76,12 @@ namespace SugarTalk.Core.Services.Users
             await _repository.AddAsync(webRtcConnection, cancellationToken).ConfigureAwait(false);
         }
 
+        public async Task AddUserSessionWebRtcConnectionIceCandidate(
+            UserSessionWebRtcConnectionIceCandidate iceCandidate, CancellationToken cancellationToken = default)
+        {
+            await _repository.AddAsync(iceCandidate, cancellationToken).ConfigureAwait(false);
+        }
+        
         public async Task RemoveUserSessionWebRtcConnection(Guid id, CancellationToken cancellationToken = default)
         {
             var webRtcConnection = await _userSessionDataProvider
@@ -103,6 +113,9 @@ namespace SugarTalk.Core.Services.Users
         {
             var webRtcConnection = await _userSessionDataProvider
                 .GetUserSessionWebRtcConnectionById(command.UserSessionWebRtcConnectionId, cancellationToken).ConfigureAwait(false);
+
+            if (webRtcConnection == null)
+                throw new UserSessionWebRtcConnectionNotFoundException();
 
             webRtcConnection.ConnectionStatus = command.ConnectionStatus;
             
