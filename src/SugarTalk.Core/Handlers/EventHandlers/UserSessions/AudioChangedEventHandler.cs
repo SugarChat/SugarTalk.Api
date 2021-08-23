@@ -11,10 +11,10 @@ namespace SugarTalk.Core.Handlers.EventHandlers.UserSessions
 {
     public class AudioChangedEventHandler : IEventHandler<AudioChangedEvent>
     {
-        private readonly IHubContext<MeetingHub> _meetingHub;
+        private readonly IHubContext<P2pMeetingHub> _meetingHub;
         private readonly IMeetingSessionDataProvider _meetingSessionDataProvider;
         
-        public AudioChangedEventHandler(IHubContext<MeetingHub> meetingHub, IMeetingSessionDataProvider meetingSessionDataProvider)
+        public AudioChangedEventHandler(IHubContext<P2pMeetingHub> meetingHub, IMeetingSessionDataProvider meetingSessionDataProvider)
         {
             _meetingHub = meetingHub;
             _meetingSessionDataProvider = meetingSessionDataProvider;
