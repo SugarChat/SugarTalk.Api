@@ -56,10 +56,11 @@ namespace SugarTalk.Core.Hubs
             Clients.OthersInGroup(MeetingNumber).OtherJoined(userSession);
         }
         
-        public void ProcessOffer(UserSessionDto sendFromUserSession, UserSessionDto sendToUserSession, string offerPeerConnectionId, string offerToJson)
+        public void ProcessOffer(UserSessionDto sendFromUserSession, UserSessionDto sendToUserSession, 
+            OfferPeerConnectionMediaType offerPeerConnectionMediaType, string offerPeerConnectionId, string offerToJson)
         {
             Clients.Client(sendToUserSession.ConnectionId)
-                .OtherOfferSent(sendFromUserSession, offerPeerConnectionId, offerToJson);
+                .OtherOfferSent(sendFromUserSession, offerPeerConnectionMediaType, offerPeerConnectionId, offerToJson);
         }
         
         public void ProcessAnswer(UserSessionDto sendFromUserSession, UserSessionDto sendToUserSession, string offerPeerConnectionId, string answerPeerConnectionId, string answerToJson)
@@ -79,5 +80,12 @@ namespace SugarTalk.Core.Hubs
             Clients.Client(sendToUserSession.ConnectionId)
                 .OtherCandidateCreated(peerConnectionId, candidateToJson);
         }
+    }
+
+    public enum OfferPeerConnectionMediaType
+    {
+        Audio,
+        Video,
+        Screen
     }
 }
