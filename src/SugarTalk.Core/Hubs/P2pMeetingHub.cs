@@ -55,12 +55,6 @@ namespace SugarTalk.Core.Hubs
             Clients.Caller.SetOtherUsers(otherUserSessions);
             Clients.OthersInGroup(MeetingNumber).OtherJoined(userSession);
         }
-
-        public void ProcessCandidate(UserSessionDto sendFromUserSession, UserSessionDto sendToUserSession, string peerConnectionId, string candidateToJson)
-        {
-            Clients.Client(sendToUserSession.ConnectionId)
-                .OtherCandidateCreated(sendFromUserSession, peerConnectionId, candidateToJson);
-        }
         
         public void ProcessOffer(UserSessionDto sendFromUserSession, UserSessionDto sendToUserSession, string offerPeerConnectionId, string offerToJson)
         {
@@ -72,6 +66,18 @@ namespace SugarTalk.Core.Hubs
         {
             Clients.Client(sendToUserSession.ConnectionId)
                 .OtherAnswerSent(sendFromUserSession, offerPeerConnectionId, answerPeerConnectionId, answerToJson);
+        }
+        
+        public void ProcessCandidate(UserSessionDto sendToUserSession, string peerConnectionId, string candidateToJson)
+        {
+            Clients.Client(sendToUserSession.ConnectionId)
+                .OtherCandidateCreated(peerConnectionId, candidateToJson);
+        }
+
+        public void ConnectionNotFoundWhenOtherIceSent(UserSessionDto sendToUserSession, string peerConnectionId, string candidateToJson)
+        {
+            Clients.Client(sendToUserSession.ConnectionId)
+                .OtherCandidateCreated(peerConnectionId, candidateToJson);
         }
     }
 }
