@@ -1,3 +1,4 @@
+using System;
 using System.Threading.Tasks;
 using Mediator.Net;
 using Microsoft.AspNetCore.Authorization;
@@ -47,7 +48,8 @@ namespace SugarTalk.Api.Controllers
         [Route("iceservers"), HttpGet]
         public IActionResult GetIceServers()
         {
-            Log.Information($"{_webRtcIceServerSettings.Value}, {_webRtcIceServerSettings.Value.IceServers}");
+            Log.Information($"IceServers: {_webRtcIceServerSettings.Value}, {_webRtcIceServerSettings.Value.IceServers}");
+            Log.Information($"IceServers: {Environment.GetEnvironmentVariable("WebRtcIceServerSettings.IceServers")}");
             return Ok(_webRtcIceServerSettings.Value.IceServers);
         }
     }
