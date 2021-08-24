@@ -2,7 +2,7 @@ namespace SugarTalk.Core.Settings
 {
     public class WebRtcIceServerSettings
     {
-        public WebRtcIceServer[] IceServers { get; set; }
+        public string IceServers { get; set; }
     } 
 
     public class WebRtcIceServer
