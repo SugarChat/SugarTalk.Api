@@ -9,7 +9,7 @@ namespace SugarTalk.Core.Settings
     {
         public string[] Urls { get; set; }
         
-        public string UserName { get; set; }
+        public string Username { get; set; }
         
         public string Credential { get; set; }
         
