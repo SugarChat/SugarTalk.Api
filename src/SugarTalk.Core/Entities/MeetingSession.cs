@@ -9,6 +9,5 @@ namespace SugarTalk.Core.Entities
         public Guid MeetingId { get; set; }
         public string MeetingNumber { set; get; }
         public MeetingType MeetingType { get; set; }
-        public string PipelineId { get; set; }
     }
 }

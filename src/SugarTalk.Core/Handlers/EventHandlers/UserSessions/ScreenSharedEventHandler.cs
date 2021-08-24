@@ -11,10 +11,10 @@ namespace SugarTalk.Core.Handlers.EventHandlers.UserSessions
 {
     public class ScreenSharedEventHandler : IEventHandler<ScreenSharedEvent>
     {
-        private readonly IHubContext<P2pMeetingHub> _meetingHub;
+        private readonly IHubContext<MeetingHub> _meetingHub;
         private readonly IMeetingSessionDataProvider _meetingSessionDataProvider;
 
-        public ScreenSharedEventHandler(IHubContext<P2pMeetingHub> meetingHub, IMeetingSessionDataProvider meetingSessionDataProvider)
+        public ScreenSharedEventHandler(IHubContext<MeetingHub> meetingHub, IMeetingSessionDataProvider meetingSessionDataProvider)
         {
             _meetingHub = meetingHub;
             _meetingSessionDataProvider = meetingSessionDataProvider;

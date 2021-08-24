@@ -3,7 +3,6 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using AutoMapper;
-using Kurento.NET;
 using SugarTalk.Core.Data.MongoDb;
 using SugarTalk.Core.Entities;
 using SugarTalk.Core.Services.Users;
@@ -32,17 +31,15 @@ namespace SugarTalk.Core.Services.Meetings
     public class MeetingSessionService : IMeetingSessionService
     {
         private readonly IMapper _mapper;
-        private readonly KurentoClient _client;
         private readonly IUserService _userService;
         private readonly IMongoDbRepository _repository;
         private readonly IMeetingSessionDataProvider _meetingSessionDataProvider;
         
-        public MeetingSessionService(IMapper mapper,  KurentoClient client, 
+        public MeetingSessionService(IMapper mapper, 
             IMongoDbRepository repository, IUserService userService, 
             IMeetingSessionDataProvider meetingSessionDataProvider)
         {
             _mapper = mapper;
-            _client = client;
             _repository = repository;
             _userService = userService;
             _meetingSessionDataProvider = meetingSessionDataProvider;
@@ -108,11 +105,8 @@ namespace SugarTalk.Core.Services.Meetings
         public async Task<MeetingSession> GenerateNewMeetingSession(Meeting meeting,
             CancellationToken cancellationToken)
         {
-            var pipeline = await _client.CreateAsync(new MediaPipeline());
-            
             var meetingSession = new MeetingSession
             {
-                PipelineId = pipeline.id,
                 MeetingId = meeting.Id,
                 MeetingType = meeting.MeetingType,
                 MeetingNumber = meeting.MeetingNumber

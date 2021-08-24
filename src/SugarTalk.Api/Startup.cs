@@ -87,7 +87,7 @@ namespace SugarTalk.Api
             app.UseEndpoints(endpoints =>
             {
                 endpoints.MapControllers();
-                endpoints.MapHub<P2pMeetingHub>("/meetingHub");
+                endpoints.MapHub<MeetingHub>("/meetingHub");
             });
             
             app.UseMvc(routes =>

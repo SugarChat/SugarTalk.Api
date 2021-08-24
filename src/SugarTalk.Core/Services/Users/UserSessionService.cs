@@ -1,5 +1,3 @@
-using System;
-using System.Runtime.Serialization.Formatters;
 using System.Threading;
 using System.Threading.Tasks;
 using AutoMapper;
@@ -18,17 +16,6 @@ namespace SugarTalk.Core.Services.Users
         
         Task RemoveUserSession(UserSession userSession, CancellationToken cancellationToken = default);
 
-        Task AddUserSessionWebRtcConnection(UserSessionWebRtcConnection webRtcConnection,
-            CancellationToken cancellationToken = default);
-
-        Task RemoveUserSessionWebRtcConnection(Guid id, CancellationToken cancellationToken = default);
-        
-        Task<UserSessionWebRtcConnectionRemovedEvent> RemoveUserSessionWebRtcConnection(
-            RemoveUserSessionWebRtcConnectionCommand command, CancellationToken cancellationToken = default);
-        
-        Task<UserSessionWebRtcConnectionStatusUpdatedEvent> UpdateUserSessionWebRtcConnectionStatus(
-            UpdateUserSessionWebRtcConnectionStatusCommand command, CancellationToken cancellationToken = default);
-        
         Task<AudioChangedEvent> ChangeAudio(ChangeAudioCommand changeAudioCommand, CancellationToken cancellationToken = default);
 
         Task<ScreenSharedEvent> ShareScreen(ShareScreenCommand shareScreenCommand,
@@ -57,62 +44,8 @@ namespace SugarTalk.Core.Services.Users
         {
             if (userSession != null)
             {
-                var userSessionWebRtcConnections = await _userSessionDataProvider
-                    .GetUserSessionWebRtcConnectionsByUserSessionId(userSession.Id, cancellationToken).ConfigureAwait(false);
-                
                 await _repository.RemoveAsync(userSession, cancellationToken).ConfigureAwait(false);
-                await _repository.RemoveRangeAsync(userSessionWebRtcConnections, cancellationToken)
-                    .ConfigureAwait(false);
             }
-        }
-
-        public async Task AddUserSessionWebRtcConnection(UserSessionWebRtcConnection webRtcConnection,
-            CancellationToken cancellationToken = default)
-        {
-            await _repository.AddAsync(webRtcConnection, cancellationToken).ConfigureAwait(false);
-        }
-
-        public async Task RemoveUserSessionWebRtcConnection(Guid id, CancellationToken cancellationToken = default)
-        {
-            var webRtcConnection = await _userSessionDataProvider
-                .GetUserSessionWebRtcConnectionById(id, cancellationToken).ConfigureAwait(false);
-            
-            if (webRtcConnection != null)
-                await _repository.RemoveAsync(webRtcConnection, cancellationToken).ConfigureAwait(false);
-        }
-
-        public async Task<UserSessionWebRtcConnectionRemovedEvent> RemoveUserSessionWebRtcConnection(
-            RemoveUserSessionWebRtcConnectionCommand command, CancellationToken cancellationToken = default)
-        {
-            var webRtcConnection = await _userSessionDataProvider
-                .GetUserSessionWebRtcConnectionById(Guid.Empty, command.WebRtcPeerConnectionId, cancellationToken).ConfigureAwait(false);
-
-            if (webRtcConnection == null)
-                throw new ArgumentNullException(nameof(webRtcConnection));
-            
-            await _repository.RemoveAsync(webRtcConnection, cancellationToken).ConfigureAwait(false);
-            
-            return new UserSessionWebRtcConnectionRemovedEvent
-            {
-                RemovedConnection = _mapper.Map<UserSessionWebRtcConnectionDto>(webRtcConnection)
-            };
-        }
-        
-        public async Task<UserSessionWebRtcConnectionStatusUpdatedEvent> UpdateUserSessionWebRtcConnectionStatus(
-            UpdateUserSessionWebRtcConnectionStatusCommand command, CancellationToken cancellationToken = default)
-        {
-            var webRtcConnection = await _userSessionDataProvider
-                .GetUserSessionWebRtcConnectionById(command.UserSessionWebRtcConnectionId, cancellationToken).ConfigureAwait(false);
-
-            webRtcConnection.ConnectionStatus = command.ConnectionStatus;
-            
-            await _repository.UpdateAsync(webRtcConnection, cancellationToken).ConfigureAwait(false);
-
-            return new UserSessionWebRtcConnectionStatusUpdatedEvent
-            {
-                UserSession = await _userSessionDataProvider
-                    .GetUserSessionById(webRtcConnection.UserSessionId, true, cancellationToken).ConfigureAwait(false)
-            };
         }
 
         public async Task<ScreenSharedEvent> ShareScreen(ShareScreenCommand shareScreenCommand,

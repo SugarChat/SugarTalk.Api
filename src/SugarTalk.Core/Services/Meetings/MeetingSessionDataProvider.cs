@@ -2,8 +2,6 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using AutoMapper;
-using Kurento.NET;
-using MongoDB.Driver;
 using MongoDB.Driver.Linq;
 using SugarTalk.Core.Data.MongoDb;
 using SugarTalk.Core.Entities;
@@ -26,14 +24,12 @@ namespace SugarTalk.Core.Services.Meetings
     public class MeetingSessionDataProvider : IMeetingSessionDataProvider
     {
         private readonly IMapper _mapper;
-        private readonly KurentoClient _client;
         private readonly IMongoDbRepository _repository;
         private readonly IUserSessionDataProvider _userSessionDataProvider;
         
-        public MeetingSessionDataProvider(IMapper mapper, KurentoClient client, IMongoDbRepository repository, IUserSessionDataProvider userSessionDataProvider)
+        public MeetingSessionDataProvider(IMapper mapper, IMongoDbRepository repository, IUserSessionDataProvider userSessionDataProvider)
         {
             _mapper = mapper;
-            _client = client;
             _repository = repository;
             _userSessionDataProvider = userSessionDataProvider;
         }
@@ -58,8 +54,6 @@ namespace SugarTalk.Core.Services.Meetings
             var meeting = await GetMeetingSessionByNumber(meetingNumber, cancellationToken).ConfigureAwait(false);
 
             var meetingSession = _mapper.Map<MeetingSessionDto>(meeting);
-
-            meetingSession.Pipeline = _client.GetObjectById(meetingSession.PipelineId) as MediaPipeline;
 
             if (includeUserSessions)
             {
