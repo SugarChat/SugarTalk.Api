@@ -1,3 +1,4 @@
+using System;
 using System.Linq;
 using System.Threading.Tasks;
 using AutoMapper;
@@ -54,6 +55,18 @@ namespace SugarTalk.Core.Hubs
             Clients.Caller.SetLocalUser(userSession);
             Clients.Caller.SetOtherUsers(otherUserSessions);
             Clients.OthersInGroup(MeetingNumber).OtherJoined(userSession);
+        }
+        
+        public override async Task OnDisconnectedAsync(Exception exception)
+        {
+            var userSession = await _userSessionDataProvider.GetUserSessionByConnectionId(Context.ConnectionId)
+                .ConfigureAwait(false);
+            
+            Clients.OthersInGroup(MeetingNumber).OtherLeft(userSession);
+            
+            await _userSessionService.RemoveUserSession(userSession).ConfigureAwait(false);
+
+            await base.OnDisconnectedAsync(exception).ConfigureAwait(false);
         }
         
         public void ProcessOffer(UserSessionDto sendFromUserSession, UserSessionDto sendToUserSession, 
