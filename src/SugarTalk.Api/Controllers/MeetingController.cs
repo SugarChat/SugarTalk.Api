@@ -3,6 +3,7 @@ using Mediator.Net;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
+using Serilog;
 using SugarTalk.Core.Settings;
 using SugarTalk.Messages;
 using SugarTalk.Messages.Commands.Meetings;
@@ -46,6 +47,7 @@ namespace SugarTalk.Api.Controllers
         [Route("iceservers"), HttpGet]
         public IActionResult GetIceServers()
         {
+            Log.Information($"{_webRtcIceServerSettings.Value}, {_webRtcIceServerSettings.Value.IceServers}");
             return Ok(_webRtcIceServerSettings.Value.IceServers);
         }
     }
