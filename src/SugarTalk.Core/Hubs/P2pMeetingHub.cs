@@ -1,8 +1,7 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using AutoMapper;
-using Kurento.NET;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
 using SugarTalk.Core.Services.Meetings;
@@ -16,20 +15,16 @@ namespace SugarTalk.Core.Hubs
     {
         private string MeetingNumber => Context.GetHttpContext().Request.Query["meetingNumber"];
 
-        private readonly IMapper _mapper;
-        private readonly KurentoClient _kurento;
         private readonly IUserService _userService;
         private readonly IUserSessionService _userSessionService;
         private readonly IMeetingSessionService _meetingSessionService;
         private readonly IUserSessionDataProvider _userSessionDataProvider;
         private readonly IMeetingSessionDataProvider _meetingSessionDataProvider;
         
-        public P2pMeetingHub(IMapper mapper, KurentoClient kurento, IUserService userService,
+        public P2pMeetingHub(IUserService userService,
             IUserSessionService userSessionService, IMeetingSessionService meetingSessionService, 
             IUserSessionDataProvider userSessionDataProvider, IMeetingSessionDataProvider meetingSessionDataProvider)
         {
-            _mapper = mapper;
-            _kurento = kurento;
             _userService = userService;
             _userSessionService = userSessionService;
             _meetingSessionService = meetingSessionService;
@@ -88,6 +83,12 @@ namespace SugarTalk.Core.Hubs
                 .OtherCandidateCreated(peerConnectionId, candidateToJson);
         }
 
+        public void ConnectionsClosed(IEnumerable<string> peerConnectionIds)
+        {
+            Clients.OthersInGroup(MeetingNumber)
+                .OtherConnectionsClosed(peerConnectionIds);
+        }
+        
         public void ConnectionNotFoundWhenOtherIceSent(UserSessionDto sendToUserSession, string peerConnectionId, string candidateToJson)
         {
             Clients.Client(sendToUserSession.ConnectionId)
