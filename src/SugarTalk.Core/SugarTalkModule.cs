@@ -23,20 +23,7 @@ namespace SugarTalk.Core
                 .AddAutoMapper(typeof(SugarTalkModule).Assembly)
                 .LoadMongoDb()
                 .LoadMediator()
-                .LoadServices()
-                .LoadKurento();
-            
-            return services;
-        }
-        
-        private static IServiceCollection LoadKurento(this IServiceCollection services)
-        {
-            services.AddSingleton(serviceProvider =>
-            {
-                var settings = serviceProvider.GetService<IOptions<WebRtcServerSettings>>();
-                var logger = serviceProvider.GetService<Microsoft.Extensions.Logging.ILogger>();
-                return new KurentoClient(settings?.Value.ServerUrl, logger);
-            });
+                .LoadServices();
             
             return services;
         }
@@ -46,7 +33,7 @@ namespace SugarTalk.Core
             services.Configure<MongoDbSettings>(configuration.GetSection(nameof(MongoDbSettings)));
             services.Configure<GoogleSettings>(configuration.GetSection(nameof(GoogleSettings)));
             services.Configure<FacebookSettings>(configuration.GetSection(nameof(FacebookSettings)));
-            services.Configure<WebRtcServerSettings>(configuration.GetSection(nameof(WebRtcServerSettings)));
+            services.Configure<WebRtcIceServerSettings>(configuration.GetSection(nameof(WebRtcIceServerSettings)));
             
             return services;
         }
