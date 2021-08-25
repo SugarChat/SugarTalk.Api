@@ -56,10 +56,13 @@ namespace SugarTalk.Core.Hubs
         {
             var userSession = await _userSessionDataProvider.GetUserSessionByConnectionId(Context.ConnectionId)
                 .ConfigureAwait(false);
+
+            if (userSession != null)
+            {
+                Clients.OthersInGroup(MeetingNumber).OtherLeft(userSession);
             
-            Clients.OthersInGroup(MeetingNumber).OtherLeft(userSession);
-            
-            await _userSessionService.RemoveUserSession(userSession).ConfigureAwait(false);
+                await _userSessionService.RemoveUserSession(userSession).ConfigureAwait(false);
+            }
 
             await base.OnDisconnectedAsync(exception).ConfigureAwait(false);
         }
