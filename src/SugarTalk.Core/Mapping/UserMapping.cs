@@ -11,8 +11,6 @@ namespace SugarTalk.Core.Mapping
             CreateMap<User, SignedInUserDto>();
             CreateMap<UserSession, UserSessionDto>();
             CreateMap<UserSessionDto, UserSession>();
-            CreateMap<UserSessionWebRtcConnection, UserSessionWebRtcConnectionDto>();
-            CreateMap<UserSessionWebRtcConnectionDto, UserSessionWebRtcConnection>();
         }
     }
 }

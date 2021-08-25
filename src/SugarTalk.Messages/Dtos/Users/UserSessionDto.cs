@@ -1,16 +1,10 @@
 using System;
-using System.Collections.Generic;
 using Newtonsoft.Json;
 
 namespace SugarTalk.Messages.Dtos.Users
 {
     public class UserSessionDto
     {
-        public UserSessionDto()
-        {
-            WebRtcConnections = new List<UserSessionWebRtcConnectionDto>();
-        }
-        
         [JsonProperty("id")]
         public Guid Id { set; get; }
         
@@ -40,8 +34,5 @@ namespace SugarTalk.Messages.Dtos.Users
         
         [JsonProperty("isSharingCamera")]
         public bool IsSharingCamera { get; set; }
-
-        [JsonProperty("webRtcConnections")]
-        public List<UserSessionWebRtcConnectionDto> WebRtcConnections { get; set; }
     }
 }

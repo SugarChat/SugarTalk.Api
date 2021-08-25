@@ -1,48 +1,37 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using AutoMapper;
-using Kurento.NET;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
-using Newtonsoft.Json;
-using SugarTalk.Core.Entities;
-using SugarTalk.Core.Hubs.Exceptions;
 using SugarTalk.Core.Services.Meetings;
 using SugarTalk.Core.Services.Users;
-using SugarTalk.Messages.Dtos.Meetings;
 using SugarTalk.Messages.Dtos.Users;
-using SugarTalk.Messages.Enums;
 
 namespace SugarTalk.Core.Hubs
 {
     [Authorize]
     public class MeetingHub : DynamicHub
     {
-        private string UserName => Context.GetHttpContext().Request.Query["userName"];
         private string MeetingNumber => Context.GetHttpContext().Request.Query["meetingNumber"];
 
-        private readonly IMapper _mapper;
-        private readonly KurentoClient _kurento;
         private readonly IUserService _userService;
         private readonly IUserSessionService _userSessionService;
         private readonly IMeetingSessionService _meetingSessionService;
         private readonly IUserSessionDataProvider _userSessionDataProvider;
         private readonly IMeetingSessionDataProvider _meetingSessionDataProvider;
         
-        public MeetingHub(IMapper mapper, KurentoClient kurento, IUserService userService,
+        public MeetingHub(IUserService userService,
             IUserSessionService userSessionService, IMeetingSessionService meetingSessionService, 
             IUserSessionDataProvider userSessionDataProvider, IMeetingSessionDataProvider meetingSessionDataProvider)
         {
-            _mapper = mapper;
-            _kurento = kurento;
             _userService = userService;
             _userSessionService = userSessionService;
             _meetingSessionService = meetingSessionService;
             _userSessionDataProvider = userSessionDataProvider;
             _meetingSessionDataProvider = meetingSessionDataProvider;
         }
-
+        
         public override async Task OnConnectedAsync()
         {
             var user = await _userService.GetCurrentLoggedInUser().ConfigureAwait(false);
@@ -67,153 +56,53 @@ namespace SugarTalk.Core.Hubs
         {
             var userSession = await _userSessionDataProvider.GetUserSessionByConnectionId(Context.ConnectionId)
                 .ConfigureAwait(false);
+
+            if (userSession != null)
+            {
+                Clients.OthersInGroup(MeetingNumber).OtherLeft(userSession);
             
-            Clients.OthersInGroup(MeetingNumber).OtherLeft(userSession);
-            
-            await _userSessionService.RemoveUserSession(userSession).ConfigureAwait(false);
-            
+                await _userSessionService.RemoveUserSession(userSession).ConfigureAwait(false);
+            }
+
             await base.OnDisconnectedAsync(exception).ConfigureAwait(false);
         }
-
-        public async Task ProcessCandidateAsync(Guid userSessionId, string peerConnectionId, IceCandidate candidate, 
-            UserSessionWebRtcConnectionMediaType mediaType, Guid? receiveWebRtcConnectionId)
+        
+        public void ProcessOffer(UserSessionDto sendFromUserSession, UserSessionDto sendToUserSession, 
+            OfferPeerConnectionMediaType offerPeerConnectionMediaType, string offerPeerConnectionId, string offerToJson)
         {
-            var meetingSession = await _meetingSessionDataProvider.GetMeetingSession(MeetingNumber)
-                .ConfigureAwait(false);
-            
-            var connection =
-                await GetOrCreateWebRtcConnection(meetingSession, userSessionId, peerConnectionId, mediaType, receiveWebRtcConnectionId, false)
-                    .ConfigureAwait(false);
-
-            // endpoint is null maybe connection closed
-            if (connection?.WebRtcEndpoint == null) return;
-            
-            await connection.WebRtcEndpoint.AddIceCandidateAsync(candidate);
+            Clients.Client(sendToUserSession.ConnectionId)
+                .OtherOfferSent(sendFromUserSession, offerPeerConnectionMediaType, offerPeerConnectionId, offerToJson);
         }
         
-        public async Task ProcessOfferAsync(Guid userSessionId, string peerConnectionId, string offerSdp, 
-            UserSessionWebRtcConnectionMediaType mediaType, Guid? receiveWebRtcConnectionId)
+        public void ProcessAnswer(UserSessionDto sendFromUserSession, UserSessionDto sendToUserSession, string offerPeerConnectionId, string answerPeerConnectionId, string answerToJson)
         {
-            var meetingSession = await _meetingSessionDataProvider.GetMeetingSession(MeetingNumber)
-                .ConfigureAwait(false);
-
-            var connection =
-                await GetOrCreateWebRtcConnection(meetingSession, userSessionId, peerConnectionId, mediaType, receiveWebRtcConnectionId, true)
-                    .ConfigureAwait(false);
-
-            // endpoint is null maybe connection closed
-            if (connection?.WebRtcEndpoint == null) return;
-            
-            var answerSdp = await connection.WebRtcEndpoint.ProcessOfferAsync(offerSdp).ConfigureAwait(false);
-
-            Clients.Caller.ProcessAnswer(connection.Id, peerConnectionId, answerSdp);
-            
-            await connection.WebRtcEndpoint.GatherCandidatesAsync().ConfigureAwait(false);
+            Clients.Client(sendToUserSession.ConnectionId)
+                .OtherAnswerSent(sendFromUserSession, offerPeerConnectionId, answerPeerConnectionId, answerToJson);
         }
         
-        private async Task<UserSessionWebRtcConnectionDto> GetOrCreateWebRtcConnection(
-            MeetingSessionDto meetingSession, Guid userSessionId, string peerConnectionId,
-            UserSessionWebRtcConnectionMediaType mediaType, Guid? receiveWebRtcConnectionId, bool shouldRecreateEndpoint)
+        public void ProcessCandidate(UserSessionDto sendToUserSession, string peerConnectionId, string candidateToJson)
         {
-            var selfUserSession = meetingSession.UserSessions.SingleOrDefault(x => x.ConnectionId == Context.ConnectionId);
+            Clients.Client(sendToUserSession.ConnectionId)
+                .OtherCandidateCreated(peerConnectionId, candidateToJson);
+        }
 
-            // maybe self user leave the meeting
-            if (selfUserSession == null) return null;
-            
-            if (selfUserSession.Id == userSessionId)
-            {
-                var webRtcConnection =
-                    selfUserSession.WebRtcConnections.SingleOrDefault(x =>
-                        x.WebRtcPeerConnectionId == peerConnectionId);
-
-                if (webRtcConnection == null || shouldRecreateEndpoint)
-                {
-                    if (webRtcConnection != null)
-                        await _userSessionService.RemoveUserSessionWebRtcConnection(webRtcConnection.Id)
-                            .ConfigureAwait(false);
-                    
-                    var selfEndpoint = await CreateEndPoint(meetingSession.Pipeline, peerConnectionId, mediaType)
-                        .ConfigureAwait(false);
-
-                    webRtcConnection = new UserSessionWebRtcConnectionDto
-                    {
-                        Id = Guid.NewGuid(),
-                        MediaType = mediaType,
-                        UserSessionId = selfUserSession.Id,
-                        WebRtcEndpoint = selfEndpoint,
-                        WebRtcEndpointId = selfEndpoint.id,
-                        WebRtcPeerConnectionId = peerConnectionId,
-                        ConnectionType = UserSessionWebRtcConnectionType.Send
-                    };
-
-                    await _userSessionService
-                        .AddUserSessionWebRtcConnection(_mapper.Map<UserSessionWebRtcConnection>(webRtcConnection)).ConfigureAwait(false);
-                }
-                
-                return webRtcConnection;
-            }
-            
-            var otherUserSession = meetingSession.UserSessions.SingleOrDefault(x => x.Id == userSessionId);
-
-            var otherUserSessionSendEndpointConnection =
-                otherUserSession?.WebRtcConnections.SingleOrDefault(x =>
-                    x.Id == receiveWebRtcConnectionId && 
-                    x.ConnectionType == UserSessionWebRtcConnectionType.Send &&
-                    x.ConnectionStatus == UserSessionWebRtcConnectionStatus.Connected);
-
-            // maybe leave, should reconnect
-            if (otherUserSessionSendEndpointConnection == null) return null;
-            
-            var receiveThisUserSessionEndpointConnection = selfUserSession.WebRtcConnections
-                .SingleOrDefault(x => x.ReceiveWebRtcConnectionId == otherUserSessionSendEndpointConnection.Id);
-
-            if (receiveThisUserSessionEndpointConnection == null || shouldRecreateEndpoint)
-            {
-                if (receiveThisUserSessionEndpointConnection != null)
-                    await _userSessionService.RemoveUserSessionWebRtcConnection(receiveThisUserSessionEndpointConnection.Id)
-                        .ConfigureAwait(false);
-                
-                var receiveThisUserSessionEndpoint = await CreateEndPoint(meetingSession.Pipeline, peerConnectionId, mediaType).ConfigureAwait(false);
-
-                await otherUserSessionSendEndpointConnection.WebRtcEndpoint.ConnectAsync(receiveThisUserSessionEndpoint)
-                    .ConfigureAwait(false);
-            
-                receiveThisUserSessionEndpointConnection = new UserSessionWebRtcConnectionDto
-                {
-                    Id = Guid.NewGuid(),
-                    MediaType = mediaType,
-                    UserSessionId = selfUserSession.Id,
-                    WebRtcPeerConnectionId = peerConnectionId,
-                    WebRtcEndpoint = receiveThisUserSessionEndpoint,
-                    WebRtcEndpointId = receiveThisUserSessionEndpoint.id,
-                    ConnectionType = UserSessionWebRtcConnectionType.Receive,
-                    ReceiveWebRtcConnectionId = receiveWebRtcConnectionId
-                };
-
-                await _userSessionService
-                    .AddUserSessionWebRtcConnection(_mapper.Map<UserSessionWebRtcConnection>(receiveThisUserSessionEndpointConnection)).ConfigureAwait(false);
-            }
-
-            return receiveThisUserSessionEndpointConnection;
+        public void ConnectionsClosed(IEnumerable<string> peerConnectionIds)
+        {
+            Clients.OthersInGroup(MeetingNumber)
+                .OtherConnectionsClosed(peerConnectionIds);
         }
         
-        private async Task<WebRtcEndpoint> CreateEndPoint(MediaPipeline pipeline, string peerConnectionId, UserSessionWebRtcConnectionMediaType mediaType)
+        public void ConnectionNotFoundWhenOtherIceSent(UserSessionDto sendToUserSession, string peerConnectionId, string candidateToJson)
         {
-            var endPoint = await _kurento.CreateAsync(new WebRtcEndpoint(pipeline)).ConfigureAwait(false);
-
-            if (mediaType == UserSessionWebRtcConnectionMediaType.Screen)
-            {
-                await endPoint.SetMinVideoSendBandwidthAsync(20000).ConfigureAwait(false);
-                await endPoint.SetMinVideoRecvBandwidthAsync(20000).ConfigureAwait(false);
-                await endPoint.SetMinOutputBitrateAsync(20000).ConfigureAwait(false);
-            }
-            
-            endPoint.OnIceCandidate += arg =>
-            {
-                Clients.Caller.AddCandidate(peerConnectionId, JsonConvert.SerializeObject(arg.candidate));
-            };
-            
-            return endPoint;
+            Clients.Client(sendToUserSession.ConnectionId)
+                .OtherCandidateCreated(peerConnectionId, candidateToJson);
         }
+    }
+
+    public enum OfferPeerConnectionMediaType
+    {
+        Audio,
+        Video,
+        Screen
     }
 }

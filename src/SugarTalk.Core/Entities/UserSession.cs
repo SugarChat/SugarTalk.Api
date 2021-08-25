@@ -1,6 +1,4 @@
 using System;
-using System.Collections.Concurrent;
-using SugarTalk.Messages.Enums;
 
 namespace SugarTalk.Core.Entities
 {
@@ -9,7 +7,6 @@ namespace SugarTalk.Core.Entities
         public UserSession()
         {
             CreatedDate = DateTimeOffset.Now;
-            ReceivedEndPointIds = new ConcurrentDictionary<string, string>();
         }
         
         public Guid Id { set; get; }
@@ -31,9 +28,5 @@ namespace SugarTalk.Core.Entities
         public bool IsSharingScreen { get; set; }
         
         public bool IsSharingCamera { get; set; }
-        
-        public string WebRtcEndpointId { get; set; }
-        
-        public ConcurrentDictionary<string, string> ReceivedEndPointIds { get; set; }
     }
 }
