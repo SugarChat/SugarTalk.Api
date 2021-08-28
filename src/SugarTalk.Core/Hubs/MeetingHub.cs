@@ -68,34 +68,22 @@ namespace SugarTalk.Core.Hubs
         }
         
         public void ProcessOffer(UserSessionDto sendFromUserSession, UserSessionDto sendToUserSession, 
-            OfferPeerConnectionMediaType offerPeerConnectionMediaType, string offerPeerConnectionId, string offerToJson)
+            OfferPeerConnectionMediaType offerPeerConnectionMediaType, string offerPeerConnectionId, string offerToJson, string[] candidatesToJson)
         {
             Clients.Client(sendToUserSession.ConnectionId)
-                .OtherOfferSent(sendFromUserSession, offerPeerConnectionMediaType, offerPeerConnectionId, offerToJson);
+                .OtherOfferSent(sendFromUserSession, offerPeerConnectionMediaType, offerPeerConnectionId, offerToJson, candidatesToJson);
         }
         
-        public void ProcessAnswer(UserSessionDto sendFromUserSession, UserSessionDto sendToUserSession, string offerPeerConnectionId, string answerPeerConnectionId, string answerToJson)
+        public void ProcessAnswer(UserSessionDto sendFromUserSession, UserSessionDto sendToUserSession, string offerPeerConnectionId, string answerPeerConnectionId, string answerToJson, string[] candidatesToJson)
         {
             Clients.Client(sendToUserSession.ConnectionId)
-                .OtherAnswerSent(sendFromUserSession, offerPeerConnectionId, answerPeerConnectionId, answerToJson);
+                .OtherAnswerSent(sendFromUserSession, offerPeerConnectionId, answerPeerConnectionId, answerToJson, candidatesToJson);
         }
         
-        public void ProcessCandidate(UserSessionDto sendToUserSession, string peerConnectionId, string candidateToJson)
-        {
-            Clients.Client(sendToUserSession.ConnectionId)
-                .OtherCandidateCreated(peerConnectionId, candidateToJson);
-        }
-
         public void ConnectionsClosed(IEnumerable<string> peerConnectionIds)
         {
             Clients.OthersInGroup(MeetingNumber)
                 .OtherConnectionsClosed(peerConnectionIds);
-        }
-        
-        public void ConnectionNotFoundWhenOtherIceSent(UserSessionDto sendToUserSession, string peerConnectionId, string candidateToJson)
-        {
-            Clients.Client(sendToUserSession.ConnectionId)
-                .OtherCandidateCreated(peerConnectionId, candidateToJson);
         }
     }
 
