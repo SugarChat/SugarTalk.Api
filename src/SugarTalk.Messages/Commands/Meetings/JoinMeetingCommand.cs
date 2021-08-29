@@ -6,6 +6,8 @@ namespace SugarTalk.Messages.Commands.Meetings
     {
         public string MeetingNumber { get; set; }
         
+        public string DisplayName { get; set; }
+        
         public bool IsMuted { get; set; }
     }
 }
