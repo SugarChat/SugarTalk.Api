@@ -78,6 +78,9 @@ namespace SugarTalk.Core.Services.Meetings
             if (meetingSession == null)
                 throw new MeetingNotFoundException();
 
+            if (!string.IsNullOrEmpty(joinMeetingCommand.DisplayName))
+                user.DisplayName = joinMeetingCommand.DisplayName;
+            
             await _meetingSessionService.ConnectUserToMeetingSession(user, meetingSession, null, joinMeetingCommand.IsMuted, cancellationToken)
                 .ConfigureAwait(false);
 
