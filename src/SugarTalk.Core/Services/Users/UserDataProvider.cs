@@ -1,8 +1,8 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using SugarTalk.Core.Data.MongoDb;
-using SugarTalk.Core.Entities;
+using SugarTalk.Core.Data;
+using SugarTalk.Core.Domain.Account;
 
 namespace SugarTalk.Core.Services.Users
 {
@@ -15,9 +15,9 @@ namespace SugarTalk.Core.Services.Users
     
     public class UserDataProvider : IUserDataProvider
     {
-        private readonly IMongoDbRepository _repository;
+        private readonly IRepository _repository;
 
-        public UserDataProvider(IMongoDbRepository repository)
+        public UserDataProvider(IRepository repository)
         {
             _repository = repository;
         }
@@ -33,7 +33,7 @@ namespace SugarTalk.Core.Services.Users
             if (user.Id == Guid.Empty)
                 user.Id = Guid.NewGuid();
 
-            await _repository.AddAsync(user, cancellationToken).ConfigureAwait(false);
+            await _repository.InsertAsync(user, cancellationToken).ConfigureAwait(false);
         }
     }
 }

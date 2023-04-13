@@ -1,9 +1,11 @@
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using AutoMapper;
+using Microsoft.EntityFrameworkCore;
 using MongoDB.Driver.Linq;
-using SugarTalk.Core.Data.MongoDb;
-using SugarTalk.Core.Entities;
+using SugarTalk.Core.Data;
+using SugarTalk.Core.Domain.Account;
 using SugarTalk.Messages.Commands.UserSessions;
 using SugarTalk.Messages.Dtos.Users;
 using SugarTalk.Messages.Events.UserSessions;
@@ -25,10 +27,10 @@ namespace SugarTalk.Core.Services.Users
     public class UserSessionService : IUserSessionService
     {
         private readonly IMapper _mapper;
-        private readonly IMongoDbRepository _repository;
+        private readonly IRepository _repository;
         private readonly IUserSessionDataProvider _userSessionDataProvider;
 
-        public UserSessionService(IMapper mapper, IMongoDbRepository repository, IUserSessionDataProvider userSessionDataProvider)
+        public UserSessionService(IMapper mapper, IRepository repository, IUserSessionDataProvider userSessionDataProvider)
         {
             _mapper = mapper;
             _repository = repository;
@@ -44,7 +46,7 @@ namespace SugarTalk.Core.Services.Users
         {
             if (userSession != null)
             {
-                await _repository.RemoveAsync(userSession, cancellationToken).ConfigureAwait(false);
+                await _repository.DeleteAsync(userSession, cancellationToken).ConfigureAwait(false);
             }
         }
 

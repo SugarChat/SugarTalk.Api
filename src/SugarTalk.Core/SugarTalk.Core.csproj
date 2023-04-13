@@ -1,28 +1,54 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFrameworks>net5.0;netstandard2.1</TargetFrameworks>
-        <LangVersion>9</LangVersion>
+        <LangVersion>11</LangVersion>
+        <TargetFramework>net7.0</TargetFramework>
     </PropertyGroup>
 
     <ItemGroup>
-      <PackageReference Include="AutoMapper" Version="10.1.1" />
-      <PackageReference Include="AutoMapper.Extensions.Microsoft.DependencyInjection" Version="8.1.1" />
+      <PackageReference Include="Autofac" Version="7.0.0" />
+      <PackageReference Include="AutoMapper" Version="12.0.1" />
+      <PackageReference Include="AutoMapper.Contrib.Autofac.DependencyInjection" Version="7.1.0" />
+      <PackageReference Include="dbup" Version="5.0.8" />
+      <PackageReference Include="dbup-mysql" Version="5.0.10" />
+      <PackageReference Include="Destructurama.JsonNet" Version="2.0.0" />
+      <PackageReference Include="EFCore.BulkExtensions" Version="7.0.1" />
+      <PackageReference Include="FluentValidation" Version="11.5.2" />
       <PackageReference Include="Kurento.NET" Version="1.1.1" />
-      <PackageReference Include="Mediator.Net" Version="4.0.0" />
-      <PackageReference Include="Mediator.Net.MicrosoftDependencyInjection" Version="4.0.0" />
-      <PackageReference Include="Microsoft.AspNetCore.SignalR" Version="1.1.0" />
-      <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="5.0.0" />
-      <PackageReference Include="Microsoft.Extensions.Http" Version="5.0.0" />
-      <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="5.0.0" />
-      <PackageReference Include="MongoDB.Driver" Version="2.12.4" />
-      <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
-      <PackageReference Include="Serilog" Version="2.10.0" />
+      <PackageReference Include="Mediator.Net" Version="4.7.0" />
+      <PackageReference Include="Mediator.Net.Middlewares.Serilog" Version="4.7.0" />
+      <PackageReference Include="Microsoft.AspNet.WebApi.Client" Version="5.2.9" />
+      <PackageReference Include="Microsoft.AspNetCore.Http" Version="2.2.2" />
+      <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="6.0.8" />
+      <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="7.0.4" />
+      <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="7.0.0" />
+      <PackageReference Include="Microsoft.Extensions.Http" Version="7.0.0" />
+      <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="7.0.0" />
+      <PackageReference Include="MongoDB.Driver" Version="2.19.1" />
+      <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+      <PackageReference Include="Pomelo.EntityFrameworkCore.MySql" Version="7.0.0" />
+      <PackageReference Include="Serilog" Version="2.12.0" />
+      <PackageReference Include="Serilog.AspNetCore" Version="6.1.0" />
+      <PackageReference Include="Serilog.Enrichers.CorrelationId" Version="3.0.1" />
+      <PackageReference Include="Serilog.Sinks.Seq" Version="5.2.2" />
       <PackageReference Include="System.Net.Http" Version="4.3.4" />
     </ItemGroup>
 
     <ItemGroup>
       <ProjectReference Include="..\SugarTalk.Messages\SugarTalk.Messages.csproj" />
+    </ItemGroup>
+
+    <ItemGroup Condition="'$(TargetFramework)' == 'net7.0'">
+      <PackageReference Include="Microsoft.EntityFrameworkCore" Version="7.0.4" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Folder Include="Identity" />
+      <Folder Include="Validators" />
+    </ItemGroup>
+    
+    <ItemGroup>
+        <EmbeddedResource Include="DbUp\Scripts_2023\Script0001_initial_tables.sql" />
     </ItemGroup>
 
 </Project>

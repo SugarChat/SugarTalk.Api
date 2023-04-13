@@ -9,7 +9,13 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SugarTalk.Api", "SugarTalk.
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SugarTalk.Messages", "SugarTalk.Messages\SugarTalk.Messages.csproj", "{AE2B7F9A-4FA9-4E26-9CEE-DCD40B0B88C7}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SugarTalk.Tests", "SugarTalk.Tests\SugarTalk.Tests.csproj", "{B9D0D86D-C694-41BC-9AD8-5BBAB6EDCB8C}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SugarTalk.IntegrationTests", "SugarTalk.IntegrationTests\SugarTalk.IntegrationTests.csproj", "{B9D0D86D-C694-41BC-9AD8-5BBAB6EDCB8C}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Facade", "Facade", "{E21DA172-EA77-4843-8DEC-3CBCBB311D6C}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Libraries", "Libraries", "{FACE568E-DCA5-4129-B8D1-29A545EF4BF7}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{1DF8A9F7-981A-49F2-BEDA-4FD3AE267097}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -39,5 +45,11 @@ Global
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {BB9A0997-9D14-4A39-AEA7-5F5D191BA1DD}
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{B4130217-FE6F-43EA-8393-F9D1E4BA9067} = {E21DA172-EA77-4843-8DEC-3CBCBB311D6C}
+		{2ADC70AB-EAD2-4BD3-801A-354939239160} = {FACE568E-DCA5-4129-B8D1-29A545EF4BF7}
+		{AE2B7F9A-4FA9-4E26-9CEE-DCD40B0B88C7} = {FACE568E-DCA5-4129-B8D1-29A545EF4BF7}
+		{B9D0D86D-C694-41BC-9AD8-5BBAB6EDCB8C} = {1DF8A9F7-981A-49F2-BEDA-4FD3AE267097}
 	EndGlobalSection
 EndGlobal

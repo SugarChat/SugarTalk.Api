@@ -4,7 +4,7 @@ using System.Text.Encodings.Web;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using SugarTalk.Core;
+using SugarTalk.Messages;
 using SugarTalk.Messages.Enums;
 using static Google.Apis.Auth.GoogleJsonWebSignature;
 
@@ -33,9 +33,9 @@ namespace SugarTalk.Api.Middlewares.Authentication
             {
                 new(ClaimTypes.Name, name),
                 new(ClaimTypes.Email, email),
-                new(SugarTalkClaimType.Picture, picture),
-                new(SugarTalkClaimType.ThirdPartyId, thirdPartyId),
-                new(SugarTalkClaimType.ThirdPartyFrom, ThirdPartyFrom.Google.ToString())
+                new(SugarTalkConstants.Picture, picture),
+                new(SugarTalkConstants.ThirdPartyId, thirdPartyId),
+                new(SugarTalkConstants.ThirdPartyFrom, ThirdPartyFrom.Google.ToString())
             };
         }
         
@@ -50,9 +50,9 @@ namespace SugarTalk.Api.Middlewares.Authentication
             {
                 new(ClaimTypes.Name, name),
                 new(ClaimTypes.Email, email),
-                new(SugarTalkClaimType.Picture, picture),
-                new(SugarTalkClaimType.ThirdPartyId, thirdPartyId),
-                new(SugarTalkClaimType.ThirdPartyFrom, ThirdPartyFrom.Facebook.ToString())
+                new(SugarTalkConstants.Picture, picture),
+                new(SugarTalkConstants.ThirdPartyId, thirdPartyId),
+                new(SugarTalkConstants.ThirdPartyFrom, ThirdPartyFrom.Facebook.ToString())
             };
         }
         
@@ -67,9 +67,9 @@ namespace SugarTalk.Api.Middlewares.Authentication
             {
                 new(ClaimTypes.Name, name),
                 new(ClaimTypes.Email, email),
-                new(SugarTalkClaimType.Picture, picture),
-                new(SugarTalkClaimType.ThirdPartyId, thirdPartyId),
-                new(SugarTalkClaimType.ThirdPartyFrom, ThirdPartyFrom.Wechat.ToString())
+                new(SugarTalkConstants.Picture, picture),
+                new(SugarTalkConstants.ThirdPartyId, thirdPartyId),
+                new(SugarTalkConstants.ThirdPartyFrom, ThirdPartyFrom.Wechat.ToString())
             };
         }
     }

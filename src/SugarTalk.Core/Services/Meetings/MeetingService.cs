@@ -3,18 +3,20 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using AutoMapper;
-using SugarTalk.Core.Data.MongoDb;
-using SugarTalk.Core.Entities;
+using SugarTalk.Core.Data;
+using SugarTalk.Core.Domain.Meeting;
+using SugarTalk.Core.Ioc;
 using SugarTalk.Core.Services.Exceptions;
 using SugarTalk.Core.Services.Users;
 using SugarTalk.Messages;
 using SugarTalk.Messages.Commands.Meetings;
 using SugarTalk.Messages.Dtos.Meetings;
 using SugarTalk.Messages.Requests.Meetings;
+using SugarTalk.Messages.Responses;
 
 namespace SugarTalk.Core.Services.Meetings
 {
-    public interface IMeetingService
+    public interface IMeetingService : IScopedDependency
     {
         Task<SugarTalkResponse<MeetingDto>> ScheduleMeeting(ScheduleMeetingCommand scheduleMeetingCommand, CancellationToken cancellationToken);
 
@@ -29,13 +31,13 @@ namespace SugarTalk.Core.Services.Meetings
     {
         private readonly IMapper _mapper;
         private readonly IUserService _userService;
-        private readonly IMongoDbRepository _repository;
+        private readonly IRepository _repository;
         private readonly IMeetingDataProvider _meetingDataProvider;
 
         private readonly IMeetingSessionService _meetingSessionService;
         private readonly IMeetingSessionDataProvider _meetingSessionDataProvider;
         
-        public MeetingService(IMapper mapper, IMongoDbRepository repository,
+        public MeetingService(IMapper mapper, IRepository repository,
             IMeetingDataProvider meetingDataProvider, IUserService userService, IMeetingSessionService meetingSessionService, IMeetingSessionDataProvider meetingSessionDataProvider)
         {
             _mapper = mapper;
@@ -52,7 +54,7 @@ namespace SugarTalk.Core.Services.Meetings
 
             meeting.MeetingNumber = GenerateMeetingNumber();
 
-            await _repository.AddAsync(meeting, cancellationToken).ConfigureAwait(false);
+            await _repository.InsertAsync(meeting, cancellationToken).ConfigureAwait(false);
             
             await _meetingSessionService.GenerateNewMeetingSession(meeting, cancellationToken)
                 .ConfigureAwait(false);

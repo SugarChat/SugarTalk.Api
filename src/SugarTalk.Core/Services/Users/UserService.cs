@@ -5,10 +5,11 @@ using System.Threading;
 using System.Threading.Tasks;
 using AutoMapper;
 using Microsoft.AspNetCore.Http;
-using SugarTalk.Core.Entities;
+using SugarTalk.Core.Domain.Account;
 using SugarTalk.Messages;
 using SugarTalk.Messages.Dtos.Users;
 using SugarTalk.Messages.Requests.Users;
+using SugarTalk.Messages.Responses;
 
 namespace SugarTalk.Core.Services.Users
 {
@@ -52,7 +53,7 @@ namespace SugarTalk.Core.Services.Users
 
         public async Task<User> GetCurrentLoggedInUser(CancellationToken cancellationToken = default)
         {
-            var thirdPartyId = GetCurrentPrincipal().Claims.Single(x => x.Type == SugarTalkClaimType.ThirdPartyId).Value;
+            var thirdPartyId = GetCurrentPrincipal().Claims.Single(x => x.Type == SugarTalkConstants.ThirdPartyId).Value;
 
             return await _userDataProvider.GetUserByThirdPartyId(thirdPartyId, cancellationToken)
                 .ConfigureAwait(false);
@@ -65,7 +66,7 @@ namespace SugarTalk.Core.Services.Users
 
         private async Task<User> GetOrCreateUser(ClaimsPrincipal principal, CancellationToken cancellationToken)
         {
-            var thirdPartyId = principal.Claims.Single(x => x.Type == SugarTalkClaimType.ThirdPartyId).Value;
+            var thirdPartyId = principal.Claims.Single(x => x.Type == SugarTalkConstants.ThirdPartyId).Value;
 
             var user = await _userDataProvider.GetUserByThirdPartyId(thirdPartyId, cancellationToken)
                 .ConfigureAwait(false);

@@ -3,10 +3,9 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using AutoMapper;
-using MongoDB.Driver;
-using MongoDB.Driver.Linq;
-using SugarTalk.Core.Data.MongoDb;
-using SugarTalk.Core.Entities;
+using Microsoft.EntityFrameworkCore;
+using SugarTalk.Core.Data;
+using SugarTalk.Core.Domain.Account;
 using SugarTalk.Messages.Dtos.Users;
 
 namespace SugarTalk.Core.Services.Users
@@ -26,9 +25,9 @@ namespace SugarTalk.Core.Services.Users
     public class UserSessionDataProvider : IUserSessionDataProvider
     {
         private readonly IMapper _mapper;
-        private readonly IMongoDbRepository _repository;
+        private readonly IRepository _repository;
 
-        public UserSessionDataProvider(IMapper mapper, IMongoDbRepository repository)
+        public UserSessionDataProvider(IMapper mapper, IRepository repository)
         {
             _mapper = mapper;
             _repository = repository;
@@ -58,8 +57,7 @@ namespace SugarTalk.Core.Services.Users
 
         public async Task<List<UserSessionDto>> GetUserSessionsByMeetingSessionId(Guid meetingSessionId, CancellationToken cancellationToken = default)
         {
-            var userSessions = await _repository.Query<UserSession>()
-                .Where(x => x.MeetingSessionId == meetingSessionId)
+            var userSessions = await _repository.Query<UserSession>(x => x.MeetingSessionId == meetingSessionId)
                 .ToListAsync(cancellationToken).ConfigureAwait(false);
 
             return _mapper.Map<List<UserSessionDto>>(userSessions);

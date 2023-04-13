@@ -2,13 +2,14 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using AutoMapper;
-using MongoDB.Driver.Linq;
-using SugarTalk.Core.Data.MongoDb;
-using SugarTalk.Core.Entities;
+using Microsoft.EntityFrameworkCore;
+using SugarTalk.Core.Data;
+using SugarTalk.Core.Domain.Meeting;
+using SugarTalk.Core.Ioc;
 
 namespace SugarTalk.Core.Services.Meetings
 {
-    public interface IMeetingDataProvider
+    public interface IMeetingDataProvider : IScopedDependency
     {
         Task<Meeting> GetMeetingById(Guid meetingId, CancellationToken cancellationToken = default);
         Task<Meeting> GetMeetingByNumber(string meetingNumber, CancellationToken cancellationToken = default);
@@ -17,9 +18,9 @@ namespace SugarTalk.Core.Services.Meetings
     public class MeetingDataProvider : IMeetingDataProvider
     {
         private readonly IMapper _mapper;
-        private readonly IMongoDbRepository _repository;
+        private readonly IRepository _repository;
 
-        public MeetingDataProvider(IMapper mapper, IMongoDbRepository repository)
+        public MeetingDataProvider(IMapper mapper, IRepository repository)
         {
             _mapper = mapper;
             _repository = repository;

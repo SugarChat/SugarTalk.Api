@@ -3,17 +3,19 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using AutoMapper;
-using SugarTalk.Core.Data.MongoDb;
-using SugarTalk.Core.Entities;
+using SugarTalk.Core.Data;
+using SugarTalk.Core.Domain.Account;
+using SugarTalk.Core.Domain.Meeting;
+using SugarTalk.Core.Ioc;
 using SugarTalk.Core.Services.Users;
-using SugarTalk.Messages;
 using SugarTalk.Messages.Dtos.Meetings;
 using SugarTalk.Messages.Dtos.Users;
 using SugarTalk.Messages.Requests.Meetings;
+using SugarTalk.Messages.Responses;
 
 namespace SugarTalk.Core.Services.Meetings
 {
-    public interface IMeetingSessionService
+    public interface IMeetingSessionService : IScopedDependency
     {
         Task<SugarTalkResponse<MeetingSessionDto>> GetMeetingSession(GetMeetingSessionRequest request,
             CancellationToken cancellationToken = default);
@@ -32,11 +34,11 @@ namespace SugarTalk.Core.Services.Meetings
     {
         private readonly IMapper _mapper;
         private readonly IUserService _userService;
-        private readonly IMongoDbRepository _repository;
+        private readonly IRepository _repository;
         private readonly IMeetingSessionDataProvider _meetingSessionDataProvider;
         
         public MeetingSessionService(IMapper mapper, 
-            IMongoDbRepository repository, IUserService userService, 
+            IRepository repository, IUserService userService, 
             IMeetingSessionDataProvider meetingSessionDataProvider)
         {
             _mapper = mapper;
@@ -85,7 +87,7 @@ namespace SugarTalk.Core.Services.Meetings
             {
                 userSession = GenerateNewUserSessionFromUser(user, meetingSession.Id, connectionId, isMuted ?? false);
                 
-                await _repository.AddAsync(userSession, cancellationToken).ConfigureAwait(false);
+                await _repository.InsertAsync(userSession, cancellationToken).ConfigureAwait(false);
                 
                 meetingSession.AddUserSession(_mapper.Map<UserSessionDto>(userSession));
             }
@@ -112,7 +114,7 @@ namespace SugarTalk.Core.Services.Meetings
                 MeetingNumber = meeting.MeetingNumber
             };
 
-            await _repository.AddAsync(meetingSession, cancellationToken).ConfigureAwait(false);
+            await _repository.InsertAsync(meetingSession, cancellationToken).ConfigureAwait(false);
 
             return meetingSession;
         }

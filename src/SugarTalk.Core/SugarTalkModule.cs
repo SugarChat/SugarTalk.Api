@@ -1,83 +1,109 @@
-﻿using Kurento.NET;
+﻿using System;
+using System.Linq;
+using System.Reflection;
+using Autofac;
+using AutoMapper.Contrib.Autofac.DependencyInjection;
 using Mediator.Net;
-using Mediator.Net.MicrosoftDependencyInjection;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Options;
-using MongoDB.Driver;
+using Mediator.Net.Autofac;
+using Mediator.Net.Middlewares.Serilog;
+using Microsoft.EntityFrameworkCore;
+using Serilog;
 using SugarTalk.Core.Data;
-using SugarTalk.Core.Data.MongoDb;
+using SugarTalk.Core.Ioc;
 using SugarTalk.Core.Middlewares;
-using SugarTalk.Core.Services.Authentication;
-using SugarTalk.Core.Services.Meetings;
-using SugarTalk.Core.Services.Users;
+using SugarTalk.Core.Middlewares.FluentMessageValidator;
+using SugarTalk.Core.Middlewares.UnifyResponse;
+using SugarTalk.Core.Middlewares.UnitOfWork;
 using SugarTalk.Core.Settings;
+using Module = Autofac.Module;
 
 namespace SugarTalk.Core
 {
-    public static class SugarTalkModule
+    public class SugarTalkModule : Module
     {
-        public static IServiceCollection LoadSugarTalkModule(this IServiceCollection services, IConfiguration configuration)
+        private readonly ILogger _logger;
+        private readonly Assembly[] _assemblies;
+        
+        public SugarTalkModule(ILogger logger, params Assembly[] assemblies)
         {
-            services.LoadSettings(configuration)
-                .AddAutoMapper(typeof(SugarTalkModule).Assembly)
-                .LoadMongoDb()
-                .LoadMediator()
-                .LoadServices();
-            
-            return services;
+            _logger = logger;
+            _assemblies = assemblies;
+    
+            if (_logger == null)
+                throw new ArgumentException(nameof(_logger));
+        
+            if (_assemblies == null || !_assemblies.Any())
+                throw new ArgumentException("No assemblies found to scan. Supply at least one assembly to scan.");
         }
 
-        private static IServiceCollection LoadSettings(this IServiceCollection services, IConfiguration configuration)
+        protected override void Load(ContainerBuilder builder)
         {
-            services.Configure<MongoDbSettings>(configuration.GetSection(nameof(MongoDbSettings)));
-            services.Configure<GoogleSettings>(configuration.GetSection(nameof(GoogleSettings)));
-            services.Configure<FacebookSettings>(configuration.GetSection(nameof(FacebookSettings)));
-            services.Configure<WebRtcIceServerSettings>(configuration.GetSection(nameof(WebRtcIceServerSettings)));
+            RegisterLogger(builder);
+            RegisterSettings(builder);
+            RegisterMediator(builder);
+            RegisterDatabase(builder);
+            RegisterDependency(builder);
+            RegisterAutoMapper(builder);
+        }
             
-            return services;
+        private void RegisterLogger(ContainerBuilder builder)
+        {
+            builder.RegisterInstance(_logger).AsSelf().AsImplementedInterfaces().SingleInstance();
         }
 
-        private static IServiceCollection LoadMongoDb(this IServiceCollection services)
+        private void RegisterSettings(ContainerBuilder builder)
         {
-            services.AddSingleton(serviceProvider =>
+            var settingTypes = typeof(SugarTalkModule).Assembly.GetTypes()
+                .Where(t => t.IsClass && typeof(IConfigurationSetting).IsAssignableFrom(t))
+                .ToArray();
+
+            builder.RegisterTypes(settingTypes).AsSelf().SingleInstance();
+        }
+
+        private void RegisterMediator(ContainerBuilder builder)
+        {
+            var mediatorBuilder = new MediatorBuilder();
+            mediatorBuilder.RegisterHandlers(_assemblies);
+            mediatorBuilder.ConfigureGlobalReceivePipe(c =>
             {
-                var settings = serviceProvider.GetService<IOptions<MongoDbSettings>>();
-                return new MongoClient(settings?.Value.ConnectionString).GetDatabase(settings?.Value.DatabaseName);
+                c.UseUnitOfWork();
+                c.UseUnifyResponse();
+                c.UseMessageValidator();
+                c.UseSerilog(logger: _logger);
             });
+            builder.RegisterMediator(mediatorBuilder);
+        }
             
-            services.AddScoped<IRepository, MongoDbRepository>();
-            services.AddScoped<IMongoDbRepository, MongoDbRepository>();
-            
-            return services;
+        private void RegisterDatabase(ContainerBuilder builder)
+        {
+            builder.RegisterType<SugarTalkDbContext>()
+                .AsSelf()
+                .As<DbContext>()
+                .AsImplementedInterfaces()
+                .InstancePerLifetimeScope();
+    
+            builder.RegisterType<EfRepository>().As<IRepository>().InstancePerLifetimeScope();
         }
 
-        private static IServiceCollection LoadMediator(this IServiceCollection services)
+        private void RegisterDependency(ContainerBuilder builder)
         {
-            var mediaBuilder = new MediatorBuilder();
-            mediaBuilder.RegisterHandlers(typeof(SugarTalkModule).Assembly);
-            mediaBuilder.ConfigureGlobalReceivePipe(x => x.UseUnifyResponseMiddleware());
-            services.RegisterMediator(mediaBuilder);
-            return services;
+            foreach (var type in typeof(IDependency).Assembly.GetTypes()
+                         .Where(type => type.IsClass && typeof(IDependency).IsAssignableFrom(type)))
+            {
+                if (typeof(IScopedDependency).IsAssignableFrom(type))
+                    builder.RegisterType(type).AsSelf().AsImplementedInterfaces().InstancePerLifetimeScope();
+                else if (typeof(ISingletonDependency).IsAssignableFrom(type))
+                    builder.RegisterType(type).AsSelf().AsImplementedInterfaces().SingleInstance();
+                else if (typeof(ITransientDependency).IsAssignableFrom(type))
+                    builder.RegisterType(type).AsSelf().AsImplementedInterfaces().InstancePerDependency();
+                else
+                    builder.RegisterType(type).AsSelf().AsImplementedInterfaces();
+            }
         }
         
-        private static IServiceCollection LoadServices(this IServiceCollection services)
+        private void RegisterAutoMapper(ContainerBuilder builder)
         {
-            services.AddScoped<IMeetingDataProvider, MeetingDataProvider>();
-            services.AddScoped<IMeetingSessionDataProvider, MeetingSessionDataProvider>();
-            services.AddScoped<IMeetingSessionService, MeetingSessionService>();
-            services.AddScoped<IMeetingService, MeetingService>();
-
-            services.AddScoped<IUserSessionDataProvider, UserSessionDataProvider>();
-            services.AddScoped<IUserSessionService, UserSessionService>();
-            services.AddScoped<IUserDataProvider, UserDataProvider>();
-            services.AddScoped<IUserService, UserService>();
-
-            services.AddScoped<ITokenDataProvider, TokenDataProvider>();
-            services.AddScoped<ITokenService, TokenService>();
-            services.AddScoped<IAuthenticationService, AuthenticationService>();
-            
-            return services;
+            builder.RegisterAutoMapper(typeof(SugarTalkModule).Assembly);
         }
     }
 }

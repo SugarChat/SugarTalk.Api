@@ -1,5 +1,5 @@
 using AutoMapper;
-using SugarTalk.Core.Entities;
+using SugarTalk.Core.Domain.Account;
 using SugarTalk.Messages.Dtos.Users;
 
 namespace SugarTalk.Core.Mapping

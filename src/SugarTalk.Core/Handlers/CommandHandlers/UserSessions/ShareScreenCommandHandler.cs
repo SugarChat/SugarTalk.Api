@@ -6,6 +6,7 @@ using SugarTalk.Core.Services.Users;
 using SugarTalk.Messages;
 using SugarTalk.Messages.Commands.UserSessions;
 using SugarTalk.Messages.Dtos.Users;
+using SugarTalk.Messages.Responses;
 
 namespace SugarTalk.Core.Handlers.CommandHandlers.UserSessions
 {

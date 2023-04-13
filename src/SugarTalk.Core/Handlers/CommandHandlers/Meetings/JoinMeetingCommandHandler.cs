@@ -6,6 +6,7 @@ using SugarTalk.Core.Services.Meetings;
 using SugarTalk.Messages;
 using SugarTalk.Messages.Commands.Meetings;
 using SugarTalk.Messages.Dtos.Meetings;
+using SugarTalk.Messages.Responses;
 
 namespace SugarTalk.Core.Handlers.CommandHandlers.Meetings
 {

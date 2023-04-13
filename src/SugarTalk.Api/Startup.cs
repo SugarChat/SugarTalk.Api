@@ -1,4 +1,6 @@
 using System.Text.Json;
+using Correlate.AspNetCore;
+using Correlate.DependencyInjection;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
@@ -8,10 +10,12 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.OpenApi.Models;
 using Serilog;
+using SugarTalk.Api.Extensions;
+using SugarTalk.Api.Filters;
 using SugarTalk.Api.Middlewares;
 using SugarTalk.Api.Middlewares.Authentication;
-using SugarTalk.Core;
 using SugarTalk.Core.Hubs;
+using SugarTalk.Messages;
 
 namespace SugarTalk.Api
 {
@@ -22,22 +26,19 @@ namespace SugarTalk.Api
             Configuration = configuration;
         }
 
-        public IConfiguration Configuration { get; }
+        private IConfiguration Configuration { get; }
 
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddLogging(logBuilder =>
-            {
-                logBuilder.AddSerilog(dispose: true);
-            });
+            services.AddCorrelate(options => options.RequestHeaders = SugarTalkConstants.CorrelationIdHeaders);
             services.AddControllers();
             services.AddSwaggerGen(c =>
             {
                 c.SwaggerDoc("v1", new OpenApiInfo {Title = "SugarTalk.Api", Version = "v1"});
             });
 
-            services.AddHttpClient();
+            services.AddHttpClientInternal();
             services.AddHttpContextAccessor();
 
             services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -51,10 +52,12 @@ namespace SugarTalk.Api
                 builder = builder.RequireAuthenticatedUser();
                 options.DefaultPolicy = builder.Build();
             });
-            
-            services.LoadSugarTalkModule(Configuration);
-            
-            services.AddMvc(options => options.EnableEndpointRouting = false);
+
+            services.AddMvc(options =>
+            {
+                options.EnableEndpointRouting = false;
+                options.Filters.Add<GlobalExceptionFilter>();
+            });
             services.AddSignalR(config =>
             {
                 config.EnableDetailedErrors = true;
@@ -73,13 +76,13 @@ namespace SugarTalk.Api
                 app.UseSwagger();
                 app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "SugarTalk.Api v1"));
             }
-
-            app.UseHttpsRedirection();
-
-            app.UseStaticFiles();
             
+            app.UseSerilogRequestLogging();
+            app.UseHttpsRedirection();
+            app.UseStaticFiles();
+            app.UseCorrelate();
             app.UseRouting();
-
+            app.UseCors();
             app.UseMiddleware<EnrichAccessTokenMiddleware>();
             app.UseAuthentication();
             app.UseAuthorization();
@@ -87,6 +90,7 @@ namespace SugarTalk.Api
             app.UseEndpoints(endpoints =>
             {
                 endpoints.MapControllers();
+                // endpoints.MapHealthChecks("health");
                 endpoints.MapHub<MeetingHub>("/meetingHub");
             });
             

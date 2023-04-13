@@ -1,7 +1,8 @@
 using System;
 using System.Linq;
 using System.Security.Claims;
-using SugarTalk.Core.Entities;
+using SugarTalk.Core.Domain.Account;
+using SugarTalk.Messages;
 using SugarTalk.Messages.Enums;
 
 namespace SugarTalk.Core.Services.Users
@@ -12,9 +13,9 @@ namespace SugarTalk.Core.Services.Users
         {
             var name = principal.Claims.SingleOrDefault(x => x.Type == ClaimTypes.Name)?.Value;
             var email = principal.Claims.SingleOrDefault(x => x.Type == ClaimTypes.Email)?.Value;
-            var picture = principal.Claims.SingleOrDefault(x => x.Type == SugarTalkClaimType.Picture)?.Value;
-            var thirdPartyId = principal.Claims.Single(x => x.Type == SugarTalkClaimType.ThirdPartyId).Value;
-            var thirdPartyFrom = principal.Claims.Single(x => x.Type == SugarTalkClaimType.ThirdPartyFrom).Value;
+            var picture = principal.Claims.SingleOrDefault(x => x.Type == SugarTalkConstants.Picture)?.Value;
+            var thirdPartyId = principal.Claims.Single(x => x.Type == SugarTalkConstants.ThirdPartyId).Value;
+            var thirdPartyFrom = principal.Claims.Single(x => x.Type == SugarTalkConstants.ThirdPartyFrom).Value;
             
             return new User
             {

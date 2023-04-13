@@ -3,13 +3,15 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
+using SugarTalk.Core.Ioc;
 using SugarTalk.Core.Settings;
+using SugarTalk.Core.Settings.ThirdParty;
 using SugarTalk.Messages.Dtos.Authentication;
 using SugarTalk.Messages.Requests.Authentication;
 
 namespace SugarTalk.Core.Services.Authentication
 {
-    public interface IAuthenticationService
+    public interface IAuthenticationService : IScopedDependency
     {
         Task<GetGoogleAccessTokenResponse> GetGoogleAccessToken(GetGoogleAccessTokenRequest request,
             CancellationToken cancellationToken);

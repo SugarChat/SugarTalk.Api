@@ -1,5 +1,5 @@
 using AutoMapper;
-using SugarTalk.Core.Entities;
+using SugarTalk.Core.Domain.Meeting;
 using SugarTalk.Messages.Commands;
 using SugarTalk.Messages.Commands.Meetings;
 using SugarTalk.Messages.Dtos;
