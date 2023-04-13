@@ -3,7 +3,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using AutoMapper;
 using Microsoft.EntityFrameworkCore;
-using MongoDB.Driver.Linq;
 using SugarTalk.Core.Data;
 using SugarTalk.Core.Domain.Account;
 using SugarTalk.Messages.Commands.UserSessions;

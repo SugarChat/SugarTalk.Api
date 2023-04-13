@@ -7,9 +7,7 @@ using Autofac;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using MongoDB.Driver;
 using StackExchange.Redis;
-using SugarTalk.Core;
 using SugarTalk.Core.Domain.Account;
 using SugarTalk.Core.Services.Users;
 using SugarTalk.Messages;
@@ -105,22 +103,6 @@ namespace SugarTalk.Tests
                 Email = "test@email.com",
                 Picture = "https://www.sugartalk.com/test-picture.png"
             };
-        }
-
-        private void ClearDatabaseRecords()
-        {
-            Run<IMongoDatabase>(db =>
-            {
-                using var cursor = db.ListCollectionNames();
-                
-                while (cursor.MoveNext())
-                {
-                    foreach (var collectionName in cursor.Current)
-                    {
-                        db.DropCollection(collectionName);
-                    }
-                }
-            });
         }
     }
 }
