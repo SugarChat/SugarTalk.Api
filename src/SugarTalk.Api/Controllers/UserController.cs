@@ -2,10 +2,7 @@ using System.Threading.Tasks;
 using Mediator.Net;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using SugarTalk.Messages;
-using SugarTalk.Messages.Dtos.Users;
 using SugarTalk.Messages.Requests.Users;
-using SugarTalk.Messages.Responses;
 
 namespace SugarTalk.Api.Controllers
 {
@@ -22,9 +19,9 @@ namespace SugarTalk.Api.Controllers
         }
         
         [Route("signin"), HttpGet]
-        public async Task<SugarTalkResponse<SignedInUserDto>> SignInFromThirdParty()
+        public async Task<SignInFromThirdPartyResponse> SignInFromThirdParty()
         {
-            return await _mediator.RequestAsync<SignInFromThirdPartyRequest, SugarTalkResponse<SignedInUserDto>>(
+            return await _mediator.RequestAsync<SignInFromThirdPartyRequest, SignInFromThirdPartyResponse>(
                 new SignInFromThirdPartyRequest());
         }
     }

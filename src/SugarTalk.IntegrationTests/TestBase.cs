@@ -6,7 +6,6 @@ using System.Threading.Tasks;
 using Autofac;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
 using StackExchange.Redis;
 using SugarTalk.Core.Domain.Account;
 using SugarTalk.Core.Services.Users;
@@ -61,12 +60,6 @@ namespace SugarTalk.Tests
             Signin(DefaultUser);
         }
 
-        private void RegisterHttpContextAccessor(IServiceCollection services)
-        {
-            var httpContextAccessor = new HttpContextAccessor {HttpContext = new DefaultHttpContext()};
-            services.AddSingleton<IHttpContextAccessor>(httpContextAccessor);
-        }
-        
         protected void Signin(User user)
         {
             Run<IHttpContextAccessor>(accessor =>

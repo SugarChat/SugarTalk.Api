@@ -1,6 +1,6 @@
 using Newtonsoft.Json;
 
-namespace SugarTalk.Api.Middlewares.Authentication
+namespace SugarTalk.Api.Authentication.Facebook
 {
     public class FacebookPayload
     {

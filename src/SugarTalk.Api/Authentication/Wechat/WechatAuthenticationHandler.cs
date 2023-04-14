@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.Net.Http;
 using System.Net.Http.Json;
 using System.Security.Claims;
@@ -8,13 +7,11 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using Newtonsoft.Json;
 using Serilog;
-using SugarTalk.Core;
 using SugarTalk.Core.Services.Authentication;
 using SugarTalk.Messages.Enums;
 
-namespace SugarTalk.Api.Middlewares.Authentication
+namespace SugarTalk.Api.Authentication.Wechat
 {
     public class WechatAuthenticationHandler : AuthenticationHandlerBase<WechatAuthenticationOptions>
     {

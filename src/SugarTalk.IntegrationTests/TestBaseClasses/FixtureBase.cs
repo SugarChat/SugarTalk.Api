@@ -1,4 +1,4 @@
-namespace SugarTalk.Tests.IntegrationTests.TestBaseClasses;
+namespace SugarTalk.Tests.TestBaseClasses;
 
 public class FixtureBase : TestBase
 {

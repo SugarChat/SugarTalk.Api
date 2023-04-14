@@ -2,7 +2,7 @@ using System;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 
-namespace SugarTalk.Api.Middlewares
+namespace SugarTalk.Api.Authentication
 {
     public class EnrichAccessTokenMiddleware
     {

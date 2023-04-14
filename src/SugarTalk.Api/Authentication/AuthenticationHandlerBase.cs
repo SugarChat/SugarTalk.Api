@@ -4,11 +4,13 @@ using System.Text.Encodings.Web;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using SugarTalk.Api.Authentication.Facebook;
+using SugarTalk.Api.Authentication.Wechat;
 using SugarTalk.Messages;
 using SugarTalk.Messages.Enums;
 using static Google.Apis.Auth.GoogleJsonWebSignature;
 
-namespace SugarTalk.Api.Middlewares.Authentication
+namespace SugarTalk.Api.Authentication
 {
     public abstract class AuthenticationHandlerBase<TOptions> : AuthenticationHandler<TOptions> where TOptions : AuthenticationSchemeOptions, new()
     {

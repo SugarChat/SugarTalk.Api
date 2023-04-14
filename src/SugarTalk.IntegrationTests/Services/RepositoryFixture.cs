@@ -5,10 +5,10 @@ using Microsoft.EntityFrameworkCore;
 using Shouldly;
 using SugarTalk.Core.Data;
 using SugarTalk.Core.Domain.Meeting;
-using SugarTalk.Tests.IntegrationTests.TestBaseClasses;
+using SugarTalk.Tests.TestBaseClasses;
 using Xunit;
 
-namespace SugarTalk.Tests.IntegrationTests
+namespace SugarTalk.Tests.Services
 {
     public class RepositoryFixture : FixtureBase
     {

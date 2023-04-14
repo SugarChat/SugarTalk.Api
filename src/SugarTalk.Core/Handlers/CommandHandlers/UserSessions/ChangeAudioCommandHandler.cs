@@ -10,7 +10,7 @@ using SugarTalk.Messages.Responses;
 
 namespace SugarTalk.Core.Handlers.CommandHandlers.UserSessions
 {
-    public class ChangeAudioCommandHandler : ICommandHandler<ChangeAudioCommand, SugarTalkResponse<UserSessionDto>>
+    public class ChangeAudioCommandHandler : ICommandHandler<ChangeAudioCommand, ChangeAudioResponse>
     {
         private readonly IUserSessionService _userSessionService;
 
@@ -19,14 +19,14 @@ namespace SugarTalk.Core.Handlers.CommandHandlers.UserSessions
             _userSessionService = userSessionService;
         }
 
-        public async Task<SugarTalkResponse<UserSessionDto>> Handle(IReceiveContext<ChangeAudioCommand> context, CancellationToken cancellationToken)
+        public async Task<ChangeAudioResponse> Handle(IReceiveContext<ChangeAudioCommand> context, CancellationToken cancellationToken)
         {
             var audioChangedEvent = await _userSessionService.ChangeAudio(context.Message, cancellationToken)
                 .ConfigureAwait(false);
 
             await context.PublishAsync(audioChangedEvent, cancellationToken).ConfigureAwait(false);
 
-            return new SugarTalkResponse<UserSessionDto>
+            return new ChangeAudioResponse
             {
                 Data = audioChangedEvent.UserSession
             };

@@ -4,13 +4,9 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
-using SugarTalk.Core.Settings;
 using SugarTalk.Core.Settings.WebRTC;
-using SugarTalk.Messages;
 using SugarTalk.Messages.Commands.Meetings;
-using SugarTalk.Messages.Dtos.Meetings;
 using SugarTalk.Messages.Requests.Meetings;
-using SugarTalk.Messages.Responses;
 
 namespace SugarTalk.Api.Controllers
 {
@@ -29,21 +25,21 @@ namespace SugarTalk.Api.Controllers
         }
         
         [Route("schedule"), HttpPost]
-        public async Task<SugarTalkResponse<MeetingDto>> ScheduleMeeting(ScheduleMeetingCommand scheduleMeetingCommand)
+        public async Task<ScheduleMeetingResponse> ScheduleMeeting(ScheduleMeetingCommand scheduleMeetingCommand)
         {
-            return await _mediator.SendAsync<ScheduleMeetingCommand, SugarTalkResponse<MeetingDto>>(scheduleMeetingCommand);
+            return await _mediator.SendAsync<ScheduleMeetingCommand, ScheduleMeetingResponse>(scheduleMeetingCommand);
         }
         
         [Route("join"), HttpPost]
-        public async Task<SugarTalkResponse<MeetingSessionDto>> JoinMeeting(JoinMeetingCommand joinMeetingCommand)
+        public async Task<JoinMeetingResponse> JoinMeeting(JoinMeetingCommand joinMeetingCommand)
         {
-            return await _mediator.SendAsync<JoinMeetingCommand, SugarTalkResponse<MeetingSessionDto>>(joinMeetingCommand);
+            return await _mediator.SendAsync<JoinMeetingCommand, JoinMeetingResponse>(joinMeetingCommand);
         }
         
         [Route("session"), HttpGet]
-        public async Task<SugarTalkResponse<MeetingSessionDto>> GetMeetingSession([FromQuery] GetMeetingSessionRequest request)
+        public async Task<GetMeetingSessionResponse> GetMeetingSession([FromQuery] GetMeetingSessionRequest request)
         {
-            return await _mediator.RequestAsync<GetMeetingSessionRequest, SugarTalkResponse<MeetingSessionDto>>(request);
+            return await _mediator.RequestAsync<GetMeetingSessionRequest, GetMeetingSessionResponse>(request);
         }
         
         [Route("iceservers"), HttpGet]

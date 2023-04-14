@@ -10,7 +10,7 @@ using SugarTalk.Messages.Responses;
 
 namespace SugarTalk.Core.Handlers.CommandHandlers.UserSessions
 {
-    public class ShareScreenCommandHandler : ICommandHandler<ShareScreenCommand, SugarTalkResponse<UserSessionDto>>
+    public class ShareScreenCommandHandler : ICommandHandler<ShareScreenCommand, ChangeAudioResponse>
     {
         private readonly IUserSessionService _userSessionService;
 
@@ -19,14 +19,14 @@ namespace SugarTalk.Core.Handlers.CommandHandlers.UserSessions
             _userSessionService = userSessionService;
         }
 
-        public async Task<SugarTalkResponse<UserSessionDto>> Handle(IReceiveContext<ShareScreenCommand> context, CancellationToken cancellationToken)
+        public async Task<ChangeAudioResponse> Handle(IReceiveContext<ShareScreenCommand> context, CancellationToken cancellationToken)
         {
             var screenSharedEvent = await _userSessionService.ShareScreen(context.Message, cancellationToken)
                 .ConfigureAwait(false);
 
             await context.PublishAsync(screenSharedEvent, cancellationToken).ConfigureAwait(false);
 
-            return new SugarTalkResponse<UserSessionDto>
+            return new ChangeAudioResponse
             {
                 Data = screenSharedEvent.UserSession
             };

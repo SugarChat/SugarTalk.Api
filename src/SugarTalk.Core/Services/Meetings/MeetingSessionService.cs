@@ -17,7 +17,7 @@ namespace SugarTalk.Core.Services.Meetings
 {
     public interface IMeetingSessionService : IScopedDependency
     {
-        Task<SugarTalkResponse<MeetingSessionDto>> GetMeetingSession(GetMeetingSessionRequest request,
+        Task<GetMeetingSessionResponse> GetMeetingSession(GetMeetingSessionRequest request,
             CancellationToken cancellationToken = default);
 
         Task ConnectUserToMeetingSession(User user, MeetingSessionDto meetingSession, string connectionId,
@@ -47,7 +47,7 @@ namespace SugarTalk.Core.Services.Meetings
             _meetingSessionDataProvider = meetingSessionDataProvider;
         }
         
-        public async Task<SugarTalkResponse<MeetingSessionDto>> GetMeetingSession(GetMeetingSessionRequest request,
+        public async Task<GetMeetingSessionResponse> GetMeetingSession(GetMeetingSessionRequest request,
             CancellationToken cancellationToken = default)
         {
             var user = await _userService.GetCurrentLoggedInUser(cancellationToken).ConfigureAwait(false);
@@ -63,7 +63,7 @@ namespace SugarTalk.Core.Services.Meetings
                 meetingSession.UserSessions.All(x => x.UserId != user.Id))
                 throw new UnauthorizedAccessException();
 
-            return new SugarTalkResponse<MeetingSessionDto>
+            return new GetMeetingSessionResponse
             {
                 Data = meetingSession
             };

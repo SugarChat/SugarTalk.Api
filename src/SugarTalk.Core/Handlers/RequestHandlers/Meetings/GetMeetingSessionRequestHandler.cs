@@ -10,7 +10,7 @@ using SugarTalk.Messages.Responses;
 
 namespace SugarTalk.Core.Handlers.RequestHandlers.Meetings
 {
-    public class GetMeetingSessionRequestHandler : IRequestHandler<GetMeetingSessionRequest, SugarTalkResponse<MeetingSessionDto>>
+    public class GetMeetingSessionRequestHandler : IRequestHandler<GetMeetingSessionRequest, GetMeetingSessionResponse>
     {
         private readonly IMeetingSessionService _meetingSessionService;
 
@@ -19,7 +19,7 @@ namespace SugarTalk.Core.Handlers.RequestHandlers.Meetings
             _meetingSessionService = meetingSessionService;
         }
 
-        public async Task<SugarTalkResponse<MeetingSessionDto>> Handle(IReceiveContext<GetMeetingSessionRequest> context, CancellationToken cancellationToken)
+        public async Task<GetMeetingSessionResponse> Handle(IReceiveContext<GetMeetingSessionRequest> context, CancellationToken cancellationToken)
         {
             return await _meetingSessionService.GetMeetingSession(context.Message, cancellationToken).ConfigureAwait(false);
         }

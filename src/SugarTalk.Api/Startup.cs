@@ -1,8 +1,6 @@
 using System.Text.Json;
 using Correlate.AspNetCore;
 using Correlate.DependencyInjection;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
@@ -10,10 +8,9 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.OpenApi.Models;
 using Serilog;
+using SugarTalk.Api.Authentication;
 using SugarTalk.Api.Extensions;
 using SugarTalk.Api.Filters;
-using SugarTalk.Api.Middlewares;
-using SugarTalk.Api.Middlewares.Authentication;
 using SugarTalk.Core.Hubs;
 using SugarTalk.Messages;
 
@@ -40,18 +37,7 @@ namespace SugarTalk.Api
 
             services.AddHttpClientInternal();
             services.AddHttpContextAccessor();
-
-            services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-                .AddScheme<GoogleAuthenticationOptions, GoogleAuthenticationHandler>("Google", _ => { })
-                .AddScheme<WechatAuthenticationOptions, WechatAuthenticationHandler>("Wechat", _ => { })
-                .AddScheme<FacebookAuthenticationOptions, FacebookAuthenticationHandler>("Facebook", _ => { });
-            
-            services.AddAuthorization(options =>
-            {
-                var builder = new AuthorizationPolicyBuilder("Google", "Wechat", "Facebook");
-                builder = builder.RequireAuthenticatedUser();
-                options.DefaultPolicy = builder.Build();
-            });
+            services.AddCustomAuthentication(Configuration);
 
             services.AddMvc(options =>
             {

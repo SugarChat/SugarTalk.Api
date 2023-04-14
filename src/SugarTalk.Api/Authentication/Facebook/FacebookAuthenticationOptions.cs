@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Authentication;
 
-namespace SugarTalk.Api.Middlewares.Authentication
+namespace SugarTalk.Api.Authentication.Facebook
 {
     public class FacebookAuthenticationOptions : AuthenticationSchemeOptions
     {
