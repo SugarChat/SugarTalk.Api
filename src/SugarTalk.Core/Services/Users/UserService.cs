@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using AutoMapper;
 using Microsoft.AspNetCore.Http;
 using SugarTalk.Core.Domain.Account;
+using SugarTalk.Core.Ioc;
 using SugarTalk.Messages;
 using SugarTalk.Messages.Dtos.Users;
 using SugarTalk.Messages.Requests.Users;
@@ -13,7 +14,7 @@ using SugarTalk.Messages.Responses;
 
 namespace SugarTalk.Core.Services.Users
 {
-    public interface IUserService
+    public interface IUserService : IScopedDependency
     {
         ClaimsPrincipal GetCurrentPrincipal();
 

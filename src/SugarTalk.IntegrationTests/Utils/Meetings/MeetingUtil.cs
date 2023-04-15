@@ -1,12 +1,15 @@
 using System;
+using System.Threading;
 using System.Threading.Tasks;
 using Autofac;
 using Mediator.Net;
+using SugarTalk.Core.Data;
+using SugarTalk.Core.Domain.Meeting;
 using SugarTalk.Messages.Commands.Meetings;
 using SugarTalk.Messages.Enums;
 using SugarTalk.Messages.Requests.Meetings;
 
-namespace SugarTalk.Tests.Utils.Meeting;
+namespace SugarTalk.IntegrationTests.Utils.Meetings;
 
 public class MeetingUtil : TestUtil
 {
@@ -40,6 +43,19 @@ public class MeetingUtil : TestUtil
                 });
 
             return response;
+        });
+    }
+
+    public async Task AddMeeting(Guid meetingId, string meetingNumber, MeetingType type)
+    {
+        await RunWithUnitOfWork<IRepository>(async (repository) =>
+        {
+            await repository.InsertAsync(new Meeting
+            {
+                Id = meetingId,
+                MeetingNumber = meetingNumber,
+                MeetingType = type
+            }, CancellationToken.None).ConfigureAwait(false);
         });
     }
 }

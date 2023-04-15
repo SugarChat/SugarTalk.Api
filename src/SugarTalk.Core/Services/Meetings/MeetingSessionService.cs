@@ -11,7 +11,6 @@ using SugarTalk.Core.Services.Users;
 using SugarTalk.Messages.Dtos.Meetings;
 using SugarTalk.Messages.Dtos.Users;
 using SugarTalk.Messages.Requests.Meetings;
-using SugarTalk.Messages.Responses;
 
 namespace SugarTalk.Core.Services.Meetings
 {

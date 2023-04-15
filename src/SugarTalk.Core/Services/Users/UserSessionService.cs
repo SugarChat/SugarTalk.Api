@@ -5,13 +5,14 @@ using AutoMapper;
 using Microsoft.EntityFrameworkCore;
 using SugarTalk.Core.Data;
 using SugarTalk.Core.Domain.Account;
+using SugarTalk.Core.Ioc;
 using SugarTalk.Messages.Commands.UserSessions;
 using SugarTalk.Messages.Dtos.Users;
 using SugarTalk.Messages.Events.UserSessions;
 
 namespace SugarTalk.Core.Services.Users
 {
-    public interface IUserSessionService
+    public interface IUserSessionService : IScopedDependency
     {
         Task UpdateUserSession(UserSession userSession, CancellationToken cancellationToken = default);
         

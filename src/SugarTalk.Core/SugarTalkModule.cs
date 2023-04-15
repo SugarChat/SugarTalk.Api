@@ -23,15 +23,15 @@ namespace SugarTalk.Core
     {
         private readonly ILogger _logger;
         private readonly Assembly[] _assemblies;
-        
+
         public SugarTalkModule(ILogger logger, params Assembly[] assemblies)
         {
             _logger = logger;
             _assemblies = assemblies;
-    
+
             if (_logger == null)
                 throw new ArgumentException(nameof(_logger));
-        
+
             if (_assemblies == null || !_assemblies.Any())
                 throw new ArgumentException("No assemblies found to scan. Supply at least one assembly to scan.");
         }
@@ -45,7 +45,7 @@ namespace SugarTalk.Core
             RegisterDependency(builder);
             RegisterAutoMapper(builder);
         }
-            
+
         private void RegisterLogger(ContainerBuilder builder)
         {
             builder.RegisterInstance(_logger).AsSelf().AsImplementedInterfaces().SingleInstance();
@@ -73,7 +73,7 @@ namespace SugarTalk.Core
             });
             builder.RegisterMediator(mediatorBuilder);
         }
-            
+
         private void RegisterDatabase(ContainerBuilder builder)
         {
             builder.RegisterType<SugarTalkDbContext>()
@@ -81,7 +81,7 @@ namespace SugarTalk.Core
                 .As<DbContext>()
                 .AsImplementedInterfaces()
                 .InstancePerLifetimeScope();
-    
+
             builder.RegisterType<EfRepository>().As<IRepository>().InstancePerLifetimeScope();
         }
 
@@ -100,7 +100,7 @@ namespace SugarTalk.Core
                     builder.RegisterType(type).AsSelf().AsImplementedInterfaces();
             }
         }
-        
+
         private void RegisterAutoMapper(ContainerBuilder builder)
         {
             builder.RegisterAutoMapper(typeof(SugarTalkModule).Assembly);

@@ -29,13 +29,17 @@ namespace SugarTalk.Api
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddCorrelate(options => options.RequestHeaders = SugarTalkConstants.CorrelationIdHeaders);
-            services.AddControllers();
+            services.AddControllers().AddNewtonsoftJson();
             services.AddSwaggerGen(c =>
             {
                 c.SwaggerDoc("v1", new OpenApiInfo {Title = "SugarTalk.Api", Version = "v1"});
             });
 
             services.AddHttpClientInternal();
+            services.AddMemoryCache();
+            services.AddResponseCaching();
+            services.AddHealthChecks();
+            services.AddEndpointsApiExplorer();
             services.AddHttpContextAccessor();
             services.AddCustomAuthentication(Configuration);
 
@@ -69,6 +73,7 @@ namespace SugarTalk.Api
             app.UseCorrelate();
             app.UseRouting();
             app.UseCors();
+            app.UseResponseCaching();
             app.UseMiddleware<EnrichAccessTokenMiddleware>();
             app.UseAuthentication();
             app.UseAuthorization();
@@ -76,7 +81,7 @@ namespace SugarTalk.Api
             app.UseEndpoints(endpoints =>
             {
                 endpoints.MapControllers();
-                // endpoints.MapHealthChecks("health");
+                endpoints.MapHealthChecks("health");
                 endpoints.MapHub<MeetingHub>("/meetingHub");
             });
             

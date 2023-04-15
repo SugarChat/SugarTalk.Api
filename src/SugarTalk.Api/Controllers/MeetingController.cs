@@ -1,6 +1,7 @@
 using System.Threading.Tasks;
 using Mediator.Net;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
@@ -25,24 +26,34 @@ namespace SugarTalk.Api.Controllers
         }
         
         [Route("schedule"), HttpPost]
-        public async Task<ScheduleMeetingResponse> ScheduleMeeting(ScheduleMeetingCommand scheduleMeetingCommand)
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ScheduleMeetingResponse))]
+        public async Task<IActionResult> ScheduleMeeting(ScheduleMeetingCommand scheduleMeetingCommand)
         {
-            return await _mediator.SendAsync<ScheduleMeetingCommand, ScheduleMeetingResponse>(scheduleMeetingCommand);
+            var response = await _mediator.SendAsync<ScheduleMeetingCommand, ScheduleMeetingResponse>(scheduleMeetingCommand);
+            
+            return Ok(response);
         }
         
         [Route("join"), HttpPost]
-        public async Task<JoinMeetingResponse> JoinMeeting(JoinMeetingCommand joinMeetingCommand)
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(JoinMeetingResponse))]
+        public async Task<IActionResult> JoinMeeting(JoinMeetingCommand joinMeetingCommand)
         {
-            return await _mediator.SendAsync<JoinMeetingCommand, JoinMeetingResponse>(joinMeetingCommand);
+            var response = await _mediator.SendAsync<JoinMeetingCommand, JoinMeetingResponse>(joinMeetingCommand);
+            
+            return Ok(response);
         }
         
         [Route("session"), HttpGet]
-        public async Task<GetMeetingSessionResponse> GetMeetingSession([FromQuery] GetMeetingSessionRequest request)
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(GetMeetingSessionResponse))]
+        public async Task<IActionResult> GetMeetingSession([FromQuery] GetMeetingSessionRequest request)
         {
-            return await _mediator.RequestAsync<GetMeetingSessionRequest, GetMeetingSessionResponse>(request);
+            var response = await _mediator.RequestAsync<GetMeetingSessionRequest, GetMeetingSessionResponse>(request);
+
+            return Ok(response);
         }
         
         [Route("iceservers"), HttpGet]
+        [ProducesResponseType(StatusCodes.Status200OK)]
         public IActionResult GetIceServers()
         {
             return Ok(JsonConvert.DeserializeObject<WebRtcIceServer[]>(_webRtcIceServerSettings.Value.IceServers));

@@ -3,7 +3,7 @@ using System.Threading.Tasks;
 using Autofac;
 using SugarTalk.Core.Data;
 
-namespace SugarTalk.Tests;
+namespace SugarTalk.IntegrationTests;
 
 public class TestUtilBase
 {

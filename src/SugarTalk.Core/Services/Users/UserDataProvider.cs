@@ -3,10 +3,11 @@ using System.Threading;
 using System.Threading.Tasks;
 using SugarTalk.Core.Data;
 using SugarTalk.Core.Domain.Account;
+using SugarTalk.Core.Ioc;
 
 namespace SugarTalk.Core.Services.Users
 {
-    public interface IUserDataProvider
+    public interface IUserDataProvider : IScopedDependency
     {
         Task<User> GetUserByThirdPartyId(string thirdPartyId, CancellationToken cancellationToken);
 

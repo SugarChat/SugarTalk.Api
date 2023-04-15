@@ -14,7 +14,7 @@ using SugarTalk.Core;
 using SugarTalk.Core.DbUp;
 using SugarTalk.Core.Settings.System;
 
-namespace SugarTalk.Tests;
+namespace SugarTalk.IntegrationTests;
 
 public partial class TestBase
 {
@@ -23,7 +23,10 @@ public partial class TestBase
         "schemaversions"
     };
 
-
+    public async Task InitializeAsync()
+    {
+        await _identityUtil.Signin(new TestCurrentUser());
+    }
     
     private void RegisterBaseContainer(ContainerBuilder containerBuilder)
     {
@@ -126,11 +129,6 @@ public partial class TestBase
     {
         ClearDatabaseRecord();
         FlushRedisDatabase();
-    }
-
-    public Task InitializeAsync()
-    {
-        throw new NotImplementedException();
     }
 
     public Task DisposeAsync()

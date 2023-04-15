@@ -1,6 +1,6 @@
 using Autofac;
 
-namespace SugarTalk.Tests;
+namespace SugarTalk.IntegrationTests;
 
 public class TestUtil : TestUtilBase
 {

@@ -6,11 +6,12 @@ using AutoMapper;
 using Microsoft.EntityFrameworkCore;
 using SugarTalk.Core.Data;
 using SugarTalk.Core.Domain.Account;
+using SugarTalk.Core.Ioc;
 using SugarTalk.Messages.Dtos.Users;
 
 namespace SugarTalk.Core.Services.Users
 {
-    public interface IUserSessionDataProvider
+    public interface IUserSessionDataProvider : IScopedDependency
     {
         Task<UserSession> GetUserSessionById(Guid id, CancellationToken cancellationToken = default);
         

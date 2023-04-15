@@ -1,6 +1,7 @@
 using System.Threading.Tasks;
 using Mediator.Net;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using SugarTalk.Messages.Commands.UserSessions;
 
@@ -19,15 +20,21 @@ namespace SugarTalk.Api.Controllers
         }
         
         [Route("audio/change"), HttpPost]
-        public async Task<ChangeAudioResponse> ChangeAudio(ChangeAudioCommand changeAudioCommand)
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ChangeAudioResponse))]
+        public async Task<IActionResult> ChangeAudio(ChangeAudioCommand changeAudioCommand)
         {
-            return await _mediator.SendAsync<ChangeAudioCommand, ChangeAudioResponse>(changeAudioCommand);
+            var response = await _mediator.SendAsync<ChangeAudioCommand, ChangeAudioResponse>(changeAudioCommand);
+
+            return Ok(response);
         }
         
         [Route("screen/share"), HttpPost]
-        public async Task<ShareScreenResponse> ChangeAudio(ShareScreenCommand shareScreenCommand)
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ShareScreenResponse))]
+        public async Task<IActionResult> ChangeAudio(ShareScreenCommand shareScreenCommand)
         {
-            return await _mediator.SendAsync<ShareScreenCommand, ShareScreenResponse>(shareScreenCommand);
+            var response = await _mediator.SendAsync<ShareScreenCommand, ShareScreenResponse>(shareScreenCommand);
+
+            return Ok(response);
         }
     }
 }
