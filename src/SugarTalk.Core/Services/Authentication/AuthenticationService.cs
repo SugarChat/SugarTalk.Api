@@ -42,11 +42,11 @@ namespace SugarTalk.Core.Services.Authentication
             var response = await _httpClientFactory.CreateClient("google")
                 .PostAsync(requestUrl, null, cancellationToken).ConfigureAwait(false);
 
-            var content = await response.Content.ReadAsStringAsync();
+            var content = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
             
             var accessToken = JsonConvert.DeserializeObject<GoogleAccessTokenDto>(content);
 
-            return new GetGoogleAccessTokenResponse()
+            return new GetGoogleAccessTokenResponse
             {
                 AccessToken = accessToken
             };
@@ -58,11 +58,11 @@ namespace SugarTalk.Core.Services.Authentication
             var requestUrl =
                 $"https://graph.facebook.com/oauth/access_token?code={request.Code}&client_id={_facebookSettings.Value.ClientId}&client_secret={_facebookSettings.Value.ClientSecret}";
             
-            var response = await _httpClientFactory.CreateClient("facebook").GetStringAsync(requestUrl);
+            var response = await _httpClientFactory.CreateClient("facebook").GetStringAsync(requestUrl, cancellationToken).ConfigureAwait(false);
 
             var accessToken = JsonConvert.DeserializeObject<FacebookAccessTokenDto>(response);
 
-            return new GetFacebookAccessTokenResponse()
+            return new GetFacebookAccessTokenResponse
             {
                 AccessToken = accessToken
             };

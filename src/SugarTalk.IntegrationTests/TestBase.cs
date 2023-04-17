@@ -50,30 +50,4 @@ public partial class TestBase : TestUtilBase, IAsyncLifetime, IDisposable
 
         _identityUtil = new IdentityUtil(CurrentScope);
     }
-
-    // private void Signin(User user)
-    // {
-    //     Run<IHttpContextAccessor>(accessor =>
-    //     {
-    //         accessor.HttpContext.User = new ClaimsPrincipal(new ClaimsIdentity(new List<Claim>
-    //         {
-    //             new(ClaimTypes.Name, user.DisplayName),
-    //             new(ClaimTypes.Email, user.Email),
-    //             new(SugarTalkConstants.Picture, user.Picture),
-    //             new(SugarTalkConstants.ThirdPartyId, user.ThirdPartyId),
-    //             new(SugarTalkConstants.ThirdPartyFrom, user.ThirdPartyFrom.ToString())
-    //         }, user.ThirdPartyFrom.ToString()));
-    //     });
-    //
-    //     Run<IUserService>(userService =>
-    //     {
-    //         Task.Run(async () =>
-    //         {
-    //             var response =
-    //                 await userService.SignInFromThirdParty(new SignInFromThirdPartyRequest(), default);
-    //             
-    //             user.Id = response.Data.Id;
-    //         });
-    //     });
-    // }
 }
