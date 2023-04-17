@@ -13,8 +13,8 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        dotnet-version: ['5.0.x' ]
-        mongodb-version: [ 4.4 ]
+        dotnet-version: ['7.0.x' ]
+        mysql-version: [ '8.0.x' ]
     steps:
       - name: Prepare Environment
         run: sudo bash -c "echo '127.0.0.1      mongoserver' >> /etc/hosts"
