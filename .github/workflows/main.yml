@@ -13,7 +13,7 @@ jobs:
       mysql:
         image: bitnami/mysql:8.0
         env:
-          MYSQL_USER: root
+          MYSQL_USER: sugar_talk
           MYSQL_PASSWORD: 123456
           MYSQL_ROOT_PASSWORD: 123456
           MYSQL_AUTHENTICATION_PLUGIN: mysql_native_password
