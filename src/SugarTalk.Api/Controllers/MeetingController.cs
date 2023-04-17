@@ -3,7 +3,6 @@ using Mediator.Net;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 using SugarTalk.Core.Settings.WebRTC;
 using SugarTalk.Messages.Commands.Meetings;
@@ -17,9 +16,9 @@ namespace SugarTalk.Api.Controllers
     public class MeetingController: ControllerBase
     {
         private readonly IMediator _mediator;
-        private readonly IOptions<WebRtcIceServerSettings> _webRtcIceServerSettings;
+        private readonly WebRtcIceServerSettings _webRtcIceServerSettings;
         
-        public MeetingController(IMediator mediator, IOptions<WebRtcIceServerSettings> webRtcIceServerSettings)
+        public MeetingController(IMediator mediator, WebRtcIceServerSettings webRtcIceServerSettings)
         {
             _mediator = mediator;
             _webRtcIceServerSettings = webRtcIceServerSettings;
@@ -56,7 +55,7 @@ namespace SugarTalk.Api.Controllers
         [ProducesResponseType(StatusCodes.Status200OK)]
         public IActionResult GetIceServers()
         {
-            return Ok(JsonConvert.DeserializeObject<WebRtcIceServer[]>(_webRtcIceServerSettings.Value.IceServers));
+            return Ok(JsonConvert.DeserializeObject<WebRtcIceServer[]>(_webRtcIceServerSettings.IceServers));
         }
     }
 }
