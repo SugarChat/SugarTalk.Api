@@ -1,35 +1,38 @@
-name: Integration and unit tests
+name: BuildAndTest
 
 on:
   push:
-    branches: [ ]
+    branches: [ "*" ]
   pull_request:
-    branches: [ ]
-
-  workflow_dispatch:
+    branches: [ "*" ]
 
 jobs:
-  tests:
+  build-and-test:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        dotnet-version: ['7.0.x' ]
-        mysql-version: [ '8.0.x' ]
+    services:
+      mysql:
+        image: bitnami/mysql:8.0
+        env:
+          MYSQL_USER: sugar_talk
+          MYSQL_PASSWORD: 123456
+          MYSQL_ROOT_PASSWORD: 123456
+          MYSQL_AUTHENTICATION_PLUGIN: mysql_native_password
+        ports:
+          - 3306/tcp
+        options: >-
+          --health-cmd="mysqladmin ping" 
+          --health-interval=10s 
+          --health-timeout=5s 
+          --health-retries=3
     steps:
-      - name: Prepare Environment
-        run: sudo bash -c "echo '127.0.0.1      mongoserver' >> /etc/hosts"
-      - uses: actions/checkout@v2
-      - name: Start MongoDB
-        uses: supercharge/mongodb-github-action@1.3.0
-        with:
-          mongodb-version: ${{ matrix.mongodb-version }}
-      - name: Setup .NET Core SDK ${{ matrix.dotnet-version }}
-        uses: actions/setup-dotnet@v1.7.2
-        with:
-          dotnet-version: ${{ matrix.dotnet-version }}
-      - name: Install dependencies
-        run: dotnet restore src/SugarTalk.sln
-      - name: Build
-        run: dotnet build src/SugarTalk.sln --configuration Release --no-restore
-      - name: Test
-        run: dotnet test src/SugarTalk.sln --no-restore --verbosity normal
+    - uses: actions/checkout@v3
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v3
+      with:
+        dotnet-version: 7.0.x
+    - name: Restore dependencies
+      run: dotnet restore
+    - name: Build
+      run: dotnet build --no-restore
+    - name: Test
+      run: dotnet test --no-build --verbosity normal
