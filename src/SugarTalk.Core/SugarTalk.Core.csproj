@@ -42,7 +42,6 @@
     </ItemGroup>
 
     <ItemGroup>
-      <Folder Include="Identity" />
       <Folder Include="Validators" />
     </ItemGroup>
     

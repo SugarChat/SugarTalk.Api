@@ -3,7 +3,6 @@ using Mediator.Net;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using SugarTalk.Messages.Requests.Authentication;
-using SugarTalk.Messages.Requests.Meetings;
 
 namespace SugarTalk.Api.Controllers
 {

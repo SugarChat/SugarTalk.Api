@@ -25,11 +25,11 @@ public class IdentityUtil : TestUtil
             await repository.InsertAsync(new User
             {
                 Id = user.Id,
-                ThirdPartyId = "TestThirdPartyId",
+                ThirdPartyId = user.ThirdPartyId,
                 ThirdPartyFrom = user.AuthType,
                 DisplayName = user.DisplayName,
-                Email = "test@email.com",
-                Picture = "https://www.sugartalk.com/test-picture.png"
+                Email = user.Email,
+                Picture = user.Picture
             });
 
             if (accessor.HttpContext == null)
@@ -38,9 +38,9 @@ public class IdentityUtil : TestUtil
             accessor.HttpContext.User = new ClaimsPrincipal(new ClaimsIdentity(new List<Claim>
             {
                 new(ClaimTypes.Name, user.DisplayName),
-                new(ClaimTypes.Email, "test@email.com"),
-                new(SugarTalkConstants.Picture, "https://www.sugartalk.com/test-picture.png"),
-                new(SugarTalkConstants.ThirdPartyId, "TestThirdPartyId"),
+                new(ClaimTypes.Email, user.Email),
+                new(SugarTalkConstants.Picture, user.Picture),
+                new(SugarTalkConstants.ThirdPartyId, user.ThirdPartyId),
                 new(SugarTalkConstants.ThirdPartyFrom, user.AuthType.ToString())
             }, user.AuthType.ToString()));
         });
