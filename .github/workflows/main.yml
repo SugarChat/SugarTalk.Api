@@ -31,8 +31,8 @@ jobs:
       with:
         dotnet-version: 7.0.x
     - name: Restore dependencies
-      run: dotnet restore
+      run: dotnet restore src/SugarTalk.sln
     - name: Build
-      run: dotnet build --no-restore
+      run: dotnet build src/SugarTalk.sln --no-restore
     - name: Test
-      run: dotnet test --no-build --verbosity normal
+      run: dotnet test src/SugarTalk.sln --no-build --verbosity normal
