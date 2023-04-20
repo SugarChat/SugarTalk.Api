@@ -3,7 +3,7 @@ name: BuildAndTest
 on:
   push:
     branches:
-      - main
+      - upgrade-to-net7
 
 jobs:
   build-and-test:
