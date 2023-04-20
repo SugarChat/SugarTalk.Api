@@ -1,19 +1,15 @@
-using System;
-using SugarTalk.Messages.Enums;
+using SugarTalk.Core.Services.Identity;
+using SugarTalk.Messages.Enums.Account;
 
 namespace SugarTalk.IntegrationTests;
 
-public class TestCurrentUser
+public class TestCurrentUser : ICurrentUser
 {
-    public Guid Id { get; init; } = Guid.NewGuid();
+    public int Id { get; init; } = 1;
 
-    public string ThirdPartyId { get; set; } = "TestThirdPartyId";
+    public UserAccountIssuer AuthType { get; set; }
 
-    public string Email { get; set; } = "test@email.com";
+    public string ThirdPartyId { get; set; } = "thirdpartyid";
 
-    public string Picture { get; set; } = "https://www.sugartalk.com/test-picture.png";
-
-    public ThirdPartyFrom AuthType { get; } = ThirdPartyFrom.Google;
-
-    public string DisplayName { get; set; } = "TestName";
+    public string UserName { get; set; } = "TEST_USER";
 }

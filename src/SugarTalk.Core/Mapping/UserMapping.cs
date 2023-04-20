@@ -8,9 +8,9 @@ namespace SugarTalk.Core.Mapping
     {
         public UserMapping()
         {
-            CreateMap<User, SignedInUserDto>();
-            CreateMap<UserSession, UserSessionDto>();
-            CreateMap<UserSessionDto, UserSession>();
+            CreateMap<UserAccount, SignedInUserDto>();
+            CreateMap<UserSession, UserSessionDto>().ReverseMap();
+            CreateMap<UserAccount, UserAccountDto>().ReverseMap();
         }
     }
 }

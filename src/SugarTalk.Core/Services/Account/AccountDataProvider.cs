@@ -1,0 +1,157 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Security.Claims;
+using System.Threading;
+using System.Threading.Tasks;
+using AutoMapper;
+using AutoMapper.QueryableExtensions;
+using Microsoft.EntityFrameworkCore;
+using SugarTalk.Core.Constants;
+using SugarTalk.Core.Data;
+using SugarTalk.Core.Domain.Account;
+using SugarTalk.Core.Domain.Account.Exceptions;
+using SugarTalk.Core.Extensions;
+using SugarTalk.Core.Ioc;
+using SugarTalk.Messages.Dtos.Users;
+using SugarTalk.Messages.Enums.Account;
+using Role = SugarTalk.Core.Domain.Account.Role;
+
+namespace SugarTalk.Core.Services.Account
+{
+    public interface IAccountDataProvider : IScopedDependency
+    {
+        Task<(bool CanLogin, UserAccountDto Account)> AuthenticateAsync(
+            string username, string clearTextPassword, CancellationToken cancellationToken);
+        
+        Task<UserAccount> GetUserByThirdPartyId(string thirdPartyId, CancellationToken cancellationToken);
+
+        Task PersistUser(UserAccount user, CancellationToken cancellationToken);
+        
+        Task<UserAccountDto> GetUserAccountAsync(int? id = null, string username = null, string thirdPartyUserId = null, bool includeRoles = false,
+            CancellationToken cancellationToken = default);
+
+        Task<UserAccount> CreateUserAccountAsync(string userName, string password, string thirdPartyUserId = null,
+            UserAccountIssuer authType = UserAccountIssuer.Wiltechs, CancellationToken cancellationToken = default);
+        
+        List<Claim> GenerateClaimsFromUserAccount(UserAccountDto account);
+        
+        Task AllocateUserToRoleAsync(int userId, int roleId, CancellationToken cancellationToken);
+    }
+    
+    public partial class AccountDataProvider : IAccountDataProvider
+    {
+        private readonly IMapper _mapper;
+        private readonly IRepository _repository;
+
+        public AccountDataProvider(IRepository repository, IMapper mapper)
+        {
+            _mapper = mapper;
+            _repository = repository;
+        }
+
+        public async Task<UserAccount> GetUserByThirdPartyId(string thirdPartyId, CancellationToken cancellationToken)
+        {
+            return await _repository.SingleOrDefaultAsync<UserAccount>(x => x.ThirdPartyUserId == thirdPartyId, cancellationToken)
+                .ConfigureAwait(false);
+        }
+
+        public async Task PersistUser(UserAccount user, CancellationToken cancellationToken)
+        {
+            await _repository.InsertAsync(user, cancellationToken).ConfigureAwait(false);
+        }
+        
+        public async Task<UserAccountDto> GetUserAccountAsync(int? id = null, string username = null, string thirdPartyUserId = null, bool includeRoles = false,
+            CancellationToken cancellationToken = default)
+        {
+            var query = _repository.QueryNoTracking<UserAccount>();
+
+            if (id.HasValue)
+                query = query.Where(x => x.Id == id);
+            if (!string.IsNullOrEmpty(username))
+                query = query.Where(x => x.UserName == username);
+            if (thirdPartyUserId != null)
+                query = query.Where(x => x.ThirdPartyUserId == thirdPartyUserId);
+        
+            var account = await query
+                .ProjectTo<UserAccountDto>(_mapper.ConfigurationProvider)
+                .SingleOrDefaultAsync(cancellationToken).ConfigureAwait(false);
+
+            if (account == null || !includeRoles) return account;
+            {
+                var userRoleIds = await _repository
+                    .QueryNoTracking<RoleUser>().Where(x => x.UserId == account.Id)
+                    .Select(x => x.RoleId).ToListAsync(cancellationToken).ConfigureAwait(false);
+
+                if (userRoleIds.Any())
+                {
+                    account.Roles = await _repository
+                        .QueryNoTracking<Role>()
+                        .Where(x => userRoleIds.Contains(x.Id))
+                        .ProjectTo<RoleDto>(_mapper.ConfigurationProvider)
+                        .ToListAsync(cancellationToken).ConfigureAwait(false);
+                }
+            }
+
+            return account;
+        }
+        
+        public async Task<UserAccount> CreateUserAccountAsync(string requestUserName, string requestPassword, 
+            string thirdPartyUserId = null, UserAccountIssuer authType = UserAccountIssuer.Wiltechs, CancellationToken cancellationToken = default)
+        {
+            var userAccounts = 
+                _repository.Query<UserAccount>().Where(x => x.UserName == requestUserName).ToList();
+
+            if (userAccounts is { Count: > 0 }) throw new CannotRegisterWhenExistTheSameUserAccountException();
+        
+            var userAccount = new UserAccount
+            {
+                CreatedOn = DateTime.Now,
+                ModifiedOn = DateTime.Now,
+                Uuid = Guid.NewGuid(),
+                UserName = requestUserName,
+                Password = requestPassword?.ToSha256(),
+                ThirdPartyUserId = thirdPartyUserId,
+                Issuer = authType,
+                IsActive = true
+            };
+
+            await _repository.InsertAsync(userAccount, cancellationToken).ConfigureAwait(false);
+
+            return userAccount;
+        }
+
+        public List<Claim> GenerateClaimsFromUserAccount(UserAccountDto account)
+        {
+            var claims = new List<Claim>
+            {
+                new(ClaimTypes.Name, account.UserName),
+                new(ClaimTypes.NameIdentifier, account.Id.ToString()),
+                new(ClaimTypes.Authentication, AuthenticationSchemeConstants.SelfAuthenticationScheme)
+            };
+            claims.AddRange(account.Roles.Select(r => new Claim(ClaimTypes.Role, r.Name)));
+            return claims;
+        }
+
+        public async Task AllocateUserToRoleAsync(int userId, int roleId, CancellationToken cancellationToken)
+        {
+            var user = await GetUserAccountAsync(userId, includeRoles: true, cancellationToken: cancellationToken).ConfigureAwait(false);
+        
+            if (user == null) return;
+        
+            var userRole = 
+                await _repository.SingleOrDefaultAsync<RoleUser>(x => 
+                    x.UserId == user.Id && x.RoleId == roleId, cancellationToken).ConfigureAwait(false);
+
+            if (userRole != null) return;
+            {
+                await _repository.InsertAsync(new RoleUser
+                {
+                    RoleId = roleId,
+                    UserId = user.Id,
+                    Uuid = Guid.NewGuid()
+                }, cancellationToken).ConfigureAwait(false);
+            }
+        }
+    }
+}

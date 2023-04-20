@@ -1,18 +1,13 @@
 using System.Text.Json;
 using Correlate.AspNetCore;
 using Correlate.DependencyInjection;
-using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
-using Microsoft.OpenApi.Models;
 using Serilog;
 using SugarTalk.Api.Authentication;
 using SugarTalk.Api.Extensions;
 using SugarTalk.Api.Filters;
 using SugarTalk.Core.Hubs;
 using SugarTalk.Messages;
+using Swashbuckle.AspNetCore.SwaggerUI;
 
 namespace SugarTalk.Api
 {
@@ -30,17 +25,13 @@ namespace SugarTalk.Api
         {
             services.AddCorrelate(options => options.RequestHeaders = SugarTalkConstants.CorrelationIdHeaders);
             services.AddControllers().AddNewtonsoftJson();
-            services.AddSwaggerGen(c =>
-            {
-                c.SwaggerDoc("v1", new OpenApiInfo {Title = "SugarTalk.Api", Version = "v1"});
-            });
-
             services.AddHttpClientInternal();
             services.AddMemoryCache();
             services.AddResponseCaching();
             services.AddHealthChecks();
             services.AddEndpointsApiExplorer();
             services.AddHttpContextAccessor();
+            services.AddCustomSwagger();
             services.AddCustomAuthentication(Configuration);
 
             services.AddMvc(options =>
@@ -64,7 +55,11 @@ namespace SugarTalk.Api
             {
                 app.UseDeveloperExceptionPage();
                 app.UseSwagger();
-                app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "SugarTalk.Api v1"));
+                app.UseSwaggerUI(c =>
+                {
+                    c.SwaggerEndpoint("/swagger/v1/swagger.json", "Smarties.Api.xml");
+                    c.DocExpansion(DocExpansion.None);
+                });
             }
             
             app.UseSerilogRequestLogging();

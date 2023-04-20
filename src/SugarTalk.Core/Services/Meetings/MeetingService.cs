@@ -6,8 +6,8 @@ using AutoMapper;
 using SugarTalk.Core.Data;
 using SugarTalk.Core.Domain.Meeting;
 using SugarTalk.Core.Ioc;
+using SugarTalk.Core.Services.Account;
 using SugarTalk.Core.Services.Exceptions;
-using SugarTalk.Core.Services.Users;
 using SugarTalk.Messages;
 using SugarTalk.Messages.Commands.Meetings;
 using SugarTalk.Messages.Dtos.Meetings;
@@ -30,7 +30,7 @@ namespace SugarTalk.Core.Services.Meetings
     public class MeetingService: IMeetingService
     {
         private readonly IMapper _mapper;
-        private readonly IUserService _userService;
+        private readonly IAccountService _userService;
         private readonly IRepository _repository;
         private readonly IMeetingDataProvider _meetingDataProvider;
 
@@ -38,7 +38,7 @@ namespace SugarTalk.Core.Services.Meetings
         private readonly IMeetingSessionDataProvider _meetingSessionDataProvider;
         
         public MeetingService(IMapper mapper, IRepository repository,
-            IMeetingDataProvider meetingDataProvider, IUserService userService, IMeetingSessionService meetingSessionService, IMeetingSessionDataProvider meetingSessionDataProvider)
+            IMeetingDataProvider meetingDataProvider, IAccountService userService, IMeetingSessionService meetingSessionService, IMeetingSessionDataProvider meetingSessionDataProvider)
         {
             _mapper = mapper;
             _repository = repository;

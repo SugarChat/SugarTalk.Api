@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using SugarTalk.Core.Data;
 using SugarTalk.Core.Domain.Meeting;
 using SugarTalk.Core.Ioc;
-using SugarTalk.Core.Services.Users;
+using SugarTalk.Core.Services.Account;
 using SugarTalk.Messages.Dtos.Meetings;
 
 namespace SugarTalk.Core.Services.Meetings
@@ -44,7 +44,7 @@ namespace SugarTalk.Core.Services.Meetings
         public async Task<MeetingSession> GetMeetingSessionByNumber(string meetingNumber,
             CancellationToken cancellationToken = default)
         {
-            return await _repository.Query<MeetingSession>()
+            return await _repository.QueryNoTracking<MeetingSession>()
                 .SingleOrDefaultAsync(x => x.MeetingNumber == meetingNumber, cancellationToken)
                 .ConfigureAwait(false);
         }

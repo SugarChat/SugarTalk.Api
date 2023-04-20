@@ -4,8 +4,8 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
+using SugarTalk.Core.Services.Account;
 using SugarTalk.Core.Services.Meetings;
-using SugarTalk.Core.Services.Users;
 using SugarTalk.Messages.Dtos.Users;
 
 namespace SugarTalk.Core.Hubs
@@ -15,17 +15,17 @@ namespace SugarTalk.Core.Hubs
     {
         private string MeetingNumber => Context.GetHttpContext().Request.Query["meetingNumber"];
 
-        private readonly IUserService _userService;
+        private readonly IAccountService _accountService;
         private readonly IUserSessionService _userSessionService;
         private readonly IMeetingSessionService _meetingSessionService;
         private readonly IUserSessionDataProvider _userSessionDataProvider;
         private readonly IMeetingSessionDataProvider _meetingSessionDataProvider;
         
-        public MeetingHub(IUserService userService,
+        public MeetingHub(IAccountService accountService,
             IUserSessionService userSessionService, IMeetingSessionService meetingSessionService, 
             IUserSessionDataProvider userSessionDataProvider, IMeetingSessionDataProvider meetingSessionDataProvider)
         {
-            _userService = userService;
+            _accountService = accountService;
             _userSessionService = userSessionService;
             _meetingSessionService = meetingSessionService;
             _userSessionDataProvider = userSessionDataProvider;
@@ -34,7 +34,7 @@ namespace SugarTalk.Core.Hubs
         
         public override async Task OnConnectedAsync()
         {
-            var user = await _userService.GetCurrentLoggedInUser().ConfigureAwait(false);
+            var user = await _accountService.GetCurrentLoggedInUser().ConfigureAwait(false);
             
             var meetingSession = await _meetingSessionDataProvider.GetMeetingSession(MeetingNumber)
                 .ConfigureAwait(false);

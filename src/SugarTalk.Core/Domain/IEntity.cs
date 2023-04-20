@@ -1,9 +1,10 @@
-using System;
+namespace SugarTalk.Core.Domain;
 
-namespace SugarTalk.Core.Domain
+public interface IEntity
 {
-    public interface IEntity
-    {
-        Guid Id { get; set; }
-    }
+}
+
+public interface IEntity<TId> : IEntity
+{
+    public TId Id { get; set; }
 }

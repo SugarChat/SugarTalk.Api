@@ -58,4 +58,17 @@ public class MeetingUtil : TestUtil
             }, CancellationToken.None).ConfigureAwait(false);
         });
     }
+
+    public async Task AddMeetingSession(string meetingNumber, Guid? meetingId = default)
+    {
+        await RunWithUnitOfWork<IRepository>(async (repository) =>
+        {
+            await repository.InsertAsync(new MeetingSession
+            {
+                MeetingId = meetingId ?? Guid.NewGuid(),
+                MeetingNumber = meetingNumber,
+                MeetingType = MeetingType.Adhoc
+            });
+        }); 
+    }
 }

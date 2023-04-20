@@ -14,6 +14,7 @@ using SugarTalk.Core.Middlewares;
 using SugarTalk.Core.Middlewares.FluentMessageValidator;
 using SugarTalk.Core.Middlewares.UnifyResponse;
 using SugarTalk.Core.Middlewares.UnitOfWork;
+using SugarTalk.Core.Services.Caching;
 using SugarTalk.Core.Settings;
 using Module = Autofac.Module;
 
@@ -41,6 +42,7 @@ namespace SugarTalk.Core
             RegisterLogger(builder);
             RegisterSettings(builder);
             RegisterMediator(builder);
+            RegisterCaching(builder);
             RegisterDatabase(builder);
             RegisterDependency(builder);
             RegisterAutoMapper(builder);
@@ -72,6 +74,15 @@ namespace SugarTalk.Core
                 c.UseSerilog(logger: _logger);
             });
             builder.RegisterMediator(mediatorBuilder);
+        }
+        
+        private void RegisterCaching(ContainerBuilder builder)
+        {
+            builder.Register(cfx =>
+            {
+                var pool = cfx.Resolve<IRedisConnectionPool>();
+                return pool.GetConnection();
+            }).ExternallyOwned();
         }
 
         private void RegisterDatabase(ContainerBuilder builder)

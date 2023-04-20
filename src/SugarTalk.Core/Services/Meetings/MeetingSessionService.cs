@@ -7,7 +7,7 @@ using SugarTalk.Core.Data;
 using SugarTalk.Core.Domain.Account;
 using SugarTalk.Core.Domain.Meeting;
 using SugarTalk.Core.Ioc;
-using SugarTalk.Core.Services.Users;
+using SugarTalk.Core.Services.Account;
 using SugarTalk.Messages.Dtos.Meetings;
 using SugarTalk.Messages.Dtos.Users;
 using SugarTalk.Messages.Requests.Meetings;
@@ -19,7 +19,7 @@ namespace SugarTalk.Core.Services.Meetings
         Task<GetMeetingSessionResponse> GetMeetingSession(GetMeetingSessionRequest request,
             CancellationToken cancellationToken = default);
 
-        Task ConnectUserToMeetingSession(User user, MeetingSessionDto meetingSession, string connectionId,
+        Task ConnectUserToMeetingSession(UserAccount user, MeetingSessionDto meetingSession, string connectionId,
             bool? isMuted = null, CancellationToken cancellationToken = default);
         
         Task UpdateMeetingSession(MeetingSession meetingSession,
@@ -32,24 +32,24 @@ namespace SugarTalk.Core.Services.Meetings
     public class MeetingSessionService : IMeetingSessionService
     {
         private readonly IMapper _mapper;
-        private readonly IUserService _userService;
         private readonly IRepository _repository;
+        private readonly IAccountService _accountService;
         private readonly IMeetingSessionDataProvider _meetingSessionDataProvider;
         
         public MeetingSessionService(IMapper mapper, 
-            IRepository repository, IUserService userService, 
+            IRepository repository, IAccountService accountService, 
             IMeetingSessionDataProvider meetingSessionDataProvider)
         {
             _mapper = mapper;
             _repository = repository;
-            _userService = userService;
+            _accountService = accountService;
             _meetingSessionDataProvider = meetingSessionDataProvider;
         }
         
         public async Task<GetMeetingSessionResponse> GetMeetingSession(GetMeetingSessionRequest request,
             CancellationToken cancellationToken = default)
         {
-            var user = await _userService.GetCurrentLoggedInUser(cancellationToken).ConfigureAwait(false);
+            var user = await _accountService.GetCurrentLoggedInUser(cancellationToken).ConfigureAwait(false);
 
             if (user == null)
                 throw new UnauthorizedAccessException();
@@ -59,7 +59,7 @@ namespace SugarTalk.Core.Services.Meetings
 
             if (meetingSession != null && 
                 meetingSession.UserSessions.Any() &&
-                meetingSession.UserSessions.All(x => x.UserId != user.Id))
+                meetingSession.UserSessions.All(x => x.UserId != user.Uuid))
                 throw new UnauthorizedAccessException();
 
             return new GetMeetingSessionResponse
@@ -73,11 +73,11 @@ namespace SugarTalk.Core.Services.Meetings
             await _repository.UpdateAsync(meetingSession, cancellationToken).ConfigureAwait(false);
         }
 
-        public async Task ConnectUserToMeetingSession(User user, MeetingSessionDto meetingSession, string connectionId, 
+        public async Task ConnectUserToMeetingSession(UserAccount user, MeetingSessionDto meetingSession, string connectionId, 
             bool? isMuted = null, CancellationToken cancellationToken = default)
         {
             var userSession = meetingSession.UserSessions
-                .Where(x => x.UserId == user.Id)
+                .Where(x => x.UserId == user.Uuid)
                 .OrderByDescending(x => x.CreatedDate)
                 .Select(x => _mapper.Map<UserSession>(x))
                 .FirstOrDefault();
@@ -118,12 +118,12 @@ namespace SugarTalk.Core.Services.Meetings
             return meetingSession;
         }
         
-        private UserSession GenerateNewUserSessionFromUser(User user, Guid meetingSessionId, string connectionId, bool isMuted)
+        private UserSession GenerateNewUserSessionFromUser(UserAccount user, Guid meetingSessionId, string connectionId, bool isMuted)
         {
             return new()
             {
-                UserId = user.Id,
-                UserName = user.DisplayName,
+                UserId = user.Uuid,
+                UserName = user.UserName,
                 UserPicture = user.Picture,
                 MeetingSessionId = meetingSessionId,
                 ConnectionId = connectionId,

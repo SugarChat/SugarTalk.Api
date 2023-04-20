@@ -1,7 +1,5 @@
-using System.Threading.Tasks;
 using Mediator.Net;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 using SugarTalk.Core.Settings.WebRTC;

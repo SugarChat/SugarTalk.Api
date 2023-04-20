@@ -2,7 +2,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Mediator.Net.Context;
 using Mediator.Net.Contracts;
-using SugarTalk.Core.Services.Users;
+using SugarTalk.Core.Services.Account;
 using SugarTalk.Messages;
 using SugarTalk.Messages.Commands.UserSessions;
 using SugarTalk.Messages.Dtos.Users;

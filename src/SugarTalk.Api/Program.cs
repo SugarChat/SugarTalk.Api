@@ -1,10 +1,6 @@
-using System;
 using Autofac;
 using Autofac.Extensions.DependencyInjection;
 using Destructurama;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Hosting;
 using Serilog;
 using SugarTalk.Core;
 using SugarTalk.Core.DbUp;

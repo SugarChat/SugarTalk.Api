@@ -10,8 +10,11 @@ using MySqlConnector;
 using Newtonsoft.Json;
 using NSubstitute;
 using Serilog;
+using StackExchange.Redis;
 using SugarTalk.Core;
 using SugarTalk.Core.DbUp;
+using SugarTalk.Core.Services.Identity;
+using SugarTalk.Core.Settings.Caching;
 using SugarTalk.Core.Settings.System;
 
 namespace SugarTalk.IntegrationTests;
@@ -25,7 +28,7 @@ public partial class TestBase
 
     public async Task InitializeAsync()
     {
-        await _identityUtil.Signin(new TestCurrentUser());
+        await _identityUtil.CreateUser(new TestCurrentUser());
     }
     
     private void RegisterBaseContainer(ContainerBuilder containerBuilder)
@@ -35,9 +38,11 @@ public partial class TestBase
         containerBuilder.RegisterModule(
             new SugarTalkModule(logger, typeof(SugarTalkModule).Assembly, typeof(TestBase).Assembly));
 
+        containerBuilder.RegisterInstance(new TestCurrentUser()).As<ICurrentUser>();
         containerBuilder.RegisterInstance(Substitute.For<IMemoryCache>()).AsImplementedInterfaces();
         containerBuilder.RegisterInstance(Substitute.For<IHttpContextAccessor>()).AsImplementedInterfaces();
         
+        RegisterRedis(containerBuilder);
         RegisterConfiguration(containerBuilder);
     }
     
@@ -52,6 +57,24 @@ public partial class TestBase
         File.WriteAllText(targetJson, JsonConvert.SerializeObject(jsonObj));
         var configuration = new ConfigurationBuilder().AddJsonFile(targetJson).Build();
         containerBuilder.RegisterInstance(configuration).AsImplementedInterfaces();
+    }
+    
+    private void RegisterRedis(ContainerBuilder builder)
+    {
+        builder.Register(cfx =>
+        {
+            if (RedisPool.ContainsKey(_redisDatabaseIndex))
+                return RedisPool[_redisDatabaseIndex];
+                
+            var redisConnectionSetting = cfx.Resolve<RedisCacheConnectionStringSetting>();
+                
+            var connString = $"{redisConnectionSetting.Value},defaultDatabase={_redisDatabaseIndex}";
+
+            var instance = ConnectionMultiplexer.Connect(connString);
+            
+            return RedisPool.GetOrAdd(_redisDatabaseIndex, instance);
+            
+        }).ExternallyOwned();
     }
     
     private void RunDbUpIfRequired()
