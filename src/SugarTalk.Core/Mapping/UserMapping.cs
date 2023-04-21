@@ -1,5 +1,5 @@
 using AutoMapper;
-using SugarTalk.Core.Entities;
+using SugarTalk.Core.Domain.Account;
 using SugarTalk.Messages.Dtos.Users;
 
 namespace SugarTalk.Core.Mapping
@@ -8,9 +8,9 @@ namespace SugarTalk.Core.Mapping
     {
         public UserMapping()
         {
-            CreateMap<User, SignedInUserDto>();
-            CreateMap<UserSession, UserSessionDto>();
-            CreateMap<UserSessionDto, UserSession>();
+            CreateMap<UserAccount, SignedInUserDto>();
+            CreateMap<UserSession, UserSessionDto>().ReverseMap();
+            CreateMap<UserAccount, UserAccountDto>().ReverseMap();
         }
     }
 }

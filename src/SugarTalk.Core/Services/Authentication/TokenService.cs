@@ -1,10 +1,11 @@
 using System.Threading;
 using System.Threading.Tasks;
+using SugarTalk.Core.Ioc;
 using SugarTalk.Messages.Enums;
 
 namespace SugarTalk.Core.Services.Authentication
 {
-    public interface ITokenService
+    public interface ITokenService : IScopedDependency
     {
         Task<T> GetPayloadFromMemoryOrDb<T>(string token, ThirdPartyFrom thirdPartyFrom,
             CancellationToken cancellationToken = default);
@@ -30,7 +31,7 @@ namespace SugarTalk.Core.Services.Authentication
 
             if (userInfo != null) return userInfo;
             {
-                userInfo = await _tokenDataProvider.GetPayloadFromMongoDb<T>(token, thirdPartyFrom, cancellationToken)
+                userInfo = await _tokenDataProvider.GetPayloadFromDataBase<T>(token, thirdPartyFrom, cancellationToken)
                     .ConfigureAwait(false);
                 
                 if (userInfo != null)
@@ -47,7 +48,7 @@ namespace SugarTalk.Core.Services.Authentication
 
             _tokenDataProvider.PersistPayloadToMemory(token, payload);
 
-            await _tokenDataProvider.PersistPayloadToMongoDb(token, thirdPartyFrom, payload, cancellationToken)
+            await _tokenDataProvider.PersistPayload(token, thirdPartyFrom, payload, cancellationToken)
                 .ConfigureAwait(false);
         }
     }

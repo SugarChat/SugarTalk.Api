@@ -1,14 +1,20 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFrameworks>net5.0;netstandard2.1</TargetFrameworks>
-        <LangVersion>9</LangVersion>
+        <TargetFrameworks>net7.0;netstandard2.1</TargetFrameworks>
+        <LangVersion>11</LangVersion>
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
     </PropertyGroup>
 
     <ItemGroup>
       <PackageReference Include="Kurento.NET" Version="1.1.1" />
-      <PackageReference Include="Mediator.Net" Version="4.0.0" />
-      <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
+      <PackageReference Include="Mediator.Net" Version="4.7.0" />
+      <PackageReference Include="Mediator.Net.Autofac" Version="4.7.0" />
+      <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Folder Include="Attributes" />
     </ItemGroup>
 
 </Project>

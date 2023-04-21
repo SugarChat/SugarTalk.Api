@@ -3,40 +3,42 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using AutoMapper;
-using SugarTalk.Core.Data.MongoDb;
-using SugarTalk.Core.Entities;
+using SugarTalk.Core.Data;
+using SugarTalk.Core.Domain.Meeting;
+using SugarTalk.Core.Ioc;
+using SugarTalk.Core.Services.Account;
 using SugarTalk.Core.Services.Exceptions;
-using SugarTalk.Core.Services.Users;
 using SugarTalk.Messages;
 using SugarTalk.Messages.Commands.Meetings;
 using SugarTalk.Messages.Dtos.Meetings;
 using SugarTalk.Messages.Requests.Meetings;
+using SugarTalk.Messages.Responses;
 
 namespace SugarTalk.Core.Services.Meetings
 {
-    public interface IMeetingService
+    public interface IMeetingService : IScopedDependency
     {
-        Task<SugarTalkResponse<MeetingDto>> ScheduleMeeting(ScheduleMeetingCommand scheduleMeetingCommand, CancellationToken cancellationToken);
+        Task<ScheduleMeetingResponse> ScheduleMeeting(ScheduleMeetingCommand scheduleMeetingCommand, CancellationToken cancellationToken);
 
-        Task<SugarTalkResponse<MeetingSessionDto>> JoinMeeting(JoinMeetingCommand joinMeetingCommand,
+        Task<JoinMeetingResponse> JoinMeeting(JoinMeetingCommand joinMeetingCommand,
             CancellationToken cancellationToken);
         
-        Task<SugarTalkResponse<MeetingDto>> GetMeetingByNumber(GetMeetingByNumberRequest request,
+        Task<GetMeetingByNumberResponse> GetMeetingByNumber(GetMeetingByNumberRequest request,
             CancellationToken cancellationToken);
     }
     
     public class MeetingService: IMeetingService
     {
         private readonly IMapper _mapper;
-        private readonly IUserService _userService;
-        private readonly IMongoDbRepository _repository;
+        private readonly IAccountService _userService;
+        private readonly IRepository _repository;
         private readonly IMeetingDataProvider _meetingDataProvider;
 
         private readonly IMeetingSessionService _meetingSessionService;
         private readonly IMeetingSessionDataProvider _meetingSessionDataProvider;
         
-        public MeetingService(IMapper mapper, IMongoDbRepository repository,
-            IMeetingDataProvider meetingDataProvider, IUserService userService, IMeetingSessionService meetingSessionService, IMeetingSessionDataProvider meetingSessionDataProvider)
+        public MeetingService(IMapper mapper, IRepository repository,
+            IMeetingDataProvider meetingDataProvider, IAccountService userService, IMeetingSessionService meetingSessionService, IMeetingSessionDataProvider meetingSessionDataProvider)
         {
             _mapper = mapper;
             _repository = repository;
@@ -46,24 +48,24 @@ namespace SugarTalk.Core.Services.Meetings
             _meetingSessionDataProvider = meetingSessionDataProvider;
         }
         
-        public async Task<SugarTalkResponse<MeetingDto>> ScheduleMeeting(ScheduleMeetingCommand scheduleMeetingCommand, CancellationToken cancellationToken)
+        public async Task<ScheduleMeetingResponse> ScheduleMeeting(ScheduleMeetingCommand scheduleMeetingCommand, CancellationToken cancellationToken)
         {
             var meeting = _mapper.Map<Meeting>(scheduleMeetingCommand);
 
             meeting.MeetingNumber = GenerateMeetingNumber();
 
-            await _repository.AddAsync(meeting, cancellationToken).ConfigureAwait(false);
+            await _repository.InsertAsync(meeting, cancellationToken).ConfigureAwait(false);
             
             await _meetingSessionService.GenerateNewMeetingSession(meeting, cancellationToken)
                 .ConfigureAwait(false);
 
-            return new SugarTalkResponse<MeetingDto>
+            return new ScheduleMeetingResponse
             {
                 Data = _mapper.Map<MeetingDto>(meeting)
             };
         }
         
-        public async Task<SugarTalkResponse<MeetingSessionDto>> JoinMeeting(JoinMeetingCommand joinMeetingCommand,
+        public async Task<JoinMeetingResponse> JoinMeeting(JoinMeetingCommand joinMeetingCommand,
             CancellationToken cancellationToken)
         {
             var user = await _userService.GetCurrentLoggedInUser(cancellationToken).ConfigureAwait(false);
@@ -81,13 +83,13 @@ namespace SugarTalk.Core.Services.Meetings
             await _meetingSessionService.ConnectUserToMeetingSession(user, meetingSession, null, joinMeetingCommand.IsMuted, cancellationToken)
                 .ConfigureAwait(false);
 
-            return new SugarTalkResponse<MeetingSessionDto>
+            return new JoinMeetingResponse
             {
                 Data = meetingSession
             };
         }
         
-        public async Task<SugarTalkResponse<MeetingDto>> GetMeetingByNumber(GetMeetingByNumberRequest request,
+        public async Task<GetMeetingByNumberResponse> GetMeetingByNumber(GetMeetingByNumberRequest request,
             CancellationToken cancellationToken)
         {
             var meeting = await _meetingDataProvider.GetMeetingByNumber(request.MeetingNumber, cancellationToken)
@@ -96,7 +98,7 @@ namespace SugarTalk.Core.Services.Meetings
             if (meeting == null)
                 throw new MeetingNotFoundException();
             
-            return new SugarTalkResponse<MeetingDto>
+            return new GetMeetingByNumberResponse
             {
                 Data = _mapper.Map<MeetingDto>(meeting)
             };

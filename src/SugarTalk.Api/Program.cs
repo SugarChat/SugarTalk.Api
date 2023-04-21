@@ -1,45 +1,50 @@
-using System;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Hosting;
+using Autofac;
+using Autofac.Extensions.DependencyInjection;
+using Destructurama;
 using Serilog;
-using SugarTalk.Core.Settings;
+using SugarTalk.Core;
+using SugarTalk.Core.DbUp;
+using SugarTalk.Core.Settings.Logging;
+using SugarTalk.Core.Settings.System;
 
 namespace SugarTalk.Api
 {
     public class Program
     {
-        private static readonly string AppName = typeof(Program).Namespace;
-        
-        public static int Main(string[] args)
+        public static void Main(string[] args)
         {
             var configuration = new ConfigurationBuilder()
                 .AddJsonFile("appsettings.json")
                 .AddEnvironmentVariables()
                 .Build();
 
-            var seqSettings = configuration.GetSection(nameof(SeqSettings)).Get<SeqSettings>();
+            var apikey = new SerilogApiKeySetting(configuration).Value;
+            var serverUrl = new SerilogServerUrlSetting(configuration).Value;
+            var application = new SerilogApplicationSetting(configuration).Value;
             
             Log.Logger = new LoggerConfiguration()
+                .Destructure.JsonNetTypes()
                 .Enrich.FromLogContext()
                 .Enrich.WithProperty("Application", "SugarTalk.Api")
-                .WriteTo.Seq(seqSettings.ServerUrl, apiKey: seqSettings.ApiKey)
+                .WriteTo.Console()
+                .WriteTo.Seq(serverUrl, apiKey: apikey)
                 .CreateLogger();
             
             try
             {
-                Log.Information("Configuring web host ({ApplicationContext})...", AppName);
-                var webHost = CreateHostBuilder(args).Build();
+                Log.Information("Configuring api host ({ApplicationContext})...", application);
+                
+                new DbUpRunner(new SugarTalkConnectionString(configuration).Value).Run();
+                
+                var webHost = CreateHostBuilder(args, configuration).Build();
 
-                Log.Information("Starting web host ({ApplicationContext})...", AppName);
+                Log.Information("Starting api host ({ApplicationContext})...", application);
+                
                 webHost.Run();
-
-                return 0;
             }
             catch (Exception ex)
             {
-                Log.Fatal(ex, "Program terminated unexpectedly ({ApplicationContext})!", AppName);
-                return 1;
+                Log.Fatal(ex, "Program terminated unexpectedly ({ApplicationContext})!", application);
             }
             finally
             {
@@ -47,9 +52,15 @@ namespace SugarTalk.Api
             }
         }
 
-        public static IHostBuilder CreateHostBuilder(string[] args) =>
+        private static IHostBuilder CreateHostBuilder(string[] args, IConfiguration configuration) =>
             Host.CreateDefaultBuilder(args)
                 .UseSerilog()
+                .ConfigureLogging(l => l.AddSerilog(Log.Logger))
+                .UseServiceProviderFactory(new AutofacServiceProviderFactory())
+                .ConfigureContainer<ContainerBuilder>(builder =>
+                {
+                    builder.RegisterModule(new SugarTalkModule(Log.Logger, typeof(SugarTalkModule).Assembly));
+                })
                 .ConfigureWebHostDefaults(webBuilder => { webBuilder.UseStartup<Startup>(); });
     }
 }

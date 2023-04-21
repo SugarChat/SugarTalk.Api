@@ -1,13 +1,9 @@
-using System.Threading.Tasks;
 using Mediator.Net;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
-using SugarTalk.Core.Settings;
-using SugarTalk.Messages;
+using SugarTalk.Core.Settings.WebRTC;
 using SugarTalk.Messages.Commands.Meetings;
-using SugarTalk.Messages.Dtos.Meetings;
 using SugarTalk.Messages.Requests.Meetings;
 
 namespace SugarTalk.Api.Controllers
@@ -18,36 +14,46 @@ namespace SugarTalk.Api.Controllers
     public class MeetingController: ControllerBase
     {
         private readonly IMediator _mediator;
-        private readonly IOptions<WebRtcIceServerSettings> _webRtcIceServerSettings;
+        private readonly WebRtcIceServerSettings _webRtcIceServerSettings;
         
-        public MeetingController(IMediator mediator, IOptions<WebRtcIceServerSettings> webRtcIceServerSettings)
+        public MeetingController(IMediator mediator, WebRtcIceServerSettings webRtcIceServerSettings)
         {
             _mediator = mediator;
             _webRtcIceServerSettings = webRtcIceServerSettings;
         }
         
         [Route("schedule"), HttpPost]
-        public async Task<SugarTalkResponse<MeetingDto>> ScheduleMeeting(ScheduleMeetingCommand scheduleMeetingCommand)
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ScheduleMeetingResponse))]
+        public async Task<IActionResult> ScheduleMeeting(ScheduleMeetingCommand scheduleMeetingCommand)
         {
-            return await _mediator.SendAsync<ScheduleMeetingCommand, SugarTalkResponse<MeetingDto>>(scheduleMeetingCommand);
+            var response = await _mediator.SendAsync<ScheduleMeetingCommand, ScheduleMeetingResponse>(scheduleMeetingCommand);
+            
+            return Ok(response);
         }
         
         [Route("join"), HttpPost]
-        public async Task<SugarTalkResponse<MeetingSessionDto>> JoinMeeting(JoinMeetingCommand joinMeetingCommand)
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(JoinMeetingResponse))]
+        public async Task<IActionResult> JoinMeeting(JoinMeetingCommand joinMeetingCommand)
         {
-            return await _mediator.SendAsync<JoinMeetingCommand, SugarTalkResponse<MeetingSessionDto>>(joinMeetingCommand);
+            var response = await _mediator.SendAsync<JoinMeetingCommand, JoinMeetingResponse>(joinMeetingCommand);
+            
+            return Ok(response);
         }
         
         [Route("session"), HttpGet]
-        public async Task<SugarTalkResponse<MeetingSessionDto>> GetMeetingSession([FromQuery] GetMeetingSessionRequest request)
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(GetMeetingSessionResponse))]
+        public async Task<IActionResult> GetMeetingSession([FromQuery] GetMeetingSessionRequest request)
         {
-            return await _mediator.RequestAsync<GetMeetingSessionRequest, SugarTalkResponse<MeetingSessionDto>>(request);
+            var response = await _mediator.RequestAsync<GetMeetingSessionRequest, GetMeetingSessionResponse>(request);
+
+            return Ok(response);
         }
         
         [Route("iceservers"), HttpGet]
+        [ProducesResponseType(StatusCodes.Status200OK)]
         public IActionResult GetIceServers()
         {
-            return Ok(JsonConvert.DeserializeObject<WebRtcIceServer[]>(_webRtcIceServerSettings.Value.IceServers));
+            return Ok(JsonConvert.DeserializeObject<WebRtcIceServer[]>(_webRtcIceServerSettings.IceServers));
         }
     }
 }
