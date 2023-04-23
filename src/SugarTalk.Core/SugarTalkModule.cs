@@ -7,9 +7,11 @@ using Mediator.Net;
 using Mediator.Net.Autofac;
 using Mediator.Net.Middlewares.Serilog;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Serilog;
 using SugarTalk.Core.Data;
 using SugarTalk.Core.Ioc;
+using SugarTalk.Core.Masstransit;
 using SugarTalk.Core.Middlewares;
 using SugarTalk.Core.Middlewares.FluentMessageValidator;
 using SugarTalk.Core.Middlewares.UnifyResponse;
@@ -24,11 +26,13 @@ namespace SugarTalk.Core
     {
         private readonly ILogger _logger;
         private readonly Assembly[] _assemblies;
+        private readonly IConfiguration _configuration;
 
-        public SugarTalkModule(ILogger logger, params Assembly[] assemblies)
+        public SugarTalkModule(ILogger logger, IConfiguration configuration, params Assembly[] assemblies)
         {
             _logger = logger;
             _assemblies = assemblies;
+            _configuration = configuration;
 
             if (_logger == null)
                 throw new ArgumentException(nameof(_logger));
@@ -46,6 +50,12 @@ namespace SugarTalk.Core
             RegisterDatabase(builder);
             RegisterDependency(builder);
             RegisterAutoMapper(builder);
+            RegisterMultiBus(builder, _configuration);
+        }
+
+        private void RegisterMultiBus(ContainerBuilder builder, IConfiguration configuration)
+        {
+            builder.RegisterMultiBus(configuration, _assemblies);
         }
 
         private void RegisterLogger(ContainerBuilder builder)
