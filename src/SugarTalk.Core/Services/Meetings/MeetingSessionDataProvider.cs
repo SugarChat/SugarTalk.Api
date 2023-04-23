@@ -7,6 +7,7 @@ using SugarTalk.Core.Data;
 using SugarTalk.Core.Domain.Meeting;
 using SugarTalk.Core.Ioc;
 using SugarTalk.Core.Services.Account;
+using SugarTalk.Core.Services.Http.Clients;
 using SugarTalk.Messages.Dtos.Meetings;
 
 namespace SugarTalk.Core.Services.Meetings
@@ -26,12 +27,14 @@ namespace SugarTalk.Core.Services.Meetings
     {
         private readonly IMapper _mapper;
         private readonly IRepository _repository;
+        private readonly IAntMediaClient _antMediaClient;
         private readonly IUserSessionDataProvider _userSessionDataProvider;
         
-        public MeetingSessionDataProvider(IMapper mapper, IRepository repository, IUserSessionDataProvider userSessionDataProvider)
+        public MeetingSessionDataProvider(IMapper mapper, IRepository repository, IAntMediaClient antMediaClient, IUserSessionDataProvider userSessionDataProvider)
         {
             _mapper = mapper;
             _repository = repository;
+            _antMediaClient = antMediaClient;
             _userSessionDataProvider = userSessionDataProvider;
         }
 
@@ -53,6 +56,9 @@ namespace SugarTalk.Core.Services.Meetings
             CancellationToken cancellationToken = default)
         {
             var meeting = await GetMeetingSessionByNumber(meetingNumber, cancellationToken).ConfigureAwait(false);
+
+            if (meeting == null)
+                await _antMediaClient.GetAntMediaConferenceRoomAsync(meetingNumber, cancellationToken).ConfigureAwait(false);
 
             var meetingSession = _mapper.Map<MeetingSessionDto>(meeting);
 

@@ -43,7 +43,6 @@
     </ItemGroup>
 
     <ItemGroup>
-      <Folder Include="Services\Http\Clients" />
       <Folder Include="Validators" />
     </ItemGroup>
     
