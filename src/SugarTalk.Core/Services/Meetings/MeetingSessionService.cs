@@ -8,16 +8,19 @@ using SugarTalk.Core.Domain.Account;
 using SugarTalk.Core.Domain.Meeting;
 using SugarTalk.Core.Ioc;
 using SugarTalk.Core.Services.Account;
+using SugarTalk.Core.Services.Http.Clients;
+using SugarTalk.Messages.Dtos.AntMedia;
 using SugarTalk.Messages.Dtos.Meetings;
 using SugarTalk.Messages.Dtos.Users;
+using SugarTalk.Messages.Enums.Meeting;
 using SugarTalk.Messages.Requests.Meetings;
 
 namespace SugarTalk.Core.Services.Meetings
 {
     public interface IMeetingSessionService : IScopedDependency
     {
-        Task<GetMeetingSessionResponse> GetMeetingSession(GetMeetingSessionRequest request,
-            CancellationToken cancellationToken = default);
+        Task<GetMeetingSessionResponse> GetMeetingSessionAsync(GetMeetingSessionRequest request,
+            CancellationToken cancellationToken);
 
         Task ConnectUserToMeetingSession(UserAccount user, MeetingSessionDto meetingSession, string connectionId,
             bool? isMuted = null, CancellationToken cancellationToken = default);
@@ -25,29 +28,31 @@ namespace SugarTalk.Core.Services.Meetings
         Task UpdateMeetingSession(MeetingSession meetingSession,
             CancellationToken cancellationToken = default);
 
-        Task<MeetingSession> GenerateNewMeetingSession(Meeting meeting,
-            CancellationToken cancellationToken);
+        Task<MeetingSession> GenerateNewMeetingSession(
+            Guid meetingId, StreamMode mode, string meetingNumber, CancellationToken cancellationToken);
     }
     
     public class MeetingSessionService : IMeetingSessionService
     {
         private readonly IMapper _mapper;
         private readonly IRepository _repository;
+        private readonly IAntMediaClient _antMediaClient;
         private readonly IAccountService _accountService;
         private readonly IMeetingSessionDataProvider _meetingSessionDataProvider;
         
         public MeetingSessionService(IMapper mapper, 
             IRepository repository, IAccountService accountService, 
-            IMeetingSessionDataProvider meetingSessionDataProvider)
+            IAntMediaClient antMediaClient, IMeetingSessionDataProvider meetingSessionDataProvider)
         {
             _mapper = mapper;
             _repository = repository;
+            _antMediaClient = antMediaClient;
             _accountService = accountService;
             _meetingSessionDataProvider = meetingSessionDataProvider;
         }
         
-        public async Task<GetMeetingSessionResponse> GetMeetingSession(GetMeetingSessionRequest request,
-            CancellationToken cancellationToken = default)
+        public async Task<GetMeetingSessionResponse> GetMeetingSessionAsync(
+            GetMeetingSessionRequest request, CancellationToken cancellationToken)
         {
             var user = await _accountService.GetCurrentLoggedInUser(cancellationToken).ConfigureAwait(false);
 
@@ -103,14 +108,14 @@ namespace SugarTalk.Core.Services.Meetings
             }
         }
         
-        public async Task<MeetingSession> GenerateNewMeetingSession(Meeting meeting,
-            CancellationToken cancellationToken)
+        public async Task<MeetingSession> GenerateNewMeetingSession(
+            Guid meetingId, StreamMode mode, string meetingNumber, CancellationToken cancellationToken)
         {
             var meetingSession = new MeetingSession
             {
-                MeetingId = meeting.Id,
-                MeetingType = meeting.MeetingType,
-                MeetingNumber = meeting.MeetingNumber
+                MeetingId = meetingId,
+                MeetingMode = mode,
+                MeetingNumber = meetingNumber
             };
 
             await _repository.InsertAsync(meetingSession, cancellationToken).ConfigureAwait(false);

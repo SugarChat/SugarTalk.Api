@@ -48,6 +48,7 @@
     
     <ItemGroup>
         <EmbeddedResource Include="DbUp\Scripts_2023\Script0001_initial_tables.sql" />
+        <EmbeddedResource Include="DbUp\Scripts_2023\Script0002_fix_meeting_tables.sql" />
     </ItemGroup>
 
 </Project>

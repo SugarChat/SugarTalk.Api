@@ -1,31 +1,32 @@
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using SugarTalk.Core.Domain.Meeting;
 using SugarTalk.Core.Ioc;
 using SugarTalk.Core.Settings.AntMedia;
 using SugarTalk.Messages.Dtos.AntMedia;
+using SugarTalk.Messages.Dtos.Meetings;
 
 namespace SugarTalk.Core.Services.Http.Clients;
 
 public interface IAntMediaClient : IScopedDependency
 {
-    Task<GetAntMediaConferenceRoomResponseDto> GetAntMediaConferenceRoomAsync(
+    Task<ConferenceRoomDto> GetAntMediaConferenceRoomAsync(
         string roomId, CancellationToken cancellationToken);
 
-    Task<GetAntMediaConferenceRoomsResponseDto> GetAntMediaConferenceRoomsAsync(
+    Task<List<ConferenceRoomDto>> GetAntMediaConferenceRoomsAsync(
         int offset, int size, CancellationToken cancellationToken);
 
     Task<GetAntMediaConferenceRoomInfoResponseDto> GetAntMediaConferenceRoomInfoAsync(
         string roomId, CancellationToken cancellationToken);
 
-    Task<List<GetAntMediaBroadcastResponseData>> GetAntMediaBroadcastsAsync(
+    Task<List<AntMediaBroadcastDto>> GetAntMediaBroadcastsAsync(
         int offset, int size, CancellationToken cancellationToken);
 
-    Task<GetAntMediaConferenceRoomResponseDto> CreateAntMediaConferenceRoomAsync(
-        GetAntMediaConferenceRoomResponseDto room, CancellationToken cancellationToken);
+    Task<CreateMeetingResponseDto> CreateAntMediaConferenceRoomAsync(
+        CreateMeetingDto room, CancellationToken cancellationToken);
 }
 
-// https://talk.sjdistributors.com:5443/LiveApp/rest/v2/broadcasts/conference-rooms/sj-room/room-info
 public class AntMediaClient : IAntMediaClient
 {
     private readonly AntMediaSetting _antMediaSetting;
@@ -37,20 +38,18 @@ public class AntMediaClient : IAntMediaClient
         _httpClientFactory = httpClientFactory;
     }
 
-    public async Task<GetAntMediaConferenceRoomResponseDto> GetAntMediaConferenceRoomAsync(string roomId, CancellationToken cancellationToken)
+    public async Task<ConferenceRoomDto> GetAntMediaConferenceRoomAsync(string roomId, CancellationToken cancellationToken)
     {
-        // var broadcastUrl = $"https://talk.sjdistributors.com:5443/LiveApp/rest/v2/broadcasts/conference-rooms/{roomId}";
-
         return await _httpClientFactory
-            .GetAsync<GetAntMediaConferenceRoomResponseDto>(
+            .GetAsync<ConferenceRoomDto>(
                 $"{_antMediaSetting.BroadcastUrl}/conference-rooms/{roomId}", cancellationToken).ConfigureAwait(false);
     }
 
-    public async Task<GetAntMediaConferenceRoomsResponseDto> GetAntMediaConferenceRoomsAsync(int offset, int size,
+    public async Task<List<ConferenceRoomDto>> GetAntMediaConferenceRoomsAsync(int offset, int size,
         CancellationToken cancellationToken)
     {
         return await _httpClientFactory
-            .GetAsync<GetAntMediaConferenceRoomsResponseDto>(
+            .GetAsync<List<ConferenceRoomDto>>(
                 $"{_antMediaSetting.BroadcastUrl}/conference-rooms/list/{offset}/{size}", cancellationToken).ConfigureAwait(false);
     }
 
@@ -61,17 +60,17 @@ public class AntMediaClient : IAntMediaClient
                 $"{_antMediaSetting.BroadcastUrl}/conference-rooms/{roomId}/room-info", cancellationToken).ConfigureAwait(false);
     }
 
-    public async Task<List<GetAntMediaBroadcastResponseData>> GetAntMediaBroadcastsAsync(int offset, int size, CancellationToken cancellationToken)
+    public async Task<List<AntMediaBroadcastDto>> GetAntMediaBroadcastsAsync(int offset, int size, CancellationToken cancellationToken)
     {
         return await _httpClientFactory
-            .GetAsync<List<GetAntMediaBroadcastResponseData>>(
+            .GetAsync<List<AntMediaBroadcastDto>>(
                 $"{_antMediaSetting.BroadcastUrl}/list/{offset}/{size}", cancellationToken).ConfigureAwait(false);
     }
 
-    public async Task<GetAntMediaConferenceRoomResponseDto> CreateAntMediaConferenceRoomAsync(GetAntMediaConferenceRoomResponseDto roomData, CancellationToken cancellationToken)
+    public async Task<CreateMeetingResponseDto> CreateAntMediaConferenceRoomAsync(CreateMeetingDto meetingData, CancellationToken cancellationToken)
     {
         return await _httpClientFactory
-            .PostAsJsonAsync<GetAntMediaConferenceRoomResponseDto>(
-                $"{_antMediaSetting.BroadcastUrl}/conference-rooms", roomData, cancellationToken).ConfigureAwait(false);
+            .PostAsJsonAsync<CreateMeetingResponseDto>(
+                $"{_antMediaSetting.BroadcastUrl}/conference-rooms", meetingData, cancellationToken).ConfigureAwait(false);
     }
 }

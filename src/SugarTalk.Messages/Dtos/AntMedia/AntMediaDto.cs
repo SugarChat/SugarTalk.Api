@@ -3,13 +3,7 @@ using Newtonsoft.Json;
 
 namespace SugarTalk.Messages.Dtos.AntMedia;
 
-public class GetAntMediaConferenceRoomsResponseDto
-{
-    [JsonProperty("ConferenceRoom")]
-    private List<GetAntMediaConferenceRoomResponseDto> ConferenceRoomList { get; set; }
-}
-
-public class GetAntMediaConferenceRoomResponseDto
+public class ConferenceRoomDto
 {
     [JsonProperty("roomId")]
     public string RoomId { get; set; }
@@ -34,20 +28,15 @@ public class GetAntMediaConferenceRoomInfoResponseDto
 {
     [JsonProperty("roomId")]
     public string RoomId { get; set; }
-    
+
     [JsonProperty("streamDetailsMap")]
-    public string StreamDetailsMap { get; set; }
-    
-    [JsonProperty("startDate")]
-    public long StartDate { get; set; }
-    
+    public Dictionary<string, string> StreamDetailsMap { get; set; }
+
     [JsonProperty("endDate")]
     public long EndDate { get; set; }
-}
 
-public class GetAntMediaBroadcastResponseData
-{
-    private List<AntMediaBroadcastDto> BroadcastData { get; set; }
+    [JsonProperty("startDate")]
+    public long StartDate { get; set; }
 }
 
 public class AntMediaBroadcastDto

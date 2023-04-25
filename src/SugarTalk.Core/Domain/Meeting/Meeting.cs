@@ -2,6 +2,7 @@ using System;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using SugarTalk.Messages.Enums;
+using SugarTalk.Messages.Enums.Meeting;
 
 namespace SugarTalk.Core.Domain.Meeting
 {
@@ -22,8 +23,14 @@ namespace SugarTalk.Core.Domain.Meeting
         
         [Column("meeting_number"), StringLength(256)]
         public string MeetingNumber { get; set; }
+            
+        [Column("origin_adress")]
+        public string OriginAdress { get; set; }
         
         [Column("meeting_type")]
         public MeetingType MeetingType { get; set; }
+
+        [Column("meeting_mode")]
+        public StreamMode MeetingMode { get; set; }
     }
 }

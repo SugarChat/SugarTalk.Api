@@ -11,6 +11,7 @@ using SugarTalk.IntegrationTests.TestBaseClasses;
 using SugarTalk.IntegrationTests.Utils.Meetings;
 using SugarTalk.Messages.Commands.Meetings;
 using SugarTalk.Messages.Enums;
+using SugarTalk.Messages.Enums.Meeting;
 using Xunit;
 
 namespace SugarTalk.IntegrationTests.Services.Meeting;
@@ -29,7 +30,7 @@ public class MeetingServiceFixture : MeetingFixtureBase
     {
         var meetingId = Guid.NewGuid();
 
-        var response = await _meetingUtil.ScheduleMeeting(meetingId, MeetingType.Adhoc);
+        var response = await _meetingUtil.ScheduleMeeting(meetingId);
 
         response.Data.ShouldNotBeNull();
         response.Data.Id.ShouldBe(meetingId);

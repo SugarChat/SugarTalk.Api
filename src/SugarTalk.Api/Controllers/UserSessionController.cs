@@ -21,7 +21,7 @@ namespace SugarTalk.Api.Controllers
         
         [Route("audio/change"), HttpPost]
         [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ChangeAudioResponse))]
-        public async Task<IActionResult> ChangeAudio(ChangeAudioCommand changeAudioCommand)
+        public async Task<IActionResult> ChangeAudioAsync(ChangeAudioCommand changeAudioCommand)
         {
             var response = await _mediator.SendAsync<ChangeAudioCommand, ChangeAudioResponse>(changeAudioCommand);
 
@@ -30,7 +30,7 @@ namespace SugarTalk.Api.Controllers
         
         [Route("screen/share"), HttpPost]
         [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ShareScreenResponse))]
-        public async Task<IActionResult> ChangeAudio(ShareScreenCommand shareScreenCommand)
+        public async Task<IActionResult> ShareScreenAsync(ShareScreenCommand shareScreenCommand)
         {
             var response = await _mediator.SendAsync<ShareScreenCommand, ShareScreenResponse>(shareScreenCommand);
 

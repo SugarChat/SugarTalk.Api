@@ -18,7 +18,7 @@ namespace SugarTalk.Core.Handlers.RequestHandlers.Meetings
 
         public async Task<GetMeetingSessionResponse> Handle(IReceiveContext<GetMeetingSessionRequest> context, CancellationToken cancellationToken)
         {
-            return await _meetingSessionService.GetMeetingSession(context.Message, cancellationToken).ConfigureAwait(false);
+            return await _meetingSessionService.GetMeetingSessionAsync(context.Message, cancellationToken).ConfigureAwait(false);
         }
     }
 }

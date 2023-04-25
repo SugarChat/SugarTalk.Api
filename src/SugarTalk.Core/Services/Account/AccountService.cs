@@ -21,9 +21,6 @@ namespace SugarTalk.Core.Services.Account
     {
         ClaimsPrincipal GetCurrentPrincipal();
 
-        Task<SignInFromThirdPartyResponse> SignInFromThirdParty(SignInFromThirdPartyRequest request,
-            CancellationToken cancellationToken);
-
         Task<LoginResponse> LoginAsync(LoginRequest request, CancellationToken cancellationToken);
         
         Task<UserAccount> GetCurrentLoggedInUser(CancellationToken cancellationToken = default);
@@ -48,21 +45,7 @@ namespace SugarTalk.Core.Services.Account
             _accountDataProvider = accountDataProvider;
             _httpContextAccessor = httpContextAccessor;
         }
-
-        public async Task<SignInFromThirdPartyResponse> SignInFromThirdParty(SignInFromThirdPartyRequest request, 
-            CancellationToken cancellationToken)
-        {
-            CheckIsAuthenticated();
-
-            var user = await GetOrCreateUser(GetCurrentPrincipal(), cancellationToken)
-                .ConfigureAwait(false);
-
-            return new SignInFromThirdPartyResponse
-            {
-                Data = _mapper.Map<SignedInUserDto>(user)
-            };
-        }
-
+        
         public async Task<LoginResponse> LoginAsync(LoginRequest request, CancellationToken cancellationToken)
         {
             var (canLogin, account) = await _accountDataProvider

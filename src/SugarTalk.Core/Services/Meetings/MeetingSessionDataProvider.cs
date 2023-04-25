@@ -44,8 +44,7 @@ namespace SugarTalk.Core.Services.Meetings
                 .SingleOrDefaultAsync(x => x.Id == id, cancellationToken).ConfigureAwait(false);
         }
 
-        public async Task<MeetingSession> GetMeetingSessionByNumber(string meetingNumber,
-            CancellationToken cancellationToken = default)
+        public async Task<MeetingSession> GetMeetingSessionByNumber(string meetingNumber, CancellationToken cancellationToken = default)
         {
             return await _repository.QueryNoTracking<MeetingSession>()
                 .SingleOrDefaultAsync(x => x.MeetingNumber == meetingNumber, cancellationToken)

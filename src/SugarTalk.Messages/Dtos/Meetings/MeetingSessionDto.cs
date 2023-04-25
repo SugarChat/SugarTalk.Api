@@ -1,7 +1,8 @@
 using System;
 using System.Collections.Generic;
+using SugarTalk.Messages.Dtos.AntMedia;
 using SugarTalk.Messages.Dtos.Users;
-using SugarTalk.Messages.Enums;
+using SugarTalk.Messages.Enums.Meeting;
 
 namespace SugarTalk.Messages.Dtos.Meetings
 {
@@ -21,6 +22,8 @@ namespace SugarTalk.Messages.Dtos.Meetings
         public string MeetingNumber { set; get; }
         
         public MeetingType MeetingType { get; set; }
+        
+        public ConferenceRoomDto room { get; set; }
         
         public List<UserSessionDto> UserSessions { get; set; }
 

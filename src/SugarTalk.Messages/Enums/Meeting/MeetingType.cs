@@ -1,4 +1,4 @@
-namespace SugarTalk.Messages.Enums
+namespace SugarTalk.Messages.Enums.Meeting
 {
     public enum MeetingType
     {
