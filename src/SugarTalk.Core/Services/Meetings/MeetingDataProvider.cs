@@ -17,7 +17,7 @@ namespace SugarTalk.Core.Services.Meetings
         Task<Meeting> GetMeetingByNumber(string meetingNumber, CancellationToken cancellationToken = default);
         
         Task PersistMeetingAsync(
-            Guid meetingId, StreamMode meetingMode, string roomId, string originAdress, CancellationToken cancellationToken);
+            Guid meetingId, StreamMode meetingMode, string meetingNumber, string originAdress, CancellationToken cancellationToken);
     }
     
     public class MeetingDataProvider : IMeetingDataProvider
@@ -45,12 +45,12 @@ namespace SugarTalk.Core.Services.Meetings
                 .ConfigureAwait(false);
         }
 
-        public async Task PersistMeetingAsync(Guid meetingId, StreamMode meetingMode, string roomId, string originAdress, CancellationToken cancellationToken)
+        public async Task PersistMeetingAsync(Guid meetingId, StreamMode meetingMode, string meetingNumber, string originAdress, CancellationToken cancellationToken)
         {
             var meeting = new Meeting
             {
                 Id = meetingId,
-                MeetingNumber = roomId,
+                MeetingNumber = meetingNumber,
                 MeetingMode = meetingMode,
                 OriginAdress = originAdress
             };
