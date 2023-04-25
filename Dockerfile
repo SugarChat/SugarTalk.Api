@@ -7,6 +7,7 @@ EXPOSE 443
 COPY ./src/SugarTalk.Core ./build/SugarTalk.Core
 COPY ./src/SugarTalk.Api ./build/SugarTalk.Api
 COPY ./src/SugarTalk.Messages ./build/SugarTalk.Messages
+COPY ./NuGet.Config ./build
 
 RUN dotnet publish build/SugarTalk.Api -c Release -o out
 

@@ -59,7 +59,7 @@ namespace SugarTalk.Api
                 .UseServiceProviderFactory(new AutofacServiceProviderFactory())
                 .ConfigureContainer<ContainerBuilder>(builder =>
                 {
-                    builder.RegisterModule(new SugarTalkModule(Log.Logger, typeof(SugarTalkModule).Assembly));
+                    builder.RegisterModule(new SugarTalkModule(Log.Logger, configuration, typeof(SugarTalkModule).Assembly));
                 })
                 .ConfigureWebHostDefaults(webBuilder => { webBuilder.UseStartup<Startup>(); });
     }
