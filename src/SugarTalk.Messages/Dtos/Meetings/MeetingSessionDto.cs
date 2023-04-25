@@ -23,8 +23,6 @@ namespace SugarTalk.Messages.Dtos.Meetings
         
         public MeetingType MeetingType { get; set; }
         
-        public ConferenceRoomDto room { get; set; }
-        
         public List<UserSessionDto> UserSessions { get; set; }
 
         public void AddUserSession(UserSessionDto userSession)

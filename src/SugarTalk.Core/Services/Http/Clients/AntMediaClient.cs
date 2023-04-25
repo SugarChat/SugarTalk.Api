@@ -1,7 +1,6 @@
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using SugarTalk.Core.Domain.Meeting;
 using SugarTalk.Core.Ioc;
 using SugarTalk.Core.Settings.AntMedia;
 using SugarTalk.Messages.Dtos.AntMedia;
@@ -19,9 +18,6 @@ public interface IAntMediaClient : IScopedDependency
 
     Task<GetAntMediaConferenceRoomInfoResponseDto> GetAntMediaConferenceRoomInfoAsync(
         string roomId, CancellationToken cancellationToken);
-
-    Task<List<AntMediaBroadcastDto>> GetAntMediaBroadcastsAsync(
-        int offset, int size, CancellationToken cancellationToken);
 
     Task<CreateMeetingResponseDto> CreateAntMediaConferenceRoomAsync(
         CreateMeetingDto room, CancellationToken cancellationToken);
@@ -58,13 +54,6 @@ public class AntMediaClient : IAntMediaClient
         return await _httpClientFactory
             .GetAsync<GetAntMediaConferenceRoomInfoResponseDto>(
                 $"{_antMediaSetting.BroadcastUrl}/conference-rooms/{roomId}/room-info", cancellationToken).ConfigureAwait(false);
-    }
-
-    public async Task<List<AntMediaBroadcastDto>> GetAntMediaBroadcastsAsync(int offset, int size, CancellationToken cancellationToken)
-    {
-        return await _httpClientFactory
-            .GetAsync<List<AntMediaBroadcastDto>>(
-                $"{_antMediaSetting.BroadcastUrl}/list/{offset}/{size}", cancellationToken).ConfigureAwait(false);
     }
 
     public async Task<CreateMeetingResponseDto> CreateAntMediaConferenceRoomAsync(CreateMeetingDto meetingData, CancellationToken cancellationToken)
