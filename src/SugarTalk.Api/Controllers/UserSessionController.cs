@@ -1,7 +1,5 @@
-using System.Threading.Tasks;
 using Mediator.Net;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using SugarTalk.Messages.Commands.UserSessions;
 
