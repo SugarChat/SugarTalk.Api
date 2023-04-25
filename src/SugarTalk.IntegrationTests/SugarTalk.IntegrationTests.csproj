@@ -30,7 +30,6 @@
 
     <ItemGroup>
       <ProjectReference Include="..\SugarTalk.Core\SugarTalk.Core.csproj" />
-      <ProjectReference Include="..\SugarTalk.Core\SugarTalk.Api.csproj" />
     </ItemGroup>
 
     <ItemGroup>

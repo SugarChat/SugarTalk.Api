@@ -35,8 +35,10 @@ public partial class TestBase
     {
         var logger = Substitute.For<ILogger>();
         
+        var configuration = RegisterConfiguration(containerBuilder);
+        
         containerBuilder.RegisterModule(
-            new SugarTalkModule(logger, typeof(SugarTalkModule).Assembly, typeof(TestBase).Assembly));
+            new SugarTalkModule(logger, configuration, typeof(SugarTalkModule).Assembly, typeof(TestBase).Assembly));
 
         containerBuilder.RegisterInstance(new TestCurrentUser()).As<ICurrentUser>();
         containerBuilder.RegisterInstance(Substitute.For<IMemoryCache>()).AsImplementedInterfaces();
@@ -46,7 +48,7 @@ public partial class TestBase
         RegisterConfiguration(containerBuilder);
     }
     
-    private void RegisterConfiguration(ContainerBuilder containerBuilder)
+    private IConfiguration RegisterConfiguration(ContainerBuilder containerBuilder)
     {
         var targetJson = $"appsettings{_testTopic}.json";
         File.Copy("appsettings.json", targetJson, true);
@@ -57,6 +59,7 @@ public partial class TestBase
         File.WriteAllText(targetJson, JsonConvert.SerializeObject(jsonObj));
         var configuration = new ConfigurationBuilder().AddJsonFile(targetJson).Build();
         containerBuilder.RegisterInstance(configuration).AsImplementedInterfaces();
+        return configuration;
     }
     
     private void RegisterRedis(ContainerBuilder builder)
