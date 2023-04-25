@@ -16,6 +16,7 @@
         <PackageReference Include="Google.Apis.Auth" Version="1.60.0" />
         <PackageReference Include="Mediator.Net" Version="4.7.0" />
         <PackageReference Include="Mediator.Net.Autofac" Version="4.7.0" />
+        <PackageReference Include="HR.Message.Contract" Version="1.0.26" />
         <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="7.0.4" />
         <PackageReference Include="Microsoft.AspNetCore.Mvc.NewtonsoftJson" Version="7.0.5" />
         <PackageReference Include="Swashbuckle.AspNetCore" Version="6.5.0" />
