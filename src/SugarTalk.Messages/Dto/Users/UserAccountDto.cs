@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using SugarTalk.Messages.Enums.Account;
 
-namespace SugarTalk.Messages.Dtos.Users;
+namespace SugarTalk.Messages.Dto.Users;
 
 public class UserAccountDto
 {

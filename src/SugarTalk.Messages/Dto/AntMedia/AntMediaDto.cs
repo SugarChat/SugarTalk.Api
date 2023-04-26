@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using Newtonsoft.Json;
 
-namespace SugarTalk.Messages.Dtos.AntMedia;
+namespace SugarTalk.Messages.Dto.AntMedia;
 
 public class ConferenceRoomDto
 {

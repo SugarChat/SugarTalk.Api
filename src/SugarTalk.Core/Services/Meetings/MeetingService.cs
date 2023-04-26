@@ -3,13 +3,11 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using AutoMapper;
-using SugarTalk.Core.Domain.Account;
 using SugarTalk.Core.Ioc;
 using SugarTalk.Core.Services.Account;
 using SugarTalk.Core.Services.Exceptions;
-using SugarTalk.Core.Services.Identity;
 using SugarTalk.Messages.Commands.Meetings;
-using SugarTalk.Messages.Dtos.Meetings;
+using SugarTalk.Messages.Dto.Meetings;
 using SugarTalk.Messages.Enums.Meeting;
 using SugarTalk.Messages.Requests.Meetings;
 
@@ -17,38 +15,33 @@ namespace SugarTalk.Core.Services.Meetings
 {
     public interface IMeetingService : IScopedDependency
     {
-        Task<ScheduleMeetingResponse> ScheduleMeeting(ScheduleMeetingCommand scheduleMeetingCommand, CancellationToken cancellationToken);
+        Task<ScheduleMeetingResponse> ScheduleMeeting(
+            ScheduleMeetingCommand scheduleMeetingCommand, CancellationToken cancellationToken);
 
-        Task<JoinMeetingResponse> JoinMeetingAsync(JoinMeetingCommand joinMeetingCommand,
-            CancellationToken cancellationToken);
-        
-        Task<GetMeetingByNumberResponse> GetMeetingByNumber(GetMeetingByNumberRequest request,
-            CancellationToken cancellationToken);
+        Task<GetMeetingByNumberResponse> GetMeetingByNumberAsync(
+            GetMeetingByNumberRequest request, CancellationToken cancellationToken);
+
+        Task<JoinMeetingResponse> JoinMeetingAsync(
+            JoinMeetingCommand contextMessage, CancellationToken cancellationToken);
     }
     
     public class MeetingService: IMeetingService
     {
         private readonly IMapper _mapper;
         private readonly IAccountService _userService;
-        private readonly IMeetingUtilService _meetingUtilService;
+        private readonly IAntMediaUtilService _antMediaUtilService;
         private readonly IMeetingDataProvider _meetingDataProvider;
-        private readonly IMeetingSessionService _meetingSessionService;
-        private readonly IMeetingSessionDataProvider _meetingSessionDataProvider;
         
         public MeetingService(
             IMapper mapper, 
             IMeetingDataProvider meetingDataProvider, 
             IAccountService userService, 
-            IMeetingUtilService meetingUtilService,
-            IMeetingSessionService meetingSessionService, 
-            IMeetingSessionDataProvider meetingSessionDataProvider)
+            IAntMediaUtilService antMediaUtilService)
         {
             _mapper = mapper;
             _userService = userService;
-            _meetingUtilService = meetingUtilService;
+            _antMediaUtilService = antMediaUtilService;
             _meetingDataProvider = meetingDataProvider;
-            _meetingSessionService = meetingSessionService;
-            _meetingSessionDataProvider = meetingSessionDataProvider;
         }
         
         public async Task<ScheduleMeetingResponse> ScheduleMeeting(ScheduleMeetingCommand command, CancellationToken cancellationToken)
@@ -56,59 +49,34 @@ namespace SugarTalk.Core.Services.Meetings
             var postData = new CreateMeetingDto
             {
                 MeetingNumber = GenerateMeetingNumber(),
-                Mode = command.MeetingMode == StreamMode.MCU ? "mcu" : "sfu"
+                Mode = command.MeetingStreamMode == MeetingStreamMode.MCU ? "mcu" : "sfu"
             };
             
-            var response = await _meetingUtilService.CreateMeetingAsync(postData, cancellationToken).ConfigureAwait(false);
+            var response = await _antMediaUtilService.CreateMeetingAsync(postData, cancellationToken).ConfigureAwait(false);
 
             if (!string.IsNullOrEmpty(response.MeetingNumber))
                 await _meetingDataProvider
-                    .PersistMeetingAsync(response.Id, command.MeetingMode, response.MeetingNumber, response.OriginAdress, cancellationToken).ConfigureAwait(false);
-            
-            await _meetingSessionService.GenerateNewMeetingSession(
-                response.Id, command.MeetingMode, response.MeetingNumber, cancellationToken).ConfigureAwait(false);
+                    .PersistMeetingAsync(command.MeetingStreamMode, response.MeetingNumber, response.OriginAddress, cancellationToken).ConfigureAwait(false);
 
-            response.MeetingType = command.MeetingType;
-            
             return new ScheduleMeetingResponse
             {
                 Data = response
             };
         }
         
-        public async Task<JoinMeetingResponse> JoinMeetingAsync(JoinMeetingCommand joinMeetingCommand, CancellationToken cancellationToken)
+        public async Task<GetMeetingByNumberResponse> GetMeetingByNumberAsync(GetMeetingByNumberRequest request, CancellationToken cancellationToken)
         {
-            var user = await _userService.GetCurrentUserAsync(cancellationToken).ConfigureAwait(false);
+            var response = await _antMediaUtilService.GetMeetingByMeetingNumberAsync(request.MeetingNumber, cancellationToken).ConfigureAwait(false);
 
-            var meetingSession = await _meetingSessionDataProvider
-                .GetMeetingSession(joinMeetingCommand.MeetingNumber, cancellationToken: cancellationToken)
-                .ConfigureAwait(false);
-
-            if (meetingSession == null)
-                throw new MeetingNotFoundException();
-
-            await _meetingSessionService.ConnectUserToMeetingSession(
-                    _mapper.Map<UserAccount>(user), meetingSession, null, joinMeetingCommand.IsMuted, cancellationToken).ConfigureAwait(false);
-
-            return new JoinMeetingResponse
-            {
-                Data = meetingSession
-            };
-        }
-        
-        public async Task<GetMeetingByNumberResponse> GetMeetingByNumber(GetMeetingByNumberRequest request,
-            CancellationToken cancellationToken)
-        {
-            var meeting = await _meetingDataProvider.GetMeetingByNumber(request.MeetingNumber, cancellationToken)
-                .ConfigureAwait(false);
-
-            if (meeting == null)
-                throw new MeetingNotFoundException();
-            
             return new GetMeetingByNumberResponse
             {
-                Data = _mapper.Map<MeetingDto>(meeting)
+                Data = _mapper.Map<MeetingDto>(response)
             };
+        }
+
+        public async Task<JoinMeetingResponse> JoinMeetingAsync(JoinMeetingCommand contextMessage, CancellationToken cancellationToken)
+        {
+            throw new NotImplementedException();
         }
 
         private string GenerateMeetingNumber()

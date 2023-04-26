@@ -13,7 +13,7 @@ using SugarTalk.Core.Domain.Account;
 using SugarTalk.Core.Domain.Account.Exceptions;
 using SugarTalk.Core.Extensions;
 using SugarTalk.Core.Ioc;
-using SugarTalk.Messages.Dtos.Users;
+using SugarTalk.Messages.Dto.Users;
 using SugarTalk.Messages.Enums.Account;
 using Role = SugarTalk.Core.Domain.Account.Role;
 

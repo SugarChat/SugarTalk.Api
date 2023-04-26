@@ -3,15 +3,15 @@ using System.Threading;
 using System.Threading.Tasks;
 using SugarTalk.Core.Ioc;
 using SugarTalk.Core.Settings.AntMedia;
-using SugarTalk.Messages.Dtos.AntMedia;
-using SugarTalk.Messages.Dtos.Meetings;
+using SugarTalk.Messages.Dto.AntMedia;
+using SugarTalk.Messages.Dto.Meetings;
 
 namespace SugarTalk.Core.Services.Http.Clients;
 
 public interface IAntMediaClient : IScopedDependency
 {
-    Task<ConferenceRoomDto> GetAntMediaConferenceRoomAsync(
-        string roomId, CancellationToken cancellationToken);
+    Task<GetMeetingResponseDto> GetAntMediaConferenceRoomAsync(
+        string meetingNumber, CancellationToken cancellationToken);
 
     Task<List<ConferenceRoomDto>> GetAntMediaConferenceRoomsAsync(
         int offset, int size, CancellationToken cancellationToken);
@@ -34,11 +34,11 @@ public class AntMediaClient : IAntMediaClient
         _httpClientFactory = httpClientFactory;
     }
 
-    public async Task<ConferenceRoomDto> GetAntMediaConferenceRoomAsync(string roomId, CancellationToken cancellationToken)
+    public async Task<GetMeetingResponseDto> GetAntMediaConferenceRoomAsync(string meetingNumber, CancellationToken cancellationToken)
     {
         return await _httpClientFactory
-            .GetAsync<ConferenceRoomDto>(
-                $"{_antMediaSetting.BroadcastUrl}/conference-rooms/{roomId}", cancellationToken).ConfigureAwait(false);
+            .GetAsync<GetMeetingResponseDto>(
+                $"{_antMediaSetting.BroadcastUrl}/conference-rooms/{meetingNumber}", cancellationToken).ConfigureAwait(false);
     }
 
     public async Task<List<ConferenceRoomDto>> GetAntMediaConferenceRoomsAsync(int offset, int size,

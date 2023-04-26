@@ -1,10 +1,7 @@
 using Mediator.Net;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Newtonsoft.Json;
-using SugarTalk.Core.Settings.WebRTC;
 using SugarTalk.Messages.Commands.Meetings;
-using SugarTalk.Messages.Requests.Meetings;
 
 namespace SugarTalk.Api.Controllers;
 
@@ -14,12 +11,10 @@ namespace SugarTalk.Api.Controllers;
 public class MeetingController : ControllerBase
 {
     private readonly IMediator _mediator;
-    private readonly WebRtcIceServerSettings _webRtcIceServerSettings;
 
-    public MeetingController(IMediator mediator, WebRtcIceServerSettings webRtcIceServerSettings)
+    public MeetingController(IMediator mediator)
     {
         _mediator = mediator;
-        _webRtcIceServerSettings = webRtcIceServerSettings;
     }
 
     [Route("schedule"), HttpPost]
@@ -39,21 +34,5 @@ public class MeetingController : ControllerBase
         var response = await _mediator.SendAsync<JoinMeetingCommand, JoinMeetingResponse>(joinMeetingCommand);
 
         return Ok(response);
-    }
-
-    [Route("session"), HttpGet]
-    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(GetMeetingSessionResponse))]
-    public async Task<IActionResult> GetMeetingSessionAsync([FromQuery] GetMeetingSessionRequest request)
-    {
-        var response = await _mediator.RequestAsync<GetMeetingSessionRequest, GetMeetingSessionResponse>(request);
-
-        return Ok(response);
-    }
-
-    [Route("iceservers"), HttpGet]
-    [ProducesResponseType(StatusCodes.Status200OK)]
-    public IActionResult GetIceServers()
-    {
-        return Ok(JsonConvert.DeserializeObject<WebRtcIceServer[]>(_webRtcIceServerSettings.IceServers));
     }
 }

@@ -1,5 +1,5 @@
 using Mediator.Net.Contracts;
-using SugarTalk.Messages.Dtos.Meetings;
+using SugarTalk.Messages.Dto.Meetings;
 using SugarTalk.Messages.Responses;
 
 namespace SugarTalk.Messages.Requests.Meetings;

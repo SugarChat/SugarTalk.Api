@@ -1,6 +1,6 @@
 using System;
 
-namespace SugarTalk.Messages.Dtos.Users;
+namespace SugarTalk.Messages.Dto.Users;
 
 public class RoleDto
 {

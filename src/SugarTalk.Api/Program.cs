@@ -25,7 +25,7 @@ namespace SugarTalk.Api
             Log.Logger = new LoggerConfiguration()
                 .Destructure.JsonNetTypes()
                 .Enrich.FromLogContext()
-                .Enrich.WithProperty("Application", "SugarTalk.Api")
+                .Enrich.WithProperty("Application", application)
                 .WriteTo.Console()
                 .WriteTo.Seq(serverUrl, apiKey: apikey)
                 .CreateLogger();

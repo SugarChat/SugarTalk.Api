@@ -8,7 +8,7 @@ using SugarTalk.Core.Data;
 using SugarTalk.Core.Domain.Meeting;
 using SugarTalk.Core.Services.Meetings;
 using SugarTalk.Messages.Commands.Meetings;
-using SugarTalk.Messages.Dtos.Meetings;
+using SugarTalk.Messages.Dto.Meetings;
 using SugarTalk.Messages.Enums.Meeting;
 using SugarTalk.Messages.Requests.Meetings;
 
@@ -27,43 +27,26 @@ public class MeetingUtil : TestUtil
             var response = await mediator.SendAsync<ScheduleMeetingCommand, ScheduleMeetingResponse>(
                 new ScheduleMeetingCommand
                 {
-                    MeetingType = MeetingType.Adhoc,
-                    MeetingMode = StreamMode.MCU
+                    MeetingStreamMode = MeetingStreamMode.MCU
                 });
             
             return response;
         }, builder =>
         {
-            var meetingUtilService = Substitute.For<IMeetingUtilService>();
+            var meetingUtilService = Substitute.For<IAntMediaUtilService>();
 
             meetingUtilService.CreateMeetingAsync(Arg.Any<CreateMeetingDto>(), Arg.Any<CancellationToken>())
                 .Returns(new CreateMeetingResponseDto()
                 {
-                    Id = meetingId,
                     MeetingNumber = "123",
                     Mode = "mcu",
-                    MeetingType = MeetingType.Adhoc
                 });
             
             builder.RegisterInstance(meetingUtilService);
         });
     }
 
-    public async Task<GetMeetingSessionResponse> GetMeetingSession(string meetingNumber)
-    {
-        return await Run<IMediator, GetMeetingSessionResponse>(async (mediator) =>
-        {
-            var response = await mediator.RequestAsync<GetMeetingSessionRequest, GetMeetingSessionResponse>(
-                new GetMeetingSessionRequest
-                {
-                    MeetingNumber = meetingNumber
-                });
-
-            return response;
-        });
-    }
-
-    public async Task AddMeeting(Guid meetingId, string meetingNumber, MeetingType type)
+    public async Task AddMeeting(Guid meetingId, string meetingNumber)
     {
         await RunWithUnitOfWork<IRepository>(async (repository) =>
         {
@@ -71,21 +54,7 @@ public class MeetingUtil : TestUtil
             {
                 Id = meetingId,
                 MeetingNumber = meetingNumber,
-                MeetingType = type
             }, CancellationToken.None).ConfigureAwait(false);
         });
-    }
-
-    public async Task AddMeetingSession(string meetingNumber, Guid? meetingId = default)
-    {
-        await RunWithUnitOfWork<IRepository>(async (repository) =>
-        {
-            await repository.InsertAsync(new MeetingSession
-            {
-                MeetingId = meetingId ?? Guid.NewGuid(),
-                MeetingNumber = meetingNumber,
-                MeetingType = MeetingType.Adhoc
-            });
-        }); 
     }
 }

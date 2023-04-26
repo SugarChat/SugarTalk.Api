@@ -1,9 +1,7 @@
-using System;
 using System.Collections.Generic;
 using Newtonsoft.Json;
-using SugarTalk.Messages.Enums.Meeting;
 
-namespace SugarTalk.Messages.Dtos.Meetings;
+namespace SugarTalk.Messages.Dto.Meetings;
 
 public class CreateMeetingDto
 {
@@ -23,15 +21,11 @@ public class CreateMeetingDto
     public List<string> RoomStreamList { get; set; }
 
     [JsonProperty("originAdress")]
-    public string OriginAdress { get; set; }
+    public string OriginAddress { get; set; }
 }
 
 public class CreateMeetingResponseDto
 {
-    public Guid Id { get; set; } = Guid.NewGuid();
-
-    public MeetingType MeetingType { get; set; }
-
     [JsonProperty("roomId")]
     public string MeetingNumber { get; set; }
     
@@ -48,5 +42,5 @@ public class CreateMeetingResponseDto
     public string Mode { get; set; }
     
     [JsonProperty("originAdress")]
-    public string OriginAdress { get; set; }
+    public string OriginAddress { get; set; }
 }
