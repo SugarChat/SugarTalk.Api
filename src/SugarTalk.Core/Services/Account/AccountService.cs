@@ -8,6 +8,7 @@ using AutoMapper;
 using Microsoft.AspNetCore.Http;
 using SugarTalk.Core.Domain.Account;
 using SugarTalk.Core.Ioc;
+using SugarTalk.Core.Services.Identity;
 using SugarTalk.Messages;
 using SugarTalk.Messages.Commands.Account;
 using SugarTalk.Messages.Dtos.Users;
@@ -25,6 +26,8 @@ namespace SugarTalk.Core.Services.Account
         
         Task<UserAccount> GetCurrentLoggedInUser(CancellationToken cancellationToken = default);
         
+        Task<UserAccountDto> GetCurrentUserAsync(CancellationToken cancellationToken);
+        
         Task<UserAccountRegisteredEvent> RegisterAsync(RegisterCommand command, CancellationToken cancellationToken);
         
         Task<UserAccountDto> GetOrCreateUserAccountFromThirdPartyAsync(string userId, string userName, CancellationToken cancellationToken);
@@ -33,14 +36,16 @@ namespace SugarTalk.Core.Services.Account
     public class AccountService : IAccountService
     {
         private readonly IMapper _mapper;
+        private readonly ICurrentUser _currentUser;
         private readonly ITokenProvider _tokenProvider;
         private readonly IHttpContextAccessor _httpContextAccessor;
         
         private readonly IAccountDataProvider _accountDataProvider;
 
-        public AccountService(IMapper mapper, IHttpContextAccessor httpContextAccessor, IAccountDataProvider accountDataProvider, ITokenProvider tokenProvider)
+        public AccountService(IMapper mapper, ICurrentUser currentUser, IHttpContextAccessor httpContextAccessor, IAccountDataProvider accountDataProvider, ITokenProvider tokenProvider)
         {
             _mapper = mapper;
+            _currentUser = currentUser;
             _tokenProvider = tokenProvider;
             _accountDataProvider = accountDataProvider;
             _httpContextAccessor = httpContextAccessor;
@@ -66,6 +71,12 @@ namespace SugarTalk.Core.Services.Account
 
             return await _accountDataProvider.GetUserByThirdPartyId(thirdPartyId, cancellationToken)
                 .ConfigureAwait(false);
+        }
+        
+        public async Task<UserAccountDto> GetCurrentUserAsync(CancellationToken cancellationToken)
+        {
+            return await _accountDataProvider
+                .GetUserAccountAsync(id: _currentUser.Id, includeRoles: true, cancellationToken: cancellationToken).ConfigureAwait(false);
         }
         
         public ClaimsPrincipal GetCurrentPrincipal()

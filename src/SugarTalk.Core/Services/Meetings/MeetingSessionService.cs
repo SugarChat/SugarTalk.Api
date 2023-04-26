@@ -8,8 +8,6 @@ using SugarTalk.Core.Domain.Account;
 using SugarTalk.Core.Domain.Meeting;
 using SugarTalk.Core.Ioc;
 using SugarTalk.Core.Services.Account;
-using SugarTalk.Core.Services.Http.Clients;
-using SugarTalk.Messages.Dtos.AntMedia;
 using SugarTalk.Messages.Dtos.Meetings;
 using SugarTalk.Messages.Dtos.Users;
 using SugarTalk.Messages.Enums.Meeting;
@@ -36,17 +34,14 @@ namespace SugarTalk.Core.Services.Meetings
     {
         private readonly IMapper _mapper;
         private readonly IRepository _repository;
-        private readonly IAntMediaClient _antMediaClient;
         private readonly IAccountService _accountService;
         private readonly IMeetingSessionDataProvider _meetingSessionDataProvider;
         
-        public MeetingSessionService(IMapper mapper, 
-            IRepository repository, IAccountService accountService, 
-            IAntMediaClient antMediaClient, IMeetingSessionDataProvider meetingSessionDataProvider)
+        public MeetingSessionService(IMapper mapper, IRepository repository, 
+            IAccountService accountService, IMeetingSessionDataProvider meetingSessionDataProvider)
         {
             _mapper = mapper;
             _repository = repository;
-            _antMediaClient = antMediaClient;
             _accountService = accountService;
             _meetingSessionDataProvider = meetingSessionDataProvider;
         }
@@ -54,10 +49,7 @@ namespace SugarTalk.Core.Services.Meetings
         public async Task<GetMeetingSessionResponse> GetMeetingSessionAsync(
             GetMeetingSessionRequest request, CancellationToken cancellationToken)
         {
-            var user = await _accountService.GetCurrentLoggedInUser(cancellationToken).ConfigureAwait(false);
-
-            if (user == null)
-                throw new UnauthorizedAccessException();
+            var user = await _accountService.GetCurrentUserAsync(cancellationToken).ConfigureAwait(false);
 
             var meetingSession = await _meetingSessionDataProvider
                 .GetMeetingSession(request.MeetingNumber, true, cancellationToken).ConfigureAwait(false);

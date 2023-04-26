@@ -3,9 +3,11 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using AutoMapper;
+using SugarTalk.Core.Domain.Account;
 using SugarTalk.Core.Ioc;
 using SugarTalk.Core.Services.Account;
 using SugarTalk.Core.Services.Exceptions;
+using SugarTalk.Core.Services.Identity;
 using SugarTalk.Messages.Commands.Meetings;
 using SugarTalk.Messages.Dtos.Meetings;
 using SugarTalk.Messages.Enums.Meeting;
@@ -17,7 +19,7 @@ namespace SugarTalk.Core.Services.Meetings
     {
         Task<ScheduleMeetingResponse> ScheduleMeeting(ScheduleMeetingCommand scheduleMeetingCommand, CancellationToken cancellationToken);
 
-        Task<JoinMeetingResponse> JoinMeeting(JoinMeetingCommand joinMeetingCommand,
+        Task<JoinMeetingResponse> JoinMeetingAsync(JoinMeetingCommand joinMeetingCommand,
             CancellationToken cancellationToken);
         
         Task<GetMeetingByNumberResponse> GetMeetingByNumber(GetMeetingByNumberRequest request,
@@ -74,12 +76,9 @@ namespace SugarTalk.Core.Services.Meetings
             };
         }
         
-        public async Task<JoinMeetingResponse> JoinMeeting(JoinMeetingCommand joinMeetingCommand, CancellationToken cancellationToken)
+        public async Task<JoinMeetingResponse> JoinMeetingAsync(JoinMeetingCommand joinMeetingCommand, CancellationToken cancellationToken)
         {
-            var user = await _userService.GetCurrentLoggedInUser(cancellationToken).ConfigureAwait(false);
-
-            if (user == null)
-                throw new UnauthorizedAccessException();
+            var user = await _userService.GetCurrentUserAsync(cancellationToken).ConfigureAwait(false);
 
             var meetingSession = await _meetingSessionDataProvider
                 .GetMeetingSession(joinMeetingCommand.MeetingNumber, cancellationToken: cancellationToken)
@@ -89,7 +88,7 @@ namespace SugarTalk.Core.Services.Meetings
                 throw new MeetingNotFoundException();
 
             await _meetingSessionService.ConnectUserToMeetingSession(
-                    user, meetingSession, null, joinMeetingCommand.IsMuted, cancellationToken).ConfigureAwait(false);
+                    _mapper.Map<UserAccount>(user), meetingSession, null, joinMeetingCommand.IsMuted, cancellationToken).ConfigureAwait(false);
 
             return new JoinMeetingResponse
             {
