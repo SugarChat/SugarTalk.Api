@@ -6,13 +6,18 @@ using Microsoft.EntityFrameworkCore;
 using SugarTalk.Core.Data;
 using SugarTalk.Core.Domain.Meeting;
 using SugarTalk.Core.Ioc;
+using SugarTalk.Messages.Enums.Meeting;
 
 namespace SugarTalk.Core.Services.Meetings
 {
     public interface IMeetingDataProvider : IScopedDependency
     {
         Task<Meeting> GetMeetingById(Guid meetingId, CancellationToken cancellationToken = default);
+        
         Task<Meeting> GetMeetingByNumber(string meetingNumber, CancellationToken cancellationToken = default);
+        
+        Task PersistMeetingAsync(
+            MeetingStreamMode meetingMode, string meetingNumber, string originAddress, CancellationToken cancellationToken);
     }
     
     public class MeetingDataProvider : IMeetingDataProvider
@@ -38,6 +43,18 @@ namespace SugarTalk.Core.Services.Meetings
             return await _repository.Query<Meeting>()
                 .SingleOrDefaultAsync(x => x.MeetingNumber == meetingNumber, cancellationToken)
                 .ConfigureAwait(false);
+        }
+
+        public async Task PersistMeetingAsync(MeetingStreamMode meetingMode, string meetingNumber, string originAddress, CancellationToken cancellationToken)
+        {
+            var meeting = new Meeting
+            {
+                MeetingNumber = meetingNumber,
+                MeetingStreamMode = meetingMode,
+                OriginAddress = originAddress
+            };
+
+            await _repository.InsertAsync(meeting, cancellationToken).ConfigureAwait(false);
         }
     }
 }

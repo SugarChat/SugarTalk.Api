@@ -2,7 +2,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using SugarTalk.Core.Domain.Account;
 using SugarTalk.Core.Extensions;
-using SugarTalk.Messages.Dtos.Users;
+using SugarTalk.Messages.Dto.Users;
 
 namespace SugarTalk.Core.Services.Account;
 

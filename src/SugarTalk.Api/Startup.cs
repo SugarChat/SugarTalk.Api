@@ -2,10 +2,8 @@ using System.Text.Json;
 using Correlate.AspNetCore;
 using Correlate.DependencyInjection;
 using Serilog;
-using SugarTalk.Api.Authentication;
 using SugarTalk.Api.Extensions;
 using SugarTalk.Api.Filters;
-using SugarTalk.Core.Hubs;
 using SugarTalk.Messages;
 using Swashbuckle.AspNetCore.SwaggerUI;
 
@@ -69,7 +67,6 @@ namespace SugarTalk.Api
             app.UseRouting();
             app.UseCors();
             app.UseResponseCaching();
-            app.UseMiddleware<EnrichAccessTokenMiddleware>();
             app.UseAuthentication();
             app.UseAuthorization();
             
@@ -77,7 +74,6 @@ namespace SugarTalk.Api
             {
                 endpoints.MapControllers();
                 endpoints.MapHealthChecks("health");
-                endpoints.MapHub<MeetingHub>("/meetingHub");
             });
             
             app.UseMvc(routes =>

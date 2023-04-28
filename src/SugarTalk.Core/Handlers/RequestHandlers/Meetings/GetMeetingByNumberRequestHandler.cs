@@ -4,7 +4,6 @@ using Mediator.Net.Context;
 using Mediator.Net.Contracts;
 using SugarTalk.Core.Services.Meetings;
 using SugarTalk.Messages;
-using SugarTalk.Messages.Dtos.Meetings;
 using SugarTalk.Messages.Requests.Meetings;
 using SugarTalk.Messages.Responses;
 
@@ -21,7 +20,7 @@ namespace SugarTalk.Core.Handlers.RequestHandlers.Meetings
 
         public async Task<GetMeetingByNumberResponse> Handle(IReceiveContext<GetMeetingByNumberRequest> context, CancellationToken cancellationToken)
         {
-            return await _meetingService.GetMeetingByNumber(context.Message, cancellationToken).ConfigureAwait(false);
+            return await _meetingService.GetMeetingByNumberAsync(context.Message, cancellationToken).ConfigureAwait(false);
         }
     }
 }

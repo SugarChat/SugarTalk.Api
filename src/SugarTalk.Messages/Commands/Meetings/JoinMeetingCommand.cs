@@ -1,5 +1,5 @@
 using Mediator.Net.Contracts;
-using SugarTalk.Messages.Dtos.Meetings;
+using SugarTalk.Messages.Dto.Meetings;
 using SugarTalk.Messages.Responses;
 
 namespace SugarTalk.Messages.Commands.Meetings;
@@ -11,6 +11,6 @@ public class JoinMeetingCommand : ICommand
     public bool IsMuted { get; set; }
 }
 
-public class JoinMeetingResponse : SugarTalkResponse<MeetingSessionDto>
+public class JoinMeetingResponse : SugarTalkResponse<MeetingDto>
 {
 }

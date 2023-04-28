@@ -13,7 +13,7 @@ namespace SugarTalk.Core.Services.Http;
 public interface ISugarTalkHttpClientFactory : IScopedDependency
 {
     Task<T> GetAsync<T>(string requestUrl, CancellationToken cancellationToken, 
-        TimeSpan? timeout = null, bool beginScope = false, Dictionary<string, string> headers = null);
+        TimeSpan? timeout = null, bool beginScope = false, Dictionary<string, string> headers = null, HttpClient innerClient = null);
 
     Task<T> PostAsync<T>(string requestUrl, HttpContent content, CancellationToken cancellationToken, 
         TimeSpan? timeout = null, bool beginScope = false, Dictionary<string, string> headers = null);
@@ -31,19 +31,22 @@ public class SugarTalkHttpClientFactory : ISugarTalkHttpClientFactory
         _scope = scope;
     }
     
-        private HttpClient CreateClient(TimeSpan? timeout = null, bool beginScope = false, Dictionary<string, string> headers = null)
+    private HttpClient CreateClient(TimeSpan? timeout = null, bool beginScope = false,
+        Dictionary<string, string> headers = null, HttpClient innerClient = null)
     {
+        if (innerClient != null) return innerClient;
+
         var scope = beginScope ? _scope.BeginLifetimeScope() : _scope;
-        
+
         var canResolve = scope.TryResolve(out IHttpClientFactory httpClientFactory);
-        
+
         var client = canResolve ? httpClientFactory.CreateClient() : new HttpClient();
-        
+
         if (timeout != null)
             client.Timeout = timeout.Value;
 
         if (headers == null) return client;
-        
+
         foreach (var header in headers)
         {
             client.DefaultRequestHeaders.Add(header.Key, header.Value);
@@ -53,7 +56,7 @@ public class SugarTalkHttpClientFactory : ISugarTalkHttpClientFactory
     }
 
     public async Task<T> GetAsync<T>(string requestUrl, CancellationToken cancellationToken,
-        TimeSpan? timeout = null, bool beginScope = false, Dictionary<string, string> headers = null)
+        TimeSpan? timeout = null, bool beginScope = false, Dictionary<string, string> headers = null, HttpClient innerClient = null)
     {
         return await SafelyProcessRequestAsync(requestUrl, async () =>
         {
