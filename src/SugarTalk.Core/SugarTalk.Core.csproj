@@ -54,6 +54,7 @@
         <EmbeddedResource Include="DbUp\Scripts_2023\Script0001_initial_tables.sql" />
         <EmbeddedResource Include="DbUp\Scripts_2023\Script0002_add_foundation_tables.sql" />
         <EmbeddedResource Include="DbUp\Scripts_2023\Script0003_add_update_meeting_tables.sql" />
+        <EmbeddedResource Include="DbUp\Scripts_2023\Script0004_add_user_session_and_update_meeting_tables.sql" />
     </ItemGroup>
 
 </Project>

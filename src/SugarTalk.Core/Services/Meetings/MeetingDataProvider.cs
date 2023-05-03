@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using SugarTalk.Core.Data;
 using SugarTalk.Core.Domain.Meeting;
 using SugarTalk.Core.Ioc;
+using SugarTalk.Messages.Dto.Meetings;
 using SugarTalk.Messages.Enums.Meeting;
 
 namespace SugarTalk.Core.Services.Meetings
@@ -14,10 +15,10 @@ namespace SugarTalk.Core.Services.Meetings
     {
         Task<Meeting> GetMeetingById(Guid meetingId, CancellationToken cancellationToken = default);
         
-        Task<Meeting> GetMeetingByNumber(string meetingNumber, CancellationToken cancellationToken = default);
+        Task<MeetingDto> GetMeetingByNumberAsync(string meetingNumber, CancellationToken cancellationToken);
         
         Task PersistMeetingAsync(
-            MeetingStreamMode meetingMode, string meetingNumber, string originAddress, CancellationToken cancellationToken);
+            MeetingStreamMode meetingMode, CreateMeetingResponseDto meetingResponseData, CancellationToken cancellationToken);
     }
     
     public class MeetingDataProvider : IMeetingDataProvider
@@ -38,20 +39,24 @@ namespace SugarTalk.Core.Services.Meetings
                 .ConfigureAwait(false);
         }
         
-        public async Task<Meeting> GetMeetingByNumber(string meetingNumber, CancellationToken cancellationToken = default)
+        public async Task<MeetingDto> GetMeetingByNumberAsync(string meetingNumber, CancellationToken cancellationToken)
         {
-            return await _repository.Query<Meeting>()
+            var meeting = await _repository.Query<Meeting>()
                 .SingleOrDefaultAsync(x => x.MeetingNumber == meetingNumber, cancellationToken)
                 .ConfigureAwait(false);
+
+            return _mapper.Map<MeetingDto>(meeting);
         }
 
-        public async Task PersistMeetingAsync(MeetingStreamMode meetingMode, string meetingNumber, string originAddress, CancellationToken cancellationToken)
+        public async Task PersistMeetingAsync(MeetingStreamMode meetingMode, CreateMeetingResponseDto meetingResponseData, CancellationToken cancellationToken)
         {
             var meeting = new Meeting
             {
-                MeetingNumber = meetingNumber,
                 MeetingStreamMode = meetingMode,
-                OriginAddress = originAddress
+                MeetingNumber = meetingResponseData.MeetingNumber,
+                OriginAddress = meetingResponseData.OriginAddress,
+                StartDate = meetingResponseData.StartDate,
+                EndDate = meetingResponseData.EndDate
             };
 
             await _repository.InsertAsync(meeting, cancellationToken).ConfigureAwait(false);
