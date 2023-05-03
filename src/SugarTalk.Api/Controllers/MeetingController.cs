@@ -29,9 +29,18 @@ public class MeetingController : ControllerBase
 
     [Route("join"), HttpPost]
     [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(JoinMeetingResponse))]
-    public async Task<IActionResult> JoinMeetingAsync([FromQuery] JoinMeetingCommand joinMeetingCommand)
+    public async Task<IActionResult> JoinMeetingAsync([FromBody] JoinMeetingCommand joinMeetingCommand)
     {
         var response = await _mediator.SendAsync<JoinMeetingCommand, JoinMeetingResponse>(joinMeetingCommand);
+
+        return Ok(response);
+    }
+    
+    [Route("screen/share"), HttpPost]
+    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ShareScreenResponse))]
+    public async Task<IActionResult> ShareScreenAsync(ShareScreenCommand shareScreenCommand)
+    {
+        var response = await _mediator.SendAsync<ShareScreenCommand, ShareScreenResponse>(shareScreenCommand);
 
         return Ok(response);
     }

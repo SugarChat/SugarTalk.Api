@@ -10,7 +10,7 @@ public class UserSessionDto
         
     public Guid MeetingId { get; set; }
         
-    public string ConnectionId { get; set; }
+    public string RoomStreamId { get; set; }
         
     public int UserId { get; set; }
 
