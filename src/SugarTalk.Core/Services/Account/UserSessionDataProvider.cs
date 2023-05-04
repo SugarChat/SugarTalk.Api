@@ -13,7 +13,7 @@ namespace SugarTalk.Core.Services.Account;
 
 public interface IUserSessionDataProvider : IScopedDependency
 {
-    Task<List<UserSessionDto>> GetUserSessionsByMeetingId(Guid meetingId, CancellationToken cancellationToken);
+    Task<List<UserSessionDto>> GetUserSessionsByMeetingIdAsync(Guid meetingId, CancellationToken cancellationToken);
         
     Task AddUserSessionAsync(UserSession userSession, CancellationToken cancellationToken);
         
@@ -31,7 +31,7 @@ public class UserSessionDataProvider : IUserSessionDataProvider
         _repository = repository;
     }
 
-    public async Task<List<UserSessionDto>> GetUserSessionsByMeetingId(Guid meetingId, CancellationToken cancellationToken)
+    public async Task<List<UserSessionDto>> GetUserSessionsByMeetingIdAsync(Guid meetingId, CancellationToken cancellationToken)
     {
         var userSessions = await _repository.Query<UserSession>(x => x.MeetingId == meetingId)
             .ToListAsync(cancellationToken).ConfigureAwait(false);

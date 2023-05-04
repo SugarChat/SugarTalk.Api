@@ -20,7 +20,7 @@ public class MeetingUtil : TestUtil
     {
     }
 
-    public async Task<ScheduleMeetingResponse> ScheduleMeeting(Guid meetingId)
+    public async Task<ScheduleMeetingResponse> ScheduleMeeting()
     {
         return await Run<IMediator, ScheduleMeetingResponse>(async (mediator) =>
         {

@@ -31,4 +31,7 @@ public class UserSession : IEntity
 
     [Column("is_muted", TypeName = "tinyint(1)")]
     public bool IsMuted { get; set; }
+    
+    [Column("is_sharing_screen", TypeName = "tinyint(1)")]
+    public bool IsSharingScreen { get; set; }
 }

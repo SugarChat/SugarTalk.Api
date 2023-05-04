@@ -15,4 +15,6 @@ public class UserSessionDto
     public int UserId { get; set; }
 
     public bool IsMuted { get; set; }
+    
+    public bool IsSharingScreen { get; set; }
 }

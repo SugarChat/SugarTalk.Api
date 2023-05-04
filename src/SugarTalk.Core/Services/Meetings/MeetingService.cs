@@ -91,10 +91,7 @@ namespace SugarTalk.Core.Services.Meetings
         {
             var user = await _accountDataProvider.GetUserAccountAsync(_currentUser.Id, cancellationToken: cancellationToken).ConfigureAwait(false);
             
-            var meeting = await GenerateMeetingAsync(command.MeetingNumber, cancellationToken).ConfigureAwait(false);
-
-            meeting.UserSessions =
-                await _userSessionDataProvider.GetUserSessionsByMeetingId(meeting.Id, cancellationToken).ConfigureAwait(false);
+            var meeting = await GetMeetingAsync(command.MeetingNumber, cancellationToken).ConfigureAwait(false);
 
             await ConnectUserToMeetingAsync(user, meeting, null, command.IsMuted, cancellationToken)
                 .ConfigureAwait(false);
@@ -135,16 +132,19 @@ namespace SugarTalk.Core.Services.Meetings
             }
         }
 
-        private async Task<MeetingDto> GenerateMeetingAsync(string meetingNumber, CancellationToken cancellationToken)
+        public async Task<MeetingDto> GetMeetingAsync(string meetingNumber, CancellationToken cancellationToken, bool includeUserSessions = true)
         {
             var meeting = await _meetingDataProvider.GetMeetingByNumberAsync(meetingNumber, cancellationToken).ConfigureAwait(false);
 
             if (meeting == null) throw new MeetingNotFoundException();
 
-            var postData = await _antMediaUtilService
-                .GetMeetingByMeetingNumberAsync(meetingNumber, cancellationToken).ConfigureAwait(false);
-
-            return postData == null ? null : _mapper.Map<MeetingDto>(postData);
+            if (includeUserSessions)
+            {
+                meeting.UserSessions =
+                    await _userSessionDataProvider.GetUserSessionsByMeetingIdAsync(meeting.Id, cancellationToken).ConfigureAwait(false);
+            }
+            
+            return meeting;
         }
 
         private string GenerateMeetingNumber()
