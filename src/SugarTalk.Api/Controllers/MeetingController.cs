@@ -29,27 +29,27 @@ public class MeetingController : ControllerBase
 
     [Route("join"), HttpPost]
     [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(JoinMeetingResponse))]
-    public async Task<IActionResult> JoinMeetingAsync([FromBody] JoinMeetingCommand joinMeetingCommand)
+    public async Task<IActionResult> JoinMeetingAsync([FromBody] JoinMeetingCommand command)
     {
-        var response = await _mediator.SendAsync<JoinMeetingCommand, JoinMeetingResponse>(joinMeetingCommand);
+        var response = await _mediator.SendAsync<JoinMeetingCommand, JoinMeetingResponse>(command);
 
         return Ok(response);
     }
     
     [Route("screen/share"), HttpPost]
     [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ShareScreenResponse))]
-    public async Task<IActionResult> ShareScreenAsync(ShareScreenCommand shareScreenCommand)
+    public async Task<IActionResult> ShareScreenAsync(ShareScreenCommand command)
     {
-        var response = await _mediator.SendAsync<ShareScreenCommand, ShareScreenResponse>(shareScreenCommand);
+        var response = await _mediator.SendAsync<ShareScreenCommand, ShareScreenResponse>(command);
 
         return Ok(response);
     }
     
     [Route("audio/change"), HttpPost]
     [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ChangeAudioResponse))]
-    public async Task<IActionResult> ChangeAudioAsync(ChangeAudioCommand changeAudioCommand)
+    public async Task<IActionResult> ChangeAudioAsync(ChangeAudioCommand command)
     {
-        var response = await _mediator.SendAsync<ChangeAudioCommand, ChangeAudioResponse>(changeAudioCommand);
+        var response = await _mediator.SendAsync<ChangeAudioCommand, ChangeAudioResponse>(command);
 
         return Ok(response);
     }
