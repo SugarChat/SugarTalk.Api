@@ -8,7 +8,7 @@ public class ChangeAudioCommand : ICommand
 {
     public int UserSessionId { get; set; }
 
-    public bool IsShared { get; set; }
+    public bool IsMuted { get; set; }
 }
 
 public class ChangeAudioResponse : SugarTalkResponse<UserSessionDto>

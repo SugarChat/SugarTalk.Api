@@ -38,7 +38,7 @@ public class AntMediaClient : IAntMediaClient
     {
         return await _httpClientFactory
             .GetAsync<GetMeetingResponseDto>(
-                $"{_antMediaSetting.BaseUrl}/LiveApp/rest/v2/broadcasts/conference-rooms/{meetingNumber}", cancellationToken).ConfigureAwait(false);
+                $"{_antMediaSetting.BaseUrl}/{_antMediaSetting.AppName}/rest/v2/broadcasts/conference-rooms/{meetingNumber}", cancellationToken).ConfigureAwait(false);
     }
 
     public async Task<List<ConferenceRoomDto>> GetAntMediaConferenceRoomsAsync(int offset, int size,
@@ -46,20 +46,20 @@ public class AntMediaClient : IAntMediaClient
     {
         return await _httpClientFactory
             .GetAsync<List<ConferenceRoomDto>>(
-                $"{_antMediaSetting.BaseUrl}/LiveApp/rest/v2/broadcasts/conference-rooms/list/{offset}/{size}", cancellationToken).ConfigureAwait(false);
+                $"{_antMediaSetting.BaseUrl}/{_antMediaSetting.AppName}/rest/v2/broadcasts/conference-rooms/list/{offset}/{size}", cancellationToken).ConfigureAwait(false);
     }
 
     public async Task<GetAntMediaConferenceRoomInfoResponseDto> GetAntMediaConferenceRoomInfoAsync(string roomId, CancellationToken cancellationToken)
     {
         return await _httpClientFactory
             .GetAsync<GetAntMediaConferenceRoomInfoResponseDto>(
-                $"{_antMediaSetting.BaseUrl}/LiveApp/rest/v2/broadcasts/conference-rooms/{roomId}/room-info", cancellationToken).ConfigureAwait(false);
+                $"{_antMediaSetting.BaseUrl}/{_antMediaSetting.AppName}/rest/v2/broadcasts/conference-rooms/{roomId}/room-info", cancellationToken).ConfigureAwait(false);
     }
 
     public async Task<CreateMeetingResponseDto> CreateAntMediaConferenceRoomAsync(CreateMeetingDto meetingData, CancellationToken cancellationToken)
     {
         return await _httpClientFactory
             .PostAsJsonAsync<CreateMeetingResponseDto>(
-                $"{_antMediaSetting.BaseUrl}/LiveApp/rest/v2/broadcasts/conference-rooms", meetingData, cancellationToken).ConfigureAwait(false);
+                $"{_antMediaSetting.BaseUrl}/{_antMediaSetting.AppName}/rest/v2/broadcasts/conference-rooms", meetingData, cancellationToken).ConfigureAwait(false);
     }
 }
