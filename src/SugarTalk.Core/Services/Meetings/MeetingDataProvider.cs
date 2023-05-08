@@ -42,15 +42,6 @@ namespace SugarTalk.Core.Services.Meetings
                 .SingleOrDefaultAsync(x => x.Id == meetingId, cancellationToken)
                 .ConfigureAwait(false);
         }
-        
-        public async Task<MeetingDto> GetMeetingByNumberAsync(string meetingNumber, CancellationToken cancellationToken)
-        {
-            var meeting = await _repository.Query<Meeting>()
-                .SingleOrDefaultAsync(x => x.MeetingNumber == meetingNumber, cancellationToken)
-                .ConfigureAwait(false);
-
-            return _mapper.Map<MeetingDto>(meeting);
-        }
 
         public async Task PersistMeetingAsync(Meeting meeting, CancellationToken cancellationToken)
         {
@@ -60,17 +51,21 @@ namespace SugarTalk.Core.Services.Meetings
         public async Task<MeetingDto> GetMeetingAsync(
             string meetingNumber, CancellationToken cancellationToken, bool includeUserSessions = true)
         {
-            var meeting = await GetMeetingByNumberAsync(meetingNumber, cancellationToken).ConfigureAwait(false);
+            var meeting = await _repository.Query<Meeting>()
+                .SingleOrDefaultAsync(x => x.MeetingNumber == meetingNumber, cancellationToken)
+                .ConfigureAwait(false);
 
             if (meeting == null) throw new MeetingNotFoundException();
 
+            var updateMeeting = _mapper.Map<MeetingDto>(meeting);
+
             if (includeUserSessions)
             {
-                meeting.UserSessions =
+                updateMeeting.UserSessions =
                     await _meetingUserSessionDataProvider.GetUserSessionsByMeetingIdAsync(meeting.Id, cancellationToken).ConfigureAwait(false);
             }
             
-            return meeting;
+            return updateMeeting;
         }
     }
 }
