@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -29,14 +30,14 @@ namespace SugarTalk.Core.Services.Meetings
             JoinMeetingCommand command, CancellationToken cancellationToken);
 
         Task ConnectUserToMeetingAsync(
-            UserAccountDto user, MeetingDto meeting, string roomStreamId, bool? isMuted = null, CancellationToken cancellationToken = default);
+            UserAccountDto user, MeetingDto meeting, List<string> streamIds, bool? isMuted = null, CancellationToken cancellationToken = default);
     }
     
     public class MeetingService: IMeetingService
     {
         private readonly IMapper _mapper;
         private readonly ICurrentUser _currentUser;
-        private readonly IAntMediaUtilService _antMediaUtilService;
+        private readonly IAntMediaUtilServer _antMediaUtilServer;
         private readonly IAccountDataProvider _accountDataProvider;
         private readonly IMeetingDataProvider _meetingDataProvider;
         private readonly IUserSessionDataProvider _userSessionDataProvider;
@@ -46,12 +47,12 @@ namespace SugarTalk.Core.Services.Meetings
             ICurrentUser currentUser,
             IMeetingDataProvider meetingDataProvider,
             IAccountDataProvider accountDataProvider,
-            IAntMediaUtilService antMediaUtilService,
+            IAntMediaUtilServer antMediaUtilService,
             IUserSessionDataProvider userSessionDataProvider)
         {
             _mapper = mapper;
             _currentUser = currentUser;
-            _antMediaUtilService = antMediaUtilService;
+            _antMediaUtilServer = antMediaUtilService;
             _accountDataProvider = accountDataProvider;
             _meetingDataProvider = meetingDataProvider;
             _userSessionDataProvider = userSessionDataProvider;
@@ -65,7 +66,7 @@ namespace SugarTalk.Core.Services.Meetings
                 Mode = command.MeetingStreamMode == MeetingStreamMode.MCU ? "mcu" : "sfu"
             };
             
-            var response = await _antMediaUtilService.CreateMeetingAsync(postData, command.AppName, cancellationToken).ConfigureAwait(false);
+            var response = await _antMediaUtilServer.CreateMeetingAsync(postData, command.AppName, cancellationToken).ConfigureAwait(false);
 
             var meeting = new Meeting
             {
@@ -88,7 +89,7 @@ namespace SugarTalk.Core.Services.Meetings
         
         public async Task<GetMeetingByNumberResponse> GetMeetingByNumberAsync(GetMeetingByNumberRequest request, CancellationToken cancellationToken)
         {
-            var response = await _antMediaUtilService
+            var response = await _antMediaUtilServer
                 .GetMeetingByMeetingNumberAsync(request.MeetingNumber, request.AppName, cancellationToken).ConfigureAwait(false);
 
             return new GetMeetingByNumberResponse
@@ -101,9 +102,9 @@ namespace SugarTalk.Core.Services.Meetings
         {
             var user = await _accountDataProvider.GetUserAccountAsync(_currentUser.Id, cancellationToken: cancellationToken).ConfigureAwait(false);
             
-            var meeting = await GetMeetingAsync(command.MeetingNumber, cancellationToken).ConfigureAwait(false);
+            var meeting = await GetMeetingAsync(command.MeetingNumber, command.AppName, cancellationToken).ConfigureAwait(false);
 
-            await ConnectUserToMeetingAsync(user, meeting, null, command.IsMuted, cancellationToken).ConfigureAwait(false);
+            await ConnectUserToMeetingAsync(user, meeting, command.StreamIds, command.IsMuted, cancellationToken).ConfigureAwait(false);
             
             return new JoinMeetingResponse
             {
@@ -112,7 +113,7 @@ namespace SugarTalk.Core.Services.Meetings
         }
 
         public async Task ConnectUserToMeetingAsync(
-            UserAccountDto user, MeetingDto meeting, string roomStreamId, bool? isMuted = null, CancellationToken cancellationToken = default)
+            UserAccountDto user, MeetingDto meeting, List<string> streamIds, bool? isMuted = null, CancellationToken cancellationToken = default)
         {
             var userSession = meeting.UserSessions
                 .Where(x => x.UserId == user.Id)
@@ -125,34 +126,41 @@ namespace SugarTalk.Core.Services.Meetings
                 userSession = GenerateNewUserSessionFromUser(user, meeting.Id, isMuted ?? false);
 
                 meeting.AddUserSession(_mapper.Map<MeetingUserSessionDto>(userSession));
-
-                await _userSessionDataProvider.AddUserSessionAsync(userSession, cancellationToken);
+                
+                await _userSessionDataProvider.AddUserSessionAsync(userSession, cancellationToken).ConfigureAwait(false);
             }
             else
             {
                 if (isMuted.HasValue)
                     userSession.IsMuted = isMuted.Value;
+
+                await _userSessionDataProvider.RemoveUserSessionStreamsAsync(userSession, cancellationToken).ConfigureAwait(false);
+                
+                await _userSessionDataProvider.UpdateUserSessionAsync(userSession, cancellationToken).ConfigureAwait(false);
                 
                 meeting.UpdateUserSession(_mapper.Map<MeetingUserSessionDto>(userSession));
-
-                await _userSessionDataProvider.UpdateUserSessionAsync(userSession, cancellationToken);
             }
+            
+            await _userSessionDataProvider.AddUserSessionStreamAsync(userSession, streamIds, cancellationToken).ConfigureAwait(false);
         }
 
-        public async Task<MeetingDto> GetMeetingAsync(string meetingNumber, CancellationToken cancellationToken, bool includeUserSessions = true)
+        private async Task<MeetingDto> GetMeetingAsync(
+            string meetingNumber, string appName, CancellationToken cancellationToken, bool includeUserSessions = true)
         {
             var meeting = await _meetingDataProvider.GetMeetingByNumberAsync(meetingNumber, cancellationToken).ConfigureAwait(false);
 
             if (meeting == null) throw new MeetingNotFoundException();
 
+            var response = await _antMediaUtilServer
+                .GetMeetingByMeetingNumberAsync(meetingNumber, appName, cancellationToken).ConfigureAwait(false);
+
+            if (response != null)
+                meeting.StreamList = response.RoomStreamList;
+
             if (includeUserSessions)
             {
                 meeting.UserSessions =
                     await _userSessionDataProvider.GetUserSessionsByMeetingIdAsync(meeting.Id, cancellationToken).ConfigureAwait(false);
-
-                var userSessionIds = meeting.UserSessions.Select(x=>x.Id).ToList();
-                
-                
             }
             
             return meeting;

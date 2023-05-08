@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -6,6 +7,7 @@ using Mediator.Net;
 using Microsoft.EntityFrameworkCore;
 using Shouldly;
 using SugarTalk.Core.Data;
+using SugarTalk.Core.Domain.Meeting;
 using SugarTalk.IntegrationTests.TestBaseClasses;
 using SugarTalk.IntegrationTests.Utils.Meetings;
 using SugarTalk.Messages.Commands.Meetings;
@@ -58,6 +60,8 @@ public class MeetingServiceFixture : MeetingFixtureBase
         {
             var response = await mediator.SendAsync<JoinMeetingCommand, JoinMeetingResponse>(new JoinMeetingCommand
             {
+                AppName = "LiveApp",
+                StreamIds = new List<string> { "123", "111" },
                 MeetingNumber = scheduleMeetingResponse.Data.MeetingNumber,
                 IsMuted = false
             });
@@ -69,6 +73,10 @@ public class MeetingServiceFixture : MeetingFixtureBase
             response.Data.MeetingNumber.ShouldBe(meetingResult.MeetingNumber);
             response.Data.MeetingStreamMode.ShouldBe(MeetingStreamMode.MCU);
             response.Data.Id.ShouldBe(meetingResult.Id);
+
+            var meetingUserSessionStreams = await repository.Query<MeetingUserSessionStream>().ToListAsync(CancellationToken.None);
+            
+            meetingUserSessionStreams.Count.ShouldBe(2);
         });
     }
 }

@@ -11,8 +11,6 @@ public class MeetingUserSessionDto
         
     public Guid MeetingId { get; set; }
         
-    public List<string> RoomStreamList { get; set; }
-        
     public int UserId { get; set; }
 
     public bool IsMuted { get; set; }

@@ -15,7 +15,7 @@ create table if not exists meeting_user_session_stream
     `id` int auto_increment
     primary key,
     `user_session_id` int not null,
-    `room_stream_id` varchar(128) not null
+    `stream_id` varchar(128) not null
     )
     charset=utf8mb4;
 

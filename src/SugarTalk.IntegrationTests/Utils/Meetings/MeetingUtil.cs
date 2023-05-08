@@ -33,7 +33,7 @@ public class MeetingUtil : TestUtil
             return response;
         }, builder =>
         {
-            var meetingUtilService = Substitute.For<IAntMediaUtilService>();
+            var meetingUtilService = Substitute.For<IAntMediaUtilServer>();
 
             meetingUtilService.CreateMeetingAsync(Arg.Any<CreateMeetingDto>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
                 .Returns(new CreateMeetingResponseDto

@@ -6,7 +6,7 @@ using SugarTalk.Messages.Dto.Meetings;
 
 namespace SugarTalk.Core.Services.Meetings;
 
-public interface IAntMediaUtilService : IScopedDependency
+public interface IAntMediaUtilServer : IScopedDependency
 {
     Task<CreateMeetingResponseDto> CreateMeetingAsync(
         CreateMeetingDto meeting, string appName, CancellationToken cancellationToken);
@@ -15,11 +15,11 @@ public interface IAntMediaUtilService : IScopedDependency
         string meetingNumber, string appName, CancellationToken cancellationToken);
 }
 
-public class AntMediaUtilService : IAntMediaUtilService
+public class AntMediaUtilServer : IAntMediaUtilServer
 {
     private readonly AntMediaServerClient _antMediaServerClient;
 
-    public AntMediaUtilService(AntMediaServerClient antMediaServerClient)
+    public AntMediaUtilServer(AntMediaServerClient antMediaServerClient)
     {
         _antMediaServerClient = antMediaServerClient;
     }

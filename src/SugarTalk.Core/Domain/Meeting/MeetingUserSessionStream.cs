@@ -14,6 +14,6 @@ public class MeetingUserSessionStream : IEntity
     [Column("user_session_id")] 
     public int UserSessionId { get; set; }
     
-    [Column("room_stream_id"), StringLength(128)]
-    public string RoomStreamId { get; set; }
+    [Column("stream_id"), StringLength(128)]
+    public string StreamId { get; set; }
 }
