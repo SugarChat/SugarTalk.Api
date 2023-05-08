@@ -6,7 +6,8 @@ using Microsoft.EntityFrameworkCore;
 using SugarTalk.Core.Data;
 using SugarTalk.Core.Domain.Meeting;
 using SugarTalk.Core.Ioc;
-using SugarTalk.Messages.Enums.Meeting;
+using SugarTalk.Core.Services.Exceptions;
+using SugarTalk.Messages.Dto.Meetings;
 
 namespace SugarTalk.Core.Services.Meetings
 {
@@ -14,21 +15,22 @@ namespace SugarTalk.Core.Services.Meetings
     {
         Task<Meeting> GetMeetingById(Guid meetingId, CancellationToken cancellationToken = default);
         
-        Task<Meeting> GetMeetingByNumber(string meetingNumber, CancellationToken cancellationToken = default);
-        
-        Task PersistMeetingAsync(
-            MeetingStreamMode meetingMode, string meetingNumber, string originAddress, CancellationToken cancellationToken);
+        Task PersistMeetingAsync(Meeting meeting, CancellationToken cancellationToken);
+
+        Task<MeetingDto> GetMeetingAsync(string meetingNumber, CancellationToken cancellationToken, bool includeUserSessions = true);
     }
     
     public class MeetingDataProvider : IMeetingDataProvider
     {
         private readonly IMapper _mapper;
         private readonly IRepository _repository;
+        private readonly IMeetingUserSessionDataProvider _meetingUserSessionDataProvider;
 
-        public MeetingDataProvider(IMapper mapper, IRepository repository)
+        public MeetingDataProvider(IMapper mapper, IRepository repository, IMeetingUserSessionDataProvider meetingUserSessionDataProvider)
         {
             _mapper = mapper;
             _repository = repository;
+            _meetingUserSessionDataProvider = meetingUserSessionDataProvider;
         }
 
         public async Task<Meeting> GetMeetingById(Guid meetingId, CancellationToken cancellationToken = default)
@@ -37,24 +39,30 @@ namespace SugarTalk.Core.Services.Meetings
                 .SingleOrDefaultAsync(x => x.Id == meetingId, cancellationToken)
                 .ConfigureAwait(false);
         }
-        
-        public async Task<Meeting> GetMeetingByNumber(string meetingNumber, CancellationToken cancellationToken = default)
+
+        public async Task PersistMeetingAsync(Meeting meeting, CancellationToken cancellationToken)
         {
-            return await _repository.Query<Meeting>()
+            await _repository.InsertAsync(meeting, cancellationToken).ConfigureAwait(false);
+        }
+        
+        public async Task<MeetingDto> GetMeetingAsync(
+            string meetingNumber, CancellationToken cancellationToken, bool includeUserSessions = true)
+        {
+            var meeting = await _repository.Query<Meeting>()
                 .SingleOrDefaultAsync(x => x.MeetingNumber == meetingNumber, cancellationToken)
                 .ConfigureAwait(false);
-        }
 
-        public async Task PersistMeetingAsync(MeetingStreamMode meetingMode, string meetingNumber, string originAddress, CancellationToken cancellationToken)
-        {
-            var meeting = new Meeting
+            if (meeting == null) throw new MeetingNotFoundException();
+
+            var updateMeeting = _mapper.Map<MeetingDto>(meeting);
+
+            if (includeUserSessions)
             {
-                MeetingNumber = meetingNumber,
-                MeetingStreamMode = meetingMode,
-                OriginAddress = originAddress
-            };
-
-            await _repository.InsertAsync(meeting, cancellationToken).ConfigureAwait(false);
+                updateMeeting.UserSessions =
+                    await _meetingUserSessionDataProvider.GetUserSessionsByMeetingIdAsync(meeting.Id, cancellationToken).ConfigureAwait(false);
+            }
+            
+            return updateMeeting;
         }
     }
 }

@@ -20,6 +20,12 @@ namespace SugarTalk.Core.Domain.Meeting
         [Column("created_date")]
         public DateTimeOffset CreatedDate { get; set; }
         
+        [Column("start_date")]
+        public long StartDate { get; set; }
+        
+        [Column("end_date")]
+        public long EndDate { get; set; }
+
         [Column("meeting_number"), StringLength(256)]
         public string MeetingNumber { get; set; }
             

@@ -24,7 +24,7 @@ public class ConferenceRoomDto
     public string OriginAdress { get; set; }
 }
 
-public class GetAntMediaConferenceRoomInfoResponseDto
+public class GetConferenceRoomInfoResponseDto
 {
     [JsonProperty("roomId")]
     public string RoomId { get; set; }

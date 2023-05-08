@@ -6,6 +6,7 @@ using Mediator.Net;
 using NSubstitute;
 using SugarTalk.Core.Data;
 using SugarTalk.Core.Domain.Meeting;
+using SugarTalk.Core.Services.AntMediaServer;
 using SugarTalk.Core.Services.Meetings;
 using SugarTalk.Messages.Commands.Meetings;
 using SugarTalk.Messages.Dto.Meetings;
@@ -20,7 +21,7 @@ public class MeetingUtil : TestUtil
     {
     }
 
-    public async Task<ScheduleMeetingResponse> ScheduleMeeting(Guid meetingId)
+    public async Task<ScheduleMeetingResponse> ScheduleMeeting()
     {
         return await Run<IMediator, ScheduleMeetingResponse>(async (mediator) =>
         {
@@ -33,13 +34,13 @@ public class MeetingUtil : TestUtil
             return response;
         }, builder =>
         {
-            var meetingUtilService = Substitute.For<IAntMediaUtilService>();
+            var meetingUtilService = Substitute.For<IAntMediaServerUtilService>();
 
-            meetingUtilService.CreateMeetingAsync(Arg.Any<CreateMeetingDto>(), Arg.Any<CancellationToken>())
-                .Returns(new CreateMeetingResponseDto()
+            meetingUtilService.CreateMeetingAsync(Arg.Any<string>(), Arg.Any<CreateMeetingDto>(), Arg.Any<CancellationToken>())
+                .Returns(new CreateMeetingResponseDto
                 {
                     MeetingNumber = "123",
-                    Mode = "mcu",
+                    Mode = "mcu"
                 });
             
             builder.RegisterInstance(meetingUtilService);

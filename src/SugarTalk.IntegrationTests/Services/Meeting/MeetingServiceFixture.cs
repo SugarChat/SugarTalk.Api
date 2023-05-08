@@ -1,16 +1,16 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Mediator.Net;
 using Microsoft.EntityFrameworkCore;
 using Shouldly;
 using SugarTalk.Core.Data;
-using SugarTalk.Core.Domain.Account;
 using SugarTalk.Core.Domain.Meeting;
 using SugarTalk.IntegrationTests.TestBaseClasses;
 using SugarTalk.IntegrationTests.Utils.Meetings;
 using SugarTalk.Messages.Commands.Meetings;
-using SugarTalk.Messages.Enums;
 using SugarTalk.Messages.Enums.Meeting;
 using Xunit;
 
@@ -28,9 +28,7 @@ public class MeetingServiceFixture : MeetingFixtureBase
     [Fact]
     public async Task ShouldScheduleMeeting()
     {
-        var meetingId = Guid.NewGuid();
-
-        var response = await _meetingUtil.ScheduleMeeting(meetingId);
+        var response = await _meetingUtil.ScheduleMeeting();
 
         response.Data.ShouldNotBeNull();
         response.Data.Mode.ShouldBe("mcu");
@@ -50,6 +48,29 @@ public class MeetingServiceFixture : MeetingFixtureBase
                 .SingleAsync(CancellationToken.None);
 
             response.ShouldNotBeNull();
+        });
+    }
+
+    [Fact]
+    public async Task CanJoinMeeting()
+    {
+        var scheduleMeetingResponse = await _meetingUtil.ScheduleMeeting();
+
+        await Run<IMediator, IRepository>(async (mediator, repository) =>
+        {
+            var response = await mediator.SendAsync<JoinMeetingCommand, JoinMeetingResponse>(new JoinMeetingCommand
+            {
+                MeetingNumber = scheduleMeetingResponse.Data.MeetingNumber,
+                IsMuted = false
+            });
+
+            var meetingResult = await repository.Query<Core.Domain.Meeting.Meeting>()
+                .Where(x => x.MeetingNumber == scheduleMeetingResponse.Data.MeetingNumber)
+                .SingleAsync(CancellationToken.None);
+
+            response.Data.MeetingNumber.ShouldBe(meetingResult.MeetingNumber);
+            response.Data.MeetingStreamMode.ShouldBe(MeetingStreamMode.MCU);
+            response.Data.Id.ShouldBe(meetingResult.Id);
         });
     }
 }

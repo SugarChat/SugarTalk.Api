@@ -2,6 +2,7 @@ using AutoMapper;
 using SugarTalk.Core.Domain.Meeting;
 using SugarTalk.Messages.Commands.Meetings;
 using SugarTalk.Messages.Dto.Meetings;
+using SugarTalk.Messages.Dto.Users;
 
 namespace SugarTalk.Core.Mapping
 {
@@ -9,8 +10,9 @@ namespace SugarTalk.Core.Mapping
     {
         public MeetingMapping()
         {
-            CreateMap<ScheduleMeetingCommand, Meeting>();
             CreateMap<Meeting, MeetingDto>();
+            CreateMap<ScheduleMeetingCommand, Meeting>();
+            CreateMap<MeetingUserSession, MeetingUserSessionDto>().ReverseMap();
         }
     }
 }
