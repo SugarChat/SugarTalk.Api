@@ -34,6 +34,8 @@ namespace SugarTalk.Core.Services.Meetings
     
     public class MeetingService: IMeetingService
     {
+        private const string appName = "LiveApp";
+
         private readonly IMapper _mapper;
         private readonly ICurrentUser _currentUser;
         private readonly IAccountDataProvider _accountDataProvider;
@@ -59,8 +61,6 @@ namespace SugarTalk.Core.Services.Meetings
         
         public async Task<ScheduleMeetingResponse> ScheduleMeeting(ScheduleMeetingCommand command, CancellationToken cancellationToken)
         {
-            const string appName = "LiveApp";
-            
             var postData = new CreateMeetingDto
             {
                 MeetingNumber = GenerateMeetingNumber(),
@@ -91,8 +91,6 @@ namespace SugarTalk.Core.Services.Meetings
         
         public async Task<GetMeetingByNumberResponse> GetMeetingByNumberAsync(GetMeetingByNumberRequest request, CancellationToken cancellationToken)
         {
-            const string appName = "LiveApp";
-            
             var response = await _antMediaServerUtilService
                 .GetMeetingByMeetingNumberAsync(appName, request.MeetingNumber, cancellationToken).ConfigureAwait(false);
 
