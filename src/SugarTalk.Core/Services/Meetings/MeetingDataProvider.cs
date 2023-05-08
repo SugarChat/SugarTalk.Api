@@ -15,10 +15,7 @@ namespace SugarTalk.Core.Services.Meetings
     {
         Task<Meeting> GetMeetingById(Guid meetingId, CancellationToken cancellationToken = default);
         
-        Task<MeetingDto> GetMeetingByNumberAsync(string meetingNumber, CancellationToken cancellationToken);
-        
-        Task PersistMeetingAsync(
-            Meeting meeting, CancellationToken cancellationToken);
+        Task PersistMeetingAsync(Meeting meeting, CancellationToken cancellationToken);
 
         Task<MeetingDto> GetMeetingAsync(string meetingNumber, CancellationToken cancellationToken, bool includeUserSessions = true);
     }
