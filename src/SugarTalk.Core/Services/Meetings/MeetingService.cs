@@ -83,7 +83,7 @@ namespace SugarTalk.Core.Services.Meetings
 
             return new ScheduleMeetingResponse
             {
-                Data = _mapper.Map<MeetingDto>(meeting)
+                Data = response
             };
         }
         
