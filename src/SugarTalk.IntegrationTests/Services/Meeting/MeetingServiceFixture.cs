@@ -72,10 +72,6 @@ public class MeetingServiceFixture : MeetingFixtureBase
             response.Data.MeetingNumber.ShouldBe(meetingResult.MeetingNumber);
             response.Data.MeetingStreamMode.ShouldBe(MeetingStreamMode.MCU);
             response.Data.Id.ShouldBe(meetingResult.Id);
-
-            var meetingUserSessionStreams = await repository.Query<MeetingUserSessionStream>().ToListAsync(CancellationToken.None);
-            
-            meetingUserSessionStreams.Count.ShouldBe(2);
         });
     }
 }

@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using AutoMapper;
@@ -21,12 +20,6 @@ public interface IUserSessionDataProvider : IScopedDependency
     Task AddUserSessionAsync(MeetingUserSession userSession, CancellationToken cancellationToken);
         
     Task UpdateUserSessionAsync(MeetingUserSession userSession, CancellationToken cancellationToken);
-    
-    Task RemoveUserSessionAsync(MeetingUserSession userSession, CancellationToken cancellationToken);
-    
-    Task AddUserSessionStreamAsync(MeetingUserSession userSession, List<string> streamIds, CancellationToken cancellationToken);
-
-    Task RemoveUserSessionStreamsAsync(MeetingUserSession userSession, CancellationToken cancellationToken);
 }
 
 public class UserSessionDataProvider : IUserSessionDataProvider
@@ -71,40 +64,5 @@ public class UserSessionDataProvider : IUserSessionDataProvider
     {
         if (userSession != null)
             await _repository.UpdateAsync(userSession, cancellationToken).ConfigureAwait(false);
-    }
-
-    public async Task RemoveUserSessionAsync(MeetingUserSession userSession, CancellationToken cancellationToken)
-    {
-        if (userSession != null)
-            await _repository.DeleteAsync(userSession, cancellationToken).ConfigureAwait(false);
-    }
-
-    public async Task AddUserSessionStreamAsync(MeetingUserSession userSession, List<string> streamIds, CancellationToken cancellationToken)
-    {
-        var meetingUserSessionStreams = new List<MeetingUserSessionStream>();
-        
-        streamIds.ForEach(streamId =>
-        {
-            meetingUserSessionStreams.Add(new MeetingUserSessionStream()
-            {
-                StreamId = streamId,
-                UserSessionId = userSession.Id
-            });
-        });
-
-        await _repository.InsertAllAsync(meetingUserSessionStreams, cancellationToken).ConfigureAwait(false);
-    }
-
-    public async Task RemoveUserSessionStreamsAsync(MeetingUserSession userSession, CancellationToken cancellationToken)
-    {
-        if (userSession == null) return;
-
-        var meetingUserSessionStreams = await _repository.Query<MeetingUserSessionStream>()
-            .Where(x => userSession.Id == x.UserSessionId)
-            .ToListAsync(cancellationToken).ConfigureAwait(false);
-
-        await _repository.DeleteAllAsync(meetingUserSessionStreams, cancellationToken).ConfigureAwait(false);
-
-        await _unitOfWork.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
     }
 }
