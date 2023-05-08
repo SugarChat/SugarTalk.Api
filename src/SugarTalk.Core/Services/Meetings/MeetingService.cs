@@ -91,7 +91,7 @@ namespace SugarTalk.Core.Services.Meetings
         public async Task<GetMeetingByNumberResponse> GetMeetingByNumberAsync(GetMeetingByNumberRequest request, CancellationToken cancellationToken)
         {
             var response = await _antMediaServerUtilService
-                .GetMeetingByMeetingNumberAsync(request.MeetingNumber, request.AppName, cancellationToken).ConfigureAwait(false);
+                .GetMeetingByMeetingNumberAsync(request.MeetingNumber, "LiveApp", cancellationToken).ConfigureAwait(false);
 
             return new GetMeetingByNumberResponse
             {
