@@ -29,7 +29,7 @@ namespace SugarTalk.Core.Services.Meetings
             JoinMeetingCommand command, CancellationToken cancellationToken);
 
         Task ConnectUserToMeetingAsync(
-            UserAccountDto user, MeetingDto meeting, string connectionId, bool? isMuted = null, CancellationToken cancellationToken = default);
+            UserAccountDto user, MeetingDto meeting, string roomStreamId, bool? isMuted = null, CancellationToken cancellationToken = default);
     }
     
     public class MeetingService: IMeetingService
