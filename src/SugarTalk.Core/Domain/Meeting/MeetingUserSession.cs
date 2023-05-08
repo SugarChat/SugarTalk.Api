@@ -2,12 +2,12 @@ using System;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace SugarTalk.Core.Domain.Account;
+namespace SugarTalk.Core.Domain.Meeting;
 
-[Table("user_session")]
-public class UserSession : IEntity
+[Table("meeting_user_session")]
+public class MeetingUserSession : IEntity
 {
-    public UserSession()
+    public MeetingUserSession()
     {
         CreatedDate = DateTimeOffset.Now;
     }
@@ -22,10 +22,7 @@ public class UserSession : IEntity
         
     [Column("meeting_id", TypeName = "char(36)")]
     public Guid MeetingId { get; set; }
-        
-    [Column("room_stream_id"), StringLength(128)]
-    public string RoomStreamId { get; set; }
-        
+
     [Column("user_id")]
     public int UserId { get; set; }
 

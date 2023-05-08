@@ -4,7 +4,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using AutoMapper;
-using SugarTalk.Core.Domain.Account;
+using SugarTalk.Core.Domain.Meeting;
 using SugarTalk.Core.Ioc;
 using SugarTalk.Core.Services.Account;
 using SugarTalk.Core.Services.Exceptions;
@@ -65,11 +65,20 @@ namespace SugarTalk.Core.Services.Meetings
                 Mode = command.MeetingStreamMode == MeetingStreamMode.MCU ? "mcu" : "sfu"
             };
             
-            var response = await _antMediaUtilService.CreateMeetingAsync(postData, cancellationToken).ConfigureAwait(false);
+            var response = await _antMediaUtilService.CreateMeetingAsync(postData, command.AppName, cancellationToken).ConfigureAwait(false);
 
+            var meeting = new Meeting
+            {
+                MeetingStreamMode = command.MeetingStreamMode,
+                MeetingNumber = response.MeetingNumber,
+                OriginAddress = response.OriginAddress,
+                StartDate = response.StartDate,
+                EndDate = response.EndDate
+            };
+            
             if (!string.IsNullOrEmpty(response.MeetingNumber))
                 await _meetingDataProvider
-                    .PersistMeetingAsync(command.MeetingStreamMode, response, cancellationToken).ConfigureAwait(false);
+                    .PersistMeetingAsync(meeting, cancellationToken).ConfigureAwait(false);
 
             return new ScheduleMeetingResponse
             {
@@ -79,7 +88,8 @@ namespace SugarTalk.Core.Services.Meetings
         
         public async Task<GetMeetingByNumberResponse> GetMeetingByNumberAsync(GetMeetingByNumberRequest request, CancellationToken cancellationToken)
         {
-            var response = await _antMediaUtilService.GetMeetingByMeetingNumberAsync(request.MeetingNumber, cancellationToken).ConfigureAwait(false);
+            var response = await _antMediaUtilService
+                .GetMeetingByMeetingNumberAsync(request.MeetingNumber, request.AppName, cancellationToken).ConfigureAwait(false);
 
             return new GetMeetingByNumberResponse
             {
@@ -93,8 +103,7 @@ namespace SugarTalk.Core.Services.Meetings
             
             var meeting = await GetMeetingAsync(command.MeetingNumber, cancellationToken).ConfigureAwait(false);
 
-            await ConnectUserToMeetingAsync(user, meeting, null, command.IsMuted, cancellationToken)
-                .ConfigureAwait(false);
+            await ConnectUserToMeetingAsync(user, meeting, null, command.IsMuted, cancellationToken).ConfigureAwait(false);
             
             return new JoinMeetingResponse
             {
@@ -108,14 +117,14 @@ namespace SugarTalk.Core.Services.Meetings
             var userSession = meeting.UserSessions
                 .Where(x => x.UserId == user.Id)
                 .OrderByDescending(x => x.CreatedDate)
-                .Select(x => _mapper.Map<UserSession>(x))
+                .Select(x => _mapper.Map<MeetingUserSession>(x))
                 .FirstOrDefault();
 
             if (userSession == null)
             {
-                userSession = GenerateNewUserSessionFromUser(user, meeting.Id, roomStreamId, isMuted ?? false);
+                userSession = GenerateNewUserSessionFromUser(user, meeting.Id, isMuted ?? false);
 
-                meeting.AddUserSession(_mapper.Map<UserSessionDto>(userSession));
+                meeting.AddUserSession(_mapper.Map<MeetingUserSessionDto>(userSession));
 
                 await _userSessionDataProvider.AddUserSessionAsync(userSession, cancellationToken);
             }
@@ -124,9 +133,7 @@ namespace SugarTalk.Core.Services.Meetings
                 if (isMuted.HasValue)
                     userSession.IsMuted = isMuted.Value;
                 
-                userSession.RoomStreamId = roomStreamId;
-                
-                meeting.UpdateUserSession(_mapper.Map<UserSessionDto>(userSession));
+                meeting.UpdateUserSession(_mapper.Map<MeetingUserSessionDto>(userSession));
 
                 await _userSessionDataProvider.UpdateUserSessionAsync(userSession, cancellationToken);
             }
@@ -142,6 +149,10 @@ namespace SugarTalk.Core.Services.Meetings
             {
                 meeting.UserSessions =
                     await _userSessionDataProvider.GetUserSessionsByMeetingIdAsync(meeting.Id, cancellationToken).ConfigureAwait(false);
+
+                var userSessionIds = meeting.UserSessions.Select(x=>x.Id).ToList();
+                
+                
             }
             
             return meeting;
@@ -158,13 +169,12 @@ namespace SugarTalk.Core.Services.Meetings
             return result.ToString();
         }
         
-        private UserSession GenerateNewUserSessionFromUser(UserAccountDto user, Guid meetingId, string roomStreamId, bool isMuted)
+        private MeetingUserSession GenerateNewUserSessionFromUser(UserAccountDto user, Guid meetingId, bool isMuted)
         {
-            return new()
+            return new MeetingUserSession
             {
                 UserId = user.Id,
                 MeetingId = meetingId,
-                RoomStreamId = roomStreamId,
                 IsMuted = isMuted
             };
         }

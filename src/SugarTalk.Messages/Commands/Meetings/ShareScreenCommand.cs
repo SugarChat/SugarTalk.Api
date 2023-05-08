@@ -6,11 +6,11 @@ namespace SugarTalk.Messages.Commands.Meetings;
 
 public class ShareScreenCommand : ICommand
 {
-    public int UserSessionId { get; set; }
+    public string AccessToken { get; set; }
 
     public bool IsShared { get; set; }
 }
 
-public class ShareScreenResponse : SugarTalkResponse<UserSessionDto>
+public class ShareScreenResponse : SugarTalkResponse<MeetingUserSessionDto>
 {
 }

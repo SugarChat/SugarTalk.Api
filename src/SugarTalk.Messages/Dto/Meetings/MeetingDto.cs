@@ -17,20 +17,20 @@ public class MeetingDto
 
     public long EndDate { get; set; }
 
-    public List<string> RoomStreamList { get; set; }
+    // public List<string> RoomStreamList { get; set; }
 
     public string Mode { get; set; }
 
     public string OriginAddress { get; set; }
     
-    public List<UserSessionDto> UserSessions { get; set; }
+    public List<MeetingUserSessionDto> UserSessions { get; set; }
 
-    public void AddUserSession(UserSessionDto userSession)
+    public void AddUserSession(MeetingUserSessionDto userSession)
     {
         UserSessions.Add(userSession);
     }
 
-    public void UpdateUserSession(UserSessionDto userSession)
+    public void UpdateUserSession(MeetingUserSessionDto userSession)
     {
         var index = UserSessions.FindIndex(x => x.Id == userSession.Id);
 

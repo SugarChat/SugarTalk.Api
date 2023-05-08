@@ -18,7 +18,7 @@ namespace SugarTalk.Core.Services.Meetings
         Task<MeetingDto> GetMeetingByNumberAsync(string meetingNumber, CancellationToken cancellationToken);
         
         Task PersistMeetingAsync(
-            MeetingStreamMode meetingMode, CreateMeetingResponseDto meetingResponseData, CancellationToken cancellationToken);
+            Meeting meeting, CancellationToken cancellationToken);
     }
     
     public class MeetingDataProvider : IMeetingDataProvider
@@ -48,17 +48,8 @@ namespace SugarTalk.Core.Services.Meetings
             return _mapper.Map<MeetingDto>(meeting);
         }
 
-        public async Task PersistMeetingAsync(MeetingStreamMode meetingMode, CreateMeetingResponseDto meetingResponseData, CancellationToken cancellationToken)
+        public async Task PersistMeetingAsync(Meeting meeting, CancellationToken cancellationToken)
         {
-            var meeting = new Meeting
-            {
-                MeetingStreamMode = meetingMode,
-                MeetingNumber = meetingResponseData.MeetingNumber,
-                OriginAddress = meetingResponseData.OriginAddress,
-                StartDate = meetingResponseData.StartDate,
-                EndDate = meetingResponseData.EndDate
-            };
-
             await _repository.InsertAsync(meeting, cancellationToken).ConfigureAwait(false);
         }
     }

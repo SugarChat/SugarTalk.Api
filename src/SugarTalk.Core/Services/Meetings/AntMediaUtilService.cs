@@ -9,28 +9,28 @@ namespace SugarTalk.Core.Services.Meetings;
 public interface IAntMediaUtilService : IScopedDependency
 {
     Task<CreateMeetingResponseDto> CreateMeetingAsync(
-        CreateMeetingDto meeting, CancellationToken cancellationToken);
+        CreateMeetingDto meeting, string appName, CancellationToken cancellationToken);
     
     Task<GetMeetingResponseDto> GetMeetingByMeetingNumberAsync(
-        string meetingNumber, CancellationToken cancellationToken);
+        string meetingNumber, string appName, CancellationToken cancellationToken);
 }
 
 public class AntMediaUtilService : IAntMediaUtilService
 {
-    private readonly IAntMediaClient _antMediaClient;
+    private readonly AntMediaServerClient _antMediaServerClient;
 
-    public AntMediaUtilService(IAntMediaClient antMediaClient)
+    public AntMediaUtilService(AntMediaServerClient antMediaServerClient)
     {
-        _antMediaClient = antMediaClient;
+        _antMediaServerClient = antMediaServerClient;
     }
 
-    public async Task<CreateMeetingResponseDto> CreateMeetingAsync(CreateMeetingDto meeting, CancellationToken cancellationToken)
+    public async Task<CreateMeetingResponseDto> CreateMeetingAsync(CreateMeetingDto meeting, string appName, CancellationToken cancellationToken)
     {
-        return await _antMediaClient.CreateAntMediaConferenceRoomAsync(meeting, cancellationToken).ConfigureAwait(false);
+        return await _antMediaServerClient.CreateAntMediaConferenceRoomAsync(meeting, appName, cancellationToken).ConfigureAwait(false);
     }
 
-    public async Task<GetMeetingResponseDto> GetMeetingByMeetingNumberAsync(string meetingNumber, CancellationToken cancellationToken)
+    public async Task<GetMeetingResponseDto> GetMeetingByMeetingNumberAsync(string meetingNumber, string appName, CancellationToken cancellationToken)
     {
-        return await _antMediaClient.GetAntMediaConferenceRoomAsync(meetingNumber, cancellationToken).ConfigureAwait(false);
+        return await _antMediaServerClient.GetAntMediaConferenceRoomAsync(meetingNumber, appName, cancellationToken).ConfigureAwait(false);
     }
 }

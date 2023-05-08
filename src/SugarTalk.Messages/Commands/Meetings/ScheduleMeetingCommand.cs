@@ -7,6 +7,8 @@ namespace SugarTalk.Messages.Commands.Meetings;
 
 public class ScheduleMeetingCommand : ICommand
 {
+    public string AppName { get; set; }
+    
     public MeetingStreamMode MeetingStreamMode { get; set; }
 }
 

@@ -35,11 +35,11 @@ public class MeetingUtil : TestUtil
         {
             var meetingUtilService = Substitute.For<IAntMediaUtilService>();
 
-            meetingUtilService.CreateMeetingAsync(Arg.Any<CreateMeetingDto>(), Arg.Any<CancellationToken>())
-                .Returns(new CreateMeetingResponseDto()
+            meetingUtilService.CreateMeetingAsync(Arg.Any<CreateMeetingDto>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
+                .Returns(new CreateMeetingResponseDto
                 {
                     MeetingNumber = "123",
-                    Mode = "mcu",
+                    Mode = "mcu"
                 });
             
             builder.RegisterInstance(meetingUtilService);

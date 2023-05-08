@@ -1,7 +1,8 @@
 using AutoMapper;
 using SugarTalk.Core.Ioc;
+using SugarTalk.Core.Services.Account;
 
-namespace SugarTalk.Core.Services.Account;
+namespace SugarTalk.Core.Services.Meetings;
 
 public interface IUserSessionService : IScopedDependency
 {

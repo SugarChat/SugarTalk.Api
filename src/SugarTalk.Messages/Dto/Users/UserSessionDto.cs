@@ -1,8 +1,9 @@
 using System;
+using System.Collections.Generic;
 
 namespace SugarTalk.Messages.Dto.Users;
 
-public class UserSessionDto
+public class MeetingUserSessionDto
 {
     public int Id { get; set; }
         
@@ -10,7 +11,7 @@ public class UserSessionDto
         
     public Guid MeetingId { get; set; }
         
-    public string RoomStreamId { get; set; }
+    public List<string> RoomStreamList { get; set; }
         
     public int UserId { get; set; }
 

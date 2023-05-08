@@ -6,11 +6,11 @@ namespace SugarTalk.Messages.Commands.Meetings;
 
 public class ChangeAudioCommand : ICommand
 {
-    public int UserSessionId { get; set; }
+    public string AccessToken { get; set; }
 
     public bool IsMuted { get; set; }
 }
 
-public class ChangeAudioResponse : SugarTalkResponse<UserSessionDto>
+public class ChangeAudioResponse : SugarTalkResponse<MeetingUserSessionDto>
 {
 }
