@@ -59,13 +59,15 @@ namespace SugarTalk.Core.Services.Meetings
         
         public async Task<ScheduleMeetingResponse> ScheduleMeeting(ScheduleMeetingCommand command, CancellationToken cancellationToken)
         {
+            const string appName = "LiveApp";
+            
             var postData = new CreateMeetingDto
             {
                 MeetingNumber = GenerateMeetingNumber(),
                 Mode = command.MeetingStreamMode.ToString().ToLower()
             };
             
-            var response = await _antMediaServerUtilService.CreateMeetingAsync("LiveApp", postData, cancellationToken).ConfigureAwait(false);
+            var response = await _antMediaServerUtilService.CreateMeetingAsync(appName, postData, cancellationToken).ConfigureAwait(false);
 
             if (response == null) throw new MeetingCreatedException();
             
@@ -89,8 +91,10 @@ namespace SugarTalk.Core.Services.Meetings
         
         public async Task<GetMeetingByNumberResponse> GetMeetingByNumberAsync(GetMeetingByNumberRequest request, CancellationToken cancellationToken)
         {
+            const string appName = "LiveApp";
+            
             var response = await _antMediaServerUtilService
-                .GetMeetingByMeetingNumberAsync(request.MeetingNumber, "LiveApp", cancellationToken).ConfigureAwait(false);
+                .GetMeetingByMeetingNumberAsync(appName, request.MeetingNumber, cancellationToken).ConfigureAwait(false);
 
             return new GetMeetingByNumberResponse
             {
