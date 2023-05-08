@@ -16,7 +16,7 @@ public interface IAntMediaServerClient : IScopedDependency
     Task<List<ConferenceRoomDto>> GetConferenceRoomsAsync(
         string appName, int offset, int size, CancellationToken cancellationToken);
 
-    Task<GetAntMediaConferenceRoomInfoResponseDto> GetConferenceRoomInfoAsync(
+    Task<GetConferenceRoomInfoResponseDto> GetConferenceRoomInfoAsync(
         string appName, string roomId, CancellationToken cancellationToken);
 
     Task<CreateMeetingResponseDto> CreateConferenceRoomAsync(
@@ -50,11 +50,11 @@ public class AntMediaServerClient : IAntMediaServerClient
                 $"{_antMediaSetting.BaseUrl}/{appName}/rest/v2/broadcasts/conference-rooms/list/{offset}/{size}", cancellationToken).ConfigureAwait(false);
     }
 
-    public async Task<GetAntMediaConferenceRoomInfoResponseDto> GetConferenceRoomInfoAsync(
+    public async Task<GetConferenceRoomInfoResponseDto> GetConferenceRoomInfoAsync(
         string appName, string roomId, CancellationToken cancellationToken)
     {
         return await _httpClientFactory
-            .GetAsync<GetAntMediaConferenceRoomInfoResponseDto>(
+            .GetAsync<GetConferenceRoomInfoResponseDto>(
                 $"{_antMediaSetting.BaseUrl}/{appName}/rest/v2/broadcasts/conference-rooms/{roomId}/room-info", cancellationToken).ConfigureAwait(false);
     }
 

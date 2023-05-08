@@ -19,7 +19,7 @@ namespace SugarTalk.Core.Services.Meetings
 {
     public interface IMeetingService : IScopedDependency
     {
-        Task<ScheduleMeetingResponse> ScheduleMeeting(
+        Task<ScheduleMeetingResponse> ScheduleMeetingAsync(
             ScheduleMeetingCommand scheduleMeetingCommand, CancellationToken cancellationToken);
 
         Task<GetMeetingByNumberResponse> GetMeetingByNumberAsync(
@@ -59,7 +59,7 @@ namespace SugarTalk.Core.Services.Meetings
             _meetingUserSessionDataProvider = meetingUserSessionDataProvider;
         }
         
-        public async Task<ScheduleMeetingResponse> ScheduleMeeting(ScheduleMeetingCommand command, CancellationToken cancellationToken)
+        public async Task<ScheduleMeetingResponse> ScheduleMeetingAsync(ScheduleMeetingCommand command, CancellationToken cancellationToken)
         {
             var postData = new CreateMeetingDto
             {
