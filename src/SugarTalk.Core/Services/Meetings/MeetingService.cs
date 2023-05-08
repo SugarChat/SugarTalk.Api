@@ -30,7 +30,7 @@ namespace SugarTalk.Core.Services.Meetings
             JoinMeetingCommand command, CancellationToken cancellationToken);
 
         Task ConnectUserToMeetingAsync(
-            UserAccountDto user, MeetingDto meeting, List<string> streamIds, bool? isMuted = null, CancellationToken cancellationToken = default);
+            UserAccountDto user, MeetingDto meeting, bool? isMuted = null, CancellationToken cancellationToken = default);
     }
     
     public class MeetingService: IMeetingService
@@ -105,7 +105,7 @@ namespace SugarTalk.Core.Services.Meetings
             
             var meeting = await GetMeetingAsync(command.MeetingNumber, cancellationToken).ConfigureAwait(false);
 
-            await ConnectUserToMeetingAsync(user, meeting, command.StreamIds, command.IsMuted, cancellationToken).ConfigureAwait(false);
+            await ConnectUserToMeetingAsync(user, meeting, command.IsMuted, cancellationToken).ConfigureAwait(false);
             
             return new JoinMeetingResponse
             {
@@ -114,7 +114,7 @@ namespace SugarTalk.Core.Services.Meetings
         }
 
         public async Task ConnectUserToMeetingAsync(
-            UserAccountDto user, MeetingDto meeting, List<string> streamIds, bool? isMuted = null, CancellationToken cancellationToken = default)
+            UserAccountDto user, MeetingDto meeting, bool? isMuted = null, CancellationToken cancellationToken = default)
         {
             var userSession = meeting.UserSessions
                 .Where(x => x.UserId == user.Id)
