@@ -10,16 +10,16 @@ namespace SugarTalk.Core.Services.Http.Clients;
 
 public interface IAntMediaServerClient : IScopedDependency
 {
-    Task<GetMeetingResponseDto> GetAntMediaConferenceRoomAsync(
+    Task<GetMeetingResponseDto> GetConferenceRoomAsync(
         string appName, string meetingNumber, CancellationToken cancellationToken);
 
-    Task<List<ConferenceRoomDto>> GetAntMediaConferenceRoomsAsync(
+    Task<List<ConferenceRoomDto>> GetConferenceRoomsAsync(
         string appName, int offset, int size, CancellationToken cancellationToken);
 
-    Task<GetAntMediaConferenceRoomInfoResponseDto> GetAntMediaConferenceRoomInfoAsync(
+    Task<GetAntMediaConferenceRoomInfoResponseDto> GetConferenceRoomInfoAsync(
         string appName, string roomId, CancellationToken cancellationToken);
 
-    Task<CreateMeetingResponseDto> CreateAntMediaConferenceRoomAsync(
+    Task<CreateMeetingResponseDto> CreateConferenceRoomAsync(
         string appName, CreateMeetingDto room, CancellationToken cancellationToken);
 }
 
@@ -34,7 +34,7 @@ public class AntMediaServerClient : IAntMediaServerClient
         _httpClientFactory = httpClientFactory;
     }
 
-    public async Task<GetMeetingResponseDto> GetAntMediaConferenceRoomAsync(
+    public async Task<GetMeetingResponseDto> GetConferenceRoomAsync(
         string appName, string meetingNumber, CancellationToken cancellationToken)
     {
         return await _httpClientFactory
@@ -42,7 +42,7 @@ public class AntMediaServerClient : IAntMediaServerClient
                 $"{_antMediaSetting.BaseUrl}/{appName}/rest/v2/broadcasts/conference-rooms/{meetingNumber}", cancellationToken).ConfigureAwait(false);
     }
 
-    public async Task<List<ConferenceRoomDto>> GetAntMediaConferenceRoomsAsync(
+    public async Task<List<ConferenceRoomDto>> GetConferenceRoomsAsync(
         string appName, int offset, int size, CancellationToken cancellationToken)
     {
         return await _httpClientFactory
@@ -50,7 +50,7 @@ public class AntMediaServerClient : IAntMediaServerClient
                 $"{_antMediaSetting.BaseUrl}/{appName}/rest/v2/broadcasts/conference-rooms/list/{offset}/{size}", cancellationToken).ConfigureAwait(false);
     }
 
-    public async Task<GetAntMediaConferenceRoomInfoResponseDto> GetAntMediaConferenceRoomInfoAsync(
+    public async Task<GetAntMediaConferenceRoomInfoResponseDto> GetConferenceRoomInfoAsync(
         string appName, string roomId, CancellationToken cancellationToken)
     {
         return await _httpClientFactory
@@ -58,7 +58,7 @@ public class AntMediaServerClient : IAntMediaServerClient
                 $"{_antMediaSetting.BaseUrl}/{appName}/rest/v2/broadcasts/conference-rooms/{roomId}/room-info", cancellationToken).ConfigureAwait(false);
     }
 
-    public async Task<CreateMeetingResponseDto> CreateAntMediaConferenceRoomAsync(
+    public async Task<CreateMeetingResponseDto> CreateConferenceRoomAsync(
         string appName, CreateMeetingDto meetingData, CancellationToken cancellationToken)
     {
         return await _httpClientFactory

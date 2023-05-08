@@ -6,8 +6,8 @@ using Microsoft.EntityFrameworkCore;
 using SugarTalk.Core.Data;
 using SugarTalk.Core.Domain.Meeting;
 using SugarTalk.Core.Ioc;
+using SugarTalk.Core.Services.Exceptions;
 using SugarTalk.Messages.Dto.Meetings;
-using SugarTalk.Messages.Enums.Meeting;
 
 namespace SugarTalk.Core.Services.Meetings
 {
@@ -19,17 +19,21 @@ namespace SugarTalk.Core.Services.Meetings
         
         Task PersistMeetingAsync(
             Meeting meeting, CancellationToken cancellationToken);
+
+        Task<MeetingDto> GetMeetingAsync(string meetingNumber, CancellationToken cancellationToken, bool includeUserSessions = true);
     }
     
     public class MeetingDataProvider : IMeetingDataProvider
     {
         private readonly IMapper _mapper;
         private readonly IRepository _repository;
+        private readonly IMeetingUserSessionDataProvider _meetingUserSessionDataProvider;
 
-        public MeetingDataProvider(IMapper mapper, IRepository repository)
+        public MeetingDataProvider(IMapper mapper, IRepository repository, IMeetingUserSessionDataProvider meetingUserSessionDataProvider)
         {
             _mapper = mapper;
             _repository = repository;
+            _meetingUserSessionDataProvider = meetingUserSessionDataProvider;
         }
 
         public async Task<Meeting> GetMeetingById(Guid meetingId, CancellationToken cancellationToken = default)
@@ -51,6 +55,22 @@ namespace SugarTalk.Core.Services.Meetings
         public async Task PersistMeetingAsync(Meeting meeting, CancellationToken cancellationToken)
         {
             await _repository.InsertAsync(meeting, cancellationToken).ConfigureAwait(false);
+        }
+        
+        public async Task<MeetingDto> GetMeetingAsync(
+            string meetingNumber, CancellationToken cancellationToken, bool includeUserSessions = true)
+        {
+            var meeting = await GetMeetingByNumberAsync(meetingNumber, cancellationToken).ConfigureAwait(false);
+
+            if (meeting == null) throw new MeetingNotFoundException();
+
+            if (includeUserSessions)
+            {
+                meeting.UserSessions =
+                    await _meetingUserSessionDataProvider.GetUserSessionsByMeetingIdAsync(meeting.Id, cancellationToken).ConfigureAwait(false);
+            }
+            
+            return meeting;
         }
     }
 }

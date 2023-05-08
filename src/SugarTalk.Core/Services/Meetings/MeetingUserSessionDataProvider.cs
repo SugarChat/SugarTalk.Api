@@ -11,24 +11,24 @@ using SugarTalk.Messages.Dto.Users;
 
 namespace SugarTalk.Core.Services.Meetings;
 
-public interface IUserSessionDataProvider : IScopedDependency
+public interface IMeetingUserSessionDataProvider : IScopedDependency
 {
     Task<MeetingUserSession> GetUserSessionByIdAsync(int id, CancellationToken cancellationToken);
     
-    Task<List<MeetingUserSessionDto>> GetUserSessionsByMeetingIdAsync(Guid meetingId, CancellationToken cancellationToken);
-
     Task AddUserSessionAsync(MeetingUserSession userSession, CancellationToken cancellationToken);
         
     Task UpdateUserSessionAsync(MeetingUserSession userSession, CancellationToken cancellationToken);
+    
+    Task<List<MeetingUserSessionDto>> GetUserSessionsByMeetingIdAsync(Guid meetingId, CancellationToken cancellationToken);
 }
 
-public class UserSessionDataProvider : IUserSessionDataProvider
+public class MeetingUserSessionDataProvider : IMeetingUserSessionDataProvider
 {
     private readonly IMapper _mapper;
     private readonly IRepository _repository;
     private readonly IUnitOfWork _unitOfWork;
 
-    public UserSessionDataProvider(IMapper mapper, IRepository repository, IUnitOfWork unitOfWork)
+    public MeetingUserSessionDataProvider(IMapper mapper, IRepository repository, IUnitOfWork unitOfWork)
     {
         _mapper = mapper;
         _repository = repository;
@@ -40,14 +40,6 @@ public class UserSessionDataProvider : IUserSessionDataProvider
         return await _repository.Query<MeetingUserSession>()
             .SingleOrDefaultAsync(x => x.Id == id, cancellationToken)
             .ConfigureAwait(false);
-    }
-
-    public async Task<List<MeetingUserSessionDto>> GetUserSessionsByMeetingIdAsync(Guid meetingId, CancellationToken cancellationToken)
-    {
-        var userSessions = await _repository.Query<MeetingUserSession>(x => x.MeetingId == meetingId)
-            .ToListAsync(cancellationToken).ConfigureAwait(false);
-        
-        return _mapper.Map<List<MeetingUserSessionDto>>(userSessions);
     }
 
     public async Task AddUserSessionAsync(MeetingUserSession userSession, CancellationToken cancellationToken)
@@ -64,5 +56,13 @@ public class UserSessionDataProvider : IUserSessionDataProvider
     {
         if (userSession != null)
             await _repository.UpdateAsync(userSession, cancellationToken).ConfigureAwait(false);
+    }
+    
+    public async Task<List<MeetingUserSessionDto>> GetUserSessionsByMeetingIdAsync(Guid meetingId, CancellationToken cancellationToken)
+    {
+        var userSessions = await _repository.Query<MeetingUserSession>(x => x.MeetingId == meetingId)
+            .ToListAsync(cancellationToken).ConfigureAwait(false);
+        
+        return _mapper.Map<List<MeetingUserSessionDto>>(userSessions);
     }
 }

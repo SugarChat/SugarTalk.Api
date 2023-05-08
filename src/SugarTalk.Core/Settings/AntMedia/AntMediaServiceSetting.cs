@@ -6,7 +6,7 @@ public class AntMediaServerSetting : IConfigurationSetting
 {
     public AntMediaServerSetting(IConfiguration configuration)
     {
-        BaseUrl = configuration.GetValue<string>("AntMediaService:BaseUrl");
+        BaseUrl = configuration.GetValue<string>("AntMediaServer:BaseUrl");
     }
 
     public string BaseUrl { get; set; }

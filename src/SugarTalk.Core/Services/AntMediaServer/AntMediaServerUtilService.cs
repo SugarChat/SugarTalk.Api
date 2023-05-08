@@ -26,11 +26,11 @@ public class AntMediaServerUtilService : IAntMediaServerUtilService
 
     public async Task<CreateMeetingResponseDto> CreateMeetingAsync(string appName, CreateMeetingDto meeting, CancellationToken cancellationToken)
     {
-        return await _antMediaServerClient.CreateAntMediaConferenceRoomAsync(appName, meeting, cancellationToken).ConfigureAwait(false);
+        return await _antMediaServerClient.CreateConferenceRoomAsync(appName, meeting, cancellationToken).ConfigureAwait(false);
     }
 
     public async Task<GetMeetingResponseDto> GetMeetingByMeetingNumberAsync(string appName, string meetingNumber, CancellationToken cancellationToken)
     {
-        return await _antMediaServerClient.GetAntMediaConferenceRoomAsync(appName, meetingNumber, cancellationToken).ConfigureAwait(false);
+        return await _antMediaServerClient.GetConferenceRoomAsync(appName, meetingNumber, cancellationToken).ConfigureAwait(false);
     }
 }
