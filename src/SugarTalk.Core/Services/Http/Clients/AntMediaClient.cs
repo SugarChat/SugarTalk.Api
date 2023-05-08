@@ -11,16 +11,16 @@ namespace SugarTalk.Core.Services.Http.Clients;
 public interface IAntMediaServerClient : IScopedDependency
 {
     Task<GetMeetingResponseDto> GetAntMediaConferenceRoomAsync(
-        string meetingNumber, string appName, CancellationToken cancellationToken);
+        string appName, string meetingNumber, CancellationToken cancellationToken);
 
     Task<List<ConferenceRoomDto>> GetAntMediaConferenceRoomsAsync(
-        int offset, int size, string appName, CancellationToken cancellationToken);
+        string appName, int offset, int size, CancellationToken cancellationToken);
 
     Task<GetAntMediaConferenceRoomInfoResponseDto> GetAntMediaConferenceRoomInfoAsync(
-        string roomId, string appName, CancellationToken cancellationToken);
+        string appName, string roomId, CancellationToken cancellationToken);
 
     Task<CreateMeetingResponseDto> CreateAntMediaConferenceRoomAsync(
-        CreateMeetingDto room, string appName, CancellationToken cancellationToken);
+        string appName, CreateMeetingDto room, CancellationToken cancellationToken);
 }
 
 public class AntMediaServerClient : IAntMediaServerClient
@@ -35,7 +35,7 @@ public class AntMediaServerClient : IAntMediaServerClient
     }
 
     public async Task<GetMeetingResponseDto> GetAntMediaConferenceRoomAsync(
-        string meetingNumber, string appName, CancellationToken cancellationToken)
+        string appName, string meetingNumber, CancellationToken cancellationToken)
     {
         return await _httpClientFactory
             .GetAsync<GetMeetingResponseDto>(
@@ -43,7 +43,7 @@ public class AntMediaServerClient : IAntMediaServerClient
     }
 
     public async Task<List<ConferenceRoomDto>> GetAntMediaConferenceRoomsAsync(
-        int offset, int size, string appName, CancellationToken cancellationToken)
+        string appName, int offset, int size, CancellationToken cancellationToken)
     {
         return await _httpClientFactory
             .GetAsync<List<ConferenceRoomDto>>(
@@ -51,7 +51,7 @@ public class AntMediaServerClient : IAntMediaServerClient
     }
 
     public async Task<GetAntMediaConferenceRoomInfoResponseDto> GetAntMediaConferenceRoomInfoAsync(
-        string roomId, string appName, CancellationToken cancellationToken)
+        string appName, string roomId, CancellationToken cancellationToken)
     {
         return await _httpClientFactory
             .GetAsync<GetAntMediaConferenceRoomInfoResponseDto>(
@@ -59,7 +59,7 @@ public class AntMediaServerClient : IAntMediaServerClient
     }
 
     public async Task<CreateMeetingResponseDto> CreateAntMediaConferenceRoomAsync(
-        CreateMeetingDto meetingData, string appName, CancellationToken cancellationToken)
+        string appName, CreateMeetingDto meetingData, CancellationToken cancellationToken)
     {
         return await _httpClientFactory
             .PostAsJsonAsync<CreateMeetingResponseDto>(

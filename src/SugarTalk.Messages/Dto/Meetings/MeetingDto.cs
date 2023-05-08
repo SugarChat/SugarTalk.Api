@@ -17,8 +17,6 @@ public class MeetingDto
 
     public long EndDate { get; set; }
 
-    public List<string> StreamList { get; set; }
-
     public string Mode { get; set; }
 
     public string OriginAddress { get; set; }

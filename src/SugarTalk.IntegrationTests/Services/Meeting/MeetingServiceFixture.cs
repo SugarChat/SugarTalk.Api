@@ -60,7 +60,6 @@ public class MeetingServiceFixture : MeetingFixtureBase
         {
             var response = await mediator.SendAsync<JoinMeetingCommand, JoinMeetingResponse>(new JoinMeetingCommand
             {
-                AppName = "LiveApp",
                 StreamIds = new List<string> { "123", "111" },
                 MeetingNumber = scheduleMeetingResponse.Data.MeetingNumber,
                 IsMuted = false
