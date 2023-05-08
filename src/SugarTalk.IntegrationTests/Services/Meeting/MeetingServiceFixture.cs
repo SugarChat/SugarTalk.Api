@@ -31,7 +31,7 @@ public class MeetingServiceFixture : MeetingFixtureBase
         var response = await _meetingUtil.ScheduleMeeting();
 
         response.Data.ShouldNotBeNull();
-        response.Data.Mode.ShouldBe("mcu");
+        response.Data.MeetingStreamMode.ShouldBe(MeetingStreamMode.MCU);
     }
 
     [Fact]

@@ -45,9 +45,9 @@ namespace SugarTalk.Core.Services.Meetings
         public MeetingService(
             IMapper mapper, 
             ICurrentUser currentUser,
+            IAntMediaUtilServer antMediaUtilService,
             IMeetingDataProvider meetingDataProvider,
             IAccountDataProvider accountDataProvider,
-            IAntMediaUtilServer antMediaUtilService,
             IUserSessionDataProvider userSessionDataProvider)
         {
             _mapper = mapper;
@@ -83,7 +83,7 @@ namespace SugarTalk.Core.Services.Meetings
 
             return new ScheduleMeetingResponse
             {
-                Data = response
+                Data = _mapper.Map<MeetingDto>(meeting)
             };
         }
         

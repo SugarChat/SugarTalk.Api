@@ -12,6 +12,6 @@ public class ScheduleMeetingCommand : ICommand
     public MeetingStreamMode MeetingStreamMode { get; set; }
 }
 
-public class ScheduleMeetingResponse : SugarTalkResponse<CreateMeetingResponseDto>
+public class ScheduleMeetingResponse : SugarTalkResponse<MeetingDto>
 {
 }
