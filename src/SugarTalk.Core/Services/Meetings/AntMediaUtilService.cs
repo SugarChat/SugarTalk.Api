@@ -17,9 +17,9 @@ public interface IAntMediaUtilServer : IScopedDependency
 
 public class AntMediaUtilServer : IAntMediaUtilServer
 {
-    private readonly AntMediaServerClient _antMediaServerClient;
+    private readonly IAntMediaServerClient _antMediaServerClient;
 
-    public AntMediaUtilServer(AntMediaServerClient antMediaServerClient)
+    public AntMediaUtilServer(IAntMediaServerClient antMediaServerClient)
     {
         _antMediaServerClient = antMediaServerClient;
     }
