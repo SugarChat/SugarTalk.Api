@@ -24,13 +24,4 @@ public class AccountController : ControllerBase
 
         return Ok(response);
     }
-    
-    [Route("register"), HttpPost]
-    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(RegisterResponse))]
-    public async Task<IActionResult> RegisterAsync([FromBody] RegisterCommand command)
-    {
-        var response = await _mediator.SendAsync<RegisterCommand, RegisterResponse>(command);
-
-        return Ok(response);
-    }
 }
