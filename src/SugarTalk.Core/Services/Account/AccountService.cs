@@ -69,7 +69,7 @@ namespace SugarTalk.Core.Services.Account
             if (userAccount != null) return userAccount;
 
             var account = await _accountDataProvider
-                .CreateUserAccountAsync(userName, null, userId, UserAccountIssuer.Wiltechs, cancellationToken).ConfigureAwait(false);
+                .CreateUserAccountAsync(userName, "123abc", userId, UserAccountIssuer.Wiltechs, cancellationToken).ConfigureAwait(false);
 
             return _mapper.Map<UserAccountDto>(account);
         }

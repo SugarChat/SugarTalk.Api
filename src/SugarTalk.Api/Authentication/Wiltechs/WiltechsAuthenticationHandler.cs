@@ -61,7 +61,7 @@ public class WiltechsAuthenticationHandler : AuthenticationHandler<WiltechsAuthe
             var identity = new ClaimsIdentity(new[]
             {
                 new Claim(ClaimTypes.Name, userAccount.UserName),
-                new Claim(ClaimTypes.NameIdentifier, userAccount.ThirdPartyUserId),
+                new Claim(ClaimTypes.NameIdentifier, userAccount.Id.ToString()),
                 new Claim(ClaimTypes.Authentication, UserAccountIssuer.Wiltechs.ToString())
             }, AuthenticationSchemeConstants.WiltechsAuthenticationScheme);
 

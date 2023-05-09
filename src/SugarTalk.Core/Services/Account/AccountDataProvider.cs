@@ -43,11 +43,13 @@ namespace SugarTalk.Core.Services.Account
     {
         private readonly IMapper _mapper;
         private readonly IRepository _repository;
+        private readonly IUnitOfWork _unitOfWork;
 
-        public AccountDataProvider(IRepository repository, IMapper mapper)
+        public AccountDataProvider(IRepository repository, IMapper mapper, IUnitOfWork unitOfWork)
         {
             _mapper = mapper;
             _repository = repository;
+            _unitOfWork = unitOfWork;
         }
 
         public async Task<UserAccount> GetUserByThirdPartyId(string thirdPartyId, CancellationToken cancellationToken)
@@ -117,7 +119,9 @@ namespace SugarTalk.Core.Services.Account
             };
 
             await _repository.InsertAsync(userAccount, cancellationToken).ConfigureAwait(false);
-
+            
+            await _unitOfWork.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+            
             return userAccount;
         }
 
