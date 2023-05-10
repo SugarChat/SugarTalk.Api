@@ -18,11 +18,11 @@ public interface IRedisSafeRunner : IScopedDependency
 
     Task<List<T>> ExecuteAsync<T>(Func<ConnectionMultiplexer, Task<List<T>>> func) where T : class;
 
-    Task ExecuteWithLockAsync(string lockKey, Func<Task> logic,
-        TimeSpan? expiry = null, TimeSpan? wait = null, TimeSpan? retry = null);
+    Task ExecuteWithLockAsync(
+        string lockKey, Func<Task> logic, TimeSpan? expiry = null, TimeSpan? wait = null, TimeSpan? retry = null);
 
-    Task<T> ExecuteWithLockAsync<T>(string lockKey, Func<Task<T>> logic,
-        TimeSpan? expiry = null, TimeSpan? wait = null, TimeSpan? retry = null) where T : class;
+    Task<T> ExecuteWithLockAsync<T>(
+        string lockKey, Func<Task<T>> logic, TimeSpan? expiry = null, TimeSpan? wait = null, TimeSpan? retry = null) where T : class;
 }
 
 public class RedisSafeRunner : IRedisSafeRunner
