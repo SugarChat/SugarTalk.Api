@@ -20,11 +20,11 @@ public interface IRedisSafeRunner : IScopedDependency
 
     Task ExecuteWithLockAsync(string lockKey, Func<Task> logic,
         TimeSpan? expiry = null, TimeSpan? wait = null, TimeSpan? retry = null);
-    
+
     Task<T> ExecuteWithLockAsync<T>(string lockKey, Func<Task<T>> logic,
         TimeSpan? expiry = null, TimeSpan? wait = null, TimeSpan? retry = null) where T : class;
 }
-    
+
 public class RedisSafeRunner : IRedisSafeRunner
 {
     private readonly ConnectionMultiplexer _redis;
@@ -33,7 +33,7 @@ public class RedisSafeRunner : IRedisSafeRunner
     {
         _redis = redis;
     }
-    
+
     public async Task ExecuteAsync(Func<ConnectionMultiplexer, Task> func)
     {
         try
@@ -45,7 +45,7 @@ public class RedisSafeRunner : IRedisSafeRunner
             LogRedisException(ex);
         }
     }
-    
+
     public async Task<T> ExecuteAsync<T>(Func<ConnectionMultiplexer, Task<T>> func) where T : class
     {
         try
@@ -58,7 +58,7 @@ public class RedisSafeRunner : IRedisSafeRunner
             return default;
         }
     }
-    
+
     public async Task<List<T>> ExecuteAsync<T>(Func<ConnectionMultiplexer, Task<List<T>>> func) where T : class
     {
         try
@@ -72,13 +72,13 @@ public class RedisSafeRunner : IRedisSafeRunner
         }
     }
 
-    public async Task ExecuteWithLockAsync(string lockKey, Func<Task> logic, TimeSpan? expiry = null, TimeSpan? wait = null,
-        TimeSpan? retry = null)
+    public async Task ExecuteWithLockAsync(
+        string lockKey, Func<Task> logic, TimeSpan? expiry = null, TimeSpan? wait = null, TimeSpan? retry = null)
     {
         try
         {
             var redLock = await CreateLockAsync(lockKey, expiry, wait, retry).ConfigureAwait(false);
-        
+
             await using (redLock)
             {
                 // make sure we got the lock
@@ -92,8 +92,8 @@ public class RedisSafeRunner : IRedisSafeRunner
         }
     }
 
-    public async Task<T> ExecuteWithLockAsync<T>(string lockKey, Func<Task<T>> logic, 
-        TimeSpan? expiry = null, TimeSpan? wait = null, TimeSpan? retry = null) where T : class
+    public async Task<T> ExecuteWithLockAsync<T>(
+        string lockKey, Func<Task<T>> logic, TimeSpan? expiry = null, TimeSpan? wait = null, TimeSpan? retry = null) where T : class
     {
         try
         {
@@ -105,7 +105,7 @@ public class RedisSafeRunner : IRedisSafeRunner
                 if (redLock.IsAcquired)
                     return await logic();
             }
-        
+
             return default;
         }
         catch (Exception ex)
@@ -115,8 +115,8 @@ public class RedisSafeRunner : IRedisSafeRunner
         }
     }
 
-    private async Task<IRedLock> CreateLockAsync(string lockKey, TimeSpan? expiry = null, TimeSpan? wait = null,
-        TimeSpan? retry = null)
+    private async Task<IRedLock> CreateLockAsync(
+        string lockKey, TimeSpan? expiry = null, TimeSpan? wait = null, TimeSpan? retry = null)
     {
         var multiplexers = new List<RedLockMultiplexer> { _redis };
         var redLockFactory = RedLockFactory.Create(multiplexers);
