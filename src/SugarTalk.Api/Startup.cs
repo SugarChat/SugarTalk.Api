@@ -31,6 +31,7 @@ namespace SugarTalk.Api
             services.AddHttpContextAccessor();
             services.AddCustomSwagger();
             services.AddCustomAuthentication(Configuration);
+            services.AddCorsPolicy(Configuration);
 
             services.AddMvc(options =>
             {
