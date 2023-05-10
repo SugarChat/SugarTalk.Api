@@ -34,7 +34,6 @@ namespace SugarTalk.Api
 
             services.AddMvc(options =>
             {
-                options.EnableEndpointRouting = false;
                 options.Filters.Add<GlobalExceptionFilter>();
             });
             services.AddSignalR(config =>
@@ -74,11 +73,6 @@ namespace SugarTalk.Api
             {
                 endpoints.MapControllers();
                 endpoints.MapHealthChecks("health");
-            });
-            
-            app.UseMvc(routes =>
-            {
-                routes.MapRoute(name: "Default", template: "{controller=Home}/{action=Index}/{id?}");
             });
         }
     }
