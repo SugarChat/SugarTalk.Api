@@ -17,6 +17,7 @@ public static class CorsPolicyExtension
                         .AllowCredentials();
                 });
         });
+        
         return services;
     }
 }
