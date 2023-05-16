@@ -18,8 +18,6 @@ namespace SugarTalk.Core.Services.Meetings
         Task PersistMeetingAsync(Meeting meeting, CancellationToken cancellationToken);
 
         Task<MeetingDto> GetMeetingAsync(string meetingNumber, CancellationToken cancellationToken, bool includeUserSessions = true);
-        
-        Task RemoveMeetingUserSession(MeetingUserSession userSession, CancellationToken cancellationToken);
     }
     
     public partial class MeetingDataProvider : IMeetingDataProvider
@@ -65,12 +63,6 @@ namespace SugarTalk.Core.Services.Meetings
             }
             
             return updateMeeting;
-        }
-
-        public async Task RemoveMeetingUserSession(MeetingUserSession userSession, CancellationToken cancellationToken)
-        {
-            if (userSession != null)
-                await _repository.DeleteAsync(userSession, cancellationToken).ConfigureAwait(false);
         }
     }
 }

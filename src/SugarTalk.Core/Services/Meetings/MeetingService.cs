@@ -28,9 +28,6 @@ namespace SugarTalk.Core.Services.Meetings
         Task<JoinMeetingResponse> JoinMeetingAsync(
             JoinMeetingCommand command, CancellationToken cancellationToken);
 
-        Task<OutMeetingResponse> OutMeetingAsync(
-            OutMeetingCommand command, CancellationToken cancellationToken);
-        
         Task ConnectUserToMeetingAsync(
             UserAccountDto user, MeetingDto meeting, bool? isMuted = null, CancellationToken cancellationToken = default);
     }
@@ -113,16 +110,6 @@ namespace SugarTalk.Core.Services.Meetings
             {
                 Data = meeting
             };
-        }
-
-        public async Task<OutMeetingResponse> OutMeetingAsync(OutMeetingCommand command, CancellationToken cancellationToken)
-        {
-            var userSession = await _meetingDataProvider
-                .GetMeetingUserSessionByIdAsync(command.MeetingUserSessionId, cancellationToken).ConfigureAwait(false);
-
-            await _meetingDataProvider.RemoveMeetingUserSession(userSession, cancellationToken).ConfigureAwait(false);
-            
-            return new OutMeetingResponse { Data = "success" };
         }
 
         public async Task ConnectUserToMeetingAsync(
