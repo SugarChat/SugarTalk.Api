@@ -73,4 +73,54 @@ public class MeetingServiceFixture : MeetingFixtureBase
             response.Data.Id.ShouldBe(meetingResult.Id);
         });
     }
+
+    [Fact]
+    public async Task CanOutMeeting()
+    {
+        var scheduleMeetingResponse = await _meetingUtil.ScheduleMeeting();
+
+        var meeting = await _meetingUtil.GetMeeting(scheduleMeetingResponse.Data.MeetingNumber);
+
+        await _meetingUtil.JoinMeeting(meeting.MeetingNumber);
+
+        await Run<IMediator, IRepository>(async (mediator, repository) =>
+        {
+            var beforeUserSession = await repository.QueryNoTracking<MeetingUserSession>()
+                .Where(x => x.MeetingId == meeting.Id).ToListAsync();
+
+            beforeUserSession.Count.ShouldBe(1);
+
+            await mediator.SendAsync<OutMeetingCommand, OutMeetingResponse>(new OutMeetingCommand
+            {
+                MeetingId = meeting.Id
+            });
+
+            var afterUserSession = await repository.QueryNoTracking<MeetingUserSession>()
+                .Where(x => x.MeetingId == meeting.Id).ToListAsync();
+
+            afterUserSession.Count.ShouldBe(0);
+        });
+    }
+
+    [Fact]
+    public async Task ShouldNotThrowWhenJoinMeetingDuplicated()
+    {
+        var isNotThrow = true;
+        
+        try
+        {
+            var scheduleMeetingResponse = await _meetingUtil.ScheduleMeeting();
+
+            var meeting = await _meetingUtil.GetMeeting(scheduleMeetingResponse.Data.MeetingNumber);
+
+            await _meetingUtil.JoinMeeting(meeting.MeetingNumber);
+            await _meetingUtil.JoinMeeting(meeting.MeetingNumber);
+        }
+        catch (Exception ex)
+        {
+            isNotThrow = false;
+        }
+        
+        isNotThrow.ShouldBeTrue();
+    }
 }

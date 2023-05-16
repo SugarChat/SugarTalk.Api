@@ -13,6 +13,7 @@ using SugarTalk.Core.Services.Identity;
 using SugarTalk.Messages.Commands.Meetings;
 using SugarTalk.Messages.Dto.Meetings;
 using SugarTalk.Messages.Dto.Users;
+using SugarTalk.Messages.Events.Meeting;
 using SugarTalk.Messages.Requests.Meetings;
 
 namespace SugarTalk.Core.Services.Meetings
@@ -27,12 +28,15 @@ namespace SugarTalk.Core.Services.Meetings
 
         Task<JoinMeetingResponse> JoinMeetingAsync(
             JoinMeetingCommand command, CancellationToken cancellationToken);
+        
+        Task<MeetingOutedEvent> OutMeetingAsync(
+            OutMeetingCommand command, CancellationToken cancellationToken);
 
         Task ConnectUserToMeetingAsync(
             UserAccountDto user, MeetingDto meeting, bool? isMuted = null, CancellationToken cancellationToken = default);
     }
     
-    public partial class MeetingService: IMeetingService
+    public partial class MeetingService : IMeetingService
     {
         private const string appName = "LiveApp";
 
@@ -111,10 +115,25 @@ namespace SugarTalk.Core.Services.Meetings
                 Data = meeting
             };
         }
+        
+        public async Task<MeetingOutedEvent> OutMeetingAsync(OutMeetingCommand command, CancellationToken cancellationToken)
+        {
+            var userSession = await _meetingDataProvider
+                .GetMeetingUserSessionByMeetingIdAsync(command.MeetingId, _currentUser.Id, cancellationToken).ConfigureAwait(false);
+
+            if (userSession == null) return new MeetingOutedEvent { IsOuted = false };
+            
+            await _meetingDataProvider.RemoveMeetingUserSession(userSession, cancellationToken).ConfigureAwait(false);
+            
+            return new MeetingOutedEvent { IsOuted = true };
+        }
 
         public async Task ConnectUserToMeetingAsync(
             UserAccountDto user, MeetingDto meeting, bool? isMuted = null, CancellationToken cancellationToken = default)
         {
+            await _meetingDataProvider
+                .RemoveMeetingUserSessionsIfRequiredAsync(user.Id, meeting.Id, cancellationToken).ConfigureAwait(false);
+            
             var userSession = meeting.UserSessions
                 .Where(x => x.UserId == user.Id)
                 .OrderByDescending(x => x.CreatedDate)

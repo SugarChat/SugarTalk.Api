@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using AutoMapper;
@@ -13,11 +14,15 @@ namespace SugarTalk.Core.Services.Meetings
 {
     public partial interface IMeetingDataProvider : IScopedDependency
     {
+        Task<MeetingUserSession> GetMeetingUserSessionByMeetingIdAsync(Guid meetingId, int userId, CancellationToken cancellationToken);
+        
         Task<Meeting> GetMeetingById(Guid meetingId, CancellationToken cancellationToken = default);
         
         Task PersistMeetingAsync(Meeting meeting, CancellationToken cancellationToken);
 
         Task<MeetingDto> GetMeetingAsync(string meetingNumber, CancellationToken cancellationToken, bool includeUserSessions = true);
+        
+        Task RemoveMeetingUserSession(MeetingUserSession userSession, CancellationToken cancellationToken);
     }
     
     public partial class MeetingDataProvider : IMeetingDataProvider
@@ -31,6 +36,15 @@ namespace SugarTalk.Core.Services.Meetings
             _mapper = mapper;
             _repository = repository;
             _unitOfWork = unitOfWork;
+        }
+        
+        public async Task<MeetingUserSession> GetMeetingUserSessionByMeetingIdAsync(Guid meetingId, int userId, CancellationToken cancellationToken)
+        {
+            return await _repository.QueryNoTracking<MeetingUserSession>()
+                .Where(x => x.MeetingId == meetingId)
+                .Where(x => x.UserId == userId)
+                .SingleOrDefaultAsync(cancellationToken)
+                .ConfigureAwait(false);
         }
 
         public async Task<Meeting> GetMeetingById(Guid meetingId, CancellationToken cancellationToken = default)
@@ -63,6 +77,11 @@ namespace SugarTalk.Core.Services.Meetings
             }
             
             return updateMeeting;
+        }
+        
+        public async Task RemoveMeetingUserSession(MeetingUserSession userSession, CancellationToken cancellationToken)
+        {
+            await _repository.DeleteAsync(userSession, cancellationToken).ConfigureAwait(false);
         }
     }
 }

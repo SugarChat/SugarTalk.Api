@@ -21,6 +21,8 @@ public partial interface IMeetingDataProvider
     Task UpdateMeetingUserSessionAsync(MeetingUserSession userSession, CancellationToken cancellationToken);
     
     Task<List<MeetingUserSessionDto>> GetUserSessionsByMeetingIdAsync(Guid meetingId, CancellationToken cancellationToken);
+
+    Task RemoveMeetingUserSessionsIfRequiredAsync(int userId, Guid meetingId, CancellationToken cancellationToken);
     
     Task<bool> IsOtherSharingAsync(MeetingUserSession userSession, CancellationToken cancellationToken);
 }
@@ -64,5 +66,17 @@ public partial class MeetingDataProvider
             .Where(x => x.Id != userSession.Id)
             .Where(x => x.MeetingId == userSession.MeetingId)
             .AnyAsync(x => x.IsSharingScreen, cancellationToken).ConfigureAwait(false);
+    }
+
+    public async Task RemoveMeetingUserSessionsIfRequiredAsync(int userId, Guid meetingId, CancellationToken cancellationToken)
+    {
+        var meetingUserSessions = await _repository.QueryNoTracking<MeetingUserSession>()
+            .Where(x => x.UserId == userId)
+            .Where(x => x.MeetingId != meetingId)
+            .ToListAsync(cancellationToken).ConfigureAwait(false);
+
+        if (meetingUserSessions is not { Count: > 0 }) return;
+
+        await _repository.DeleteAllAsync(meetingUserSessions, cancellationToken).ConfigureAwait(false);
     }
 }

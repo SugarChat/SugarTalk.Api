@@ -1,7 +1,5 @@
 using System.Threading;
 using System.Threading.Tasks;
-using AutoMapper;
-using SugarTalk.Core.Ioc;
 using SugarTalk.Messages.Commands.Meetings;
 using SugarTalk.Messages.Dto.Users;
 using SugarTalk.Messages.Events.Meeting;
