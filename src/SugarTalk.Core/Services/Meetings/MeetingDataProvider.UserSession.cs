@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using AutoMapper;
@@ -20,6 +21,8 @@ public partial interface IMeetingDataProvider
     Task UpdateUserSessionAsync(MeetingUserSession userSession, CancellationToken cancellationToken);
     
     Task<List<MeetingUserSessionDto>> GetUserSessionsByMeetingIdAsync(Guid meetingId, CancellationToken cancellationToken);
+    
+    Task RemoveOtherMeetingUserSessionsAsync(int userId, Guid meetingId, CancellationToken cancellationToken);
 }
 
 public partial class MeetingDataProvider : IMeetingDataProvider
@@ -53,5 +56,17 @@ public partial class MeetingDataProvider : IMeetingDataProvider
             .ToListAsync(cancellationToken).ConfigureAwait(false);
         
         return _mapper.Map<List<MeetingUserSessionDto>>(userSessions);
+    }
+
+    public async Task RemoveOtherMeetingUserSessionsAsync(int userId, Guid meetingId, CancellationToken cancellationToken)
+    {
+        var meetingUserSessions = await _repository.QueryNoTracking<MeetingUserSession>()
+            .Where(x => x.UserId == userId)
+            .Where(x => x.MeetingId != meetingId)
+            .ToListAsync(cancellationToken).ConfigureAwait(false);
+
+        if (meetingUserSessions is not { Count: > 0 }) return;
+
+        await _repository.DeleteAllAsync(meetingUserSessions, cancellationToken).ConfigureAwait(false);
     }
 }
