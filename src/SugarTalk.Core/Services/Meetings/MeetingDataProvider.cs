@@ -78,8 +78,7 @@ namespace SugarTalk.Core.Services.Meetings
         
         public async Task RemoveMeetingUserSession(MeetingUserSession userSession, CancellationToken cancellationToken)
         {
-            if (userSession != null)
-                await _repository.DeleteAsync(userSession, cancellationToken).ConfigureAwait(false);
+            await _repository.DeleteAsync(userSession, cancellationToken).ConfigureAwait(false);
         }
     }
 }

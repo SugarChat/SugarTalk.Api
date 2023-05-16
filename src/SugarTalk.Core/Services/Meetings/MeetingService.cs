@@ -119,6 +119,8 @@ namespace SugarTalk.Core.Services.Meetings
             var userSession = await _meetingDataProvider
                 .GetMeetingUserSessionByIdAsync(command.MeetingUserSessionId, cancellationToken).ConfigureAwait(false);
 
+            if (userSession == null) return null;
+            
             await _meetingDataProvider.RemoveMeetingUserSession(userSession, cancellationToken).ConfigureAwait(false);
             
             return new OutMeetingResponse { Data = "success" };
