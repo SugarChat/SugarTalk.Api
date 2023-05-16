@@ -121,6 +121,6 @@ public class MeetingServiceFixture : MeetingFixtureBase
             isNotThrow = false;
         }
         
-        isNotThrow.ShouldBe(true);
+        isNotThrow.ShouldBeTrue();
     }
 }
