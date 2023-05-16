@@ -85,7 +85,7 @@ public class MeetingServiceFixture : MeetingFixtureBase
         {
             await mediator.SendAsync<JoinMeetingCommand, JoinMeetingResponse>(new JoinMeetingCommand
             {
-                MeetingNumber = scheduleMeetingResponse.Data.MeetingNumber,
+                MeetingNumber = meeting.MeetingNumber,
                 IsMuted = false
             });
         });
