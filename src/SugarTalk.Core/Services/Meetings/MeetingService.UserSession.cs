@@ -6,7 +6,6 @@ namespace SugarTalk.Core.Services.Meetings;
 
 public partial interface IMeetingService
 {
-
 }
 
 public partial class MeetingService

@@ -73,4 +73,39 @@ public class MeetingServiceFixture : MeetingFixtureBase
             response.Data.Id.ShouldBe(meetingResult.Id);
         });
     }
+
+    [Fact]
+    public async Task CanRemoveUserSessionMeeting()
+    {
+        var scheduleMeetingResponse = await _meetingUtil.ScheduleMeeting();
+
+        var meeting = await _meetingUtil.GetMeeting(scheduleMeetingResponse.Data.MeetingNumber);
+
+        await Run<IMediator>(async (mediator) =>
+        {
+            await mediator.SendAsync<JoinMeetingCommand, JoinMeetingResponse>(new JoinMeetingCommand
+            {
+                MeetingNumber = scheduleMeetingResponse.Data.MeetingNumber,
+                IsMuted = false
+            });
+        });
+
+        await Run<IMediator, IRepository>(async (mediator, repository) =>
+        {
+            var beforeUserSession = await repository.QueryNoTracking<MeetingUserSession>()
+                .Where(x => x.MeetingId == meeting.Id).ToListAsync();
+
+            beforeUserSession.Count.ShouldBe(1);
+
+            await mediator.SendAsync<OutMeetingCommand, OutMeetingResponse>(new OutMeetingCommand
+            {
+                MeetingUserSessionId = beforeUserSession.Single().Id
+            });
+
+            var afterUserSession = await repository.QueryNoTracking<MeetingUserSession>()
+                .Where(x => x.MeetingId == meeting.Id).ToListAsync();
+
+            afterUserSession.Count.ShouldBe(0);
+        });
+    }
 }

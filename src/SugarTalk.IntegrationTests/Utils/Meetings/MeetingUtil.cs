@@ -1,8 +1,10 @@
 using System;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Autofac;
 using Mediator.Net;
+using Microsoft.EntityFrameworkCore;
 using NSubstitute;
 using SugarTalk.Core.Data;
 using SugarTalk.Core.Domain.Meeting;
@@ -56,6 +58,16 @@ public class MeetingUtil : TestUtil
                 Id = meetingId,
                 MeetingNumber = meetingNumber,
             }, CancellationToken.None).ConfigureAwait(false);
+        });
+    }
+    
+    public async Task<Meeting> GetMeeting(string meetingNumber)
+    {
+        return await Run<IRepository, Meeting>(async (repository) =>
+        {
+            return await repository.QueryNoTracking<Meeting>()
+                .Where(x => x.MeetingNumber == meetingNumber)
+                .SingleAsync(CancellationToken.None);
         });
     }
 }
