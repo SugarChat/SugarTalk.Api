@@ -35,7 +35,7 @@ namespace SugarTalk.Core.Services.Meetings
             UserAccountDto user, MeetingDto meeting, bool? isMuted = null, CancellationToken cancellationToken = default);
     }
     
-    public partial class MeetingService: IMeetingService
+    public partial class MeetingService : IMeetingService
     {
         private const string appName = "LiveApp";
 
