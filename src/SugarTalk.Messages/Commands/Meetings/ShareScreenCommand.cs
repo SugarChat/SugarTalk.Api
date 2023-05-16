@@ -6,6 +6,8 @@ namespace SugarTalk.Messages.Commands.Meetings;
 
 public class ShareScreenCommand : ICommand
 {
+    public int MeetingUserSessionId { get; set; }
+    
     public bool IsShared { get; set; }
 }
 

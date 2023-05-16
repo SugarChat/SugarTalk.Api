@@ -11,26 +11,28 @@ using SugarTalk.Messages.Dto.Meetings;
 
 namespace SugarTalk.Core.Services.Meetings
 {
-    public interface IMeetingDataProvider : IScopedDependency
+    public partial interface IMeetingDataProvider : IScopedDependency
     {
         Task<Meeting> GetMeetingById(Guid meetingId, CancellationToken cancellationToken = default);
         
         Task PersistMeetingAsync(Meeting meeting, CancellationToken cancellationToken);
 
         Task<MeetingDto> GetMeetingAsync(string meetingNumber, CancellationToken cancellationToken, bool includeUserSessions = true);
+        
+        Task RemoveMeetingUserSession(MeetingUserSession userSession, CancellationToken cancellationToken);
     }
     
-    public class MeetingDataProvider : IMeetingDataProvider
+    public partial class MeetingDataProvider : IMeetingDataProvider
     {
         private readonly IMapper _mapper;
         private readonly IRepository _repository;
-        private readonly IMeetingUserSessionDataProvider _meetingUserSessionDataProvider;
+        private readonly IUnitOfWork _unitOfWork;
 
-        public MeetingDataProvider(IMapper mapper, IRepository repository, IMeetingUserSessionDataProvider meetingUserSessionDataProvider)
+        public MeetingDataProvider(IMapper mapper, IRepository repository, IUnitOfWork unitOfWork)
         {
             _mapper = mapper;
             _repository = repository;
-            _meetingUserSessionDataProvider = meetingUserSessionDataProvider;
+            _unitOfWork = unitOfWork;
         }
 
         public async Task<Meeting> GetMeetingById(Guid meetingId, CancellationToken cancellationToken = default)
@@ -59,10 +61,16 @@ namespace SugarTalk.Core.Services.Meetings
             if (includeUserSessions)
             {
                 updateMeeting.UserSessions =
-                    await _meetingUserSessionDataProvider.GetUserSessionsByMeetingIdAsync(meeting.Id, cancellationToken).ConfigureAwait(false);
+                    await GetUserSessionsByMeetingIdAsync(meeting.Id, cancellationToken).ConfigureAwait(false);
             }
             
             return updateMeeting;
+        }
+
+        public async Task RemoveMeetingUserSession(MeetingUserSession userSession, CancellationToken cancellationToken)
+        {
+            if (userSession != null)
+                await _repository.DeleteAsync(userSession, cancellationToken).ConfigureAwait(false);
         }
     }
 }
