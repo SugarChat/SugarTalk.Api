@@ -49,6 +49,18 @@ public class MeetingUtil : TestUtil
         });
     }
 
+    public async Task JoinMeeting(string meetingNumber, bool isMuted = false)
+    {
+        await Run<IMediator>(async (mediator) =>
+        {
+            await mediator.SendAsync<JoinMeetingCommand, JoinMeetingResponse>(new JoinMeetingCommand
+            {
+                MeetingNumber = meetingNumber,
+                IsMuted = isMuted
+            });
+        });
+    }
+
     public async Task AddMeeting(Guid meetingId, string meetingNumber)
     {
         await RunWithUnitOfWork<IRepository>(async (repository) =>

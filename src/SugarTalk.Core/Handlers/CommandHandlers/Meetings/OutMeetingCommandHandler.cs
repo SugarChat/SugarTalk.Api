@@ -18,6 +18,10 @@ public class OutMeetingCommandHandler : ICommandHandler<OutMeetingCommand, OutMe
 
     public async Task<OutMeetingResponse> Handle(IReceiveContext<OutMeetingCommand> context, CancellationToken cancellationToken)
     {
-        return await _meetingService.OutMeetingAsync(context.Message, cancellationToken).ConfigureAwait(false);
+        var @event = await _meetingService.OutMeetingAsync(context.Message, cancellationToken).ConfigureAwait(false);
+        
+        await context.PublishAsync(@event, cancellationToken).ConfigureAwait(false);
+
+        return new OutMeetingResponse { Data = @event.IsOuted };
     }
 }

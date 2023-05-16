@@ -75,20 +75,13 @@ public class MeetingServiceFixture : MeetingFixtureBase
     }
 
     [Fact]
-    public async Task CanRemoveUserSessionMeeting()
+    public async Task CanOutMeeting()
     {
         var scheduleMeetingResponse = await _meetingUtil.ScheduleMeeting();
 
         var meeting = await _meetingUtil.GetMeeting(scheduleMeetingResponse.Data.MeetingNumber);
 
-        await Run<IMediator>(async (mediator) =>
-        {
-            await mediator.SendAsync<JoinMeetingCommand, JoinMeetingResponse>(new JoinMeetingCommand
-            {
-                MeetingNumber = meeting.MeetingNumber,
-                IsMuted = false
-            });
-        });
+        await _meetingUtil.JoinMeeting(meeting.MeetingNumber);
 
         await Run<IMediator, IRepository>(async (mediator, repository) =>
         {
@@ -99,7 +92,7 @@ public class MeetingServiceFixture : MeetingFixtureBase
 
             await mediator.SendAsync<OutMeetingCommand, OutMeetingResponse>(new OutMeetingCommand
             {
-                MeetingUserSessionId = beforeUserSession.Single().Id
+                MeetingId = meeting.Id
             });
 
             var afterUserSession = await repository.QueryNoTracking<MeetingUserSession>()
@@ -107,5 +100,27 @@ public class MeetingServiceFixture : MeetingFixtureBase
 
             afterUserSession.Count.ShouldBe(0);
         });
+    }
+
+    [Fact]
+    public async Task ShouldNotThrowWhenJoinMeetingDuplicated()
+    {
+        var isNotThrow = true;
+        
+        try
+        {
+            var scheduleMeetingResponse = await _meetingUtil.ScheduleMeeting();
+
+            var meeting = await _meetingUtil.GetMeeting(scheduleMeetingResponse.Data.MeetingNumber);
+
+            await _meetingUtil.JoinMeeting(meeting.MeetingNumber);
+            await _meetingUtil.JoinMeeting(meeting.MeetingNumber);
+        }
+        catch (Exception ex)
+        {
+            isNotThrow = false;
+        }
+        
+        isNotThrow.ShouldBe(true);
     }
 }

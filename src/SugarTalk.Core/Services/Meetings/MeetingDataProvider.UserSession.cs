@@ -22,7 +22,7 @@ public partial interface IMeetingDataProvider
     
     Task<List<MeetingUserSessionDto>> GetUserSessionsByMeetingIdAsync(Guid meetingId, CancellationToken cancellationToken);
     
-    Task RemoveOtherMeetingUserSessionsAsync(int userId, Guid meetingId, CancellationToken cancellationToken);
+    Task RemoveMeetingUserSessionsIfRequiredAsync(int userId, Guid meetingId, CancellationToken cancellationToken);
 }
 
 public partial class MeetingDataProvider : IMeetingDataProvider
@@ -58,7 +58,7 @@ public partial class MeetingDataProvider : IMeetingDataProvider
         return _mapper.Map<List<MeetingUserSessionDto>>(userSessions);
     }
 
-    public async Task RemoveOtherMeetingUserSessionsAsync(int userId, Guid meetingId, CancellationToken cancellationToken)
+    public async Task RemoveMeetingUserSessionsIfRequiredAsync(int userId, Guid meetingId, CancellationToken cancellationToken)
     {
         var meetingUserSessions = await _repository.QueryNoTracking<MeetingUserSession>()
             .Where(x => x.UserId == userId)

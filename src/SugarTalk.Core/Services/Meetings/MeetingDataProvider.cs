@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using AutoMapper;
@@ -13,7 +14,7 @@ namespace SugarTalk.Core.Services.Meetings
 {
     public partial interface IMeetingDataProvider : IScopedDependency
     {
-        Task<MeetingUserSession> GetMeetingUserSessionByIdAsync(int id, CancellationToken cancellationToken);
+        Task<MeetingUserSession> GetMeetingUserSessionByMeetingIdAsync(Guid meetingId, int userId, CancellationToken cancellationToken);
         
         Task<Meeting> GetMeetingById(Guid meetingId, CancellationToken cancellationToken = default);
         
@@ -37,10 +38,12 @@ namespace SugarTalk.Core.Services.Meetings
             _unitOfWork = unitOfWork;
         }
         
-        public async Task<MeetingUserSession> GetMeetingUserSessionByIdAsync(int id, CancellationToken cancellationToken)
+        public async Task<MeetingUserSession> GetMeetingUserSessionByMeetingIdAsync(Guid meetingId, int userId, CancellationToken cancellationToken)
         {
             return await _repository.QueryNoTracking<MeetingUserSession>()
-                .SingleOrDefaultAsync(x => x.Id == id, cancellationToken)
+                .Where(x => x.MeetingId == meetingId)
+                .Where(x => x.UserId == userId)
+                .SingleOrDefaultAsync(cancellationToken)
                 .ConfigureAwait(false);
         }
 

@@ -13,6 +13,7 @@ using SugarTalk.Core.Services.Identity;
 using SugarTalk.Messages.Commands.Meetings;
 using SugarTalk.Messages.Dto.Meetings;
 using SugarTalk.Messages.Dto.Users;
+using SugarTalk.Messages.Events.Meeting;
 using SugarTalk.Messages.Requests.Meetings;
 
 namespace SugarTalk.Core.Services.Meetings
@@ -28,7 +29,7 @@ namespace SugarTalk.Core.Services.Meetings
         Task<JoinMeetingResponse> JoinMeetingAsync(
             JoinMeetingCommand command, CancellationToken cancellationToken);
         
-        Task<OutMeetingResponse> OutMeetingAsync(
+        Task<MeetingOutedEvent> OutMeetingAsync(
             OutMeetingCommand command, CancellationToken cancellationToken);
 
         Task ConnectUserToMeetingAsync(
@@ -114,23 +115,23 @@ namespace SugarTalk.Core.Services.Meetings
             };
         }
         
-        public async Task<OutMeetingResponse> OutMeetingAsync(OutMeetingCommand command, CancellationToken cancellationToken)
+        public async Task<MeetingOutedEvent> OutMeetingAsync(OutMeetingCommand command, CancellationToken cancellationToken)
         {
             var userSession = await _meetingDataProvider
-                .GetMeetingUserSessionByIdAsync(command.MeetingUserSessionId, cancellationToken).ConfigureAwait(false);
+                .GetMeetingUserSessionByMeetingIdAsync(command.MeetingId, _currentUser.Id, cancellationToken).ConfigureAwait(false);
 
-            if (userSession == null) return null;
+            if (userSession == null) return new MeetingOutedEvent { IsOuted = false };
             
             await _meetingDataProvider.RemoveMeetingUserSession(userSession, cancellationToken).ConfigureAwait(false);
             
-            return new OutMeetingResponse { Data = "success" };
+            return new MeetingOutedEvent { IsOuted = true };
         }
 
         public async Task ConnectUserToMeetingAsync(
             UserAccountDto user, MeetingDto meeting, bool? isMuted = null, CancellationToken cancellationToken = default)
         {
             await _meetingDataProvider
-                .RemoveOtherMeetingUserSessionsAsync(user.Id, meeting.Id, cancellationToken).ConfigureAwait(false);
+                .RemoveMeetingUserSessionsIfRequiredAsync(user.Id, meeting.Id, cancellationToken).ConfigureAwait(false);
             
             var userSession = meeting.UserSessions
                 .Where(x => x.UserId == user.Id)
