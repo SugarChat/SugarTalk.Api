@@ -17,6 +17,9 @@ namespace SugarTalk.Core.Domain.Meeting
         [Column("id", TypeName = "char(36)")]
         public Guid Id { get; set; }
         
+        [Column("initiator_id")]
+        public int InitiatorId { get; set; }
+        
         [Column("created_date")]
         public DateTimeOffset CreatedDate { get; set; }
         

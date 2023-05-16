@@ -8,6 +8,11 @@ namespace SugarTalk.Messages.Dto.Meetings;
 public class MeetingDto
 {
     public Guid Id { get; set; }
+    
+    /// <summary>
+    /// 发起人ID
+    /// </summary>
+    public int InitiatorId { get; set; }
 
     public MeetingStreamMode MeetingStreamMode { get; set; }
 

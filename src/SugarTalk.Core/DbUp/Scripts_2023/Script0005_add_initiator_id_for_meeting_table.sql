@@ -1,0 +1,1 @@
+alter table `meeting` add `initiator_id` int not null;

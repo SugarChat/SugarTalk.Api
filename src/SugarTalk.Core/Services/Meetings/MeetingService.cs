@@ -73,6 +73,7 @@ namespace SugarTalk.Core.Services.Meetings
             
             var meeting = new Meeting
             {
+                InitiatorId = _currentUser.Id,
                 MeetingStreamMode = command.MeetingStreamMode,
                 MeetingNumber = response.MeetingNumber,
                 OriginAddress = response.OriginAddress,
