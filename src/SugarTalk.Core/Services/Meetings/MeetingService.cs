@@ -17,7 +17,7 @@ using SugarTalk.Messages.Requests.Meetings;
 
 namespace SugarTalk.Core.Services.Meetings
 {
-    public interface IMeetingService : IScopedDependency
+    public partial interface IMeetingService : IScopedDependency
     {
         Task<ScheduleMeetingResponse> ScheduleMeetingAsync(
             ScheduleMeetingCommand scheduleMeetingCommand, CancellationToken cancellationToken);
@@ -27,12 +27,15 @@ namespace SugarTalk.Core.Services.Meetings
 
         Task<JoinMeetingResponse> JoinMeetingAsync(
             JoinMeetingCommand command, CancellationToken cancellationToken);
+        
+        Task<OutMeetingResponse> OutMeetingAsync(
+            OutMeetingCommand command, CancellationToken cancellationToken);
 
         Task ConnectUserToMeetingAsync(
             UserAccountDto user, MeetingDto meeting, bool? isMuted = null, CancellationToken cancellationToken = default);
     }
     
-    public class MeetingService: IMeetingService
+    public partial class MeetingService: IMeetingService
     {
         private const string appName = "LiveApp";
 
@@ -41,22 +44,19 @@ namespace SugarTalk.Core.Services.Meetings
         private readonly IAccountDataProvider _accountDataProvider;
         private readonly IMeetingDataProvider _meetingDataProvider;
         private readonly IAntMediaServerUtilService _antMediaServerUtilService;
-        private readonly IMeetingUserSessionDataProvider _meetingUserSessionDataProvider;
         
         public MeetingService(
             IMapper mapper, 
             ICurrentUser currentUser,
             IMeetingDataProvider meetingDataProvider,
             IAccountDataProvider accountDataProvider,
-            IAntMediaServerUtilService antMediaServerUtilService,
-            IMeetingUserSessionDataProvider meetingUserSessionDataProvider)
+            IAntMediaServerUtilService antMediaServerUtilService)
         {
             _mapper = mapper;
             _currentUser = currentUser;
             _accountDataProvider = accountDataProvider;
             _meetingDataProvider = meetingDataProvider;
             _antMediaServerUtilService = antMediaServerUtilService;
-            _meetingUserSessionDataProvider = meetingUserSessionDataProvider;
         }
         
         public async Task<ScheduleMeetingResponse> ScheduleMeetingAsync(ScheduleMeetingCommand command, CancellationToken cancellationToken)
@@ -113,6 +113,16 @@ namespace SugarTalk.Core.Services.Meetings
                 Data = meeting
             };
         }
+        
+        public async Task<OutMeetingResponse> OutMeetingAsync(OutMeetingCommand command, CancellationToken cancellationToken)
+        {
+            var userSession = await _meetingDataProvider
+                .GetMeetingUserSessionByIdAsync(command.MeetingUserSessionId, cancellationToken).ConfigureAwait(false);
+
+            await _meetingDataProvider.RemoveMeetingUserSession(userSession, cancellationToken).ConfigureAwait(false);
+            
+            return new OutMeetingResponse { Data = "success" };
+        }
 
         public async Task ConnectUserToMeetingAsync(
             UserAccountDto user, MeetingDto meeting, bool? isMuted = null, CancellationToken cancellationToken = default)
@@ -127,7 +137,7 @@ namespace SugarTalk.Core.Services.Meetings
             {
                 userSession = GenerateNewUserSessionFromUser(user, meeting.Id, isMuted ?? false);
 
-                await _meetingUserSessionDataProvider.AddUserSessionAsync(userSession, cancellationToken).ConfigureAwait(false);
+                await _meetingDataProvider.AddUserSessionAsync(userSession, cancellationToken).ConfigureAwait(false);
                 
                 meeting.AddUserSession(_mapper.Map<MeetingUserSessionDto>(userSession));
             }
@@ -136,7 +146,7 @@ namespace SugarTalk.Core.Services.Meetings
                 if (isMuted.HasValue)
                     userSession.IsMuted = isMuted.Value;
 
-                await _meetingUserSessionDataProvider.UpdateUserSessionAsync(userSession, cancellationToken).ConfigureAwait(false);
+                await _meetingDataProvider.UpdateUserSessionAsync(userSession, cancellationToken).ConfigureAwait(false);
                 
                 meeting.UpdateUserSession(_mapper.Map<MeetingUserSessionDto>(userSession));
             }

@@ -11,7 +11,7 @@ using SugarTalk.Messages.Dto.Users;
 
 namespace SugarTalk.Core.Services.Meetings;
 
-public interface IMeetingUserSessionDataProvider : IScopedDependency
+public partial interface IMeetingDataProvider
 {
     Task<MeetingUserSession> GetUserSessionByIdAsync(int id, CancellationToken cancellationToken);
     
@@ -22,19 +22,8 @@ public interface IMeetingUserSessionDataProvider : IScopedDependency
     Task<List<MeetingUserSessionDto>> GetUserSessionsByMeetingIdAsync(Guid meetingId, CancellationToken cancellationToken);
 }
 
-public class MeetingUserSessionDataProvider : IMeetingUserSessionDataProvider
+public partial class MeetingDataProvider : IMeetingDataProvider
 {
-    private readonly IMapper _mapper;
-    private readonly IRepository _repository;
-    private readonly IUnitOfWork _unitOfWork;
-
-    public MeetingUserSessionDataProvider(IMapper mapper, IRepository repository, IUnitOfWork unitOfWork)
-    {
-        _mapper = mapper;
-        _repository = repository;
-        _unitOfWork = unitOfWork;
-    }
-    
     public async Task<MeetingUserSession> GetUserSessionByIdAsync(int id, CancellationToken cancellationToken)
     {
         return await _repository.Query<MeetingUserSession>()
@@ -60,7 +49,7 @@ public class MeetingUserSessionDataProvider : IMeetingUserSessionDataProvider
     
     public async Task<List<MeetingUserSessionDto>> GetUserSessionsByMeetingIdAsync(Guid meetingId, CancellationToken cancellationToken)
     {
-        var userSessions = await _repository.Query<MeetingUserSession>(x => x.MeetingId == meetingId)
+        var userSessions = await _repository.QueryNoTracking<MeetingUserSession>(x => x.MeetingId == meetingId)
             .ToListAsync(cancellationToken).ConfigureAwait(false);
         
         return _mapper.Map<List<MeetingUserSessionDto>>(userSessions);
