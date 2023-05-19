@@ -23,8 +23,6 @@ public partial interface IMeetingDataProvider
     Task<List<MeetingUserSessionDto>> GetUserSessionsByMeetingIdAsync(Guid meetingId, CancellationToken cancellationToken);
     
     Task RemoveMeetingUserSessionsIfRequiredAsync(int userId, Guid meetingId, CancellationToken cancellationToken);
-    
-    Task<List<MeetingUserSession>> GetMeetingUserSessionsAsync(Guid meetingId, CancellationToken cancellationToken);
 }
 
 public partial class MeetingDataProvider : IMeetingDataProvider
@@ -70,12 +68,5 @@ public partial class MeetingDataProvider : IMeetingDataProvider
         if (meetingUserSessions is not { Count: > 0 }) return;
 
         await _repository.DeleteAllAsync(meetingUserSessions, cancellationToken).ConfigureAwait(false);
-    }
-
-    public async Task<List<MeetingUserSession>> GetMeetingUserSessionsAsync(Guid meetingId, CancellationToken cancellationToken)
-    {
-        return await _repository.QueryNoTracking<MeetingUserSession>()
-            .Where(x => x.MeetingId == meetingId)
-            .ToListAsync(cancellationToken).ConfigureAwait(false);
     }
 }
