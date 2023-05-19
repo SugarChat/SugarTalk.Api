@@ -74,6 +74,15 @@ public class MeetingServiceFixture : MeetingFixtureBase
             response.Data.MeetingNumber.ShouldBe(meetingResult.MeetingNumber);
             response.Data.MeetingStreamMode.ShouldBe(MeetingStreamMode.MCU);
             response.Data.Id.ShouldBe(meetingResult.Id);
+        }, builder =>
+        {
+            var antMediaServerUtilService = Substitute.For<IAntMediaServerUtilService>();
+
+            antMediaServerUtilService.AddStreamIdForMeetingAsync(Arg.Any<string>(), Arg.Any<string>(),
+                    Arg.Any<string>(), CancellationToken.None)
+                .Returns(new ConferenceRoomBaseDto { Success = true });
+
+            builder.RegisterInstance(antMediaServerUtilService);
         });
     }
 
@@ -102,6 +111,15 @@ public class MeetingServiceFixture : MeetingFixtureBase
                 .Where(x => x.MeetingId == meeting.Id).ToListAsync();
 
             afterUserSession.Count.ShouldBe(0);
+        }, builder =>
+        {
+            var antMediaServerUtilService = Substitute.For<IAntMediaServerUtilService>();
+
+            antMediaServerUtilService.DeleteStreamIdForMeetingAsync(Arg.Any<string>(), Arg.Any<string>(),
+                    Arg.Any<string>(), CancellationToken.None)
+                .Returns(new ConferenceRoomBaseDto { Success = true });
+
+            builder.RegisterInstance(antMediaServerUtilService);
         });
     }
 

@@ -116,10 +116,12 @@ namespace SugarTalk.Core.Services.Meetings
             
             var meeting = await _meetingDataProvider.GetMeetingAsync(command.MeetingNumber, cancellationToken).ConfigureAwait(false);
 
-            await ConnectUserToMeetingAsync(user, meeting, command.IsMuted, cancellationToken).ConfigureAwait(false);
-
-            await _antMediaServerUtilService
+            var response = await _antMediaServerUtilService
                 .AddStreamIdForMeetingAsync(appName, meeting.MeetingNumber, command.StreamId, cancellationToken).ConfigureAwait(false);
+
+            if (!response.Success) return new JoinMeetingResponse();
+            
+            await ConnectUserToMeetingAsync(user, meeting, command.IsMuted, cancellationToken).ConfigureAwait(false);
             
             return new JoinMeetingResponse
             {
@@ -132,12 +134,23 @@ namespace SugarTalk.Core.Services.Meetings
             var userSession = await _meetingDataProvider
                 .GetMeetingUserSessionByMeetingIdAsync(command.MeetingId, _currentUser.Id, cancellationToken).ConfigureAwait(false);
 
-            if (userSession == null) return new MeetingOutedEvent { IsOuted = false };
+            if (userSession == null) return new MeetingOutedEvent { Data = new OutMeetingData { IsOuted = false } };
+
+            var meeting = await _meetingDataProvider.GetMeetingByIdAsync(command.MeetingId, cancellationToken).ConfigureAwait(false);
+
+            var response = await _antMediaServerUtilService
+                .DeleteStreamIdForMeetingAsync(appName, meeting.MeetingNumber, command.StreamId, cancellationToken).ConfigureAwait(false);
+
+            if (!response.Success) return new MeetingOutedEvent { Data = new OutMeetingData { IsOuted = response.Success } };
             
             await _meetingDataProvider
                 .RemoveMeetingUserSessionsAsync(new List<MeetingUserSession> { userSession }, cancellationToken).ConfigureAwait(false);
             
-            return new MeetingOutedEvent { IsOuted = true };
+            return new MeetingOutedEvent { Data = new OutMeetingData
+            {
+                IsOuted = response.Success,
+                MergedStream = $"{meeting.MeetingNumber}Merged"
+            }};
         }
         
         public async Task<MeetingEndedEvent> EndMeetingAsync(EndMeetingCommand command, CancellationToken cancellationToken)
@@ -160,7 +173,7 @@ namespace SugarTalk.Core.Services.Meetings
 
             return new MeetingEndedEvent
             {
-                MeetingData = new EndMeetingData
+                Data = new EndMeetingData
                 {
                     MeetingNumber = meeting.MeetingNumber,
                     MeetingUserSessionIds = meeting.UserSessions.Select(x => x.Id).ToList()

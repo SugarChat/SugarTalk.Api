@@ -17,7 +17,7 @@ namespace SugarTalk.Core.Services.Meetings
     {
         Task<MeetingUserSession> GetMeetingUserSessionByMeetingIdAsync(Guid meetingId, int userId, CancellationToken cancellationToken);
         
-        Task<Meeting> GetMeetingById(Guid meetingId, CancellationToken cancellationToken = default);
+        Task<Meeting> GetMeetingByIdAsync(Guid meetingId, CancellationToken cancellationToken = default);
         
         Task PersistMeetingAsync(Meeting meeting, CancellationToken cancellationToken);
 
@@ -50,7 +50,7 @@ namespace SugarTalk.Core.Services.Meetings
                 .ConfigureAwait(false);
         }
 
-        public async Task<Meeting> GetMeetingById(Guid meetingId, CancellationToken cancellationToken = default)
+        public async Task<Meeting> GetMeetingByIdAsync(Guid meetingId, CancellationToken cancellationToken = default)
         {
             return await _repository.Query<Meeting>()
                 .SingleOrDefaultAsync(x => x.Id == meetingId, cancellationToken)
