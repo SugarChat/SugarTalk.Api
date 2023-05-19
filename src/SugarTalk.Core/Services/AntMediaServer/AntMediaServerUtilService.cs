@@ -13,6 +13,9 @@ public interface IAntMediaServerUtilService : IScopedDependency
     
     Task<GetMeetingResponseDto> GetMeetingByMeetingNumberAsync(
         string appName, string meetingNumber, CancellationToken cancellationToken);
+
+    Task<ConferenceRoomBaseDto> RemoveMeetingByMeetingNumberAsync(
+        string appName, string meetingNumber, CancellationToken cancellationToken);
 }
 
 public class AntMediaServerUtilService : IAntMediaServerUtilService
@@ -32,5 +35,10 @@ public class AntMediaServerUtilService : IAntMediaServerUtilService
     public async Task<GetMeetingResponseDto> GetMeetingByMeetingNumberAsync(string appName, string meetingNumber, CancellationToken cancellationToken)
     {
         return await _antMediaServerClient.GetConferenceRoomAsync(appName, meetingNumber, cancellationToken).ConfigureAwait(false);
+    }
+
+    public async Task<ConferenceRoomBaseDto> RemoveMeetingByMeetingNumberAsync(string appName, string meetingNumber, CancellationToken cancellationToken)
+    {
+        return await _antMediaServerClient.DeleteConferenceRoomAsync(appName, meetingNumber, cancellationToken).ConfigureAwait(false);
     }
 }

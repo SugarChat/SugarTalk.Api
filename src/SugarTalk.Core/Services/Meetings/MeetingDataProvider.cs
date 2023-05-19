@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -22,7 +23,9 @@ namespace SugarTalk.Core.Services.Meetings
 
         Task<MeetingDto> GetMeetingAsync(string meetingNumber, CancellationToken cancellationToken, bool includeUserSessions = true);
         
-        Task RemoveMeetingUserSession(MeetingUserSession userSession, CancellationToken cancellationToken);
+        Task RemoveMeetingUserSessionsAsync(IEnumerable<MeetingUserSession> meetingUserSessions, CancellationToken cancellationToken);
+        
+        Task RemoveMeetingAsync(Meeting meeting, CancellationToken cancellationToken);
     }
     
     public partial class MeetingDataProvider : IMeetingDataProvider
@@ -62,13 +65,15 @@ namespace SugarTalk.Core.Services.Meetings
         public async Task<MeetingDto> GetMeetingAsync(
             string meetingNumber, CancellationToken cancellationToken, bool includeUserSessions = true)
         {
-            var meeting = await _repository.Query<Meeting>()
+            var meeting = await _repository.QueryNoTracking<Meeting>()
                 .SingleOrDefaultAsync(x => x.MeetingNumber == meetingNumber, cancellationToken)
                 .ConfigureAwait(false);
 
             if (meeting == null) throw new MeetingNotFoundException();
 
             var updateMeeting = _mapper.Map<MeetingDto>(meeting);
+
+            updateMeeting.MergedStream = $"{meetingNumber}Merged";
 
             if (includeUserSessions)
             {
@@ -79,9 +84,15 @@ namespace SugarTalk.Core.Services.Meetings
             return updateMeeting;
         }
         
-        public async Task RemoveMeetingUserSession(MeetingUserSession userSession, CancellationToken cancellationToken)
+        public async Task RemoveMeetingUserSessionsAsync(
+            IEnumerable<MeetingUserSession> meetingUserSessions, CancellationToken cancellationToken)
         {
-            await _repository.DeleteAsync(userSession, cancellationToken).ConfigureAwait(false);
+            await _repository.DeleteAllAsync(meetingUserSessions, cancellationToken).ConfigureAwait(false);
+        }
+
+        public async Task RemoveMeetingAsync(Meeting meeting, CancellationToken cancellationToken)
+        {
+            await _repository.DeleteAsync(meeting, cancellationToken).ConfigureAwait(false);
         }
     }
 }

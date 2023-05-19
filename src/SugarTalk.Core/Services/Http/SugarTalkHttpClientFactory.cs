@@ -20,6 +20,9 @@ public interface ISugarTalkHttpClientFactory : IScopedDependency
     
     Task<T> PostAsJsonAsync<T>(string requestUrl, object value, CancellationToken cancellationToken, 
         TimeSpan? timeout = null, bool beginScope = false, Dictionary<string, string> headers = null);
+    
+    Task<T> DeleteAsync<T>(string requestUrl, CancellationToken cancellationToken, TimeSpan? timeout = null,
+        bool beginScope = false, Dictionary<string, string> headers = null);
 }
 
 public class SugarTalkHttpClientFactory : ISugarTalkHttpClientFactory
@@ -90,6 +93,19 @@ public class SugarTalkHttpClientFactory : ISugarTalkHttpClientFactory
                 .PostAsJsonAsync(requestUrl, value, cancellationToken).ConfigureAwait(false);
             
             return await ReadAndLogResponseAsync<T>(requestUrl, HttpMethod.Post, response, cancellationToken).ConfigureAwait(false);
+            
+        }, cancellationToken).ConfigureAwait(false);
+    }
+    
+    public async Task<T> DeleteAsync<T>(string requestUrl,CancellationToken cancellationToken,
+        TimeSpan? timeout = null, bool beginScope = false, Dictionary<string, string> headers = null)
+    {
+        return await SafelyProcessRequestAsync(requestUrl, async () =>
+        {
+            var response = await CreateClient(timeout: timeout, beginScope: beginScope, headers: headers)
+                .DeleteAsync(requestUrl, cancellationToken).ConfigureAwait(false);
+
+            return await ReadAndLogResponseAsync<T>(requestUrl, HttpMethod.Delete, response, cancellationToken).ConfigureAwait(false);
             
         }, cancellationToken).ConfigureAwait(false);
     }

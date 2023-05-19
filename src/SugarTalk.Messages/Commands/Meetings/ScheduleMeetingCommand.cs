@@ -10,6 +10,13 @@ public class ScheduleMeetingCommand : ICommand
     public MeetingStreamMode MeetingStreamMode { get; set; } = MeetingStreamMode.MCU;
 }
 
-public class ScheduleMeetingResponse : SugarTalkResponse<CreateMeetingResponseDto>
+public class ScheduleMeetingResponse : SugarTalkResponse<ScheduleMeetingData>
 {
+}
+
+public class ScheduleMeetingData
+{
+    public string MergedStream { get; set; }
+    
+    public CreateMeetingResponseDto MeetingResponse { get; set; }
 }

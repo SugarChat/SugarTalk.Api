@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -32,6 +33,9 @@ namespace SugarTalk.Core.Services.Meetings
         Task<MeetingOutedEvent> OutMeetingAsync(
             OutMeetingCommand command, CancellationToken cancellationToken);
 
+        Task<MeetingEndedEvent> EndMeetingAsync(
+            EndMeetingCommand command, CancellationToken cancellationToken);
+        
         Task ConnectUserToMeetingAsync(
             UserAccountDto user, MeetingDto meeting, bool? isMuted = null, CancellationToken cancellationToken = default);
     }
@@ -74,6 +78,7 @@ namespace SugarTalk.Core.Services.Meetings
             
             var meeting = new Meeting
             {
+                MeetingMasterId = _currentUser.Id,
                 MeetingStreamMode = command.MeetingStreamMode,
                 MeetingNumber = response.MeetingNumber,
                 OriginAddress = response.OriginAddress,
@@ -86,7 +91,11 @@ namespace SugarTalk.Core.Services.Meetings
 
             return new ScheduleMeetingResponse
             {
-                Data = response
+                Data = new ScheduleMeetingData
+                {
+                    MeetingResponse = response,
+                    MergedStream = $"{response.MeetingNumber}Merged"
+                }
             };
         }
         
@@ -122,9 +131,38 @@ namespace SugarTalk.Core.Services.Meetings
 
             if (userSession == null) return new MeetingOutedEvent { IsOuted = false };
             
-            await _meetingDataProvider.RemoveMeetingUserSession(userSession, cancellationToken).ConfigureAwait(false);
+            await _meetingDataProvider
+                .RemoveMeetingUserSessionsAsync(new List<MeetingUserSession> { userSession }, cancellationToken).ConfigureAwait(false);
             
             return new MeetingOutedEvent { IsOuted = true };
+        }
+        
+        public async Task<MeetingEndedEvent> EndMeetingAsync(EndMeetingCommand command, CancellationToken cancellationToken)
+        {
+            var meeting = await _meetingDataProvider.GetMeetingAsync(command.MeetingNumber, cancellationToken).ConfigureAwait(false);
+
+            if (meeting.MeetingMasterId != _currentUser.Id) throw new UserMismatchException();
+
+            var response = await _antMediaServerUtilService
+                .RemoveMeetingByMeetingNumberAsync(appName, meeting.MeetingNumber, cancellationToken)
+                .ConfigureAwait(false);
+
+            if (!response.Success) return new MeetingEndedEvent();
+
+            await _meetingDataProvider.RemoveMeetingUserSessionsAsync(
+                _mapper.Map<List<MeetingUserSession>>(meeting.UserSessions), cancellationToken).ConfigureAwait(false);
+
+            await _meetingDataProvider.RemoveMeetingAsync(
+                _mapper.Map<Meeting>(meeting), cancellationToken).ConfigureAwait(false);
+
+            return new MeetingEndedEvent
+            {
+                MeetingData = new EndMeetingData
+                {
+                    MeetingNumber = meeting.MeetingNumber,
+                    MeetingUserSessionIds = meeting.UserSessions.Select(x => x.Id).ToList()
+                }
+            };
         }
 
         public async Task ConnectUserToMeetingAsync(
