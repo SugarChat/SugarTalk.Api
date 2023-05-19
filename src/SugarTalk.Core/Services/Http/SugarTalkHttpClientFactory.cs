@@ -113,7 +113,7 @@ public class SugarTalkHttpClientFactory : ISugarTalkHttpClientFactory
         }, cancellationToken).ConfigureAwait(false);
     }
 
-    public async Task<T> DeleteAsync<T>(string requestUrl,CancellationToken cancellationToken,
+    public async Task<T> DeleteAsync<T>(string requestUrl, CancellationToken cancellationToken,
         TimeSpan? timeout = null, bool beginScope = false, Dictionary<string, string> headers = null)
     {
         return await SafelyProcessRequestAsync(requestUrl, async () =>
@@ -122,7 +122,6 @@ public class SugarTalkHttpClientFactory : ISugarTalkHttpClientFactory
                 .DeleteAsync(requestUrl, cancellationToken).ConfigureAwait(false);
 
             return await ReadAndLogResponseAsync<T>(requestUrl, HttpMethod.Delete, response, cancellationToken).ConfigureAwait(false);
-            
         }, cancellationToken).ConfigureAwait(false);
     }
 
