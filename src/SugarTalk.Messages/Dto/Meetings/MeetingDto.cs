@@ -24,7 +24,7 @@ public class MeetingDto
 
     public long EndDate { get; set; }
 
-    public string Mode { get; set; }
+    public string Mode => "mcu";
 
     public string OriginAddress { get; set; }
     

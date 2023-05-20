@@ -34,7 +34,7 @@ public class MeetingServiceFixture : MeetingFixtureBase
         var response = await _meetingUtil.ScheduleMeeting();
 
         response.Data.ShouldNotBeNull();
-        response.Data.MeetingResponse.Mode.ShouldBe("mcu");
+        response.Data.MeetingStreamMode.ShouldBe(MeetingStreamMode.MCU);
     }
 
     [Fact]
@@ -63,17 +63,17 @@ public class MeetingServiceFixture : MeetingFixtureBase
         {
             var response = await mediator.SendAsync<JoinMeetingCommand, JoinMeetingResponse>(new JoinMeetingCommand
             {
-                MeetingNumber = scheduleMeetingResponse.Data.MeetingResponse.MeetingNumber,
+                MeetingNumber = scheduleMeetingResponse.Data.MeetingNumber,
                 IsMuted = false
             });
 
             var meetingResult = await repository.Query<Core.Domain.Meeting.Meeting>()
-                .Where(x => x.MeetingNumber == scheduleMeetingResponse.Data.MeetingResponse.MeetingNumber)
+                .Where(x => x.MeetingNumber == scheduleMeetingResponse.Data.MeetingNumber)
                 .SingleAsync(CancellationToken.None);
 
-            response.Data.MeetingNumber.ShouldBe(meetingResult.MeetingNumber);
-            response.Data.MeetingStreamMode.ShouldBe(MeetingStreamMode.MCU);
-            response.Data.Id.ShouldBe(meetingResult.Id);
+            response.Data.Meeting.MeetingNumber.ShouldBe(meetingResult.MeetingNumber);
+            response.Data.Meeting.MeetingStreamMode.ShouldBe(MeetingStreamMode.MCU);
+            response.Data.Meeting.Id.ShouldBe(meetingResult.Id);
         }, builder =>
         {
             var antMediaServerUtilService = Substitute.For<IAntMediaServerUtilService>();
@@ -91,7 +91,7 @@ public class MeetingServiceFixture : MeetingFixtureBase
     {
         var scheduleMeetingResponse = await _meetingUtil.ScheduleMeeting();
 
-        var meeting = await _meetingUtil.GetMeeting(scheduleMeetingResponse.Data.MeetingResponse.MeetingNumber);
+        var meeting = await _meetingUtil.GetMeeting(scheduleMeetingResponse.Data.MeetingNumber);
 
         await _meetingUtil.JoinMeeting(meeting.MeetingNumber);
 
@@ -132,7 +132,7 @@ public class MeetingServiceFixture : MeetingFixtureBase
         {
             var scheduleMeetingResponse = await _meetingUtil.ScheduleMeeting();
 
-            var meeting = await _meetingUtil.GetMeeting(scheduleMeetingResponse.Data.MeetingResponse.MeetingNumber);
+            var meeting = await _meetingUtil.GetMeeting(scheduleMeetingResponse.Data.MeetingNumber);
 
             await _meetingUtil.JoinMeeting(meeting.MeetingNumber);
             await _meetingUtil.JoinMeeting(meeting.MeetingNumber);
@@ -150,7 +150,7 @@ public class MeetingServiceFixture : MeetingFixtureBase
     {
         var scheduleMeetingResponse = await _meetingUtil.ScheduleMeeting();
 
-        var meeting = await _meetingUtil.GetMeeting(scheduleMeetingResponse.Data.MeetingResponse.MeetingNumber);
+        var meeting = await _meetingUtil.GetMeeting(scheduleMeetingResponse.Data.MeetingNumber);
 
         await _meetingUtil.JoinMeeting(meeting.MeetingNumber);
         

@@ -13,6 +13,13 @@ public class JoinMeetingCommand : ICommand
     public bool IsMuted { get; set; }
 }
 
-public class JoinMeetingResponse : SugarTalkResponse<MeetingDto>
+public class JoinMeetingResponse : SugarTalkResponse<JoinMeetingResponseData>
 {
+}
+
+public class JoinMeetingResponseData
+{
+    public MeetingDto Meeting { get; set; }
+    
+    public ConferenceRoomBaseDto Response { get; set; }
 }
