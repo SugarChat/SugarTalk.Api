@@ -51,12 +51,12 @@ public class AntMediaServerUtilService : IAntMediaServerUtilService
     public async Task<ConferenceRoomBaseDto> AddStreamToMeetingAsync(string appName, string meetingNumber, string streamId, CancellationToken cancellationToken)
     {
         return await _antMediaServerClient
-            .AddStreamForConferenceRoomAsync(appName, meetingNumber, streamId, cancellationToken).ConfigureAwait(false);
+            .AddStreamToConferenceRoomAsync(appName, meetingNumber, streamId, cancellationToken).ConfigureAwait(false);
     }
 
     public async Task<ConferenceRoomBaseDto> RemoveStreamFromMeetingAsync(string appName, string meetingNumber, string streamId, CancellationToken cancellationToken)
     {
         return await _antMediaServerClient
-            .DeleteStreamForConferenceRoomAsync(appName, meetingNumber, streamId, cancellationToken).ConfigureAwait(false);
+            .DeleteStreamFromConferenceRoomAsync(appName, meetingNumber, streamId, cancellationToken).ConfigureAwait(false);
     }
 }
