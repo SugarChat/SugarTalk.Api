@@ -45,6 +45,15 @@ public class MeetingController : ControllerBase
         return Ok(response);
     }
     
+    [Route("end"), HttpPost]
+    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(EndMeetingResponse))]
+    public async Task<IActionResult> EndMeetingAsync([FromBody] EndMeetingCommand command)
+    {
+        var response = await _mediator.SendAsync<EndMeetingCommand, EndMeetingResponse>(command);
+
+        return Ok(response);
+    }
+    
     [Route("screen/share"), HttpPost]
     [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ShareScreenResponse))]
     public async Task<IActionResult> ShareScreenAsync(ShareScreenCommand command)

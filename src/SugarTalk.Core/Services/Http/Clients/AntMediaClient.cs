@@ -21,6 +21,15 @@ public interface IAntMediaServerClient : IScopedDependency
 
     Task<CreateMeetingResponseDto> CreateConferenceRoomAsync(
         string appName, CreateMeetingDto room, CancellationToken cancellationToken);
+    
+    Task<ConferenceRoomResponseBaseDto> AddStreamToConferenceRoomAsync(
+        string appName, string meetingNumber, string streamId, CancellationToken cancellationToken);
+
+    Task<ConferenceRoomResponseBaseDto> DeleteConferenceRoomAsync(
+        string appName, string meetingNumber, CancellationToken cancellationToken);
+    
+    Task<ConferenceRoomResponseBaseDto> DeleteStreamFromConferenceRoomAsync(
+        string appName, string meetingNumber, string streamId, CancellationToken cancellationToken);
 }
 
 public class AntMediaServerClient : IAntMediaServerClient
@@ -64,5 +73,29 @@ public class AntMediaServerClient : IAntMediaServerClient
         return await _httpClientFactory
             .PostAsJsonAsync<CreateMeetingResponseDto>(
                 $"{_antMediaSetting.BaseUrl}/{appName}/rest/v2/broadcasts/conference-rooms", meetingData, cancellationToken).ConfigureAwait(false);
+    }
+
+    public async Task<ConferenceRoomResponseBaseDto> DeleteConferenceRoomAsync(
+        string appName, string meetingNumber, CancellationToken cancellationToken)
+    {
+        return await _httpClientFactory
+            .DeleteAsync<ConferenceRoomResponseBaseDto>(
+                $"{_antMediaSetting.BaseUrl}/{appName}/rest/v2/broadcasts/conference-rooms/{meetingNumber}", cancellationToken).ConfigureAwait(false);
+    }
+
+    public async Task<ConferenceRoomResponseBaseDto> AddStreamToConferenceRoomAsync(
+        string appName, string meetingNumber, string streamId, CancellationToken cancellationToken)
+    {
+        return await _httpClientFactory
+            .PutAsync<ConferenceRoomResponseBaseDto>(
+                $"{_antMediaSetting.BaseUrl}/{appName}/rest/v2/broadcasts/conference-rooms/{meetingNumber}/add?streamId={streamId}", null, cancellationToken).ConfigureAwait(false);
+    }
+    
+    public async Task<ConferenceRoomResponseBaseDto> DeleteStreamFromConferenceRoomAsync(
+        string appName, string meetingNumber, string streamId, CancellationToken cancellationToken)
+    {
+        return await _httpClientFactory
+            .PutAsync<ConferenceRoomResponseBaseDto>(
+                $"{_antMediaSetting.BaseUrl}/{appName}/rest/v2/broadcasts/conference-rooms/{meetingNumber}/delete?streamId={streamId}", null, cancellationToken).ConfigureAwait(false);
     }
 }
