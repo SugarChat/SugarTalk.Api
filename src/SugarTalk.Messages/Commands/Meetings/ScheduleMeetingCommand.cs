@@ -13,10 +13,3 @@ public class ScheduleMeetingCommand : ICommand
 public class ScheduleMeetingResponse : SugarTalkResponse<MeetingDto>
 {
 }
-
-public class ScheduleMeetingData
-{
-    public string MergedStream { get; set; }
-    
-    public CreateMeetingResponseDto MeetingResponse { get; set; }
-}

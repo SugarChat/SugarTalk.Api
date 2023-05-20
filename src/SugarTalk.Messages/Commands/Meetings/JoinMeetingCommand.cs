@@ -21,5 +21,5 @@ public class JoinMeetingResponseData
 {
     public MeetingDto Meeting { get; set; }
     
-    public ConferenceRoomBaseDto Response { get; set; }
+    public ConferenceRoomBaseDto MeetingResponse { get; set; }
 }

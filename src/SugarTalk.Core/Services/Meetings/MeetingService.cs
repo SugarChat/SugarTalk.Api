@@ -122,7 +122,7 @@ namespace SugarTalk.Core.Services.Meetings
                 Data = new JoinMeetingResponseData
                 {
                     Meeting = meeting,
-                    Response = response
+                    MeetingResponse = response
                 }
             };
         }
