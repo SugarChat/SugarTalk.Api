@@ -62,7 +62,7 @@ public class MeetingUtil : TestUtil
         {
             var antMediaServerUtilService = Substitute.For<IAntMediaServerUtilService>();
 
-            antMediaServerUtilService.AddStreamIdForMeetingAsync(Arg.Any<string>(), Arg.Any<string>(),
+            antMediaServerUtilService.AddStreamToMeetingAsync(Arg.Any<string>(), Arg.Any<string>(),
                     Arg.Any<string>(), CancellationToken.None)
                 .Returns(new ConferenceRoomBaseDto { Success = true });
 

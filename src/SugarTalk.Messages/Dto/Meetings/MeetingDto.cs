@@ -12,13 +12,13 @@ public class MeetingDto
     /// <summary>
     /// 会议主持人Id
     /// </summary>
-    public int MeetingMasterId { get; set; }
+    public int MeetingMasterUserId { get; set; }
 
     public MeetingStreamMode MeetingStreamMode { get; set; }
 
     public string MeetingNumber { get; set; }
     
-    public string MergedStream { get; set; }
+    public string MergedStream => $"{MeetingNumber}Merged";
 
     public long StartDate { get; set; }
 

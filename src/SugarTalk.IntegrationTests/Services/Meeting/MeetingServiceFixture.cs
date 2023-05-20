@@ -78,7 +78,7 @@ public class MeetingServiceFixture : MeetingFixtureBase
         {
             var antMediaServerUtilService = Substitute.For<IAntMediaServerUtilService>();
 
-            antMediaServerUtilService.AddStreamIdForMeetingAsync(Arg.Any<string>(), Arg.Any<string>(),
+            antMediaServerUtilService.AddStreamToMeetingAsync(Arg.Any<string>(), Arg.Any<string>(),
                     Arg.Any<string>(), CancellationToken.None)
                 .Returns(new ConferenceRoomBaseDto { Success = true });
 
@@ -115,7 +115,7 @@ public class MeetingServiceFixture : MeetingFixtureBase
         {
             var antMediaServerUtilService = Substitute.For<IAntMediaServerUtilService>();
 
-            antMediaServerUtilService.DeleteStreamIdForMeetingAsync(Arg.Any<string>(), Arg.Any<string>(),
+            antMediaServerUtilService.RemoveStreamFromMeetingAsync(Arg.Any<string>(), Arg.Any<string>(),
                     Arg.Any<string>(), CancellationToken.None)
                 .Returns(new ConferenceRoomBaseDto { Success = true });
 

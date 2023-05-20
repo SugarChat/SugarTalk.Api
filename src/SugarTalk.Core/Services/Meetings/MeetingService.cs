@@ -78,7 +78,7 @@ namespace SugarTalk.Core.Services.Meetings
             
             var meeting = new Meeting
             {
-                MeetingMasterId = _currentUser.Id,
+                MeetingMasterUserId = _currentUser.Id,
                 MeetingStreamMode = command.MeetingStreamMode,
                 MeetingNumber = response.MeetingNumber,
                 OriginAddress = response.OriginAddress,
@@ -117,7 +117,7 @@ namespace SugarTalk.Core.Services.Meetings
             var meeting = await _meetingDataProvider.GetMeetingAsync(command.MeetingNumber, cancellationToken).ConfigureAwait(false);
 
             var response = await _antMediaServerUtilService
-                .AddStreamIdForMeetingAsync(appName, meeting.MeetingNumber, command.StreamId, cancellationToken).ConfigureAwait(false);
+                .AddStreamToMeetingAsync(appName, meeting.MeetingNumber, command.StreamId, cancellationToken).ConfigureAwait(false);
 
             if (!response.Success) return new JoinMeetingResponse();
             
@@ -134,30 +134,26 @@ namespace SugarTalk.Core.Services.Meetings
             var userSession = await _meetingDataProvider
                 .GetMeetingUserSessionByMeetingIdAsync(command.MeetingId, _currentUser.Id, cancellationToken).ConfigureAwait(false);
 
-            if (userSession == null) return new MeetingOutedEvent { Data = new OutMeetingData { IsOuted = false } };
+            if (userSession == null) return new MeetingOutedEvent { IsOuted = false };
 
             var meeting = await _meetingDataProvider.GetMeetingByIdAsync(command.MeetingId, cancellationToken).ConfigureAwait(false);
 
             var response = await _antMediaServerUtilService
-                .DeleteStreamIdForMeetingAsync(appName, meeting.MeetingNumber, command.StreamId, cancellationToken).ConfigureAwait(false);
+                .RemoveStreamFromMeetingAsync(appName, meeting.MeetingNumber, command.StreamId, cancellationToken).ConfigureAwait(false);
 
-            if (!response.Success) return new MeetingOutedEvent { Data = new OutMeetingData { IsOuted = response.Success } };
+            if (!response.Success) return new MeetingOutedEvent { IsOuted = response.Success };
             
             await _meetingDataProvider
                 .RemoveMeetingUserSessionsAsync(new List<MeetingUserSession> { userSession }, cancellationToken).ConfigureAwait(false);
             
-            return new MeetingOutedEvent { Data = new OutMeetingData
-            {
-                IsOuted = response.Success,
-                MergedStream = $"{meeting.MeetingNumber}Merged"
-            }};
+            return new MeetingOutedEvent { IsOuted = response.Success };
         }
         
         public async Task<MeetingEndedEvent> EndMeetingAsync(EndMeetingCommand command, CancellationToken cancellationToken)
         {
             var meeting = await _meetingDataProvider.GetMeetingAsync(command.MeetingNumber, cancellationToken).ConfigureAwait(false);
 
-            if (meeting.MeetingMasterId != _currentUser.Id) throw new UserMismatchException();
+            if (meeting.MeetingMasterUserId != _currentUser.Id) throw new CannotEndMeetingWhenUnauthorizedException();
 
             var response = await _antMediaServerUtilService
                 .RemoveMeetingByMeetingNumberAsync(appName, meeting.MeetingNumber, cancellationToken)

@@ -73,8 +73,6 @@ namespace SugarTalk.Core.Services.Meetings
 
             var updateMeeting = _mapper.Map<MeetingDto>(meeting);
 
-            updateMeeting.MergedStream = $"{meetingNumber}Merged";
-
             if (includeUserSessions)
             {
                 updateMeeting.UserSessions =

@@ -11,13 +11,6 @@ public class OutMeetingCommand : ICommand
     public string StreamId { get; set; }
 }
 
-public class OutMeetingResponse : SugarTalkResponse<OutMeetingData>
+public class OutMeetingResponse : SugarTalkResponse<bool>
 {
-}
-
-public class OutMeetingData
-{
-    public bool IsOuted { get; set; }
-    
-    public string MergedStream { get; set; }
 }

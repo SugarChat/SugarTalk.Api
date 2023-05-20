@@ -17,10 +17,10 @@ public interface IAntMediaServerUtilService : IScopedDependency
     Task<ConferenceRoomBaseDto> RemoveMeetingByMeetingNumberAsync(
         string appName, string meetingNumber, CancellationToken cancellationToken);
 
-    Task<ConferenceRoomBaseDto> AddStreamIdForMeetingAsync(
+    Task<ConferenceRoomBaseDto> AddStreamToMeetingAsync(
         string appName, string meetingNumber, string streamId, CancellationToken cancellationToken);
     
-    Task<ConferenceRoomBaseDto> DeleteStreamIdForMeetingAsync(
+    Task<ConferenceRoomBaseDto> RemoveStreamFromMeetingAsync(
         string appName, string meetingNumber, string streamId, CancellationToken cancellationToken);
 }
 
@@ -48,15 +48,15 @@ public class AntMediaServerUtilService : IAntMediaServerUtilService
         return await _antMediaServerClient.DeleteConferenceRoomAsync(appName, meetingNumber, cancellationToken).ConfigureAwait(false);
     }
 
-    public async Task<ConferenceRoomBaseDto> AddStreamIdForMeetingAsync(string appName, string meetingNumber, string streamId, CancellationToken cancellationToken)
+    public async Task<ConferenceRoomBaseDto> AddStreamToMeetingAsync(string appName, string meetingNumber, string streamId, CancellationToken cancellationToken)
     {
         return await _antMediaServerClient
-            .AddStreamIdForConferenceRoomAsync(appName, meetingNumber, streamId, cancellationToken).ConfigureAwait(false);
+            .AddStreamForConferenceRoomAsync(appName, meetingNumber, streamId, cancellationToken).ConfigureAwait(false);
     }
 
-    public async Task<ConferenceRoomBaseDto> DeleteStreamIdForMeetingAsync(string appName, string meetingNumber, string streamId, CancellationToken cancellationToken)
+    public async Task<ConferenceRoomBaseDto> RemoveStreamFromMeetingAsync(string appName, string meetingNumber, string streamId, CancellationToken cancellationToken)
     {
         return await _antMediaServerClient
-            .DeleteStreamIdForConferenceRoomAsync(appName, meetingNumber, streamId, cancellationToken).ConfigureAwait(false);
+            .DeleteStreamForConferenceRoomAsync(appName, meetingNumber, streamId, cancellationToken).ConfigureAwait(false);
     }
 }
