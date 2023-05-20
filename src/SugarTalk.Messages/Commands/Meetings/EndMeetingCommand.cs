@@ -10,11 +10,7 @@ public class EndMeetingCommand : ICommand
     public string MeetingNumber { get; set; }
 }
 
-public class EndMeetingResponse : SugarTalkResponse<EndMeetingData>
-{
-}
-
-public class EndMeetingData
+public class EndMeetingResponse : SugarTalkResponse
 {
     public string MeetingNumber { get; set; }
     

@@ -80,7 +80,7 @@ public class MeetingServiceFixture : MeetingFixtureBase
 
             antMediaServerUtilService.AddStreamToMeetingAsync(Arg.Any<string>(), Arg.Any<string>(),
                     Arg.Any<string>(), CancellationToken.None)
-                .Returns(new ConferenceRoomBaseDto { Success = true });
+                .Returns(new ConferenceRoomResponseBaseDto { Success = true });
 
             builder.RegisterInstance(antMediaServerUtilService);
         });
@@ -117,7 +117,7 @@ public class MeetingServiceFixture : MeetingFixtureBase
 
             antMediaServerUtilService.RemoveStreamFromMeetingAsync(Arg.Any<string>(), Arg.Any<string>(),
                     Arg.Any<string>(), CancellationToken.None)
-                .Returns(new ConferenceRoomBaseDto { Success = true });
+                .Returns(new ConferenceRoomResponseBaseDto { Success = true });
 
             builder.RegisterInstance(antMediaServerUtilService);
         });
@@ -179,7 +179,7 @@ public class MeetingServiceFixture : MeetingFixtureBase
 
             antMediaServerUtilService
                 .RemoveMeetingByMeetingNumberAsync(Arg.Any<string>(), Arg.Any<string>(), CancellationToken.None)
-                .Returns(new ConferenceRoomBaseDto { Success = true });
+                .Returns(new ConferenceRoomResponseBaseDto { Success = true });
 
             builder.RegisterInstance(antMediaServerUtilService);
         });

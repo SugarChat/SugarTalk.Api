@@ -122,7 +122,7 @@ namespace SugarTalk.Core.Services.Meetings
                 Data = new JoinMeetingResponseData
                 {
                     Meeting = meeting,
-                    MeetingResponse = response
+                    Response = response
                 }
             };
         }
@@ -142,7 +142,7 @@ namespace SugarTalk.Core.Services.Meetings
             await _meetingDataProvider
                 .RemoveMeetingUserSessionsAsync(new List<MeetingUserSession> { userSession }, cancellationToken).ConfigureAwait(false);
             
-            return new MeetingOutedEvent { Data = response };
+            return new MeetingOutedEvent { Response = response };
         }
         
         public async Task<MeetingEndedEvent> EndMeetingAsync(EndMeetingCommand command, CancellationToken cancellationToken)
@@ -165,11 +165,8 @@ namespace SugarTalk.Core.Services.Meetings
 
             return new MeetingEndedEvent
             {
-                Data = new EndMeetingData
-                {
-                    MeetingNumber = meeting.MeetingNumber,
-                    MeetingUserSessionIds = meeting.UserSessions.Select(x => x.Id).ToList()
-                }
+                MeetingNumber = meeting.MeetingNumber,
+                MeetingUserSessionIds = meeting.UserSessions.Select(x => x.Id).ToList()
             };
         }
 

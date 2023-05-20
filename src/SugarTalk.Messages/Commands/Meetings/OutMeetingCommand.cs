@@ -12,6 +12,6 @@ public class OutMeetingCommand : ICommand
     public string StreamId { get; set; }
 }
 
-public class OutMeetingResponse : SugarTalkResponse<ConferenceRoomBaseDto>
+public class OutMeetingResponse : SugarTalkResponse<ConferenceRoomResponseBaseDto>
 {
 }

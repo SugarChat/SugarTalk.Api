@@ -3,7 +3,7 @@ using Newtonsoft.Json;
 
 namespace SugarTalk.Messages.Dto.Meetings;
 
-public class ConferenceRoomBaseDto
+public class ConferenceRoomResponseBaseDto
 {
     [JsonProperty("success")]
     public bool Success { get; set; }

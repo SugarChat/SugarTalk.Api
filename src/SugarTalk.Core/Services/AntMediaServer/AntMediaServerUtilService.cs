@@ -14,13 +14,13 @@ public interface IAntMediaServerUtilService : IScopedDependency
     Task<GetMeetingResponseDto> GetMeetingByMeetingNumberAsync(
         string appName, string meetingNumber, CancellationToken cancellationToken);
 
-    Task<ConferenceRoomBaseDto> RemoveMeetingByMeetingNumberAsync(
+    Task<ConferenceRoomResponseBaseDto> RemoveMeetingByMeetingNumberAsync(
         string appName, string meetingNumber, CancellationToken cancellationToken);
 
-    Task<ConferenceRoomBaseDto> AddStreamToMeetingAsync(
+    Task<ConferenceRoomResponseBaseDto> AddStreamToMeetingAsync(
         string appName, string meetingNumber, string streamId, CancellationToken cancellationToken);
     
-    Task<ConferenceRoomBaseDto> RemoveStreamFromMeetingAsync(
+    Task<ConferenceRoomResponseBaseDto> RemoveStreamFromMeetingAsync(
         string appName, string meetingNumber, string streamId, CancellationToken cancellationToken);
 }
 
@@ -43,18 +43,18 @@ public class AntMediaServerUtilService : IAntMediaServerUtilService
         return await _antMediaServerClient.GetConferenceRoomAsync(appName, meetingNumber, cancellationToken).ConfigureAwait(false);
     }
 
-    public async Task<ConferenceRoomBaseDto> RemoveMeetingByMeetingNumberAsync(string appName, string meetingNumber, CancellationToken cancellationToken)
+    public async Task<ConferenceRoomResponseBaseDto> RemoveMeetingByMeetingNumberAsync(string appName, string meetingNumber, CancellationToken cancellationToken)
     {
         return await _antMediaServerClient.DeleteConferenceRoomAsync(appName, meetingNumber, cancellationToken).ConfigureAwait(false);
     }
 
-    public async Task<ConferenceRoomBaseDto> AddStreamToMeetingAsync(string appName, string meetingNumber, string streamId, CancellationToken cancellationToken)
+    public async Task<ConferenceRoomResponseBaseDto> AddStreamToMeetingAsync(string appName, string meetingNumber, string streamId, CancellationToken cancellationToken)
     {
         return await _antMediaServerClient
             .AddStreamToConferenceRoomAsync(appName, meetingNumber, streamId, cancellationToken).ConfigureAwait(false);
     }
 
-    public async Task<ConferenceRoomBaseDto> RemoveStreamFromMeetingAsync(string appName, string meetingNumber, string streamId, CancellationToken cancellationToken)
+    public async Task<ConferenceRoomResponseBaseDto> RemoveStreamFromMeetingAsync(string appName, string meetingNumber, string streamId, CancellationToken cancellationToken)
     {
         return await _antMediaServerClient
             .DeleteStreamFromConferenceRoomAsync(appName, meetingNumber, streamId, cancellationToken).ConfigureAwait(false);

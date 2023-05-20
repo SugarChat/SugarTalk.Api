@@ -5,5 +5,5 @@ namespace SugarTalk.Messages.Events.Meeting;
 
 public class MeetingOutedEvent : IEvent
 {
-    public ConferenceRoomBaseDto Data { get; set; }
+    public ConferenceRoomResponseBaseDto Response { get; set; }
 }
