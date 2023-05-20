@@ -3,9 +3,7 @@ using SugarTalk.Messages.Dto.Meetings;
 
 namespace SugarTalk.Messages.Events.Meeting;
 
-public class MeetingJoinedEvent : IEvent
+public class MeetingScheduledEvent : IEvent
 {
     public MeetingDto Meeting { get; set; }
-    
-    public ConferenceRoomResponseBaseDto Response { get; set; }
 }

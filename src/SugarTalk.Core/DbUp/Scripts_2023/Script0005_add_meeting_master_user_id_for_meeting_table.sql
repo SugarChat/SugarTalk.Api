@@ -1,1 +1,1 @@
-alter table `meeting` add `meeting_master_user_id` int not null default 0;
+alter table `meeting` add `meeting_master_user_id` int null;

@@ -18,7 +18,18 @@ namespace SugarTalk.Core.Handlers.CommandHandlers.Meetings
 
         public async Task<JoinMeetingResponse> Handle(IReceiveContext<JoinMeetingCommand> context, CancellationToken cancellationToken)
         {
-            return await _meetingService.JoinMeetingAsync(context.Message, cancellationToken).ConfigureAwait(false);
+            var @event = await _meetingService.JoinMeetingAsync(context.Message, cancellationToken).ConfigureAwait(false);
+
+            await context.PublishAsync(@event, cancellationToken).ConfigureAwait(false);
+
+            return new JoinMeetingResponse
+            {
+                Data = new JoinMeetingResponseData
+                {
+                    Meeting = @event.Meeting,
+                    Response = @event.Response
+                }
+            };
         }
     }
 }
