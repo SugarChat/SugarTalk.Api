@@ -24,8 +24,6 @@ public class MeetingDto
 
     public long EndDate { get; set; }
 
-    public string Mode => "mcu";
-
     public string OriginAddress { get; set; }
     
     public List<MeetingUserSessionDto> UserSessions { get; set; }
