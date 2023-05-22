@@ -5,5 +5,5 @@ namespace SugarTalk.Messages.Events.Meeting;
 
 public class MeetingEndedEvent : IEvent
 {
-    public EndMeetingData Data { get; set; }
+    public EndMeetingResponseData Response { get; set; }
 }
