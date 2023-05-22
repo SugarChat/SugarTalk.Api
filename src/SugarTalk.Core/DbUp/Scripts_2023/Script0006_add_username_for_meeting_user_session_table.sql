@@ -1,1 +1,0 @@
-alter table `meeting_user_session` add `username` varchar(128) null;
