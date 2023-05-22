@@ -2,6 +2,7 @@ using Mediator.Net;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SugarTalk.Messages.Commands.Meetings;
+using SugarTalk.Messages.Requests.Meetings;
 
 namespace SugarTalk.Api.Controllers;
 
@@ -50,6 +51,15 @@ public class MeetingController : ControllerBase
     public async Task<IActionResult> EndMeetingAsync([FromBody] EndMeetingCommand command)
     {
         var response = await _mediator.SendAsync<EndMeetingCommand, EndMeetingResponse>(command);
+
+        return Ok(response);
+    }
+    
+    [HttpGet]
+    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(GetMeetingByNumberResponse))]
+    public async Task<IActionResult> GetMeetingByNumberAsync([FromQuery] GetMeetingByNumberRequest request)
+    {
+        var response = await _mediator.RequestAsync<GetMeetingByNumberRequest, GetMeetingByNumberResponse>(request);
 
         return Ok(response);
     }

@@ -15,6 +15,7 @@ using SugarTalk.IntegrationTests.Utils.Meetings;
 using SugarTalk.Messages.Commands.Meetings;
 using SugarTalk.Messages.Dto.Meetings;
 using SugarTalk.Messages.Enums.Meeting;
+using SugarTalk.Messages.Requests.Meetings;
 using Xunit;
 
 namespace SugarTalk.IntegrationTests.Services.Meeting;
@@ -182,6 +183,28 @@ public class MeetingServiceFixture : MeetingFixtureBase
                 .Returns(new ConferenceRoomResponseBaseDto { Success = true });
 
             builder.RegisterInstance(antMediaServerUtilService);
+        });
+    }
+    
+    [Fact]
+    public async Task CanGetMeetingByNumber()
+    {
+        var scheduleMeetingResponse = await _meetingUtil.ScheduleMeeting();
+
+        await _meetingUtil.JoinMeeting(scheduleMeetingResponse.Data.MeetingNumber);
+
+        await Run<IMediator>(async (mediator) =>
+        {
+            var response = await mediator.RequestAsync<GetMeetingByNumberRequest, GetMeetingByNumberResponse>(
+                new GetMeetingByNumberRequest
+                {
+                    MeetingNumber = scheduleMeetingResponse.Data.MeetingNumber
+                });
+
+            response.Data.ShouldNotBeNull();
+            response.Data.UserSessions.Count.ShouldBe(1);
+            response.Data.MeetingStreamMode.ShouldBe(MeetingStreamMode.MCU);
+            response.Data.MeetingNumber.ShouldBe(scheduleMeetingResponse.Data.MeetingNumber);
         });
     }
 }

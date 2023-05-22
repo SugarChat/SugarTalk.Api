@@ -97,13 +97,15 @@ namespace SugarTalk.Core.Services.Meetings
         
         public async Task<GetMeetingByNumberResponse> GetMeetingByNumberAsync(GetMeetingByNumberRequest request, CancellationToken cancellationToken)
         {
-            var response = await _antMediaServerUtilService
-                .GetMeetingByMeetingNumberAsync(appName, request.MeetingNumber, cancellationToken).ConfigureAwait(false);
+            var meeting = await _meetingDataProvider
+                .GetMeetingAsync(request.MeetingNumber, cancellationToken).ConfigureAwait(false);
 
-            return new GetMeetingByNumberResponse
-            {
-                Data = _mapper.Map<MeetingDto>(response)
-            };
+            if (meeting != null &&
+                meeting.UserSessions.Any() &&
+                meeting.UserSessions.All(x => x.UserId != _currentUser.Id))
+                throw new UnauthorizedAccessException();
+
+            return new GetMeetingByNumberResponse { Data = meeting };
         }
 
         public async Task<MeetingJoinedEvent> JoinMeetingAsync(JoinMeetingCommand command, CancellationToken cancellationToken)
