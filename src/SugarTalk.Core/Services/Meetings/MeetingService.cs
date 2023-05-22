@@ -162,11 +162,8 @@ namespace SugarTalk.Core.Services.Meetings
 
             return new MeetingEndedEvent
             {
-                Response = new EndMeetingResponseData
-                {
-                    MeetingNumber = meeting.MeetingNumber,
-                    MeetingUserSessionIds = meeting.UserSessions.Select(x => x.Id).ToList()
-                }
+                MeetingNumber = meeting.MeetingNumber,
+                MeetingUserSessionIds = meeting.UserSessions.Select(x => x.Id).ToList()
             };
         }
 
