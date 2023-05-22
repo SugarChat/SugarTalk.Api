@@ -22,10 +22,6 @@ public class EndMeetingCommandHandler : ICommandHandler<EndMeetingCommand, EndMe
         
         await context.PublishAsync(@event, cancellationToken).ConfigureAwait(false);
 
-        return new EndMeetingResponse
-        {
-            MeetingNumber = @event.MeetingNumber,
-            MeetingUserSessionIds = @event.MeetingUserSessionIds
-        };
+        return new EndMeetingResponse { Data = @event.Data };
     }
 }
