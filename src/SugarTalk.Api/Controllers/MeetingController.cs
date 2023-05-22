@@ -55,7 +55,7 @@ public class MeetingController : ControllerBase
         return Ok(response);
     }
     
-    [HttpGet]
+    [Route("get"), HttpGet]
     [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(GetMeetingByNumberResponse))]
     public async Task<IActionResult> GetMeetingByNumberAsync([FromQuery] GetMeetingByNumberRequest request)
     {

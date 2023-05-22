@@ -203,6 +203,7 @@ public class MeetingServiceFixture : MeetingFixtureBase
 
             response.Data.ShouldNotBeNull();
             response.Data.UserSessions.Count.ShouldBe(1);
+            response.Data.UserSessions.Single().UserName.ShouldBe("TEST_USER");
             response.Data.MeetingStreamMode.ShouldBe(MeetingStreamMode.MCU);
             response.Data.MeetingNumber.ShouldBe(scheduleMeetingResponse.Data.MeetingNumber);
         });

@@ -25,6 +25,9 @@ public class MeetingUserSession : IEntity
 
     [Column("user_id")]
     public int UserId { get; set; }
+    
+    [Column("username"), StringLength(128)]
+    public string UserName { set; get; }
 
     [Column("is_muted", TypeName = "tinyint(1)")]
     public bool IsMuted { get; set; }
