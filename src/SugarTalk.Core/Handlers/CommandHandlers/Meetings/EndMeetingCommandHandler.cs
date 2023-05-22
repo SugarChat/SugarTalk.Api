@@ -24,8 +24,11 @@ public class EndMeetingCommandHandler : ICommandHandler<EndMeetingCommand, EndMe
 
         return new EndMeetingResponse
         {
-            MeetingNumber = @event.MeetingNumber,
-            MeetingUserSessionIds = @event.MeetingUserSessionIds
+            Data = new EndMeetingResponseData
+            {
+                MeetingNumber = @event.MeetingNumber,
+                MeetingUserSessionIds = @event.MeetingUserSessionIds
+            }
         };
     }
 }
