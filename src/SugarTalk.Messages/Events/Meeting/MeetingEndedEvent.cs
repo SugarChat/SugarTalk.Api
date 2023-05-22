@@ -1,11 +1,9 @@
-using System.Collections.Generic;
 using Mediator.Net.Contracts;
+using SugarTalk.Messages.Commands.Meetings;
 
 namespace SugarTalk.Messages.Events.Meeting;
 
 public class MeetingEndedEvent : IEvent
 {
-    public string MeetingNumber { get; set; }
-    
-    public List<int> MeetingUserSessionIds { get; set; }
+    public EndMeetingData Data { get; set; }
 }
