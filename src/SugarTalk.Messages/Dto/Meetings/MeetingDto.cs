@@ -10,19 +10,19 @@ public class MeetingDto
     public Guid Id { get; set; }
     
     /// <summary>
-    /// 发起人ID
+    /// 会议主持人Id
     /// </summary>
-    public int InitiatorId { get; set; }
+    public int MeetingMasterUserId { get; set; }
 
     public MeetingStreamMode MeetingStreamMode { get; set; }
 
     public string MeetingNumber { get; set; }
+    
+    public string MergedStream => $"{MeetingNumber}Merged";
 
     public long StartDate { get; set; }
 
     public long EndDate { get; set; }
-
-    public string Mode { get; set; }
 
     public string OriginAddress { get; set; }
     

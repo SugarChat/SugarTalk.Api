@@ -58,6 +58,15 @@ public class MeetingUtil : TestUtil
                 MeetingNumber = meetingNumber,
                 IsMuted = isMuted
             });
+        }, builder =>
+        {
+            var antMediaServerUtilService = Substitute.For<IAntMediaServerUtilService>();
+
+            antMediaServerUtilService.AddStreamToMeetingAsync(Arg.Any<string>(), Arg.Any<string>(),
+                    Arg.Any<string>(), CancellationToken.None)
+                .Returns(new ConferenceRoomResponseBaseDto { Success = true });
+
+            builder.RegisterInstance(antMediaServerUtilService);
         });
     }
 

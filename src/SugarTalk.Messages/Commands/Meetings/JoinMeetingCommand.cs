@@ -7,10 +7,19 @@ namespace SugarTalk.Messages.Commands.Meetings;
 public class JoinMeetingCommand : ICommand
 {
     public string MeetingNumber { get; set; }
+    
+    public string StreamId { get; set; }
 
     public bool IsMuted { get; set; }
 }
 
-public class JoinMeetingResponse : SugarTalkResponse<MeetingDto>
+public class JoinMeetingResponse : SugarTalkResponse<JoinMeetingResponseData>
 {
+}
+
+public class JoinMeetingResponseData
+{
+    public MeetingDto Meeting { get; set; }
+    
+    public ConferenceRoomResponseBaseDto Response { get; set; }
 }
