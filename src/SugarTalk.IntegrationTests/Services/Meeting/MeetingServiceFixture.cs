@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -11,10 +12,12 @@ using SugarTalk.Core.Data;
 using SugarTalk.Core.Domain.Meeting;
 using SugarTalk.Core.Services.AntMediaServer;
 using SugarTalk.IntegrationTests.TestBaseClasses;
+using SugarTalk.IntegrationTests.Utils.Account;
 using SugarTalk.IntegrationTests.Utils.Meetings;
 using SugarTalk.Messages.Commands.Meetings;
 using SugarTalk.Messages.Dto.Meetings;
 using SugarTalk.Messages.Enums.Meeting;
+using SugarTalk.Messages.Requests.Meetings;
 using Xunit;
 
 namespace SugarTalk.IntegrationTests.Services.Meeting;
@@ -22,10 +25,12 @@ namespace SugarTalk.IntegrationTests.Services.Meeting;
 public class MeetingServiceFixture : MeetingFixtureBase
 {
     private readonly MeetingUtil _meetingUtil;
+    private readonly AccountUtil _accountUtil;
 
     public MeetingServiceFixture()
     {
         _meetingUtil = new MeetingUtil(CurrentScope);
+        _accountUtil = new AccountUtil(CurrentScope);
     }
 
     [Fact]
@@ -182,6 +187,52 @@ public class MeetingServiceFixture : MeetingFixtureBase
                 .Returns(new ConferenceRoomResponseBaseDto { Success = true });
 
             builder.RegisterInstance(antMediaServerUtilService);
+        });
+    }
+    
+    [Fact]
+    public async Task CanGetMeetingByNumber()
+    {
+        var scheduleMeetingResponse = await _meetingUtil.ScheduleMeeting();
+
+        var user1 = await _accountUtil.AddUserAccount("mars", "123");
+        var user2 = await _accountUtil.AddUserAccount("greg", "123");
+
+        await _meetingUtil.JoinMeeting(scheduleMeetingResponse.Data.MeetingNumber);
+
+        await Run<IMediator, IRepository, IUnitOfWork>(async (mediator, repository, unitOfWork) =>
+        {
+            await repository.InsertAllAsync(new List<MeetingUserSession>
+            {
+                new()
+                {
+                    UserId = user1.Id,
+                    IsMuted = false,
+                    MeetingId = scheduleMeetingResponse.Data.Id
+                },
+                new()
+                {
+                    UserId = user2.Id,
+                    IsMuted = true,
+                    MeetingId = scheduleMeetingResponse.Data.Id
+                }
+            });
+
+            await unitOfWork.SaveChangesAsync().ConfigureAwait(false);
+
+            var response = await mediator.RequestAsync<GetMeetingByNumberRequest, GetMeetingByNumberResponse>(
+                new GetMeetingByNumberRequest
+                {
+                    MeetingNumber = scheduleMeetingResponse.Data.MeetingNumber
+                });
+
+            response.Data.ShouldNotBeNull();
+            response.Data.UserSessions.Count.ShouldBe(3);
+            response.Data.MeetingStreamMode.ShouldBe(MeetingStreamMode.MCU);
+            response.Data.MeetingNumber.ShouldBe(scheduleMeetingResponse.Data.MeetingNumber);
+            response.Data.UserSessions.Single(x => x.UserId == 1).UserName.ShouldBe("TEST_USER");
+            response.Data.UserSessions.Single(x => x.UserId == user1.Id).UserName.ShouldBe("mars");
+            response.Data.UserSessions.Single(x => x.UserId == user2.Id).UserName.ShouldBe("greg");
         });
     }
 }

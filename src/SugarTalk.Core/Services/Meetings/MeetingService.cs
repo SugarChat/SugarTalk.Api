@@ -95,15 +95,18 @@ namespace SugarTalk.Core.Services.Meetings
             };
         }
         
-        public async Task<GetMeetingByNumberResponse> GetMeetingByNumberAsync(GetMeetingByNumberRequest request, CancellationToken cancellationToken)
+        public async Task<GetMeetingByNumberResponse> GetMeetingByNumberAsync(GetMeetingByNumberRequest request,
+            CancellationToken cancellationToken)
         {
-            var response = await _antMediaServerUtilService
-                .GetMeetingByMeetingNumberAsync(appName, request.MeetingNumber, cancellationToken).ConfigureAwait(false);
+            var meeting = await _meetingDataProvider
+                .GetMeetingAsync(request.MeetingNumber, cancellationToken).ConfigureAwait(false);
 
-            return new GetMeetingByNumberResponse
-            {
-                Data = _mapper.Map<MeetingDto>(response)
-            };
+            if (meeting != null &&
+                meeting.UserSessions.Any() &&
+                meeting.UserSessions.All(x => x.UserId != _currentUser.Id))
+                throw new UnauthorizedAccessException();
+
+            return new GetMeetingByNumberResponse { Data = meeting };
         }
 
         public async Task<MeetingJoinedEvent> JoinMeetingAsync(JoinMeetingCommand command, CancellationToken cancellationToken)
@@ -185,7 +188,11 @@ namespace SugarTalk.Core.Services.Meetings
 
                 await _meetingDataProvider.AddUserSessionAsync(userSession, cancellationToken).ConfigureAwait(false);
                 
-                meeting.AddUserSession(_mapper.Map<MeetingUserSessionDto>(userSession));
+                var updateUserSession = _mapper.Map<MeetingUserSessionDto>(userSession);
+
+                updateUserSession.UserName = user.UserName;
+                
+                meeting.AddUserSession(updateUserSession);
             }
             else
             {
