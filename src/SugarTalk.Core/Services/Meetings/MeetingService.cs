@@ -98,9 +98,6 @@ namespace SugarTalk.Core.Services.Meetings
         public async Task<GetMeetingByNumberResponse> GetMeetingByNumberAsync(GetMeetingByNumberRequest request,
             CancellationToken cancellationToken)
         {
-            var user = await _accountDataProvider
-                .GetUserAccountAsync(_currentUser.Id, cancellationToken: cancellationToken).ConfigureAwait(false);
-
             var meeting = await _meetingDataProvider
                 .GetMeetingAsync(request.MeetingNumber, cancellationToken).ConfigureAwait(false);
 
@@ -108,14 +105,6 @@ namespace SugarTalk.Core.Services.Meetings
                 meeting.UserSessions.Any() &&
                 meeting.UserSessions.All(x => x.UserId != _currentUser.Id))
                 throw new UnauthorizedAccessException();
-
-            var meetingUserSession = meeting?.UserSessions.FirstOrDefault(x => x.UserId == _currentUser.Id);
-
-            if (meetingUserSession == null) return new GetMeetingByNumberResponse();
-
-            meetingUserSession.UserName = user.UserName;
-
-            meeting.UpdateUserSession(meetingUserSession);
 
             return new GetMeetingByNumberResponse { Data = meeting };
         }
@@ -199,7 +188,11 @@ namespace SugarTalk.Core.Services.Meetings
 
                 await _meetingDataProvider.AddUserSessionAsync(userSession, cancellationToken).ConfigureAwait(false);
                 
-                meeting.AddUserSession(_mapper.Map<MeetingUserSessionDto>(userSession));
+                var updateUserSession = _mapper.Map<MeetingUserSessionDto>(userSession);
+
+                updateUserSession.UserName = user.UserName;
+                
+                meeting.AddUserSession(updateUserSession);
             }
             else
             {

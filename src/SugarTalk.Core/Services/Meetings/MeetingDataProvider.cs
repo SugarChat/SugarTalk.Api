@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using AutoMapper;
 using Microsoft.EntityFrameworkCore;
 using SugarTalk.Core.Data;
+using SugarTalk.Core.Domain.Account;
 using SugarTalk.Core.Domain.Meeting;
 using SugarTalk.Core.Ioc;
 using SugarTalk.Core.Services.Exceptions;
@@ -77,6 +78,19 @@ namespace SugarTalk.Core.Services.Meetings
             {
                 updateMeeting.UserSessions =
                     await GetUserSessionsByMeetingIdAsync(meeting.Id, cancellationToken).ConfigureAwait(false);
+
+                var userIds = updateMeeting.UserSessions.Select(x => x.UserId).ToList();
+
+                var userAccounts = await _repository
+                    .ToListAsync<UserAccount>(x => userIds.Contains(x.Id), cancellationToken)
+                    .ConfigureAwait(false);
+
+                updateMeeting.UserSessions.ForEach(userSession =>
+                {
+                    userSession.UserName = userAccounts
+                        .Where(x => x.Id == userSession.UserId)
+                        .Select(x => x.UserName).FirstOrDefault();
+                });
             }
             
             return updateMeeting;
