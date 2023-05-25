@@ -58,6 +58,8 @@ public partial class MeetingService
             .GetMeetingUserSessionByIdAsync(command.MeetingUserSessionId, cancellationToken).ConfigureAwait(false);
 
         var meeting = await _meetingDataProvider.GetMeetingByIdAsync(userSession.MeetingId, cancellationToken).ConfigureAwait(false);
+        
+        if (meeting == null) throw new MeetingNotFoundException();
 
         var response = new ConferenceRoomResponseBaseDto();
         
