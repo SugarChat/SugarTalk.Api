@@ -11,6 +11,8 @@ using Shouldly;
 using SugarTalk.Core.Data;
 using SugarTalk.Core.Domain.Meeting;
 using SugarTalk.Core.Services.AntMediaServer;
+using SugarTalk.Core.Services.Exceptions;
+using SugarTalk.Core.Services.Identity;
 using SugarTalk.IntegrationTests.TestBaseClasses;
 using SugarTalk.IntegrationTests.Utils.Account;
 using SugarTalk.IntegrationTests.Utils.Meetings;
@@ -233,6 +235,109 @@ public class MeetingServiceFixture : MeetingFixtureBase
             response.Data.UserSessions.Single(x => x.UserId == 1).UserName.ShouldBe("TEST_USER");
             response.Data.UserSessions.Single(x => x.UserId == user1.Id).UserName.ShouldBe("mars");
             response.Data.UserSessions.Single(x => x.UserId == user2.Id).UserName.ShouldBe("greg");
+        });
+    }
+
+    [Theory]
+    [InlineData(true, false)]
+    [InlineData(false, true)]
+    public async Task CanShareScreen(bool isSharingScreen, bool expect)
+    {
+        var scheduleMeetingResponse = await _meetingUtil.ScheduleMeeting();
+
+        var meeting = await _meetingUtil.GetMeeting(scheduleMeetingResponse.Data.MeetingNumber);
+
+        var user = await _accountUtil.AddUserAccount("test", "123");
+
+        await _meetingUtil.AddMeetingUserSession(1, meeting.Id, 1);
+        await _meetingUtil.AddMeetingUserSession(2, meeting.Id, user.Id, isSharingScreen: isSharingScreen);
+        
+        await Run<IMediator>(async mediator =>
+        {
+            var response = await mediator.SendAsync<ShareScreenCommand, ShareScreenResponse>(
+                new ShareScreenCommand
+                {
+                    MeetingUserSessionId = 1,
+                    StreamId = "room1",
+                    IsShared = true
+                });
+            
+            response.Data.MeetingUserSession.IsSharingScreen.ShouldBe(expect);
+        }, builder =>
+        {
+            var antMediaServerUtilService = Substitute.For<IAntMediaServerUtilService>();
+
+            antMediaServerUtilService.AddStreamToMeetingAsync(
+                    Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), CancellationToken.None)
+                .Returns(new ConferenceRoomResponseBaseDto { Success = true });
+
+            builder.RegisterInstance(antMediaServerUtilService);
+        });
+    }
+
+    [Fact]
+    public async Task ShouldExceptionWhenShareScreen()
+    {
+        var scheduleMeetingResponse = await _meetingUtil.ScheduleMeeting();
+
+        var meeting = await _meetingUtil.GetMeeting(scheduleMeetingResponse.Data.MeetingNumber);
+
+        var user1 = await _accountUtil.AddUserAccount("test1", "123");
+        var user2 = await _accountUtil.AddUserAccount("test2", "123");
+
+        await Assert.ThrowsAsync<CannotShareWhenConfirmRequiredException>(async () =>
+        {
+            await Run<IMediator, ICurrentUser>(async (mediator, currentUser) =>
+            {
+                await _meetingUtil.AddMeetingUserSession(1, meeting.Id, user1.Id);
+                await _meetingUtil.AddMeetingUserSession(2, meeting.Id, user2.Id);
+                await _meetingUtil.AddMeetingUserSession(3, meeting.Id, currentUser.Id);
+                
+                await mediator.SendAsync<ShareScreenCommand, ShareScreenResponse>(
+                    new ShareScreenCommand
+                    {
+                        MeetingUserSessionId = 1,
+                        StreamId = "room1",
+                        IsShared = true
+                    });
+            });
+        });
+    }
+
+    [Theory]
+    [InlineData(true, true)]
+    [InlineData(false, false)]
+    public async Task CanChangeAudio(bool isMuted, bool expect)
+    {
+        var scheduleMeetingResponse = await _meetingUtil.ScheduleMeeting();
+
+        var meeting = await _meetingUtil.GetMeeting(scheduleMeetingResponse.Data.MeetingNumber);
+
+        var user1 = await _accountUtil.AddUserAccount("test1", "123");
+        var user2 = await _accountUtil.AddUserAccount("test2", "123");
+
+        await _meetingUtil.AddMeetingUserSession(1, meeting.Id, user1.Id, isMuted: isMuted);
+        await _meetingUtil.AddMeetingUserSession(2, meeting.Id, user2.Id);
+
+        await Run<IMediator>(async mediator =>
+        {
+            var response = await mediator.SendAsync<ShareScreenCommand, ShareScreenResponse>(
+                new ShareScreenCommand
+                {
+                    StreamId = "room1",
+                    MeetingUserSessionId = 1
+                });
+
+            response.Data.MeetingUserSession.IsMuted.ShouldBe(expect);
+        }, builder =>
+        {
+            var antMediaServerUtilService = Substitute.For<IAntMediaServerUtilService>();
+
+            antMediaServerUtilService.AddStreamToMeetingAsync(
+                    Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), CancellationToken.None)
+                .Returns(new ConferenceRoomResponseBaseDto { Success = true });
+
+            builder.RegisterInstance(antMediaServerUtilService);
         });
     }
 }

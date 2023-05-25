@@ -4,6 +4,7 @@ using Mediator.Net.Context;
 using Mediator.Net.Contracts;
 using SugarTalk.Core.Services.Meetings;
 using SugarTalk.Messages.Commands.Meetings;
+using SugarTalk.Messages.Dto.Users;
 
 namespace SugarTalk.Core.Handlers.CommandHandlers.Meetings;
 
@@ -24,7 +25,11 @@ public class ChangeAudioCommandHandler : ICommandHandler<ChangeAudioCommand, Cha
 
         return new ChangeAudioResponse
         {
-            Data = @event.MeetingUserSession
+            Data = new ChangeAudioData
+            {
+                Response = @event.Response,
+                MeetingUserSession = @event.MeetingUserSession
+            }
         };
     }
 }

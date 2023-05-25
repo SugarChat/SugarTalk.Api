@@ -1,4 +1,5 @@
 using Mediator.Net.Contracts;
+using SugarTalk.Messages.Dto.Meetings;
 using SugarTalk.Messages.Dto.Users;
 using SugarTalk.Messages.Responses;
 
@@ -8,9 +9,18 @@ public class ShareScreenCommand : ICommand
 {
     public int MeetingUserSessionId { get; set; }
     
+    public string StreamId { get; set; }
+    
     public bool IsShared { get; set; }
 }
 
-public class ShareScreenResponse : SugarTalkResponse<MeetingUserSessionDto>
+public class ShareScreenResponse : SugarTalkResponse<ShareScreenData>
 {
+}
+
+public class ShareScreenData
+{
+    public ConferenceRoomResponseBaseDto Response { get; set; }
+        
+    public MeetingUserSessionDto MeetingUserSession { get; set; }
 }
