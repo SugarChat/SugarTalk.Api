@@ -4,7 +4,7 @@ namespace SugarTalk.Core.Services.Exceptions;
 
 public class CannotChangeAudioWhenConfirmRequiredException : Exception
 {
-    public CannotChangeAudioWhenConfirmRequiredException() : base("The current user is not a sharer and needs to confirm")
+    public CannotChangeAudioWhenConfirmRequiredException() : base("The current user cannot change audio and needs to confirm it")
     {
     }
 }
