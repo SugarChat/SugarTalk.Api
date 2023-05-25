@@ -258,25 +258,16 @@ public class MeetingServiceFixture : MeetingFixtureBase
                 new ShareScreenCommand
                 {
                     MeetingUserSessionId = 1,
-                    StreamId = "room1",
+                    StreamId = "123456",
                     IsShared = true
                 });
             
             response.Data.MeetingUserSession.IsSharingScreen.ShouldBe(expect);
-        }, builder =>
-        {
-            var antMediaServerUtilService = Substitute.For<IAntMediaServerUtilService>();
-
-            antMediaServerUtilService.AddStreamToMeetingAsync(
-                    Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), CancellationToken.None)
-                .Returns(new ConferenceRoomResponseBaseDto { Success = true });
-
-            builder.RegisterInstance(antMediaServerUtilService);
         });
     }
 
     [Fact]
-    public async Task ShouldExceptionWhenShareScreen()
+    public async Task ShouldExceptionWhenChangeAudio()
     {
         var scheduleMeetingResponse = await _meetingUtil.ScheduleMeeting();
 
@@ -285,20 +276,19 @@ public class MeetingServiceFixture : MeetingFixtureBase
         var user1 = await _accountUtil.AddUserAccount("test1", "123");
         var user2 = await _accountUtil.AddUserAccount("test2", "123");
 
-        await Assert.ThrowsAsync<CannotShareWhenConfirmRequiredException>(async () =>
+        await Assert.ThrowsAsync<CannotChangeAudioWhenConfirmRequiredException>(async () =>
         {
-            await Run<IMediator, ICurrentUser>(async (mediator, currentUser) =>
+            await Run<IMediator>(async (mediator) =>
             {
                 await _meetingUtil.AddMeetingUserSession(1, meeting.Id, user1.Id);
                 await _meetingUtil.AddMeetingUserSession(2, meeting.Id, user2.Id);
-                await _meetingUtil.AddMeetingUserSession(3, meeting.Id, currentUser.Id);
                 
-                await mediator.SendAsync<ShareScreenCommand, ShareScreenResponse>(
-                    new ShareScreenCommand
+                await mediator.SendAsync<ChangeAudioCommand, ChangeAudioResponse>(
+                    new ChangeAudioCommand
                     {
                         MeetingUserSessionId = 1,
                         StreamId = "room1",
-                        IsShared = true
+                        IsMuted = true
                     });
             });
         });
@@ -316,16 +306,17 @@ public class MeetingServiceFixture : MeetingFixtureBase
         var user1 = await _accountUtil.AddUserAccount("test1", "123");
         var user2 = await _accountUtil.AddUserAccount("test2", "123");
 
-        await _meetingUtil.AddMeetingUserSession(1, meeting.Id, user1.Id, isMuted: isMuted);
-        await _meetingUtil.AddMeetingUserSession(2, meeting.Id, user2.Id);
-
-        await Run<IMediator>(async mediator =>
+        await Run<IMediator, ICurrentUser>(async (mediator, currentUser) =>
         {
-            var response = await mediator.SendAsync<ShareScreenCommand, ShareScreenResponse>(
-                new ShareScreenCommand
+            await _meetingUtil.AddMeetingUserSession(2, meeting.Id, user2.Id);
+            await _meetingUtil.AddMeetingUserSession(1, meeting.Id, currentUser.Id);
+            
+            var response = await mediator.SendAsync<ChangeAudioCommand, ChangeAudioResponse>(
+                new ChangeAudioCommand
                 {
-                    StreamId = "room1",
-                    MeetingUserSessionId = 1
+                    MeetingUserSessionId = 1,
+                    StreamId = "123456",
+                    IsMuted = isMuted
                 });
 
             response.Data.MeetingUserSession.IsMuted.ShouldBe(expect);

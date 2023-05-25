@@ -6,9 +6,9 @@ using SugarTalk.Messages.Events.Meeting;
 
 namespace SugarTalk.Core.Handlers.EventHandlers.Meeting;
 
-public class MeetingAudioChangedEventHandler : IEventHandler<AudioChangedEvent>
+public class ScreenSharedEventHandler : IEventHandler<ScreenSharedEvent>
 {
-    public Task Handle(IReceiveContext<AudioChangedEvent> context, CancellationToken cancellationToken)
+    public Task Handle(IReceiveContext<ScreenSharedEvent> context, CancellationToken cancellationToken)
     {
         return Task.CompletedTask;
     }

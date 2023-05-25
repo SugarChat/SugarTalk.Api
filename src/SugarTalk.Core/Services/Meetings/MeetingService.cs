@@ -101,6 +101,8 @@ namespace SugarTalk.Core.Services.Meetings
             var meeting = await _meetingDataProvider
                 .GetMeetingAsync(request.MeetingNumber, cancellationToken).ConfigureAwait(false);
 
+            if (meeting == null) throw new MeetingNotFoundException();
+
             if (meeting != null &&
                 meeting.UserSessions.Any() &&
                 meeting.UserSessions.All(x => x.UserId != _currentUser.Id))

@@ -19,18 +19,29 @@ public partial interface IMeetingService
 
 public partial class MeetingService
 {
-    public async Task<AudioChangedEvent> ChangeAudioAsync(ChangeAudioCommand command,
-        CancellationToken cancellationToken)
+    public async Task<AudioChangedEvent> ChangeAudioAsync(ChangeAudioCommand command, CancellationToken cancellationToken)
     {
         var userSession = await _meetingDataProvider
             .GetMeetingUserSessionByIdAsync(command.MeetingUserSessionId, cancellationToken).ConfigureAwait(false);
 
         var meeting = await _meetingDataProvider.GetMeetingByIdAsync(userSession.MeetingId, cancellationToken).ConfigureAwait(false);
 
-        userSession.IsMuted = command.IsMuted;
+        if (meeting == null) throw new MeetingNotFoundException();
 
-        var response = await _antMediaServerUtilService
-            .AddStreamToMeetingAsync(appName, meeting.MeetingNumber, command.StreamId, cancellationToken).ConfigureAwait(false);
+        var response = new ConferenceRoomResponseBaseDto();
+
+        if (command.IsMuted)
+        {
+            if (userSession.UserId != _currentUser.Id)
+                throw new CannotChangeAudioWhenConfirmRequiredException();
+
+            userSession.IsMuted = true;
+            
+            response = await _antMediaServerUtilService
+                .AddStreamToMeetingAsync(appName, meeting.MeetingNumber, command.StreamId, cancellationToken).ConfigureAwait(false);
+        }
+        else
+            userSession.IsMuted = false;
 
         await _meetingDataProvider.UpdateMeetingUserSessionAsync(userSession, cancellationToken).ConfigureAwait(false);
 
@@ -55,14 +66,13 @@ public partial class MeetingService
             var otherSharing = await _meetingDataProvider
                 .IsOtherSharingAsync(userSession, cancellationToken).ConfigureAwait(false);
 
-            if (!otherSharing)
+            if (!otherSharing && userSession.UserId == _currentUser.Id)
+            {
                 userSession.IsSharingScreen = true;
 
-            if (userSession.UserId != _currentUser.Id && meeting.MeetingMasterUserId == _currentUser.Id)
-                throw new CannotShareWhenConfirmRequiredException();
-
-            response = await _antMediaServerUtilService
-                .AddStreamToMeetingAsync(appName, meeting.MeetingNumber, command.StreamId, cancellationToken).ConfigureAwait(false);
+                response = await _antMediaServerUtilService
+                    .AddStreamToMeetingAsync(appName, meeting.MeetingNumber, command.StreamId, cancellationToken).ConfigureAwait(false);
+            }
         }
         else
             userSession.IsSharingScreen = false;
