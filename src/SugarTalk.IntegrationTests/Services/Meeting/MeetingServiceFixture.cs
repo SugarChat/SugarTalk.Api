@@ -287,7 +287,7 @@ public class MeetingServiceFixture : MeetingFixtureBase
                     new ChangeAudioCommand
                     {
                         MeetingUserSessionId = 1,
-                        StreamId = "room1",
+                        StreamId = "123456",
                         IsMuted = true
                     });
             });
