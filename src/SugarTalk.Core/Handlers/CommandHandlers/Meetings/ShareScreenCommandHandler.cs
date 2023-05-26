@@ -24,7 +24,7 @@ public class ShareScreenCommandHandler : ICommandHandler<ShareScreenCommand, Sha
 
         return new ShareScreenResponse
         {
-            Data = new ShareScreenData
+            Data = new ShareScreenResponseData
             {
                 Response = @event.Response,
                 MeetingUserSession = @event.MeetingUserSession

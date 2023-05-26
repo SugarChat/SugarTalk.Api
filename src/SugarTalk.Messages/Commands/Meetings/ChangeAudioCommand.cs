@@ -14,11 +14,11 @@ public class ChangeAudioCommand : ICommand
     public bool IsMuted { get; set; }
 }
 
-public class ChangeAudioResponse : SugarTalkResponse<ChangeAudioData>
+public class ChangeAudioResponse : SugarTalkResponse<ChangeAudioResponseData>
 {
 }
 
-public class ChangeAudioData
+public class ChangeAudioResponseData
 {
     public ConferenceRoomResponseBaseDto Response { get; set; }
         

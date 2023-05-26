@@ -14,11 +14,11 @@ public class ShareScreenCommand : ICommand
     public bool IsShared { get; set; }
 }
 
-public class ShareScreenResponse : SugarTalkResponse<ShareScreenData>
+public class ShareScreenResponse : SugarTalkResponse<ShareScreenResponseData>
 {
 }
 
-public class ShareScreenData
+public class ShareScreenResponseData
 {
     public ConferenceRoomResponseBaseDto Response { get; set; }
         

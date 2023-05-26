@@ -263,11 +263,20 @@ public class MeetingServiceFixture : MeetingFixtureBase
                 });
             
             response.Data.MeetingUserSession.IsSharingScreen.ShouldBe(expect);
+        }, builder =>
+        {
+            var antMediaServerUtilService = Substitute.For<IAntMediaServerUtilService>();
+
+            antMediaServerUtilService.AddStreamToMeetingAsync(
+                    Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), CancellationToken.None)
+                .Returns(new ConferenceRoomResponseBaseDto { Success = true });
+
+            builder.RegisterInstance(antMediaServerUtilService);
         });
     }
 
     [Fact]
-    public async Task ShouldExceptionWhenChangeAudio()
+    public async Task ShouldNotChangeOtherUserAudio()
     {
         var scheduleMeetingResponse = await _meetingUtil.ScheduleMeeting();
 
