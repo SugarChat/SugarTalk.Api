@@ -251,7 +251,7 @@ public class MeetingServiceFixture : MeetingFixtureBase
 
         await _meetingUtil.AddMeetingUserSession(1, meeting.Id, 1);
         await _meetingUtil.AddMeetingUserSession(2, meeting.Id, user.Id, isSharingScreen: isSharingScreen);
-        
+
         await Run<IMediator>(async mediator =>
         {
             var response = await mediator.SendAsync<ShareScreenCommand, ShareScreenResponse>(
@@ -261,18 +261,9 @@ public class MeetingServiceFixture : MeetingFixtureBase
                     StreamId = "123456",
                     IsShared = true
                 });
-            
+
             response.Data.MeetingUserSession.IsSharingScreen.ShouldBe(expect);
-        }, builder =>
-        {
-            var antMediaServerUtilService = Substitute.For<IAntMediaServerUtilService>();
-
-            antMediaServerUtilService.AddStreamToMeetingAsync(
-                    Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), CancellationToken.None)
-                .Returns(new ConferenceRoomResponseBaseDto { Success = true });
-
-            builder.RegisterInstance(antMediaServerUtilService);
-        });
+        }, SetupMocking);
     }
 
     [Fact]
@@ -319,7 +310,7 @@ public class MeetingServiceFixture : MeetingFixtureBase
         {
             await _meetingUtil.AddMeetingUserSession(2, meeting.Id, user2.Id);
             await _meetingUtil.AddMeetingUserSession(1, meeting.Id, currentUser.Id);
-            
+
             var response = await mediator.SendAsync<ChangeAudioCommand, ChangeAudioResponse>(
                 new ChangeAudioCommand
                 {
@@ -329,15 +320,21 @@ public class MeetingServiceFixture : MeetingFixtureBase
                 });
 
             response.Data.MeetingUserSession.IsMuted.ShouldBe(expect);
-        }, builder =>
-        {
-            var antMediaServerUtilService = Substitute.For<IAntMediaServerUtilService>();
+        }, SetupMocking);
+    }
 
-            antMediaServerUtilService.AddStreamToMeetingAsync(
-                    Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), CancellationToken.None)
-                .Returns(new ConferenceRoomResponseBaseDto { Success = true });
+    private void SetupMocking(ContainerBuilder builder)
+    {
+        var antMediaServerUtilService = Substitute.For<IAntMediaServerUtilService>();
 
-            builder.RegisterInstance(antMediaServerUtilService);
-        });
+        antMediaServerUtilService.AddStreamToMeetingAsync(
+                Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), CancellationToken.None)
+            .Returns(new ConferenceRoomResponseBaseDto { Success = true });
+            
+        antMediaServerUtilService.RemoveStreamFromMeetingAsync(
+                Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), CancellationToken.None)
+            .Returns(new ConferenceRoomResponseBaseDto { Success = true });
+
+        builder.RegisterInstance(antMediaServerUtilService); 
     }
 }

@@ -41,7 +41,12 @@ public partial class MeetingService
                 .AddStreamToMeetingAsync(appName, meeting.MeetingNumber, command.StreamId, cancellationToken).ConfigureAwait(false);
         }
         else
+        {
             userSession.IsMuted = false;
+            
+            response = await _antMediaServerUtilService
+                .RemoveStreamFromMeetingAsync(appName, meeting.MeetingNumber, command.StreamId, cancellationToken).ConfigureAwait(false);
+        }
 
         await _meetingDataProvider.UpdateMeetingUserSessionAsync(userSession, cancellationToken).ConfigureAwait(false);
 
@@ -77,7 +82,12 @@ public partial class MeetingService
             }
         }
         else
+        {
             userSession.IsSharingScreen = false;
+            
+            response = await _antMediaServerUtilService
+                .RemoveStreamFromMeetingAsync(appName, meeting.MeetingNumber, command.StreamId, cancellationToken).ConfigureAwait(false);
+        }
 
         await _meetingDataProvider
             .UpdateMeetingUserSessionAsync(userSession, cancellationToken).ConfigureAwait(false);
