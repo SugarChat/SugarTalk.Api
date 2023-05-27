@@ -55,7 +55,7 @@ namespace SugarTalk.Api
                 app.UseSwagger();
                 app.UseSwaggerUI(c =>
                 {
-                    c.SwaggerEndpoint("/swagger/v1/swagger.json", "Smarties.Api.xml");
+                    c.SwaggerEndpoint("/swagger/v1/swagger.json", "SugarTalk.Api.xml");
                     c.DocExpansion(DocExpansion.None);
                 });
             }
