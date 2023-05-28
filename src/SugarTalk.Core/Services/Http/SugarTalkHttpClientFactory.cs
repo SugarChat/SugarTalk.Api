@@ -147,7 +147,7 @@ public class SugarTalkHttpClientFactory : ISugarTalkHttpClientFactory
     
     private static void LogHttpError(string requestUrl, HttpMethod httpMethod, HttpResponseMessage response)
     {
-        Log.Error("Smarties http {Method} {Url} error, The response: {ResponseJson}", 
+        Log.Error("SugarTalk http {Method} {Url} error, The response: {ResponseJson}", 
             httpMethod.ToString(), requestUrl, JsonConvert.SerializeObject(response));
     }
     

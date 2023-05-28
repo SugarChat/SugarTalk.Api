@@ -1,7 +1,7 @@
 ﻿using System;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using Smarties.Messages.Enums.Foundation;
+using SugarTalk.Messages.Enums.Foundation;
 
 namespace SugarTalk.Core.Domain.Foundation
 {

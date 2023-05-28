@@ -6,12 +6,12 @@ using HR.Message.Contract.Command;
 using HR.Message.Contract.Event;
 using Microsoft.EntityFrameworkCore;
 using Shouldly;
-using Smarties.Messages.Enums.Foundation;
 using SugarTalk.Core.Data;
 using SugarTalk.Core.Domain.Foundation;
 using SugarTalk.Core.Services.Foundation;
 using SugarTalk.IntegrationTests.TestBaseClasses;
 using SugarTalk.IntegrationTests.Utils.Foundation;
+using SugarTalk.Messages.Enums.Foundation;
 using Xunit;
 
 namespace SugarTalk.IntegrationTests.Services.Foundation;

@@ -1,6 +1,6 @@
 using System.ComponentModel;
 
-namespace Smarties.Messages.Enums.Foundation;
+namespace SugarTalk.Messages.Enums.Foundation;
 
 public enum PositionUsStatus
 {
