@@ -117,6 +117,8 @@ namespace SugarTalk.Core.Services.Meetings
             
             var meeting = await _meetingDataProvider.GetMeetingAsync(command.MeetingNumber, cancellationToken).ConfigureAwait(false);
 
+            if (meeting == null) throw new MeetingNotFoundException();
+
             var response = await _antMediaServerUtilService
                 .AddStreamToMeetingAsync(appName, meeting.MeetingNumber, command.StreamId, cancellationToken).ConfigureAwait(false);
 
