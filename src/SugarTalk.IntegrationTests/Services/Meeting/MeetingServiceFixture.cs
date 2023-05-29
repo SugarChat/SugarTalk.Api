@@ -323,6 +323,24 @@ public class MeetingServiceFixture : MeetingFixtureBase
         }, SetupMocking);
     }
 
+    [Fact]
+    public async Task ShouldNotJoinMeetingWhenMeetingNotFound()
+    {
+        await Assert.ThrowsAsync<MeetingNotFoundException>(async () =>
+        {
+            await Run<IMediator>(async (mediator) =>
+            {
+                await mediator.SendAsync<JoinMeetingCommand, JoinMeetingResponse>(
+                    new JoinMeetingCommand
+                    {
+                        MeetingNumber = "5201314",
+                        StreamId = "123456",
+                        IsMuted = true
+                    });
+            });
+        });
+    }
+
     private void SetupMocking(ContainerBuilder builder)
     {
         var antMediaServerUtilService = Substitute.For<IAntMediaServerUtilService>();
