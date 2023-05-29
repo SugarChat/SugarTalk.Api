@@ -101,6 +101,8 @@ namespace SugarTalk.Core.Services.Meetings
             var meeting = await _meetingDataProvider
                 .GetMeetingAsync(request.MeetingNumber, cancellationToken).ConfigureAwait(false);
 
+            if (meeting == null) throw new MeetingNotFoundException();
+
             if (meeting != null &&
                 meeting.UserSessions.Any() &&
                 meeting.UserSessions.All(x => x.UserId != _currentUser.Id))
@@ -114,6 +116,8 @@ namespace SugarTalk.Core.Services.Meetings
             var user = await _accountDataProvider.GetUserAccountAsync(_currentUser.Id, cancellationToken: cancellationToken).ConfigureAwait(false);
             
             var meeting = await _meetingDataProvider.GetMeetingAsync(command.MeetingNumber, cancellationToken).ConfigureAwait(false);
+
+            if (meeting == null) throw new MeetingNotFoundException();
 
             var response = await _antMediaServerUtilService
                 .AddStreamToMeetingAsync(appName, meeting.MeetingNumber, command.StreamId, cancellationToken).ConfigureAwait(false);
@@ -186,7 +190,7 @@ namespace SugarTalk.Core.Services.Meetings
             {
                 userSession = GenerateNewUserSessionFromUser(user, meeting.Id, isMuted ?? false);
 
-                await _meetingDataProvider.AddUserSessionAsync(userSession, cancellationToken).ConfigureAwait(false);
+                await _meetingDataProvider.AddMeetingUserSessionAsync(userSession, cancellationToken).ConfigureAwait(false);
                 
                 var updateUserSession = _mapper.Map<MeetingUserSessionDto>(userSession);
 
@@ -199,7 +203,7 @@ namespace SugarTalk.Core.Services.Meetings
                 if (isMuted.HasValue)
                     userSession.IsMuted = isMuted.Value;
 
-                await _meetingDataProvider.UpdateUserSessionAsync(userSession, cancellationToken).ConfigureAwait(false);
+                await _meetingDataProvider.UpdateMeetingUserSessionAsync(userSession, cancellationToken).ConfigureAwait(false);
                 
                 meeting.UpdateUserSession(_mapper.Map<MeetingUserSessionDto>(userSession));
             }

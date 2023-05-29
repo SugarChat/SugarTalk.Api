@@ -2,7 +2,7 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using HR.Message.Contract.Command;
-using Smarties.Messages.Enums.Foundation;
+using SugarTalk.Messages.Enums.Foundation;
 
 namespace SugarTalk.Core.Domain.Foundation
 {

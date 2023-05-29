@@ -11,6 +11,8 @@ using Shouldly;
 using SugarTalk.Core.Data;
 using SugarTalk.Core.Domain.Meeting;
 using SugarTalk.Core.Services.AntMediaServer;
+using SugarTalk.Core.Services.Exceptions;
+using SugarTalk.Core.Services.Identity;
 using SugarTalk.IntegrationTests.TestBaseClasses;
 using SugarTalk.IntegrationTests.Utils.Account;
 using SugarTalk.IntegrationTests.Utils.Meetings;
@@ -234,5 +236,123 @@ public class MeetingServiceFixture : MeetingFixtureBase
             response.Data.UserSessions.Single(x => x.UserId == user1.Id).UserName.ShouldBe("mars");
             response.Data.UserSessions.Single(x => x.UserId == user2.Id).UserName.ShouldBe("greg");
         });
+    }
+
+    [Theory]
+    [InlineData(true, false)]
+    [InlineData(false, true)]
+    public async Task CanShareScreen(bool isSharingScreen, bool expect)
+    {
+        var scheduleMeetingResponse = await _meetingUtil.ScheduleMeeting();
+
+        var meeting = await _meetingUtil.GetMeeting(scheduleMeetingResponse.Data.MeetingNumber);
+
+        var user = await _accountUtil.AddUserAccount("test", "123");
+
+        await _meetingUtil.AddMeetingUserSession(1, meeting.Id, 1);
+        await _meetingUtil.AddMeetingUserSession(2, meeting.Id, user.Id, isSharingScreen: isSharingScreen);
+
+        await Run<IMediator>(async mediator =>
+        {
+            var response = await mediator.SendAsync<ShareScreenCommand, ShareScreenResponse>(
+                new ShareScreenCommand
+                {
+                    MeetingUserSessionId = 1,
+                    StreamId = "123456",
+                    IsShared = true
+                });
+
+            response.Data.MeetingUserSession.IsSharingScreen.ShouldBe(expect);
+        }, SetupMocking);
+    }
+
+    [Fact]
+    public async Task ShouldNotChangeOtherUserAudio()
+    {
+        var scheduleMeetingResponse = await _meetingUtil.ScheduleMeeting();
+
+        var meeting = await _meetingUtil.GetMeeting(scheduleMeetingResponse.Data.MeetingNumber);
+
+        var user1 = await _accountUtil.AddUserAccount("test1", "123");
+        var user2 = await _accountUtil.AddUserAccount("test2", "123");
+
+        await Assert.ThrowsAsync<CannotChangeAudioWhenConfirmRequiredException>(async () =>
+        {
+            await Run<IMediator>(async (mediator) =>
+            {
+                await _meetingUtil.AddMeetingUserSession(1, meeting.Id, user1.Id);
+                await _meetingUtil.AddMeetingUserSession(2, meeting.Id, user2.Id);
+                
+                await mediator.SendAsync<ChangeAudioCommand, ChangeAudioResponse>(
+                    new ChangeAudioCommand
+                    {
+                        MeetingUserSessionId = 1,
+                        StreamId = "123456",
+                        IsMuted = true
+                    });
+            });
+        });
+    }
+
+    [Theory]
+    [InlineData(true, true)]
+    [InlineData(false, false)]
+    public async Task CanChangeAudio(bool isMuted, bool expect)
+    {
+        var scheduleMeetingResponse = await _meetingUtil.ScheduleMeeting();
+
+        var meeting = await _meetingUtil.GetMeeting(scheduleMeetingResponse.Data.MeetingNumber);
+
+        var user1 = await _accountUtil.AddUserAccount("test1", "123");
+        var user2 = await _accountUtil.AddUserAccount("test2", "123");
+
+        await Run<IMediator, ICurrentUser>(async (mediator, currentUser) =>
+        {
+            await _meetingUtil.AddMeetingUserSession(2, meeting.Id, user2.Id);
+            await _meetingUtil.AddMeetingUserSession(1, meeting.Id, currentUser.Id);
+
+            var response = await mediator.SendAsync<ChangeAudioCommand, ChangeAudioResponse>(
+                new ChangeAudioCommand
+                {
+                    MeetingUserSessionId = 1,
+                    StreamId = "123456",
+                    IsMuted = isMuted
+                });
+
+            response.Data.MeetingUserSession.IsMuted.ShouldBe(expect);
+        }, SetupMocking);
+    }
+
+    [Fact]
+    public async Task ShouldNotJoinMeetingWhenMeetingNotFound()
+    {
+        await Assert.ThrowsAsync<MeetingNotFoundException>(async () =>
+        {
+            await Run<IMediator>(async (mediator) =>
+            {
+                await mediator.SendAsync<JoinMeetingCommand, JoinMeetingResponse>(
+                    new JoinMeetingCommand
+                    {
+                        MeetingNumber = "5201314",
+                        StreamId = "123456",
+                        IsMuted = true
+                    });
+            });
+        });
+    }
+
+    private void SetupMocking(ContainerBuilder builder)
+    {
+        var antMediaServerUtilService = Substitute.For<IAntMediaServerUtilService>();
+
+        antMediaServerUtilService.AddStreamToMeetingAsync(
+                Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), CancellationToken.None)
+            .Returns(new ConferenceRoomResponseBaseDto { Success = true });
+            
+        antMediaServerUtilService.RemoveStreamFromMeetingAsync(
+                Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), CancellationToken.None)
+            .Returns(new ConferenceRoomResponseBaseDto { Success = true });
+
+        builder.RegisterInstance(antMediaServerUtilService); 
     }
 }
