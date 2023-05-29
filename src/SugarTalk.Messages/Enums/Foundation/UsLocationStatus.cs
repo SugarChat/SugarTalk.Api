@@ -1,4 +1,4 @@
-namespace Smarties.Messages.Enums.Foundation;
+namespace SugarTalk.Messages.Enums.Foundation;
 
 public enum UsLocationStatus
 {

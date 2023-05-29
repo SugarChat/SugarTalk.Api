@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -12,6 +13,7 @@ using SugarTalk.Core.Services.AntMediaServer;
 using SugarTalk.Core.Services.Meetings;
 using SugarTalk.Messages.Commands.Meetings;
 using SugarTalk.Messages.Dto.Meetings;
+using SugarTalk.Messages.Dto.Users;
 using SugarTalk.Messages.Enums.Meeting;
 using SugarTalk.Messages.Requests.Meetings;
 
@@ -89,6 +91,21 @@ public class MeetingUtil : TestUtil
             return await repository.QueryNoTracking<Meeting>()
                 .Where(x => x.MeetingNumber == meetingNumber)
                 .SingleAsync(CancellationToken.None);
+        });
+    }
+
+    public async Task AddMeetingUserSession(int id, Guid meetingId, int userId, bool isMuted = false, bool isSharingScreen = false)
+    {
+        await RunWithUnitOfWork<IRepository>(async repository =>
+        {
+            await repository.InsertAsync(new MeetingUserSession
+            {
+                Id = id,
+                UserId = userId,
+                IsMuted = isMuted,
+                MeetingId = meetingId,
+                IsSharingScreen = isSharingScreen
+            }, CancellationToken.None);
         });
     }
 }

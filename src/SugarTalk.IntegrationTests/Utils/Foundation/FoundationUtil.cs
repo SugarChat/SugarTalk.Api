@@ -2,9 +2,9 @@ using System;
 using System.Threading.Tasks;
 using Autofac;
 using HR.Message.Contract.Command;
-using Smarties.Messages.Enums.Foundation;
 using SugarTalk.Core.Data;
 using SugarTalk.Core.Domain.Foundation;
+using SugarTalk.Messages.Enums.Foundation;
 
 namespace SugarTalk.IntegrationTests.Utils.Foundation;
 
