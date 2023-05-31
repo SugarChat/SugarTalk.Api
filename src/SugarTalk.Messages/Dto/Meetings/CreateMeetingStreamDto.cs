@@ -2,6 +2,21 @@ using Newtonsoft.Json;
 
 namespace SugarTalk.Messages.Dto.Meetings;
 
+public class CreateMeetingStreamResponseBaseDto
+{
+    [JsonProperty("success")]
+    public bool Success { get; set; }
+    
+    [JsonProperty("message")]
+    public string Message { get; set; }
+    
+    [JsonProperty("dataId")]
+    public string DataId { get; set; }
+    
+    [JsonProperty("errorId")]
+    public int ErrorId { get; set; }
+}
+
 public class CreateMeetingStreamDto
 {
     [JsonProperty("streamId")]
@@ -23,7 +38,7 @@ public class CreateMeetingStreamDto
     public bool Publish { get; set; }
 }
 
-public class CreateMeetingStreamResponseDto : ConferenceRoomResponseBaseDto
+public class CreateMeetingStreamResponseDto : CreateMeetingStreamResponseBaseDto
 {
     [JsonProperty("streamId")]
     public string StreamId { get; set; }
