@@ -18,6 +18,6 @@ public class CreateMeetingStreamCommand : ICommand
     public bool Publish { get; set; } = true;
 }
 
-public class CreateMeetingStreamResponse : SugarTalkResponse<CreateMeetingStreamDto>
+public class CreateMeetingStreamResponse : SugarTalkResponse<CreateMeetingStreamResponseDto>
 {
 }
