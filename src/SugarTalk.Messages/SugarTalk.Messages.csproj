@@ -3,7 +3,17 @@
     <PropertyGroup>
         <TargetFrameworks>net7.0;netstandard2.1</TargetFrameworks>
         <LangVersion>11</LangVersion>
-        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <GenerateDocumentationFile>True</GenerateDocumentationFile>
+        <RootNamespace>SugarTalk.Messages</RootNamespace>
+    </PropertyGroup>
+
+    <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
+        <NoWarn>1701;1702;1591</NoWarn>
+    </PropertyGroup>
+
+    <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
+        <NoWarn>1701;1702;1591</NoWarn>
     </PropertyGroup>
 
     <ItemGroup>

@@ -30,6 +30,9 @@ public interface IAntMediaServerClient : IScopedDependency
     
     Task<ConferenceRoomResponseBaseDto> DeleteStreamFromConferenceRoomAsync(
         string appName, string meetingNumber, string streamId, CancellationToken cancellationToken);
+
+    Task<CreateMeetingStreamResponseDto> CreateCustomStreamAsync(
+        string appName, bool autoStart, CreateMeetingStreamDto createMeetingStream, CancellationToken cancellationToken);
 }
 
 public class AntMediaServerClient : IAntMediaServerClient
@@ -97,5 +100,13 @@ public class AntMediaServerClient : IAntMediaServerClient
         return await _httpClientFactory
             .PutAsync<ConferenceRoomResponseBaseDto>(
                 $"{_antMediaSetting.BaseUrl}/{appName}/rest/v2/broadcasts/conference-rooms/{meetingNumber}/delete?streamId={streamId}", null, cancellationToken).ConfigureAwait(false);
+    }
+
+    public async Task<CreateMeetingStreamResponseDto> CreateCustomStreamAsync(
+        string appName, bool autoStart, CreateMeetingStreamDto createMeetingStream, CancellationToken cancellationToken)
+    {
+        return await _httpClientFactory
+            .PostAsJsonAsync<CreateMeetingStreamResponseDto>(
+                $"{_antMediaSetting.BaseUrl}/{appName}/rest/v2/broadcasts/create?autoStart={autoStart}", createMeetingStream, cancellationToken).ConfigureAwait(false);
     }
 }
