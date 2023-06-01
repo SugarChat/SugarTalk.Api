@@ -8,6 +8,7 @@ using Microsoft.EntityFrameworkCore;
 using SugarTalk.Core.Data;
 using SugarTalk.Core.Domain.Meeting;
 using SugarTalk.Core.Ioc;
+using SugarTalk.Messages.Dto.Meetings;
 using SugarTalk.Messages.Dto.Users;
 
 namespace SugarTalk.Core.Services.Meetings;

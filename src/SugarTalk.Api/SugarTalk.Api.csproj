@@ -8,6 +8,14 @@
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
     </PropertyGroup>
 
+    <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
+      <NoWarn>1701;1702;1591;IL2121</NoWarn>
+    </PropertyGroup>
+
+    <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
+      <NoWarn>1701;1702;1591;IL2121</NoWarn>
+    </PropertyGroup>
+
     <ItemGroup>
         <PackageReference Include="Autofac" Version="7.0.0" />
         <PackageReference Include="Autofac.Extensions.DependencyInjection" Version="8.0.0" />
@@ -24,10 +32,6 @@
 
     <ItemGroup>
       <ProjectReference Include="..\SugarTalk.Core\SugarTalk.Core.csproj" />
-    </ItemGroup>
-
-    <ItemGroup>
-      <Folder Include="Views" />
     </ItemGroup>
 
 </Project>
