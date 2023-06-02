@@ -8,7 +8,7 @@ namespace SugarTalk.Api.Controllers;
 
 [Authorize]
 [ApiController]
-[Route("[controller]")]
+[Route("api/[controller]")]
 public class MeetingController : ControllerBase
 {
     private readonly IMediator _mediator;

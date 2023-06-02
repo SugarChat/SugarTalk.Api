@@ -1,12 +1,11 @@
 using Mediator.Net;
 using Microsoft.AspNetCore.Mvc;
-using SugarTalk.Messages.Commands.Account;
 using SugarTalk.Messages.Requests.Account;
 
 namespace SugarTalk.Api.Controllers;
 
 [ApiController]
-[Route("[controller]")]
+[Route("auth")]
 public class AccountController : ControllerBase
 {
     private readonly IMediator _mediator;
