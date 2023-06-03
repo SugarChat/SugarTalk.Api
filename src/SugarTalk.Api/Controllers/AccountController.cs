@@ -5,7 +5,7 @@ using SugarTalk.Messages.Requests.Account;
 namespace SugarTalk.Api.Controllers;
 
 [ApiController]
-[Route("auth")]
+[Route("[controller]")]
 public class AccountController : ControllerBase
 {
     private readonly IMediator _mediator;
