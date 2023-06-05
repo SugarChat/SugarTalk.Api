@@ -3,7 +3,7 @@
     <PropertyGroup>
         <TargetFrameworks>net7.0;netstandard2.1</TargetFrameworks>
         <LangVersion>11</LangVersion>
-        <GenerateDocumentationFile>True</GenerateDocumentationFile>
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
     </PropertyGroup>
 
     <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
