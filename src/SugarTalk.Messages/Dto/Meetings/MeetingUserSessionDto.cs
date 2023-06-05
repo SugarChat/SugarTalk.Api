@@ -1,3 +1,6 @@
+using System;
+using System.Collections.Generic;
+
 namespace SugarTalk.Messages.Dto.Meetings;
 
 public class MeetingUserSessionDto
