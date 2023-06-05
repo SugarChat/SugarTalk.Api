@@ -263,6 +263,16 @@ public class MeetingServiceFixture : MeetingFixtureBase
                 });
 
             response.Data.MeetingUserSession.IsSharingScreen.ShouldBe(expect);
+
+            if (!isSharingScreen)
+            {
+                response.Data.MeetingUserSession.UserSessionStreams.Count.ShouldBe(1);
+                response.Data.MeetingUserSession.UserSessionStreams.Single().StreamId.ShouldBe("123456");
+                response.Data.MeetingUserSession.UserSessionStreams.Single().MeetingUserSessionId.ShouldBe(1);
+                response.Data.MeetingUserSession.UserSessionStreams.Single().StreamType.ShouldBe(MeetingStreamType.ScreenSharing);
+            }
+            else
+                response.Data.MeetingUserSession.UserSessionStreams.ShouldNotBeNull();
         }, SetupMocking);
     }
 
@@ -303,7 +313,6 @@ public class MeetingServiceFixture : MeetingFixtureBase
 
         var meeting = await _meetingUtil.GetMeeting(scheduleMeetingResponse.Data.MeetingNumber);
 
-        var user1 = await _accountUtil.AddUserAccount("test1", "123");
         var user2 = await _accountUtil.AddUserAccount("test2", "123");
 
         await Run<IMediator, ICurrentUser>(async (mediator, currentUser) =>
@@ -320,6 +329,16 @@ public class MeetingServiceFixture : MeetingFixtureBase
                 });
 
             response.Data.MeetingUserSession.IsMuted.ShouldBe(expect);
+
+            if (isMuted)
+            {
+                response.Data.MeetingUserSession.UserSessionStreams.Count.ShouldBe(1);
+                response.Data.MeetingUserSession.UserSessionStreams.Single().StreamId.ShouldBe("123456");
+                response.Data.MeetingUserSession.UserSessionStreams.Single().MeetingUserSessionId.ShouldBe(1);
+                response.Data.MeetingUserSession.UserSessionStreams.Single().StreamType.ShouldBe(MeetingStreamType.Audio);
+            }
+            else
+                response.Data.MeetingUserSession.UserSessionStreams.ShouldNotBeNull();
         }, SetupMocking);
     }
 
