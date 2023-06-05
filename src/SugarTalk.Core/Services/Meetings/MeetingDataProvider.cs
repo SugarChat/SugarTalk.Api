@@ -94,13 +94,12 @@ namespace SugarTalk.Core.Services.Meetings
             var userSessionIds = userSessions.Select(x => x.Id);
 
             var userAccounts = await _repository
-                .ToListAsync<UserAccount>(x => userIds.Contains(x.Id), cancellationToken)
-                .ConfigureAwait(false);
+                .ToListAsync<UserAccount>(x => userIds.Contains(x.Id), cancellationToken).ConfigureAwait(false);
 
             var userSessionStreams = await _repository.Query<MeetingUserSessionStream>()
                 .Where(x => userSessionIds.Contains(x.MeetingUserSessionId))
                 .ProjectTo<MeetingUserSessionStreamDto>(_mapper.ConfigurationProvider)
-                .ToListAsync(cancellationToken);
+                .ToListAsync(cancellationToken).ConfigureAwait(false);
 
             userSessions.ForEach(userSession =>
             {
