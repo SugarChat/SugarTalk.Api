@@ -18,7 +18,6 @@ namespace SugarTalk.Api
 
         private IConfiguration Configuration { get; }
 
-        // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddCorrelate(options => options.RequestHeaders = SugarTalkConstants.CorrelationIdHeaders);
@@ -37,16 +36,8 @@ namespace SugarTalk.Api
             {
                 options.Filters.Add<GlobalExceptionFilter>();
             });
-            services.AddSignalR(config =>
-            {
-                config.EnableDetailedErrors = true;
-            }).AddJsonProtocol(options =>
-            {
-                options.PayloadSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
-            });
         }
 
-        // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
             if (env.IsDevelopment())
@@ -61,8 +52,6 @@ namespace SugarTalk.Api
             }
             
             app.UseSerilogRequestLogging();
-            app.UseHttpsRedirection();
-            app.UseStaticFiles();
             app.UseCorrelate();
             app.UseRouting();
             app.UseCors();

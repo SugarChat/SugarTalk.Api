@@ -69,12 +69,14 @@ namespace SugarTalk.Core.Services.Meetings
             var postData = new CreateMeetingDto
             {
                 MeetingNumber = GenerateMeetingNumber(),
-                Mode = command.MeetingStreamMode.ToString().ToLower()
+                Mode = command.MeetingStreamMode.ToString().ToLower(),
+                StartDate = command.StartDate.ToUnixTimeSeconds(),
+                EndDate = command.EndDate.ToUnixTimeSeconds()
             };
             
             var response = await _antMediaServerUtilService.CreateMeetingAsync(appName, postData, cancellationToken).ConfigureAwait(false);
 
-            if (response == null) throw new MeetingCreatedException();
+            if (response == null) throw new CannotCreateMeetingException();
             
             var meeting = new Meeting
             {
@@ -100,8 +102,6 @@ namespace SugarTalk.Core.Services.Meetings
         {
             var meeting = await _meetingDataProvider
                 .GetMeetingAsync(request.MeetingNumber, cancellationToken).ConfigureAwait(false);
-
-            if (meeting == null) throw new MeetingNotFoundException();
 
             if (meeting != null &&
                 meeting.UserSessions.Any() &&
