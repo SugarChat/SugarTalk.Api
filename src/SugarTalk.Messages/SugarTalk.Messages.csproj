@@ -16,6 +16,14 @@
         <NoWarn>1701;1702;1591</NoWarn>
     </PropertyGroup>
 
+    <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
+      <NoWarn>1701;1702;1591</NoWarn>
+    </PropertyGroup>
+
+    <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
+      <NoWarn>1701;1702;1591</NoWarn>
+    </PropertyGroup>
+
     <ItemGroup>
       <PackageReference Include="Kurento.NET" Version="1.1.1" />
       <PackageReference Include="Mediator.Net" Version="4.7.0" />

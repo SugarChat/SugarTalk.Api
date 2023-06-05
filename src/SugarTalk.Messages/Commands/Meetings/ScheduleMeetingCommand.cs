@@ -1,3 +1,4 @@
+using System;
 using Mediator.Net.Contracts;
 using SugarTalk.Messages.Dto.Meetings;
 using SugarTalk.Messages.Enums.Meeting;
@@ -9,9 +10,9 @@ public class ScheduleMeetingCommand : ICommand
 {
     public MeetingStreamMode MeetingStreamMode { get; set; } = MeetingStreamMode.MCU;
     
-    public long StartDate { get; set; }
+    public DateTimeOffset StartDate { get; set; }
     
-    public long EndDate { get; set; }
+    public DateTimeOffset EndDate { get; set; }
 }
 
 public class ScheduleMeetingResponse : SugarTalkResponse<MeetingDto>
