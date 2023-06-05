@@ -11,7 +11,7 @@ public class ScheduleMeetingCommand : ICommand
     public MeetingStreamMode MeetingStreamMode { get; set; } = MeetingStreamMode.MCU;
     
     public DateTimeOffset StartDate { get; set; }
-    
+        
     public DateTimeOffset EndDate { get; set; }
 }
 
