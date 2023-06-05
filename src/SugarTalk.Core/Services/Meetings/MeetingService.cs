@@ -154,12 +154,6 @@ namespace SugarTalk.Core.Services.Meetings
 
             if (meeting.MeetingMasterUserId != _currentUser.Id) throw new CannotEndMeetingWhenUnauthorizedException();
 
-            var response = await _antMediaServerUtilService
-                .RemoveMeetingByMeetingNumberAsync(appName, meeting.MeetingNumber, cancellationToken)
-                .ConfigureAwait(false);
-
-            if (!response.Success) return new MeetingEndedEvent();
-
             await _meetingDataProvider.RemoveMeetingUserSessionStreamsAsync(
                 meeting.UserSessions.Select(x => x.Id).ToList(), cancellationToken).ConfigureAwait(false);
 
@@ -168,6 +162,12 @@ namespace SugarTalk.Core.Services.Meetings
 
             await _meetingDataProvider.RemoveMeetingAsync(
                 _mapper.Map<Meeting>(meeting), cancellationToken).ConfigureAwait(false);
+            
+            var response = await _antMediaServerUtilService
+                .RemoveMeetingByMeetingNumberAsync(appName, meeting.MeetingNumber, cancellationToken)
+                .ConfigureAwait(false);
+
+            if (!response.Success) return new MeetingEndedEvent();
 
             return new MeetingEndedEvent
             {

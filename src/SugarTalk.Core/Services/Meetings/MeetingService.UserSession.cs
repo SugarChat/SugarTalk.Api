@@ -1,3 +1,4 @@
+using System;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -58,10 +59,12 @@ public partial class MeetingService
 
         await _meetingDataProvider.UpdateMeetingUserSessionAsync(userSession, cancellationToken).ConfigureAwait(false);
 
+        var updateMeeting = await _meetingDataProvider.GetMeetingAsync(meeting.MeetingNumber, cancellationToken).ConfigureAwait(false);
+
         return new AudioChangedEvent
         {
             Response = response,
-            MeetingUserSession = _mapper.Map<MeetingUserSessionDto>(userSession)
+            MeetingUserSession = updateMeeting.UserSessions.FirstOrDefault(x => x.Id == userSession.Id)
         };
     }
 
@@ -105,10 +108,12 @@ public partial class MeetingService
         await _meetingDataProvider
             .UpdateMeetingUserSessionAsync(userSession, cancellationToken).ConfigureAwait(false);
         
+        var updateMeeting = await _meetingDataProvider.GetMeetingAsync(meeting.MeetingNumber, cancellationToken).ConfigureAwait(false);
+
         return new ScreenSharedEvent
         {
             Response = response,
-            MeetingUserSession = _mapper.Map<MeetingUserSessionDto>(userSession)
+            MeetingUserSession = updateMeeting.UserSessions.FirstOrDefault(x => x.Id == userSession.Id)
         };
     }
     
@@ -123,6 +128,12 @@ public partial class MeetingService
             MeetingUserSessionId = userSessionId
         };
 
+        var userSessionStreams = 
+            await _meetingDataProvider.GetMeetingUserSessionStreamsAsync(userSessionId, cancellationToken).ConfigureAwait(false);
+
+        if (userSessionStreams.Any(x => x.StreamType == streamType))
+            throw new CannotAddStreamWhenStreamTypeExistException(streamType);
+        
         await _meetingDataProvider
             .AddMeetingUserSessionStreamAsync(userSessionStream, cancellationToken).ConfigureAwait(false);
     }

@@ -60,6 +60,8 @@ public partial class MeetingDataProvider
     {
         if (userSession != null)
             await _repository.UpdateAsync(userSession, cancellationToken).ConfigureAwait(false);
+        
+        await _unitOfWork.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
     }
     
     public async Task<List<MeetingUserSessionDto>> GetUserSessionsByMeetingIdAsync(Guid meetingId, CancellationToken cancellationToken)
