@@ -69,7 +69,9 @@ namespace SugarTalk.Core.Services.Meetings
             var postData = new CreateMeetingDto
             {
                 MeetingNumber = GenerateMeetingNumber(),
-                Mode = command.MeetingStreamMode.ToString().ToLower()
+                Mode = command.MeetingStreamMode.ToString().ToLower(),
+                StartDate = command.StartDate.ToUnixTimeSeconds(),
+                EndDate = command.EndDate.ToUnixTimeSeconds()
             };
             
             var response = await _antMediaServerUtilService.CreateMeetingAsync(appName, postData, cancellationToken).ConfigureAwait(false);
