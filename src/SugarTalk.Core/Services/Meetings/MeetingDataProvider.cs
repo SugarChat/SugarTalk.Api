@@ -89,9 +89,9 @@ namespace SugarTalk.Core.Services.Meetings
         private async Task EnrichMeetingUserSessionsAsync(
             List<MeetingUserSessionDto> userSessions, CancellationToken cancellationToken)
         {
-            var userIds = userSessions.Select(x => x.UserId).ToList();
+            var userIds = userSessions.Select(x => x.UserId);
 
-            var userSessionIds = userSessions.Select(x => x.Id).ToList();
+            var userSessionIds = userSessions.Select(x => x.Id);
 
             var userAccounts = await _repository
                 .ToListAsync<UserAccount>(x => userIds.Contains(x.Id), cancellationToken)
