@@ -80,7 +80,7 @@ namespace SugarTalk.Core.Services.Meetings
                 updateMeeting.UserSessions =
                     await GetUserSessionsByMeetingIdAsync(meeting.Id, cancellationToken).ConfigureAwait(false);
 
-                await EnrichMeetingUserSessionsAsync(updateMeeting.UserSessions, cancellationToken);
+                await EnrichMeetingUserSessionsAsync(updateMeeting.UserSessions, cancellationToken).ConfigureAwait(false);
             }
             
             return updateMeeting;
