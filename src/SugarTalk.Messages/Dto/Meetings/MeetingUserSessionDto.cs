@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace SugarTalk.Messages.Dto.Users;
+namespace SugarTalk.Messages.Dto.Meetings;
 
 public class MeetingUserSessionDto
 {
@@ -12,8 +12,12 @@ public class MeetingUserSessionDto
     public Guid MeetingId { get; set; }
         
     public int UserId { get; set; }
+    
+    public string UserName { set; get; }
 
     public bool IsMuted { get; set; }
     
     public bool IsSharingScreen { get; set; }
+    
+    public List<MeetingUserSessionStreamDto> UserSessionStreams { get; set; }
 }

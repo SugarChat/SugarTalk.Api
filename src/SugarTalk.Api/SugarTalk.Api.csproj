@@ -6,6 +6,15 @@
         <Nullable>enable</Nullable>
         <ImplicitUsings>enable</ImplicitUsings>
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
+        <DocumentationFile></DocumentationFile>
+    </PropertyGroup>
+
+    <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
+      <NoWarn>1701;1702;1591;IL2121</NoWarn>
+    </PropertyGroup>
+
+    <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
+      <NoWarn>1701;1702;1591;IL2121</NoWarn>
     </PropertyGroup>
 
     <ItemGroup>
@@ -24,10 +33,6 @@
 
     <ItemGroup>
       <ProjectReference Include="..\SugarTalk.Core\SugarTalk.Core.csproj" />
-    </ItemGroup>
-
-    <ItemGroup>
-      <Folder Include="Views" />
     </ItemGroup>
 
 </Project>
