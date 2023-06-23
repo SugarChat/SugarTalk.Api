@@ -25,7 +25,7 @@ public class IdentityUtil : TestUtil
         {
             await repository.InsertAsync(new UserAccount
             {
-                Id = testUser.Id,
+                Id = testUser.Id.Value,
                 UserName = testUser.UserName,
                 Uuid = new Guid("c2af213e-df6e-11ed-b5ea-0242ac120002"),
                 Password = "123456",

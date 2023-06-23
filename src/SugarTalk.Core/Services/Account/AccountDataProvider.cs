@@ -63,8 +63,8 @@ namespace SugarTalk.Core.Services.Account
             await _repository.InsertAsync(user, cancellationToken).ConfigureAwait(false);
         }
         
-        public async Task<UserAccountDto> GetUserAccountAsync(int? id = null, string username = null, string thirdPartyUserId = null, bool includeRoles = false,
-            CancellationToken cancellationToken = default)
+        public async Task<UserAccountDto> GetUserAccountAsync(
+            int? id = null, string username = null, string thirdPartyUserId = null, bool includeRoles = false, CancellationToken cancellationToken = default)
         {
             var query = _repository.QueryNoTracking<UserAccount>();
 

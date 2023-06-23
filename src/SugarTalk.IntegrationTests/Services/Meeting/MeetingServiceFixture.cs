@@ -318,7 +318,7 @@ public class MeetingServiceFixture : MeetingFixtureBase
         await Run<IMediator, ICurrentUser>(async (mediator, currentUser) =>
         {
             await _meetingUtil.AddMeetingUserSession(2, meeting.Id, user2.Id);
-            await _meetingUtil.AddMeetingUserSession(1, meeting.Id, currentUser.Id);
+            await _meetingUtil.AddMeetingUserSession(1, meeting.Id, currentUser.Id.Value);
 
             var response = await mediator.SendAsync<ChangeAudioCommand, ChangeAudioResponse>(
                 new ChangeAudioCommand

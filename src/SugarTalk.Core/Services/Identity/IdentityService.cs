@@ -5,17 +5,20 @@ using System.Threading.Tasks;
 using SugarTalk.Core.Data;
 using SugarTalk.Core.Domain.Account;
 using SugarTalk.Core.Services.Account;
+using SugarTalk.Messages.Dto.Users;
 
 namespace SugarTalk.Core.Services.Identity;
 
 public class IdentityService : IIdentityService
 {
     private readonly IRepository _repository;
+    private readonly ICurrentUser _currentUser;
     private readonly IAccountDataProvider _accountDataProvider;
 
-    public IdentityService(IRepository repository, IAccountDataProvider accountDataProvider)
+    public IdentityService(IRepository repository, ICurrentUser currentUser, IAccountDataProvider accountDataProvider)
     {
         _repository = repository;
+        _currentUser = currentUser;
         _accountDataProvider = accountDataProvider;
     }
     
@@ -35,6 +38,19 @@ public class IdentityService : IIdentityService
         }
         
         return true;
+    }
+
+    public async Task<UserAccountDto> GetCurrentUserAsync(bool throwWhenNotFound = false, CancellationToken cancellationToken = default)
+    {
+        var userId = _currentUser.Id;
+
+        if (userId != null)
+            return await _accountDataProvider.GetUserAccountAsync(userId.Value, cancellationToken: cancellationToken).ConfigureAwait(false);
+        
+        if (throwWhenNotFound)
+            throw new UnauthorizedAccessException();
+
+        return null;
     }
 
     public async Task AllocateUserToRoleAsync(int userId, int roleId, CancellationToken cancellationToken)
