@@ -196,10 +196,16 @@ namespace SugarTalk.Core.Services.Meetings
                 
                 var updateUserSession = _mapper.Map<MeetingUserSessionDto>(userSession);
 
-                var userSessionStream =
-                    await AddMeetingUserSessionStreamIfRequiredAsync(updateUserSession.Id, streamId, streamType, cancellationToken).ConfigureAwait(false);
+                if (isMuted == true)
+                {
+                    var userSessionStream =
+                        await AddMeetingUserSessionStreamIfRequiredAsync(updateUserSession.Id, streamId, streamType, cancellationToken).ConfigureAwait(false);
 
-                updateUserSession.UserSessionStreams = new List<MeetingUserSessionStreamDto> { userSessionStream };
+                    updateUserSession.UserSessionStreams = new List<MeetingUserSessionStreamDto> { userSessionStream };
+                    
+                    await _antMediaServerUtilService
+                        .AddStreamToMeetingAsync(appName, meeting.MeetingNumber, streamId, cancellationToken).ConfigureAwait(false);
+                }
 
                 updateUserSession.UserName = user.UserName;
                 
