@@ -1,6 +1,6 @@
 using Mediator.Net;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using SugarTalk.Messages.Requests.Account;
 
 namespace SugarTalk.Api.Controllers;

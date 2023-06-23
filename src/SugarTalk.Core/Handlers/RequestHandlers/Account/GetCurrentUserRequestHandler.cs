@@ -1,6 +1,6 @@
 using System.Threading;
-using System.Threading.Tasks;
 using Mediator.Net.Context;
+using System.Threading.Tasks;
 using Mediator.Net.Contracts;
 using SugarTalk.Core.Services.Account;
 using SugarTalk.Messages.Requests.Account;
