@@ -110,6 +110,8 @@ public partial class MeetingDataProvider
         if (userSessionStreams is not { Count: > 0 }) return;
 
         await _repository.DeleteAllAsync(userSessionStreams, cancellationToken).ConfigureAwait(false);
+        
+        await _unitOfWork.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
     }
 
     public async Task RemoveMeetingUserSessionsIfRequiredAsync(int userId, Guid meetingId, CancellationToken cancellationToken)
