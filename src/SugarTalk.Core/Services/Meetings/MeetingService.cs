@@ -195,14 +195,11 @@ namespace SugarTalk.Core.Services.Meetings
                 await _meetingDataProvider.AddMeetingUserSessionAsync(userSession, cancellationToken).ConfigureAwait(false);
                 
                 var updateUserSession = _mapper.Map<MeetingUserSessionDto>(userSession);
+                
+                var userSessionStream =
+                    await AddMeetingUserSessionStreamIfRequiredAsync(updateUserSession.Id, streamId, streamType, cancellationToken).ConfigureAwait(false);
 
-                if (isMuted == true)
-                {
-                    var userSessionStream =
-                        await AddMeetingUserSessionStreamIfRequiredAsync(updateUserSession.Id, streamId, streamType, cancellationToken).ConfigureAwait(false);
-
-                    updateUserSession.UserSessionStreams = new List<MeetingUserSessionStreamDto> { userSessionStream };
-                }
+                updateUserSession.UserSessionStreams = new List<MeetingUserSessionStreamDto> { userSessionStream };
 
                 updateUserSession.UserName = user.UserName;
                 
