@@ -29,17 +29,12 @@ public partial class MeetingService
 
         if (meeting == null) throw new MeetingNotFoundException();
 
-        await RemoveMeetingUserSessionStreamAsync(userSession.Id, MeetingStreamType.Audio, cancellationToken).ConfigureAwait(false);
-        
         if (command.IsMuted)
         {
             if (userSession.UserId != _currentUser.Id)
                 throw new CannotChangeAudioWhenConfirmRequiredException();
 
             userSession.IsMuted = command.IsMuted;
-            
-            await AddMeetingUserSessionStreamAsync(
-                userSession.Id, command.StreamId, MeetingStreamType.Audio, cancellationToken).ConfigureAwait(false);
         }
         else
             userSession.IsMuted = false;
