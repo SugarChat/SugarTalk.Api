@@ -1,12 +1,9 @@
-using System;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using SugarTalk.Core.Domain.Meeting;
 using SugarTalk.Core.Services.Exceptions;
 using SugarTalk.Messages.Commands.Meetings;
-using SugarTalk.Messages.Dto.Meetings;
-using SugarTalk.Messages.Dto.Users;
 using SugarTalk.Messages.Enums.Meeting;
 using SugarTalk.Messages.Events.Meeting;
 
@@ -32,8 +29,6 @@ public partial class MeetingService
 
         if (meeting == null) throw new MeetingNotFoundException();
 
-        var response = new ConferenceRoomResponseBaseDto();
-
         if (command.IsMuted)
         {
             if (userSession.UserId != _currentUser.Id)
@@ -43,18 +38,12 @@ public partial class MeetingService
             
             await AddMeetingUserSessionStreamAsync(
                 userSession.Id, command.StreamId, MeetingStreamType.Audio, cancellationToken).ConfigureAwait(false);
-
-            response = await _antMediaServerUtilService
-                .AddStreamToMeetingAsync(appName, meeting.MeetingNumber, command.StreamId, cancellationToken).ConfigureAwait(false);
         }
         else
         {
             userSession.IsMuted = false;
 
             await RemoveMeetingUserSessionStreamAsync(userSession.Id, MeetingStreamType.Audio, cancellationToken).ConfigureAwait(false);
-            
-            response = await _antMediaServerUtilService
-                .RemoveStreamFromMeetingAsync(appName, meeting.MeetingNumber, command.StreamId, cancellationToken).ConfigureAwait(false);
         }
 
         await _meetingDataProvider.UpdateMeetingUserSessionAsync(userSession, cancellationToken).ConfigureAwait(false);
@@ -63,7 +52,6 @@ public partial class MeetingService
 
         return new AudioChangedEvent
         {
-            Response = response,
             MeetingUserSession = updateMeeting.UserSessions.FirstOrDefault(x => x.Id == userSession.Id)
         };
     }
@@ -77,8 +65,6 @@ public partial class MeetingService
         
         if (meeting == null) throw new MeetingNotFoundException();
 
-        var response = new ConferenceRoomResponseBaseDto();
-        
         if (command.IsShared)
         {
             var otherSharing = await _meetingDataProvider
@@ -90,9 +76,6 @@ public partial class MeetingService
                 
                 await AddMeetingUserSessionStreamAsync(
                     userSession.Id, command.StreamId, MeetingStreamType.ScreenSharing, cancellationToken).ConfigureAwait(false);
-
-                response = await _antMediaServerUtilService
-                    .AddStreamToMeetingAsync(appName, meeting.MeetingNumber, command.StreamId, cancellationToken).ConfigureAwait(false);
             }
         }
         else
@@ -100,9 +83,6 @@ public partial class MeetingService
             userSession.IsSharingScreen = false;
 
             await RemoveMeetingUserSessionStreamAsync(userSession.Id, MeetingStreamType.ScreenSharing, cancellationToken).ConfigureAwait(false);
-            
-            response = await _antMediaServerUtilService
-                .RemoveStreamFromMeetingAsync(appName, meeting.MeetingNumber, command.StreamId, cancellationToken).ConfigureAwait(false);
         }
 
         await _meetingDataProvider
@@ -112,7 +92,6 @@ public partial class MeetingService
 
         return new ScreenSharedEvent
         {
-            Response = response,
             MeetingUserSession = updateMeeting.UserSessions.FirstOrDefault(x => x.Id == userSession.Id)
         };
     }

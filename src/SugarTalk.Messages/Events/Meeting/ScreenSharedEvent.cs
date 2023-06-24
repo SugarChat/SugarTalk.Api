@@ -6,8 +6,6 @@ namespace SugarTalk.Messages.Events.Meeting
 {
     public class ScreenSharedEvent : IEvent
     {
-        public ConferenceRoomResponseBaseDto Response { get; set; }
-        
         public MeetingUserSessionDto MeetingUserSession { get; set; }
     }
 }

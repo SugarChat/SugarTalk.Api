@@ -27,7 +27,6 @@ public class ChangeAudioCommandHandler : ICommandHandler<ChangeAudioCommand, Cha
         {
             Data = new ChangeAudioResponseData
             {
-                Response = @event.Response,
                 MeetingUserSession = @event.MeetingUserSession
             }
         };
