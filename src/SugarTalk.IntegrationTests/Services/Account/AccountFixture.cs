@@ -209,6 +209,17 @@ public class AccountFixture : AccountFixtureBase
             afterUserAccount.ThirdPartyUserId.ShouldBe(beforeUserAccount.ThirdPartyUserId);
         });
     }
+    
+    [Fact]
+    public async Task CanGetCurrentUser()
+    {
+        await Run<IMediator>(async mediator =>
+        {
+            var response = await mediator.RequestAsync<GetCurrentUserRequest, GetCurrentUserResponse>(new GetCurrentUserRequest());
+
+            response.Data.ShouldNotBeNull();
+        });
+    }
 
     private async Task MarkUserAccountAsUnActivate(UserAccount userAccount)
     {

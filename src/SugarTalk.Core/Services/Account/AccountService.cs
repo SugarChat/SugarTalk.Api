@@ -17,7 +17,7 @@ namespace SugarTalk.Core.Services.Account
     {
         Task<LoginResponse> LoginAsync(LoginRequest request, CancellationToken cancellationToken);
         
-        Task<UserAccountDto> GetCurrentUserAsync(CancellationToken cancellationToken);
+        Task<GetCurrentUserResponse> GetCurrentUserAsync(GetCurrentUserRequest request, CancellationToken cancellationToken);
         
         Task<UserAccountRegisteredEvent> RegisterAsync(RegisterCommand command, CancellationToken cancellationToken);
         
@@ -27,17 +27,17 @@ namespace SugarTalk.Core.Services.Account
     public class AccountService : IAccountService
     {
         private readonly IMapper _mapper;
-        private readonly ICurrentUser _currentUser;
         private readonly ITokenProvider _tokenProvider;
+        private readonly IIdentityService _identityService;
         private readonly IHttpContextAccessor _httpContextAccessor;
         
         private readonly IAccountDataProvider _accountDataProvider;
 
-        public AccountService(IMapper mapper, ICurrentUser currentUser, IHttpContextAccessor httpContextAccessor, IAccountDataProvider accountDataProvider, ITokenProvider tokenProvider)
+        public AccountService(IMapper mapper, IIdentityService identityService, IHttpContextAccessor httpContextAccessor, IAccountDataProvider accountDataProvider, ITokenProvider tokenProvider)
         {
             _mapper = mapper;
-            _currentUser = currentUser;
             _tokenProvider = tokenProvider;
+            _identityService = identityService;
             _accountDataProvider = accountDataProvider;
             _httpContextAccessor = httpContextAccessor;
         }
@@ -56,10 +56,12 @@ namespace SugarTalk.Core.Services.Account
             };
         }
         
-        public async Task<UserAccountDto> GetCurrentUserAsync(CancellationToken cancellationToken)
+        public async Task<GetCurrentUserResponse> GetCurrentUserAsync(GetCurrentUserRequest request, CancellationToken cancellationToken)
         {
-            return await _accountDataProvider
-                .GetUserAccountAsync(id: _currentUser.Id, includeRoles: true, cancellationToken: cancellationToken).ConfigureAwait(false);
+            return new GetCurrentUserResponse
+            {
+                Data = await _identityService.GetCurrentUserAsync(cancellationToken: cancellationToken).ConfigureAwait(false)
+            };
         }
 
         public async Task<UserAccountDto> GetOrCreateUserAccountFromThirdPartyAsync(string userId, string userName, CancellationToken cancellationToken)

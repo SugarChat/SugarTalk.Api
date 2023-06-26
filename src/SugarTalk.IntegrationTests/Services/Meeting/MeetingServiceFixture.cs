@@ -100,7 +100,7 @@ public class MeetingServiceFixture : MeetingFixtureBase
 
         var meeting = await _meetingUtil.GetMeeting(scheduleMeetingResponse.Data.MeetingNumber);
 
-        await _meetingUtil.JoinMeeting(meeting.MeetingNumber);
+        await _meetingUtil.JoinMeeting(meeting.MeetingNumber, "streamId");
 
         await Run<IMediator, IRepository>(async (mediator, repository) =>
         {
@@ -141,8 +141,8 @@ public class MeetingServiceFixture : MeetingFixtureBase
 
             var meeting = await _meetingUtil.GetMeeting(scheduleMeetingResponse.Data.MeetingNumber);
 
-            await _meetingUtil.JoinMeeting(meeting.MeetingNumber);
-            await _meetingUtil.JoinMeeting(meeting.MeetingNumber);
+            await _meetingUtil.JoinMeeting(meeting.MeetingNumber, "streamId1");
+            await _meetingUtil.JoinMeeting(meeting.MeetingNumber, "streamId2");
         }
         catch (Exception ex)
         {
@@ -159,7 +159,7 @@ public class MeetingServiceFixture : MeetingFixtureBase
 
         var meeting = await _meetingUtil.GetMeeting(scheduleMeetingResponse.Data.MeetingNumber);
 
-        await _meetingUtil.JoinMeeting(meeting.MeetingNumber);
+        await _meetingUtil.JoinMeeting(meeting.MeetingNumber, "streamId");
         
         await Run<IMediator, IRepository>(async (mediator, repository) =>
         {
@@ -200,7 +200,7 @@ public class MeetingServiceFixture : MeetingFixtureBase
         var user1 = await _accountUtil.AddUserAccount("mars", "123");
         var user2 = await _accountUtil.AddUserAccount("greg", "123");
 
-        await _meetingUtil.JoinMeeting(scheduleMeetingResponse.Data.MeetingNumber);
+        await _meetingUtil.JoinMeeting(scheduleMeetingResponse.Data.MeetingNumber, "streamId");
 
         await Run<IMediator, IRepository, IUnitOfWork>(async (mediator, repository, unitOfWork) =>
         {
@@ -311,34 +311,26 @@ public class MeetingServiceFixture : MeetingFixtureBase
     {
         var scheduleMeetingResponse = await _meetingUtil.ScheduleMeeting();
 
-        var meeting = await _meetingUtil.GetMeeting(scheduleMeetingResponse.Data.MeetingNumber);
+        var joinMeeting =
+            await _meetingUtil.JoinMeeting(scheduleMeetingResponse.Data.MeetingNumber, "streamId", !isMuted);
 
-        var user2 = await _accountUtil.AddUserAccount("test2", "123");
+        var userSessionId = joinMeeting.UserSessions.Single().Id;
 
-        await Run<IMediator, ICurrentUser>(async (mediator, currentUser) =>
+        await Run<IMediator>(async (mediator) =>
         {
-            await _meetingUtil.AddMeetingUserSession(2, meeting.Id, user2.Id);
-            await _meetingUtil.AddMeetingUserSession(1, meeting.Id, currentUser.Id);
-
             var response = await mediator.SendAsync<ChangeAudioCommand, ChangeAudioResponse>(
                 new ChangeAudioCommand
                 {
-                    MeetingUserSessionId = 1,
-                    StreamId = "123456",
+                    MeetingUserSessionId = userSessionId,
                     IsMuted = isMuted
                 });
 
             response.Data.MeetingUserSession.IsMuted.ShouldBe(expect);
 
-            if (isMuted)
-            {
-                response.Data.MeetingUserSession.UserSessionStreams.Count.ShouldBe(1);
-                response.Data.MeetingUserSession.UserSessionStreams.Single().StreamId.ShouldBe("123456");
-                response.Data.MeetingUserSession.UserSessionStreams.Single().MeetingUserSessionId.ShouldBe(1);
-                response.Data.MeetingUserSession.UserSessionStreams.Single().StreamType.ShouldBe(MeetingStreamType.Audio);
-            }
-            else
-                response.Data.MeetingUserSession.UserSessionStreams.ShouldNotBeNull();
+            response.Data.MeetingUserSession.UserSessionStreams.Count.ShouldBe(1);
+            response.Data.MeetingUserSession.UserSessionStreams.Single().StreamId.ShouldBe("streamId");
+            response.Data.MeetingUserSession.UserSessionStreams.Single().MeetingUserSessionId.ShouldBe(userSessionId);
+            response.Data.MeetingUserSession.UserSessionStreams.Single().StreamType.ShouldBe(MeetingStreamType.Audio);
         }, SetupMocking);
     }
 
