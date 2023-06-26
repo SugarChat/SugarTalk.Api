@@ -5,7 +5,7 @@ namespace SugarTalk.IntegrationTests;
 
 public class TestCurrentUser : ICurrentUser
 {
-    public int Id { get; init; } = 1;
+    public int? Id { get; init; } = 1;
 
     public UserAccountIssuer AuthType { get; set; }
 

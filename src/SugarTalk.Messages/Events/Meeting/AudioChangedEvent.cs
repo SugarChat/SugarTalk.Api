@@ -6,8 +6,6 @@ namespace SugarTalk.Messages.Events.Meeting
 {
     public class AudioChangedEvent : IEvent
     {
-        public ConferenceRoomResponseBaseDto Response { get; set; }
-        
         public MeetingUserSessionDto MeetingUserSession { get; set; }
     }
 }
