@@ -1,7 +1,6 @@
 using Mediator.Net.Contracts;
-using SugarTalk.Messages.Dto.Meetings;
-using SugarTalk.Messages.Dto.Users;
 using SugarTalk.Messages.Responses;
+using SugarTalk.Messages.Dto.Meetings;
 
 namespace SugarTalk.Messages.Commands.Meetings;
 
@@ -20,7 +19,5 @@ public class ShareScreenResponse : SugarTalkResponse<ShareScreenResponseData>
 
 public class ShareScreenResponseData
 {
-    public ConferenceRoomResponseBaseDto Response { get; set; }
-        
     public MeetingUserSessionDto MeetingUserSession { get; set; }
 }

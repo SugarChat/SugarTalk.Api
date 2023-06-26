@@ -51,15 +51,18 @@ public class MeetingUtil : TestUtil
         });
     }
 
-    public async Task JoinMeeting(string meetingNumber, bool isMuted = false)
+    public async Task<MeetingDto> JoinMeeting(string meetingNumber, string streamId, bool isMuted = false)
     {
-        await Run<IMediator>(async (mediator) =>
+        return await Run<IMediator, MeetingDto>(async (mediator) =>
         {
-            await mediator.SendAsync<JoinMeetingCommand, JoinMeetingResponse>(new JoinMeetingCommand
+            var response = await mediator.SendAsync<JoinMeetingCommand, JoinMeetingResponse>(new JoinMeetingCommand
             {
                 MeetingNumber = meetingNumber,
+                StreamId = streamId,
                 IsMuted = isMuted
             });
+
+            return response.Data.Meeting;
         }, builder =>
         {
             var antMediaServerUtilService = Substitute.For<IAntMediaServerUtilService>();
