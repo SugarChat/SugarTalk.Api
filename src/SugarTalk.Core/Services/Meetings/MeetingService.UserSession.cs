@@ -29,15 +29,9 @@ public partial class MeetingService
 
         if (meeting == null) throw new MeetingNotFoundException();
 
-        if (command.IsMuted)
-        {
-            if (userSession.UserId != _currentUser.Id)
-                throw new CannotChangeAudioWhenConfirmRequiredException();
+        if (command.IsMuted && userSession.UserId != _currentUser.Id) throw new CannotChangeAudioWhenConfirmRequiredException();
 
-            userSession.IsMuted = command.IsMuted;
-        }
-        else
-            userSession.IsMuted = false;
+        userSession.IsMuted = command.IsMuted;
 
         await _meetingDataProvider.UpdateMeetingUserSessionAsync(userSession, cancellationToken).ConfigureAwait(false);
 
