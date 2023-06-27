@@ -352,6 +352,22 @@ public class MeetingServiceFixture : MeetingFixtureBase
         });
     }
 
+    [Fact]
+    public async Task CanGetFullUserSessionWhenReconnectMeeting()
+    {
+        var scheduleMeetingResponse = await _meetingUtil.ScheduleMeeting();
+
+        var beforeInfo = await _meetingUtil.JoinMeeting(scheduleMeetingResponse.Data.MeetingNumber, "streamId");
+
+        var afterInfo = await _meetingUtil.JoinMeeting(scheduleMeetingResponse.Data.MeetingNumber, "streamId");
+
+        afterInfo.UserSessions.Count.ShouldBe(beforeInfo.UserSessions.Count);
+        afterInfo.UserSessions.Single().UserId.ShouldBe(beforeInfo.UserSessions.Single().UserId);
+        afterInfo.UserSessions.Single().UserName.ShouldBe(beforeInfo.UserSessions.Single().UserName);
+        afterInfo.UserSessions.Single().MeetingId.ShouldBe(beforeInfo.UserSessions.Single().MeetingId);
+        afterInfo.UserSessions.Single().UserSessionStreams.Count.ShouldBe(beforeInfo.UserSessions.Single().UserSessionStreams.Count);
+    }
+
     private void SetupMocking(ContainerBuilder builder)
     {
         var antMediaServerUtilService = Substitute.For<IAntMediaServerUtilService>();
