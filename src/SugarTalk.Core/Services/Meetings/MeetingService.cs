@@ -210,9 +210,18 @@ namespace SugarTalk.Core.Services.Meetings
                 if (isMuted.HasValue)
                     userSession.IsMuted = isMuted.Value;
 
+                var updateUserSession = _mapper.Map<MeetingUserSessionDto>(userSession);
+
+                var userSessionStreams = 
+                    await _meetingDataProvider.GetMeetingUserSessionStreamsAsync(updateUserSession.Id, cancellationToken).ConfigureAwait(false);
+
+                updateUserSession.UserSessionStreams = _mapper.Map<List<MeetingUserSessionStreamDto>>(userSessionStreams);
+
+                updateUserSession.UserName = user.UserName;
+
                 await _meetingDataProvider.UpdateMeetingUserSessionAsync(userSession, cancellationToken).ConfigureAwait(false);
                 
-                meeting.UpdateUserSession(_mapper.Map<MeetingUserSessionDto>(userSession));
+                meeting.UpdateUserSession(updateUserSession);
             }
         }
 
