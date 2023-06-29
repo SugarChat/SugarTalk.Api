@@ -4,6 +4,7 @@ using Correlate.DependencyInjection;
 using Serilog;
 using SugarTalk.Api.Extensions;
 using SugarTalk.Api.Filters;
+using SugarTalk.Core.Hubs;
 using SugarTalk.Messages;
 using Swashbuckle.AspNetCore.SwaggerUI;
 
@@ -36,6 +37,14 @@ namespace SugarTalk.Api
             {
                 options.Filters.Add<GlobalExceptionFilter>();
             });
+
+            services.AddSignalR(config =>
+            {
+                config.EnableDetailedErrors = true;
+            }).AddJsonProtocol(options =>
+            {
+                options.PayloadSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
+            });
         }
 
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
@@ -63,6 +72,7 @@ namespace SugarTalk.Api
             {
                 endpoints.MapControllers();
                 endpoints.MapHealthChecks("health");
+                endpoints.MapHub<MeetingHub>("/meetingHub");
             });
         }
     }
