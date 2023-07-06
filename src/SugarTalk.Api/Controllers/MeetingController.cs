@@ -63,7 +63,7 @@ public class MeetingController : ControllerBase
 
         return Ok(response);
     }
-
+    
     [Route("screen/share"), HttpPost]
     [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ShareScreenResponse))]
     public async Task<IActionResult> ShareScreenAsync(ShareScreenCommand command)
