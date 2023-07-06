@@ -229,12 +229,12 @@ public class MeetingServiceFixture : MeetingFixtureBase
                 });
 
             response.Data.ShouldNotBeNull();
-            response.Data.Meeting.UserSessions.Count.ShouldBe(3);
-            response.Data.Meeting.MeetingStreamMode.ShouldBe(MeetingStreamMode.MCU);
-            response.Data.Meeting.MeetingNumber.ShouldBe(scheduleMeetingResponse.Data.MeetingNumber);
-            response.Data.Meeting.UserSessions.Single(x => x.UserId == 1).UserName.ShouldBe("TEST_USER");
-            response.Data.Meeting.UserSessions.Single(x => x.UserId == user1.Id).UserName.ShouldBe("mars");
-            response.Data.Meeting.UserSessions.Single(x => x.UserId == user2.Id).UserName.ShouldBe("greg");
+            response.Data.UserSessions.Count.ShouldBe(3);
+            response.Data.MeetingStreamMode.ShouldBe(MeetingStreamMode.MCU);
+            response.Data.MeetingNumber.ShouldBe(scheduleMeetingResponse.Data.MeetingNumber);
+            response.Data.UserSessions.Single(x => x.UserId == 1).UserName.ShouldBe("TEST_USER");
+            response.Data.UserSessions.Single(x => x.UserId == user1.Id).UserName.ShouldBe("mars");
+            response.Data.UserSessions.Single(x => x.UserId == user2.Id).UserName.ShouldBe("greg");
         });
     }
 
@@ -388,11 +388,11 @@ public class MeetingServiceFixture : MeetingFixtureBase
     
             response.Data.AppName.ShouldBe("LiveApp");
 
-            response.Data.Meeting.UserSessions.ShouldBeNull();
-            response.Data.Meeting.StartDate.ShouldBe(scheduleMeetingResponse.Data.StartDate);
-            response.Data.Meeting.EndDate.ShouldBe(scheduleMeetingResponse.Data.EndDate);
-            response.Data.Meeting.MeetingNumber.ShouldBe(scheduleMeetingResponse.Data.MeetingNumber);
-            response.Data.Meeting.MeetingStreamMode.ShouldBe(scheduleMeetingResponse.Data.MeetingStreamMode);
+            response.Data.UserSessions.ShouldBeNull();
+            response.Data.StartDate.ShouldBe(scheduleMeetingResponse.Data.StartDate);
+            response.Data.EndDate.ShouldBe(scheduleMeetingResponse.Data.EndDate);
+            response.Data.MeetingNumber.ShouldBe(scheduleMeetingResponse.Data.MeetingNumber);
+            response.Data.MeetingStreamMode.ShouldBe(scheduleMeetingResponse.Data.MeetingStreamMode);
         });
     }
 

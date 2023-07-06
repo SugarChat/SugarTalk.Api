@@ -15,6 +15,8 @@ public class MeetingDto
     public int MeetingMasterUserId { get; set; }
 
     public MeetingStreamMode MeetingStreamMode { get; set; }
+    
+    public string AppName { get; set; }
 
     public string MeetingNumber { get; set; }
     

@@ -101,13 +101,14 @@ namespace SugarTalk.Core.Services.Meetings
             var meeting = await _meetingDataProvider
                 .GetMeetingAsync(request.MeetingNumber, cancellationToken, request.IncludeUserSession).ConfigureAwait(false);
 
+            meeting.AppName = appName;
+            
             if (request.IncludeUserSession &&
                 meeting != null && meeting.UserSessions.Any() &&
-                meeting.UserSessions.All(x => x.UserId != _currentUser.Id))
+                meeting.UserSessions.All(x => x.UserId != _currentUser.Id.Value))
                 throw new UnauthorizedAccessException();
 
-            return new GetMeetingByNumberResponse 
-                { Data = new GetMeetingByNumberData { AppName = appName, Meeting = meeting } };
+            return new GetMeetingByNumberResponse { Data = meeting };
         }
 
         public async Task<MeetingJoinedEvent> JoinMeetingAsync(JoinMeetingCommand command, CancellationToken cancellationToken)

@@ -11,13 +11,6 @@ public class GetMeetingByNumberRequest : IRequest
     public bool IncludeUserSession { get; set; } = true;
 }
 
-public class GetMeetingByNumberResponse : SugarTalkResponse<GetMeetingByNumberData>
+public class GetMeetingByNumberResponse : SugarTalkResponse<MeetingDto>
 {
-}
-
-public class GetMeetingByNumberData
-{
-    public string AppName { get; set; }
-    
-    public MeetingDto Meeting { get; set; }
 }
