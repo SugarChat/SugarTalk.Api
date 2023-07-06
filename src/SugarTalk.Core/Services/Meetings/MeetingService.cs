@@ -36,6 +36,9 @@ namespace SugarTalk.Core.Services.Meetings
 
         Task<MeetingEndedEvent> EndMeetingAsync(
             EndMeetingCommand command, CancellationToken cancellationToken);
+
+        Task<GetSimpleMeetingResponse> GetSimpleMeetingAsync(
+            GetSimpleMeetingRequest request, CancellationToken cancellationToken);
     }
     
     public partial class MeetingService : IMeetingService
@@ -173,6 +176,18 @@ namespace SugarTalk.Core.Services.Meetings
             {
                 MeetingNumber = meeting.MeetingNumber,
                 MeetingUserSessionIds = meeting.UserSessions.Select(x => x.Id).ToList()
+            };
+        }
+
+        public async Task<GetSimpleMeetingResponse> GetSimpleMeetingAsync(
+            GetSimpleMeetingRequest request, CancellationToken cancellationToken)
+        {
+            var meeting = await _meetingDataProvider
+                .GetMeetingAsync(request.MeetingNumber, cancellationToken, includeUserSessions: false).ConfigureAwait(false);
+
+            return new GetSimpleMeetingResponse
+            {
+                Data = new GetSimpleMeetingData { AppName = appName, Meeting = meeting }
             };
         }
 

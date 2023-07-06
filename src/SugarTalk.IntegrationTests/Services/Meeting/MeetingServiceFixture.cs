@@ -368,6 +368,30 @@ public class MeetingServiceFixture : MeetingFixtureBase
         afterInfo.UserSessions.Single().UserSessionStreams.Count.ShouldBe(beforeInfo.UserSessions.Single().UserSessionStreams.Count);
     }
 
+    [Fact]
+    public async Task CanGetSimpleMeeting()
+    {
+        var scheduleMeetingResponse = await _meetingUtil.ScheduleMeeting();
+
+        await Run<IMediator>(async mediator =>
+        {
+            var response = await mediator.RequestAsync<GetSimpleMeetingRequest, GetSimpleMeetingResponse>(
+                new GetSimpleMeetingRequest
+                {
+                    MeetingNumber = scheduleMeetingResponse.Data.MeetingNumber
+                });
+
+            response.Data.ShouldNotBeNull();
+
+            response.Data.AppName.ShouldBe("LiveApp");
+
+            response.Data.Meeting.StartDate.ShouldBe(scheduleMeetingResponse.Data.StartDate);
+            response.Data.Meeting.EndDate.ShouldBe(scheduleMeetingResponse.Data.EndDate);
+            response.Data.Meeting.MeetingNumber.ShouldBe(scheduleMeetingResponse.Data.MeetingNumber);
+            response.Data.Meeting.MeetingStreamMode.ShouldBe(scheduleMeetingResponse.Data.MeetingStreamMode);
+        });
+    }
+
     private void SetupMocking(ContainerBuilder builder)
     {
         var antMediaServerUtilService = Substitute.For<IAntMediaServerUtilService>();

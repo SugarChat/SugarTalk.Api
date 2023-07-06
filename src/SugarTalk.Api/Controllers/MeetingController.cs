@@ -63,6 +63,16 @@ public class MeetingController : ControllerBase
 
         return Ok(response);
     }
+
+    [AllowAnonymous]
+    [Route("simple/get"), HttpGet]
+    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(GetSimpleMeetingResponse))]
+    public async Task<IActionResult> GetSimpleMeetingAsync([FromQuery] GetSimpleMeetingRequest request)
+    {
+        var response = await _mediator.RequestAsync<GetSimpleMeetingRequest, GetSimpleMeetingResponse>(request);
+
+        return Ok(response);
+    }
     
     [Route("screen/share"), HttpPost]
     [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ShareScreenResponse))]
