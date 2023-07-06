@@ -1,5 +1,7 @@
 using System.Reflection;
 using Microsoft.OpenApi.Models;
+using SugarTalk.Api.Filters.Swagger;
+using SugarTalk.Messages.Commands.Meetings;
 using SugarTalk.Messages.Swagger;
 
 namespace SugarTalk.Api.Extensions;
@@ -35,8 +37,7 @@ public static class SwaggerExtension
                         },
                         Scheme = "oauth2",
                         Name = "Bearer",
-                        In = ParameterLocation.Header,
-
+                        In = ParameterLocation.Header
                     },
                     new List<string>()
                 }
@@ -46,6 +47,8 @@ public static class SwaggerExtension
             var xmlFilename = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
             c.IncludeXmlComments(Path.Combine(basePath, xmlFilename), true);
             c.IncludeXmlComments(Path.Combine(basePath, SwaggerDocs.XmlName), true);
+            
+            c.SchemaFilter<SwaggerShowEnumDescriptionFilter>();
         });
     }
 }

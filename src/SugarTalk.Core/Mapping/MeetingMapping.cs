@@ -13,6 +13,7 @@ namespace SugarTalk.Core.Mapping
             CreateMap<Meeting, MeetingDto>().ReverseMap();
             CreateMap<ScheduleMeetingCommand, Meeting>();
             CreateMap<MeetingUserSession, MeetingUserSessionDto>().ReverseMap();
+            CreateMap<MeetingUserSessionStream, MeetingUserSessionStreamDto>().ReverseMap();
         }
     }
 }
