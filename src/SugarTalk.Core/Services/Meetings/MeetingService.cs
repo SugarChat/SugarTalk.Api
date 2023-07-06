@@ -36,9 +36,6 @@ namespace SugarTalk.Core.Services.Meetings
 
         Task<MeetingEndedEvent> EndMeetingAsync(
             EndMeetingCommand command, CancellationToken cancellationToken);
-
-        Task<GetSimpleMeetingResponse> GetSimpleMeetingAsync(
-            GetSimpleMeetingRequest request, CancellationToken cancellationToken);
     }
     
     public partial class MeetingService : IMeetingService
@@ -102,14 +99,15 @@ namespace SugarTalk.Core.Services.Meetings
             CancellationToken cancellationToken)
         {
             var meeting = await _meetingDataProvider
-                .GetMeetingAsync(request.MeetingNumber, cancellationToken).ConfigureAwait(false);
+                .GetMeetingAsync(request.MeetingNumber, cancellationToken, request.IncludeUserSession).ConfigureAwait(false);
 
-            if (meeting != null &&
-                meeting.UserSessions.Any() &&
+            if (request.IncludeUserSession &&
+                meeting != null && meeting.UserSessions.Any() &&
                 meeting.UserSessions.All(x => x.UserId != _currentUser.Id))
                 throw new UnauthorizedAccessException();
 
-            return new GetMeetingByNumberResponse { Data = meeting };
+            return new GetMeetingByNumberResponse 
+                { Data = new GetMeetingByNumberData { AppName = appName, Meeting = meeting } };
         }
 
         public async Task<MeetingJoinedEvent> JoinMeetingAsync(JoinMeetingCommand command, CancellationToken cancellationToken)
@@ -176,18 +174,6 @@ namespace SugarTalk.Core.Services.Meetings
             {
                 MeetingNumber = meeting.MeetingNumber,
                 MeetingUserSessionIds = meeting.UserSessions.Select(x => x.Id).ToList()
-            };
-        }
-
-        public async Task<GetSimpleMeetingResponse> GetSimpleMeetingAsync(
-            GetSimpleMeetingRequest request, CancellationToken cancellationToken)
-        {
-            var meeting = await _meetingDataProvider
-                .GetMeetingAsync(request.MeetingNumber, cancellationToken, includeUserSessions: false).ConfigureAwait(false);
-
-            return new GetSimpleMeetingResponse
-            {
-                Data = new GetSimpleMeetingData { AppName = appName, Meeting = meeting }
             };
         }
 

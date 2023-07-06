@@ -229,12 +229,12 @@ public class MeetingServiceFixture : MeetingFixtureBase
                 });
 
             response.Data.ShouldNotBeNull();
-            response.Data.UserSessions.Count.ShouldBe(3);
-            response.Data.MeetingStreamMode.ShouldBe(MeetingStreamMode.MCU);
-            response.Data.MeetingNumber.ShouldBe(scheduleMeetingResponse.Data.MeetingNumber);
-            response.Data.UserSessions.Single(x => x.UserId == 1).UserName.ShouldBe("TEST_USER");
-            response.Data.UserSessions.Single(x => x.UserId == user1.Id).UserName.ShouldBe("mars");
-            response.Data.UserSessions.Single(x => x.UserId == user2.Id).UserName.ShouldBe("greg");
+            response.Data.Meeting.UserSessions.Count.ShouldBe(3);
+            response.Data.Meeting.MeetingStreamMode.ShouldBe(MeetingStreamMode.MCU);
+            response.Data.Meeting.MeetingNumber.ShouldBe(scheduleMeetingResponse.Data.MeetingNumber);
+            response.Data.Meeting.UserSessions.Single(x => x.UserId == 1).UserName.ShouldBe("TEST_USER");
+            response.Data.Meeting.UserSessions.Single(x => x.UserId == user1.Id).UserName.ShouldBe("mars");
+            response.Data.Meeting.UserSessions.Single(x => x.UserId == user2.Id).UserName.ShouldBe("greg");
         });
     }
 
@@ -369,22 +369,26 @@ public class MeetingServiceFixture : MeetingFixtureBase
     }
 
     [Fact]
-    public async Task CanGetSimpleMeeting()
+    public async Task CanGetMeetingWhenExcludeUserSession()
     {
         var scheduleMeetingResponse = await _meetingUtil.ScheduleMeeting();
+        
+        await _meetingUtil.JoinMeeting(scheduleMeetingResponse.Data.MeetingNumber, "streamId");
 
         await Run<IMediator>(async mediator =>
         {
-            var response = await mediator.RequestAsync<GetSimpleMeetingRequest, GetSimpleMeetingResponse>(
-                new GetSimpleMeetingRequest
+            var response = await mediator.RequestAsync<GetMeetingByNumberRequest, GetMeetingByNumberResponse>(
+                new GetMeetingByNumberRequest
                 {
+                    IncludeUserSession = false,
                     MeetingNumber = scheduleMeetingResponse.Data.MeetingNumber
                 });
-
+    
             response.Data.ShouldNotBeNull();
-
+    
             response.Data.AppName.ShouldBe("LiveApp");
 
+            response.Data.Meeting.UserSessions.ShouldBeNull();
             response.Data.Meeting.StartDate.ShouldBe(scheduleMeetingResponse.Data.StartDate);
             response.Data.Meeting.EndDate.ShouldBe(scheduleMeetingResponse.Data.EndDate);
             response.Data.Meeting.MeetingNumber.ShouldBe(scheduleMeetingResponse.Data.MeetingNumber);
