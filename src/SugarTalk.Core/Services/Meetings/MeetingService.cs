@@ -36,6 +36,9 @@ namespace SugarTalk.Core.Services.Meetings
 
         Task<MeetingEndedEvent> EndMeetingAsync(
             EndMeetingCommand command, CancellationToken cancellationToken);
+
+        Task ConnectUserToMeetingAsync(
+            UserAccountDto user, MeetingDto meeting, string streamId, MeetingStreamType streamType, bool? isMuted = null, CancellationToken cancellationToken = default);
     }
     
     public partial class MeetingService : IMeetingService
