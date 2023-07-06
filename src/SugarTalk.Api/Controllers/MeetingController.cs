@@ -64,7 +64,6 @@ public class MeetingController : ControllerBase
         return Ok(response);
     }
 
-    [AllowAnonymous]
     [Route("simple/get"), HttpGet]
     [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(GetSimpleMeetingResponse))]
     public async Task<IActionResult> GetSimpleMeetingAsync([FromQuery] GetSimpleMeetingRequest request)
