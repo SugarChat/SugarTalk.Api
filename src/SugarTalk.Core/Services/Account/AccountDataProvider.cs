@@ -101,11 +101,6 @@ namespace SugarTalk.Core.Services.Account
         public async Task<UserAccount> CreateUserAccountAsync(string requestUserName, string requestPassword, 
             string thirdPartyUserId = null, UserAccountIssuer authType = UserAccountIssuer.Wiltechs, CancellationToken cancellationToken = default)
         {
-            var userAccounts = 
-                _repository.Query<UserAccount>().Where(x => x.UserName == requestUserName).ToList();
-
-            if (userAccounts is { Count: > 0 }) throw new CannotRegisterWhenExistTheSameUserAccountException();
-        
             var userAccount = new UserAccount
             {
                 CreatedOn = DateTime.Now,
