@@ -77,7 +77,7 @@ namespace SugarTalk.Core.Services.Account
         
             var account = await query
                 .ProjectTo<UserAccountDto>(_mapper.ConfigurationProvider)
-                .SingleOrDefaultAsync(cancellationToken).ConfigureAwait(false);
+                .FirstOrDefaultAsync(cancellationToken).ConfigureAwait(false);
 
             if (account == null || !includeRoles) return account;
             {
