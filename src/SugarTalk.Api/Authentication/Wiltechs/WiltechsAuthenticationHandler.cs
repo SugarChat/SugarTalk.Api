@@ -55,7 +55,7 @@ public class WiltechsAuthenticationHandler : AuthenticationHandler<WiltechsAuthe
             }
 
             var userAccount = await _cacheManager.GetOrAddAsync(wiltechUser.UserId.ToString(), async () => 
-                await _userService.GetOrCreateUserAccountFromThirdPartyAsync(wiltechUser.UserId.ToString(), wiltechUser.UserName, CancellationToken.None)
+                await _userService.GetOrCreateUserAccountFromThirdPartyAsync(wiltechUser.UserId.ToString(), wiltechUser.UserName, UserAccountIssuer.Wiltechs, CancellationToken.None)
                     .ConfigureAwait(false), CachingType.RedisCache, TimeSpan.FromDays(30), CancellationToken.None).ConfigureAwait(false);
 
             var identity = new ClaimsIdentity(new[]

@@ -5,6 +5,7 @@ using SugarTalk.Core.Data;
 using SugarTalk.Core.Domain.Account;
 using SugarTalk.Core.Extensions;
 using SugarTalk.Messages.Commands.Account;
+using SugarTalk.Messages.Enums.Account;
 
 namespace SugarTalk.IntegrationTests.Utils.Account;
 
@@ -14,7 +15,7 @@ public class AccountUtil : TestUtil
     {
     }
     
-    public async Task<UserAccount> AddUserAccount(string userName, string password, bool isActive = true)
+    public async Task<UserAccount> AddUserAccount(string userName, string password, bool isActive = true, UserAccountIssuer issuer = UserAccountIssuer.Wiltechs)
     {
         return await RunWithUnitOfWork<IRepository, UserAccount>(async repository =>
         {
@@ -22,7 +23,8 @@ public class AccountUtil : TestUtil
             {
                 UserName = userName,
                 Password = password.ToSha256(),
-                IsActive = isActive
+                IsActive = isActive,
+                Issuer = issuer
             };
             await repository.InsertAsync(account);
             return account;
