@@ -3,6 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using AutoMapper;
 using Microsoft.AspNetCore.Http;
+using SugarTalk.Core.Domain.Account.Exceptions;
 using SugarTalk.Core.Ioc;
 using SugarTalk.Core.Services.Identity;
 using SugarTalk.Messages.Commands.Account;
@@ -21,7 +22,7 @@ namespace SugarTalk.Core.Services.Account
         
         Task<UserAccountRegisteredEvent> RegisterAsync(RegisterCommand command, CancellationToken cancellationToken);
         
-        Task<UserAccountDto> GetOrCreateUserAccountFromThirdPartyAsync(string userId, string userName, CancellationToken cancellationToken);
+        Task<UserAccountDto> GetOrCreateUserAccountFromThirdPartyAsync(string userId, string userName, UserAccountIssuer issuer, CancellationToken cancellationToken);
     }
     
     public class AccountService : IAccountService
@@ -64,23 +65,34 @@ namespace SugarTalk.Core.Services.Account
             };
         }
 
-        public async Task<UserAccountDto> GetOrCreateUserAccountFromThirdPartyAsync(string userId, string userName, CancellationToken cancellationToken)
+        public async Task<UserAccountDto> GetOrCreateUserAccountFromThirdPartyAsync(string userId, string userName, UserAccountIssuer issuer, CancellationToken cancellationToken)
         {
             var userAccount = await _accountDataProvider.GetUserAccountAsync(thirdPartyUserId: userId, includeRoles: true, cancellationToken: cancellationToken).ConfigureAwait(false);
 
             if (userAccount != null) return userAccount;
 
             var account = await _accountDataProvider
-                .CreateUserAccountAsync(userName, "123abc", userId, UserAccountIssuer.Wiltechs, cancellationToken).ConfigureAwait(false);
+                .CreateUserAccountAsync(userName, "123abc", userId, issuer, cancellationToken).ConfigureAwait(false);
 
             return _mapper.Map<UserAccountDto>(account);
         }
 
         public async Task<UserAccountRegisteredEvent> RegisterAsync(RegisterCommand command, CancellationToken cancellationToken)
         {
+            await CheckCanRegisterAsync(command, cancellationToken).ConfigureAwait(false);
+            
             await _accountDataProvider.CreateUserAccountAsync(command.UserName, command.Password, cancellationToken: cancellationToken);
 
             return new UserAccountRegisteredEvent();
+        }
+        
+        private async Task CheckCanRegisterAsync(RegisterCommand command, CancellationToken cancellationToken)
+        {
+            var userAccount = await _accountDataProvider
+                .GetUserAccountAsync(username: command.UserName, includeRoles: false, cancellationToken: cancellationToken).ConfigureAwait(false);
+
+            if (userAccount != null)
+                throw new CannotRegisterWhenExistTheSameUserAccountException();
         }
     }
 }

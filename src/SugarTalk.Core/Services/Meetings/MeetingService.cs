@@ -102,11 +102,13 @@ namespace SugarTalk.Core.Services.Meetings
             CancellationToken cancellationToken)
         {
             var meeting = await _meetingDataProvider
-                .GetMeetingAsync(request.MeetingNumber, cancellationToken).ConfigureAwait(false);
+                .GetMeetingAsync(request.MeetingNumber, cancellationToken, request.IncludeUserSession).ConfigureAwait(false);
 
-            if (meeting != null &&
-                meeting.UserSessions.Any() &&
-                meeting.UserSessions.All(x => x.UserId != _currentUser.Id))
+            meeting.AppName = appName;
+            
+            if (request.IncludeUserSession &&
+                meeting != null && meeting.UserSessions.Any() &&
+                meeting.UserSessions.All(x => x.UserId != _currentUser.Id.Value))
                 throw new UnauthorizedAccessException();
 
             return new GetMeetingByNumberResponse { Data = meeting };

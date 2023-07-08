@@ -368,6 +368,34 @@ public class MeetingServiceFixture : MeetingFixtureBase
         afterInfo.UserSessions.Single().UserSessionStreams.Count.ShouldBe(beforeInfo.UserSessions.Single().UserSessionStreams.Count);
     }
 
+    [Fact]
+    public async Task CanGetMeetingWhenExcludeUserSession()
+    {
+        var scheduleMeetingResponse = await _meetingUtil.ScheduleMeeting();
+        
+        await _meetingUtil.JoinMeeting(scheduleMeetingResponse.Data.MeetingNumber, "streamId");
+
+        await Run<IMediator>(async mediator =>
+        {
+            var response = await mediator.RequestAsync<GetMeetingByNumberRequest, GetMeetingByNumberResponse>(
+                new GetMeetingByNumberRequest
+                {
+                    IncludeUserSession = false,
+                    MeetingNumber = scheduleMeetingResponse.Data.MeetingNumber
+                });
+    
+            response.Data.ShouldNotBeNull();
+    
+            response.Data.AppName.ShouldBe("LiveApp");
+
+            response.Data.UserSessions.ShouldBeNull();
+            response.Data.StartDate.ShouldBe(scheduleMeetingResponse.Data.StartDate);
+            response.Data.EndDate.ShouldBe(scheduleMeetingResponse.Data.EndDate);
+            response.Data.MeetingNumber.ShouldBe(scheduleMeetingResponse.Data.MeetingNumber);
+            response.Data.MeetingStreamMode.ShouldBe(scheduleMeetingResponse.Data.MeetingStreamMode);
+        });
+    }
+
     private void SetupMocking(ContainerBuilder builder)
     {
         var antMediaServerUtilService = Substitute.For<IAntMediaServerUtilService>();

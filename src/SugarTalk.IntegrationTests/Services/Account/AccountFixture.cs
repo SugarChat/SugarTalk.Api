@@ -41,13 +41,13 @@ public class AccountFixture : AccountFixtureBase
     }
 
     [Theory]
-    [InlineData("admin", "123456", true, true)]
-    [InlineData("admin", "123456", false, false)]
-    [InlineData("admin", "1234567", true, false)]
-    [InlineData("admin1", "123456", true, false)]
-    public async Task CanLogin(string username, string password, bool isActive, bool canLogin)
+    [InlineData("admin", "123456", true, UserAccountIssuer.Wiltechs, true)]
+    [InlineData("admin", "123456", false, UserAccountIssuer.Wiltechs, false)]
+    [InlineData("admin", "1234567", true, UserAccountIssuer.Wiltechs, false)]
+    [InlineData("admin1", "123456", true, UserAccountIssuer.Wiltechs, false)]
+    public async Task CanLogin(string username, string password, bool isActive, UserAccountIssuer issuer, bool canLogin)
     {
-        await _accountUtil.AddUserAccount("admin", "123456", isActive: isActive);
+        await _accountUtil.AddUserAccount("admin", "123456", isActive: isActive, issuer: issuer);
 
         await Run<IMediator>(async mediator =>
         {
@@ -191,16 +191,16 @@ public class AccountFixture : AccountFixtureBase
 
         await Run<IAccountService>(async service =>
         {
-            var beforeUserAccount = await service.GetOrCreateUserAccountFromThirdPartyAsync(userId, "test name",
-                CancellationToken.None).ConfigureAwait(false);
+            var beforeUserAccount = await service.GetOrCreateUserAccountFromThirdPartyAsync(
+                userId, "test name", issuer: UserAccountIssuer.Wiltechs, CancellationToken.None).ConfigureAwait(false);
 
             beforeUserAccount.ShouldNotBeNull();
             beforeUserAccount.UserName.ShouldBe("test name");
             beforeUserAccount.ThirdPartyUserId.ShouldBe(userId);
             beforeUserAccount.Issuer.ShouldBe(UserAccountIssuer.Wiltechs);
             
-            var afterUserAccount = await service.GetOrCreateUserAccountFromThirdPartyAsync(userId, "test name",
-                CancellationToken.None).ConfigureAwait(false);
+            var afterUserAccount = await service.GetOrCreateUserAccountFromThirdPartyAsync(
+                userId, "test name", issuer: UserAccountIssuer.Wiltechs, CancellationToken.None).ConfigureAwait(false);
 
             afterUserAccount.ShouldNotBeNull();
             afterUserAccount.Id.ShouldBe(beforeUserAccount.Id);
