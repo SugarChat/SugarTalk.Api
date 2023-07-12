@@ -65,8 +65,7 @@ public class MeetingHub : DynamicHub
     }
 
     public void ProcessOffer(MeetingUserSessionDto sendFromUserSession, MeetingUserSessionDto sendToUserSession,
-        OfferPeerConnectionMediaType offerPeerConnectionMediaType, string offerPeerConnectionId, string offerToJson,
-        string[] candidatesToJson)
+        OfferPeerConnectionMediaType offerPeerConnectionMediaType, string offerPeerConnectionId, string offerToJson, string[] candidatesToJson)
     {
         Clients.Client(sendToUserSession.UserSessionStreams?.FirstOrDefault()?.StreamId)
             .OtherOfferSent(sendFromUserSession, offerPeerConnectionMediaType, offerPeerConnectionId, offerToJson, candidatesToJson);
