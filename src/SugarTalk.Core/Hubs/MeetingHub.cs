@@ -1,10 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.WebSockets;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
-using SugarTalk.Core.Domain.Meeting;
 using SugarTalk.Core.Services.Account;
 using SugarTalk.Core.Services.Identity;
 using SugarTalk.Core.Services.Meetings;
@@ -16,16 +16,18 @@ namespace SugarTalk.Core.Hubs;
 [Authorize]
 public class MeetingHub : DynamicHub
 {
-    private string MeetingNumber => Context.GetHttpContext().Request.Query["meetingNumber"];
+    private string MeetingNumber => Context.GetHttpContext()?.Request.Query["meetingNumber"];
 
     private readonly ICurrentUser _currentUser;
+    private readonly ClientWebSocket _webSocket;
     private readonly IMeetingService _meetingService;
     private readonly IAccountDataProvider _accountDataProvider;
     private readonly IMeetingDataProvider _meetingDataProvider;
 
-    public MeetingHub(ICurrentUser currentUser, IMeetingService meetingService,
+    public MeetingHub(ICurrentUser currentUser, IMeetingService meetingService,ClientWebSocket webSocket,
         IAccountDataProvider accountDataProvider, IMeetingDataProvider meetingDataProvider)
     {
+        _webSocket = webSocket;
         _currentUser = currentUser;
         _meetingService = meetingService;
         _accountDataProvider = accountDataProvider;
@@ -54,16 +56,10 @@ public class MeetingHub : DynamicHub
 
     public override async Task OnDisconnectedAsync(Exception exception)
     {
-        // var userSession = await _meetingDataProvider.GetUserSessionsByMeetingIdAsync()
-
-        var userSession = new MeetingUserSession();        
+        var userSession = await _meetingDataProvider.GetUserSessionByStreamIdAsync(Context.ConnectionId).ConfigureAwait(false);
         
         if (userSession != null)
-        {
             Clients.OthersInGroup(MeetingNumber).OtherLeft(userSession);
-
-            await _meetingDataProvider.RemoveMeetingUserSessionsAsync(new List<MeetingUserSession>{userSession}).ConfigureAwait(false);
-        }
 
         await base.OnDisconnectedAsync(exception).ConfigureAwait(false);
     }
@@ -73,16 +69,14 @@ public class MeetingHub : DynamicHub
         string[] candidatesToJson)
     {
         Clients.Client(sendToUserSession.UserSessionStreams?.FirstOrDefault()?.StreamId)
-            .OtherOfferSent(sendFromUserSession, offerPeerConnectionMediaType, offerPeerConnectionId, offerToJson,
-                candidatesToJson);
+            .OtherOfferSent(sendFromUserSession, offerPeerConnectionMediaType, offerPeerConnectionId, offerToJson, candidatesToJson);
     }
 
     public void ProcessAnswer(MeetingUserSessionDto sendFromUserSession, MeetingUserSessionDto sendToUserSession,
         string offerPeerConnectionId, string answerPeerConnectionId, string answerToJson, string[] candidatesToJson)
     {
         Clients.Client(sendToUserSession.UserSessionStreams?.FirstOrDefault()?.StreamId)
-            .OtherAnswerSent(sendFromUserSession, offerPeerConnectionId, answerPeerConnectionId, answerToJson,
-                candidatesToJson);
+            .OtherAnswerSent(sendFromUserSession, offerPeerConnectionId, answerPeerConnectionId, answerToJson, candidatesToJson);
     }
 
     public void ConnectionsClosed(IEnumerable<string> peerConnectionIds)
