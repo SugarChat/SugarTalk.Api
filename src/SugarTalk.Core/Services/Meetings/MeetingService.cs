@@ -11,6 +11,7 @@ using SugarTalk.Core.Services.Account;
 using SugarTalk.Core.Services.AntMediaServer;
 using SugarTalk.Core.Services.Exceptions;
 using SugarTalk.Core.Services.Identity;
+using SugarTalk.Core.Services.Utils;
 using SugarTalk.Messages.Commands.Meetings;
 using SugarTalk.Messages.Dto.Meetings;
 using SugarTalk.Messages.Dto.Users;
@@ -36,12 +37,16 @@ namespace SugarTalk.Core.Services.Meetings
 
         Task<MeetingEndedEvent> EndMeetingAsync(
             EndMeetingCommand command, CancellationToken cancellationToken);
+        
+        Task ScheduleAutoDeactivateMeetingAsync(
+            ScheduleAutoDeactivateMeetingCommand command, CancellationToken cancellationToken);
     }
     
     public partial class MeetingService : IMeetingService
     {
         private const string appName = "LiveApp";
 
+        private readonly IClock _clock;
         private readonly IMapper _mapper;
         private readonly ICurrentUser _currentUser;
         private readonly IAccountDataProvider _accountDataProvider;
@@ -49,12 +54,14 @@ namespace SugarTalk.Core.Services.Meetings
         private readonly IAntMediaServerUtilService _antMediaServerUtilService;
         
         public MeetingService(
+            IClock clock,
             IMapper mapper, 
             ICurrentUser currentUser,
             IMeetingDataProvider meetingDataProvider,
             IAccountDataProvider accountDataProvider,
             IAntMediaServerUtilService antMediaServerUtilService)
         {
+            _clock = clock;
             _mapper = mapper;
             _currentUser = currentUser;
             _accountDataProvider = accountDataProvider;

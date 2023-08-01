@@ -28,6 +28,10 @@ namespace SugarTalk.Core.Services.Meetings
         Task RemoveMeetingUserSessionsAsync(IEnumerable<MeetingUserSession> meetingUserSessions, CancellationToken cancellationToken);
         
         Task RemoveMeetingAsync(Meeting meeting, CancellationToken cancellationToken);
+
+        Task<List<Meeting>> GetMeetingsAsync(CancellationToken cancellationToken);
+        
+        Task RemoveMeetingsAsync(List<Meeting> meetings, CancellationToken cancellationToken);
     }
     
     public partial class MeetingDataProvider : IMeetingDataProvider
@@ -121,6 +125,20 @@ namespace SugarTalk.Core.Services.Meetings
         public async Task RemoveMeetingAsync(Meeting meeting, CancellationToken cancellationToken)
         {
             await _repository.DeleteAsync(meeting, cancellationToken).ConfigureAwait(false);
+        }
+
+        public async Task<List<Meeting>> GetMeetingsAsync(CancellationToken cancellationToken)
+        {
+            return await _repository.GetAllAsync<Meeting>(cancellationToken).ConfigureAwait(false);
+        }
+
+        public async Task RemoveMeetingsAsync(List<Meeting> meetings, CancellationToken cancellationToken)
+        {
+            if (meetings is not { Count: > 0 }) return;
+
+            await _repository.DeleteAllAsync(meetings, cancellationToken).ConfigureAwait(false);
+
+            await _unitOfWork.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
         }
     }
 }

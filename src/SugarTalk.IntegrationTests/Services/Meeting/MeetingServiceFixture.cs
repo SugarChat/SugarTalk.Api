@@ -13,6 +13,8 @@ using SugarTalk.Core.Domain.Meeting;
 using SugarTalk.Core.Services.AntMediaServer;
 using SugarTalk.Core.Services.Exceptions;
 using SugarTalk.Core.Services.Identity;
+using SugarTalk.Core.Services.Meetings;
+using SugarTalk.Core.Services.Utils;
 using SugarTalk.IntegrationTests.TestBaseClasses;
 using SugarTalk.IntegrationTests.Utils.Account;
 using SugarTalk.IntegrationTests.Utils.Meetings;
@@ -394,6 +396,29 @@ public class MeetingServiceFixture : MeetingFixtureBase
             response.Data.MeetingNumber.ShouldBe(scheduleMeetingResponse.Data.MeetingNumber);
             response.Data.MeetingStreamMode.ShouldBe(scheduleMeetingResponse.Data.MeetingStreamMode);
         });
+    }
+
+    [Fact]
+    public async Task ScheduleAutoDeactivateMeeting()
+    {
+        await Run<IMeetingService, IRepository, IClock>(async (service, repository, clock) =>
+        {
+            clock.Now.Returns(DateTimeOffset.Now);
+
+            await _meetingUtil.AddMeeting(Guid.NewGuid(), "123456", 1, clock.Now.ToUnixTimeSeconds());
+            await _meetingUtil.AddMeeting(Guid.NewGuid(), "123456", 1, clock.Now.AddMinutes(5).ToUnixTimeSeconds());
+            await _meetingUtil.AddMeeting(Guid.NewGuid(), "123456", 1, clock.Now.AddMinutes(-1).ToUnixTimeSeconds());
+
+            var beforeMeetings =
+                await repository.Query<Core.Domain.Meeting.Meeting>().ToListAsync(CancellationToken.None);
+            beforeMeetings.Count.ShouldBe(3);
+
+            await service.ScheduleAutoDeactivateMeetingAsync(new ScheduleAutoDeactivateMeetingCommand(), CancellationToken.None);
+
+            var afterMeetings =
+                await repository.Query<Core.Domain.Meeting.Meeting>().ToListAsync(CancellationToken.None);
+            afterMeetings.Count.ShouldBe(1);
+        }, builder => { builder.RegisterInstance(Substitute.For<IClock>()); });
     }
 
     private void SetupMocking(ContainerBuilder builder)

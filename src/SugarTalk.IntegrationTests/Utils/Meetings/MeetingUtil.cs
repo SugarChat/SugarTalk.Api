@@ -111,4 +111,18 @@ public class MeetingUtil : TestUtil
             }, CancellationToken.None);
         });
     }
+
+    public async Task AddMeeting(Guid id, string meetingNumber, int masterUserId, long endData)
+    {
+        await RunWithUnitOfWork<IRepository>(async repository =>
+        {
+            await repository.InsertAsync(new Meeting
+            {
+                Id = id,
+                MeetingNumber = meetingNumber,
+                MeetingMasterUserId = masterUserId,
+                EndDate = endData
+            }, CancellationToken.None);
+        });
+    }
 }
