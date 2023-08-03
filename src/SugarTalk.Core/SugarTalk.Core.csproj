@@ -15,7 +15,7 @@
       <PackageReference Include="Destructurama.JsonNet" Version="2.0.0" />
       <PackageReference Include="EFCore.BulkExtensions" Version="7.0.1" />
       <PackageReference Include="FluentValidation" Version="11.5.2" />
-      <PackageReference Include="Hangfire" Version="1.7.32" />
+      <PackageReference Include="Hangfire" Version="1.8.3" />
       <PackageReference Include="Hangfire.Pro.Redis" Version="2.8.19" />
       <PackageReference Include="HR.Message.Contract" Version="1.0.26" />
       <PackageReference Include="Kurento.NET" Version="1.1.1" />
@@ -56,6 +56,10 @@
         <EmbeddedResource Include="DbUp\Scripts_2023\Script0004_add_user_session_and_update_meeting_tables.sql" />
         <EmbeddedResource Include="DbUp\Scripts_2023\Script0005_add_meeting_master_user_id_for_meeting_table.sql" />
         <EmbeddedResource Include="DbUp\Scripts_2023\Script0006_add_meeting_user_session_stream_table.sql" />
+    </ItemGroup>
+    
+    <ItemGroup>
+      <Folder Include="Jobs\RecurringJobs" />
     </ItemGroup>
 
 </Project>

@@ -37,9 +37,6 @@ namespace SugarTalk.Core.Services.Meetings
 
         Task<MeetingEndedEvent> EndMeetingAsync(
             EndMeetingCommand command, CancellationToken cancellationToken);
-        
-        Task ScheduleAutoDeactivateMeetingAsync(
-            ScheduleAutoDeactivateMeetingCommand command, CancellationToken cancellationToken);
     }
     
     public partial class MeetingService : IMeetingService

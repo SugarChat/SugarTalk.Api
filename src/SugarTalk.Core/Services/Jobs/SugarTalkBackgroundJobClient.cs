@@ -9,92 +9,81 @@ namespace SugarTalk.Core.Services.Jobs;
 
 public interface ISugarTalkBackgroundJobClient : IScopedDependency
 {
-    string Enqueue(Expression<Func<Task>> methodCall);
+    string Enqueue<T>(Expression<Action> methodCall, string queue = "default");
     
-    string Enqueue<T>(Expression<Func<T, Task>> methodCall);
+    string Enqueue<T>(Expression<Action<T>> methodCall, string queue = "default");
+    
+    string Enqueue(Expression<Func<Task>> methodCall, string queue = "default");
+    
+    string Enqueue<T>(Expression<Func<T, Task>> methodCall, string queue = "default");
 
-    string Schedule(Expression<Func<Task>> methodCall, TimeSpan delay);
+    string Schedule(Expression<Func<Task>> methodCall, TimeSpan delay, string queue = "default");
     
-    string Schedule(Expression<Func<Task>> methodCall, DateTimeOffset enqueueAt);
-    
-    string Schedule<T>(Expression<Func<T, Task>> methodCall, DateTimeOffset enqueueAt);
-    
-    string ContinueJobWith(string parentJobId, Expression<Func<Task>> methodCall);
+    string Schedule(Expression<Func<Task>> methodCall, DateTimeOffset enqueueAt, string queue = "default");
+
+    string ContinueJobWith(string parentJobId, Expression<Func<Task>> methodCall, string queue = "default");
         
-    string ContinueJobWith<T>(string parentJobId, Expression<Func<T,Task>> methodCall);
-
-    bool DeleteJob(string jobId);
-
-    void RemoveRecurringJobIfExists(string jobId);
-
-    void AddOrUpdateRecurringJob<T>(string recurringJobId, Expression<Func<T, Task>> methodCall, string cronExpression,
-        TimeZoneInfo timeZone = null, string queue = "default");
+    string ContinueJobWith<T>(string parentJobId, Expression<Func<T,Task>> methodCall, string queue = "default");
+    
+    void AddOrUpdateRecurringJob<T>(string recurringJobId, Expression<Func<T, Task>> methodCall, string cronExpression, TimeZoneInfo timeZone = null, string queue = "default");
 }
 
 public class SugarTalkBackgroundJobClient : ISugarTalkBackgroundJobClient
 {
-    private readonly EnqueuedState _queue;  
-    private readonly Func<IRecurringJobManager> _recurringJobManagerFunc;
     private readonly Func<IBackgroundJobClient> _backgroundJobClientFunc;
-
-    public SugarTalkBackgroundJobClient(
-        Func<IRecurringJobManager> recurringJobManagerFunc,
-        Func<IBackgroundJobClient> backgroundJobClientFunc)
+    private readonly Func<IRecurringJobManager> _recurringJobManagerFunc;
+    
+    public SugarTalkBackgroundJobClient(Func<IBackgroundJobClient> backgroundJobClientFunc, Func<IRecurringJobManager> recurringJobManagerFunc)
     {
-        _recurringJobManagerFunc = recurringJobManagerFunc;
         _backgroundJobClientFunc = backgroundJobClientFunc;
+        _recurringJobManagerFunc = recurringJobManagerFunc;
+    }
 
-        _queue = new EnqueuedState("default");
+    public string Enqueue(Expression<Func<Task>> methodCall, string queue = "default")
+    {
+        return _backgroundJobClientFunc()?.Create(methodCall, new EnqueuedState(queue));
+    }
+
+    public string Enqueue<T>(Expression<Func<T, Task>> methodCall, string queue = "default")
+    {
+        return _backgroundJobClientFunc()?.Create(methodCall, new EnqueuedState(queue));
     }
     
-    public string Enqueue(Expression<Func<Task>> methodCall)
+    public string Enqueue<T>(Expression<Action> methodCall, string queue = "default")
     {
-        return _backgroundJobClientFunc()?.Create(methodCall, _queue);
+        return _backgroundJobClientFunc()?.Create(methodCall, new EnqueuedState(queue));
+    }
+    
+    public string Enqueue<T>(Expression<Action<T>> methodCall, string queue = "default")
+    {
+        return _backgroundJobClientFunc()?.Create(methodCall, new EnqueuedState(queue));
+    }
+    
+    public string Schedule(Expression<Func<Task>> methodCall, TimeSpan delay, string queue = "default")
+    {
+        return _backgroundJobClientFunc()?.Schedule(queue, methodCall, delay);
+    }
+    
+    public string Schedule(Expression<Func<Task>> methodCall, DateTimeOffset enqueueAt, string queue = "default")
+    {
+        return _backgroundJobClientFunc()?.Schedule(queue, methodCall, enqueueAt);
+    }
+    
+    public string ContinueJobWith(string parentJobId, Expression<Func<Task>> methodCall, string queue = "default")
+    {
+        return _backgroundJobClientFunc()?.ContinueJobWith(parentJobId, methodCall, new EnqueuedState(queue));
+    }
+    
+    public string ContinueJobWith<T>(string parentJobId, Expression<Func<T, Task>> methodCall, string queue = "default")
+    {
+        return _backgroundJobClientFunc()?.ContinueJobWith(parentJobId, methodCall, new EnqueuedState(queue));
     }
 
-    public string Enqueue<T>(Expression<Func<T, Task>> methodCall)
+    public void AddOrUpdateRecurringJob<T>(string recurringJobId, Expression<Func<T, Task>> methodCall, string cronExpression, TimeZoneInfo timeZone = null, string queue = "default")
     {
-        return _backgroundJobClientFunc()?.Create(methodCall, _queue);
-    }
-
-    public string Schedule(Expression<Func<Task>> methodCall, TimeSpan delay)
-    {
-        return _backgroundJobClientFunc()?.Schedule(methodCall, delay);
-    }
-
-    public string Schedule(Expression<Func<Task>> methodCall, DateTimeOffset enqueueAt)
-    {
-        return _backgroundJobClientFunc()?.Schedule(methodCall, enqueueAt);
-    }
-
-    public string Schedule<T>(Expression<Func<T, Task>> methodCall, DateTimeOffset enqueueAt)
-    {
-        return _backgroundJobClientFunc()?.Schedule(methodCall, enqueueAt);
-    }
-
-    public string ContinueJobWith(string parentJobId, Expression<Func<Task>> methodCall)
-    {
-        return _backgroundJobClientFunc()?.ContinueJobWith(parentJobId, methodCall, _queue);
-    }
-
-    public string ContinueJobWith<T>(string parentJobId, Expression<Func<T, Task>> methodCall)
-    {
-        return _backgroundJobClientFunc()?.ContinueJobWith(parentJobId, methodCall, _queue);
-    }
-
-    public bool DeleteJob(string jobId)
-    {
-        return _backgroundJobClientFunc().Delete(jobId);
-    }
-
-    public void RemoveRecurringJobIfExists(string jobId)
-    {
-        _recurringJobManagerFunc()?.RemoveIfExists(jobId);
-    }
-
-    public void AddOrUpdateRecurringJob<T>(string recurringJobId, Expression<Func<T, Task>> methodCall, string cronExpression,
-        TimeZoneInfo timeZone = null, string queue = "default")
-    {
-        _recurringJobManagerFunc().AddOrUpdate(recurringJobId, methodCall, cronExpression, timeZone, queue);
+        _recurringJobManagerFunc()?.AddOrUpdate(recurringJobId, queue, methodCall, cronExpression, new RecurringJobOptions
+        {
+            TimeZone = timeZone ?? TimeZoneInfo.Utc
+        });
     }
 }

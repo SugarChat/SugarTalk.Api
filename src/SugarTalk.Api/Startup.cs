@@ -59,8 +59,8 @@ namespace SugarTalk.Api
             app.UseResponseCaching();
             app.UseAuthentication();
             app.UseAuthorization();
-            app.UseHangfireInternal(Configuration);
-            app.ScanHangfireRecurringJobs(Configuration);
+            app.UseHangfireInternal();
+            app.ScanHangfireRecurringJobs();
             
             app.UseEndpoints(endpoints =>
             {

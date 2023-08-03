@@ -14,8 +14,10 @@ using StackExchange.Redis;
 using SugarTalk.Core;
 using SugarTalk.Core.DbUp;
 using SugarTalk.Core.Services.Identity;
+using SugarTalk.Core.Services.Jobs;
 using SugarTalk.Core.Settings.Caching;
 using SugarTalk.Core.Settings.System;
+using SugarTalk.IntegrationTests.Mocks;
 
 namespace SugarTalk.IntegrationTests;
 
@@ -45,7 +47,7 @@ public partial class TestBase
         containerBuilder.RegisterInstance(Substitute.For<IHttpContextAccessor>()).AsImplementedInterfaces();
         
         RegisterRedis(containerBuilder);
-        RegisterConfiguration(containerBuilder);
+        RegisterSugarTalkBackgroundJobClient(containerBuilder);
     }
     
     private IConfiguration RegisterConfiguration(ContainerBuilder containerBuilder)
@@ -60,6 +62,11 @@ public partial class TestBase
         var configuration = new ConfigurationBuilder().AddJsonFile(targetJson).Build();
         containerBuilder.RegisterInstance(configuration).AsImplementedInterfaces();
         return configuration;
+    }
+
+    private void RegisterSugarTalkBackgroundJobClient(ContainerBuilder containerBuilder)
+    {
+        containerBuilder.RegisterType<MockingBackgroundJobClient>().As<ISugarTalkBackgroundJobClient>().InstancePerLifetimeScope();
     }
     
     private void RegisterRedis(ContainerBuilder builder)

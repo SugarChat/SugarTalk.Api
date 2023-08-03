@@ -3,6 +3,7 @@ using Hangfire.Correlate;
 using Newtonsoft.Json;
 using Serilog;
 using SugarTalk.Core.Jobs;
+using SugarTalk.Core.Services.Jobs;
 using SugarTalk.Core.Settings.Caching;
 
 namespace SugarTalk.Api.Extensions;
@@ -25,7 +26,7 @@ public static class HangfireExtension
         services.AddHangfireServer();
     }
 
-    public static void UseHangfireInternal(this IApplicationBuilder app, IConfiguration configuration)
+    public static void UseHangfireInternal(this IApplicationBuilder app)
     {
         app.UseHangfireDashboard(options: new DashboardOptions
         {
@@ -33,8 +34,10 @@ public static class HangfireExtension
         });
     }
     
-    public static void ScanHangfireRecurringJobs(this IApplicationBuilder app, IConfiguration configuration)
+    public static void ScanHangfireRecurringJobs(this IApplicationBuilder app)
     {
+        var backgroundJobClient = app.ApplicationServices.GetRequiredService<ISugarTalkBackgroundJobClient>();
+        
         var recurringJobTypes = typeof(IRecurringJob).Assembly.GetTypes().Where(type => type.IsClass && typeof(IRecurringJob).IsAssignableFrom(type)).ToList();
         
         foreach (var type in recurringJobTypes)
@@ -47,7 +50,7 @@ public static class HangfireExtension
                 continue;
             }
 
-            RecurringJob.AddOrUpdate<IJobSafeRunner>(job.JobId, r => r.Run(job.JobId, type), job.CronExpression, job.TimeZone);
+            backgroundJobClient.AddOrUpdateRecurringJob<IJobSafeRunner>(job.JobId, r => r.Run(job.JobId, type), job.CronExpression, job.TimeZone);
         }
     }
 }
