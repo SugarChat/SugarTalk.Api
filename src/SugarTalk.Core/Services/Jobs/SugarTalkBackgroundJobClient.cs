@@ -1,9 +1,9 @@
 using System;
-using System.Linq.Expressions;
-using System.Threading.Tasks;
 using Hangfire;
 using Hangfire.States;
 using SugarTalk.Core.Ioc;
+using System.Threading.Tasks;
+using System.Linq.Expressions;
 
 namespace SugarTalk.Core.Services.Jobs;
 

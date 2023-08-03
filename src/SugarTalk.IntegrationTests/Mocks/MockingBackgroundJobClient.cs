@@ -1,7 +1,7 @@
 using System;
-using System.Linq.Expressions;
-using System.Threading.Tasks;
 using Autofac;
+using System.Threading.Tasks;
+using System.Linq.Expressions;
 using SugarTalk.Core.Services.Jobs;
 
 namespace SugarTalk.IntegrationTests.Mocks;
