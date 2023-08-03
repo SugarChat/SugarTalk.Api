@@ -166,9 +166,6 @@ namespace SugarTalk.Core.Services.Meetings
             await _meetingDataProvider.RemoveMeetingUserSessionsAsync(
                 _mapper.Map<List<MeetingUserSession>>(meeting.UserSessions), cancellationToken).ConfigureAwait(false);
 
-            await _meetingDataProvider.RemoveMeetingAsync(
-                _mapper.Map<Meeting>(meeting), cancellationToken).ConfigureAwait(false);
-            
             var response = await _antMediaServerUtilService
                 .RemoveMeetingByMeetingNumberAsync(appName, meeting.MeetingNumber, cancellationToken)
                 .ConfigureAwait(false);

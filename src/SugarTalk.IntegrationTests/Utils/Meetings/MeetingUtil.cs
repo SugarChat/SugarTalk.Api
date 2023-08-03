@@ -11,6 +11,7 @@ using SugarTalk.Core.Data;
 using SugarTalk.Core.Domain.Meeting;
 using SugarTalk.Core.Services.AntMediaServer;
 using SugarTalk.Core.Services.Meetings;
+using SugarTalk.Core.Settings.Meeting;
 using SugarTalk.Messages.Commands.Meetings;
 using SugarTalk.Messages.Dto.Meetings;
 using SugarTalk.Messages.Dto.Users;
