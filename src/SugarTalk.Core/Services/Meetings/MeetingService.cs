@@ -11,6 +11,7 @@ using SugarTalk.Core.Services.Account;
 using SugarTalk.Core.Services.AntMediaServer;
 using SugarTalk.Core.Services.Exceptions;
 using SugarTalk.Core.Services.Identity;
+using SugarTalk.Core.Settings.Meeting;
 using SugarTalk.Messages.Commands.Meetings;
 using SugarTalk.Messages.Dto.Meetings;
 using SugarTalk.Messages.Dto.Users;
@@ -44,6 +45,7 @@ namespace SugarTalk.Core.Services.Meetings
 
         private readonly IMapper _mapper;
         private readonly ICurrentUser _currentUser;
+        private readonly MeetingSettings _meetingSettings;
         private readonly IAccountDataProvider _accountDataProvider;
         private readonly IMeetingDataProvider _meetingDataProvider;
         private readonly IAntMediaServerUtilService _antMediaServerUtilService;
@@ -51,12 +53,14 @@ namespace SugarTalk.Core.Services.Meetings
         public MeetingService(
             IMapper mapper, 
             ICurrentUser currentUser,
+            MeetingSettings meetingSettings,
             IMeetingDataProvider meetingDataProvider,
             IAccountDataProvider accountDataProvider,
             IAntMediaServerUtilService antMediaServerUtilService)
         {
             _mapper = mapper;
             _currentUser = currentUser;
+            _meetingSettings = meetingSettings;
             _accountDataProvider = accountDataProvider;
             _meetingDataProvider = meetingDataProvider;
             _antMediaServerUtilService = antMediaServerUtilService;
@@ -66,7 +70,7 @@ namespace SugarTalk.Core.Services.Meetings
         {
             var postData = new CreateMeetingDto
             {
-                MeetingNumber = GenerateMeetingNumber(),
+                MeetingNumber = await GenerateMeetingNumber(cancellationToken).ConfigureAwait(false),
                 Mode = command.MeetingStreamMode.ToString().ToLower(),
                 StartDate = command.StartDate.ToUnixTimeSeconds(),
                 EndDate = command.EndDate.ToUnixTimeSeconds()
@@ -244,15 +248,21 @@ namespace SugarTalk.Core.Services.Meetings
             return _mapper.Map<MeetingUserSessionStreamDto>(userSessionStream);
         }
 
-        private string GenerateMeetingNumber()
+        public async Task<string> GenerateMeetingNumber(CancellationToken cancellationToken)
         {
-            var result = new StringBuilder();
-            for (var i = 0; i < 5; i++)
-            {
-                var r = new Random(Guid.NewGuid().GetHashCode());
-                result.Append(r.Next(0, 10));
-            }
-            return result.ToString();
+            var random = new Random();
+
+            var meetings =
+                await _meetingDataProvider.GetMeetingAsync(cancellationToken).ConfigureAwait(false);
+
+            var availableNumbers = Enumerable
+                .Range(_meetingSettings.MeetingNumberBaseValue, _meetingSettings.MeetingNumberCapacity)
+                .Select(num => num.ToString())
+                .Except(meetings.Select(x => x.MeetingNumber)).ToList();
+
+            if (availableNumbers is not { Count: > 0 }) throw new CannotCreateMeetingNumberException();
+
+            return availableNumbers.MinBy(_ => random.Next());
         }
         
         private MeetingUserSession GenerateNewUserSessionFromUser(UserAccountDto user, Guid meetingId, bool isMuted)
