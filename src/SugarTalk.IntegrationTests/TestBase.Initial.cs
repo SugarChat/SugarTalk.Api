@@ -1,23 +1,23 @@
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
-using Autofac;
+using System.Collections.Generic;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
+using Autofac;
+using Serilog;
+using NSubstitute;
 using MySqlConnector;
 using Newtonsoft.Json;
-using NSubstitute;
-using Serilog;
 using StackExchange.Redis;
 using SugarTalk.Core;
 using SugarTalk.Core.DbUp;
-using SugarTalk.Core.Services.Identity;
 using SugarTalk.Core.Services.Jobs;
-using SugarTalk.Core.Settings.Caching;
 using SugarTalk.Core.Settings.System;
+using SugarTalk.Core.Settings.Caching;
 using SugarTalk.IntegrationTests.Mocks;
+using SugarTalk.Core.Services.Identity;
 
 namespace SugarTalk.IntegrationTests;
 

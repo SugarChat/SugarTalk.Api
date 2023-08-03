@@ -43,7 +43,6 @@ namespace SugarTalk.Core.Services.Meetings
     {
         private const string appName = "LiveApp";
 
-        private readonly IClock _clock;
         private readonly IMapper _mapper;
         private readonly ICurrentUser _currentUser;
         private readonly IAccountDataProvider _accountDataProvider;
@@ -51,14 +50,12 @@ namespace SugarTalk.Core.Services.Meetings
         private readonly IAntMediaServerUtilService _antMediaServerUtilService;
         
         public MeetingService(
-            IClock clock,
             IMapper mapper, 
             ICurrentUser currentUser,
             IMeetingDataProvider meetingDataProvider,
             IAccountDataProvider accountDataProvider,
             IAntMediaServerUtilService antMediaServerUtilService)
         {
-            _clock = clock;
             _mapper = mapper;
             _currentUser = currentUser;
             _accountDataProvider = accountDataProvider;
