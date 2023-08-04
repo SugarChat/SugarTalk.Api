@@ -23,7 +23,6 @@ public class MeetingHub : DynamicHub
     private const string appName = "LiveApp";
     private string streamId => Context.ConnectionId;
     private string meetingNumber => Context.GetHttpContext()?.Request.Query["meetingNumber"];
-    
 
     private readonly ICurrentUser _currentUser;
     private readonly IMeetingService _meetingService;

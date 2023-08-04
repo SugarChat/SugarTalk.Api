@@ -30,6 +30,6 @@ public class AudioChangedEventHandler : IEventHandler<AudioChangedEvent>
 
         await _meetingHub.Clients
             .GroupExcept(meeting.MeetingNumber, context.Message.MeetingUserSession.UserSessionStreams.FirstOrDefault().StreamId)
-            .SendAsync("OtherAudioChanged", context.Message.MeetingUserSession, cancellationToken).ConfigureAwait(false);
+            .SendAsync("OtherAudioChangedAsync", context.Message.MeetingUserSession, cancellationToken).ConfigureAwait(false);
     }
 }

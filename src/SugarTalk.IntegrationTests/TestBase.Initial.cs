@@ -4,6 +4,7 @@ using System.IO;
 using System.Threading.Tasks;
 using Autofac;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
 using MySqlConnector;
@@ -13,6 +14,7 @@ using Serilog;
 using StackExchange.Redis;
 using SugarTalk.Core;
 using SugarTalk.Core.DbUp;
+using SugarTalk.Core.Hubs;
 using SugarTalk.Core.Services.Identity;
 using SugarTalk.Core.Settings.Caching;
 using SugarTalk.Core.Settings.System;
@@ -43,6 +45,7 @@ public partial class TestBase
         containerBuilder.RegisterInstance(new TestCurrentUser()).As<ICurrentUser>();
         containerBuilder.RegisterInstance(Substitute.For<IMemoryCache>()).AsImplementedInterfaces();
         containerBuilder.RegisterInstance(Substitute.For<IHttpContextAccessor>()).AsImplementedInterfaces();
+        containerBuilder.RegisterInstance(Substitute.For<IHubContext<MeetingHub>>()).AsImplementedInterfaces();
         
         RegisterRedis(containerBuilder);
         RegisterConfiguration(containerBuilder);

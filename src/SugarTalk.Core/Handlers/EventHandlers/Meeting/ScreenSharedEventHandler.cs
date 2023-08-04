@@ -23,13 +23,14 @@ public class ScreenSharedEventHandler : IEventHandler<ScreenSharedEvent>
 
     public async Task Handle(IReceiveContext<ScreenSharedEvent> context, CancellationToken cancellationToken)
     {
-        if (context.Message?.MeetingUserSession == null) return;
+        if (context.Message.MeetingUserSession.UserSessionStreams is not { Count: > 0 }) return;
         
         var meeting = await _meetingDataProvider
             .GetMeetingByIdAsync(context.Message.MeetingUserSession.MeetingId, cancellationToken).ConfigureAwait(false);
 
         await _meetingHub.Clients
             .GroupExcept(meeting.MeetingNumber, context.Message.MeetingUserSession.UserSessionStreams.FirstOrDefault().StreamId)
-            .SendAsync("OtherScreenShared", context.Message.MeetingUserSession, cancellationToken).ConfigureAwait(false);
+            .SendAsync("OtherScreenSharedAsync", context.Message.MeetingUserSession, cancellationToken)
+            .ConfigureAwait(false);
     }
 }
