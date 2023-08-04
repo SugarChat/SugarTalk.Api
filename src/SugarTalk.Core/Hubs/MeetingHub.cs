@@ -21,7 +21,9 @@ namespace SugarTalk.Core.Hubs;
 public class MeetingHub : DynamicHub
 {
     private const string appName = "LiveApp";
-    private string MeetingNumber => Context.GetHttpContext()?.Request.Query["meetingNumber"];
+    private string streamId => Context.ConnectionId;
+    private string meetingNumber => Context.GetHttpContext()?.Request.Query["meetingNumber"];
+    
 
     private readonly ICurrentUser _currentUser;
     private readonly IMeetingService _meetingService;
@@ -47,47 +49,47 @@ public class MeetingHub : DynamicHub
     {
         var user = await _accountDataProvider.GetUserAccountAsync(id: _currentUser.Id.Value).ConfigureAwait(false);
 
-        var meetingSession = await _meetingDataProvider.GetMeetingAsync(MeetingNumber).ConfigureAwait(false);
+        var meetingSession = await _meetingDataProvider.GetMeetingAsync(meetingNumber).ConfigureAwait(false);
 
-        await _meetingService.ConnectUserToMeetingAsync(user, meetingSession, Context.ConnectionId, MeetingStreamType.Audio).ConfigureAwait(false);
+        await _meetingService.ConnectUserToMeetingAsync(user, meetingSession, streamId, MeetingStreamType.Audio).ConfigureAwait(false);
 
         var userSession = meetingSession.UserSessions.SingleOrDefault(
-            x => x.UserSessionStreams.FirstOrDefault()?.StreamId == Context.ConnectionId);
+            x => x.UserSessionStreams.FirstOrDefault()?.StreamId == streamId);
         
         var otherUserSessions = meetingSession.UserSessions
-            .Where(x => x.UserSessionStreams.FirstOrDefault()?.StreamId != Context.ConnectionId).ToList();
+            .Where(x => x.UserSessionStreams.FirstOrDefault()?.StreamId != streamId).ToList();
 
-        await Groups.AddToGroupAsync(Context.ConnectionId, MeetingNumber).ConfigureAwait(false);
+        await Groups.AddToGroupAsync(streamId, meetingNumber).ConfigureAwait(false);
 
         Clients.Caller.SetLocalUser(userSession);
         Clients.Caller.SetOtherUsers(otherUserSessions);
-        Clients.OthersInGroup(MeetingNumber).OtherJoined(userSession);
+        Clients.OthersInGroup(meetingNumber).OtherJoined(userSession);
     }
 
     public async Task<MeetingDto> GetMeetingInfoAsync(bool includeUserSession = true)
     {
         var meetingResponse = await _meetingService
-            .GetMeetingByNumberAsync(new GetMeetingByNumberRequest { MeetingNumber = MeetingNumber, IncludeUserSession = includeUserSession}).ConfigureAwait(false);
+            .GetMeetingByNumberAsync(new GetMeetingByNumberRequest { MeetingNumber = meetingNumber, IncludeUserSession = includeUserSession}).ConfigureAwait(false);
         
         return meetingResponse.Data;
     }
     
     public async Task DrawOnCanvasAsync(string drawingData)
     {
-        var userSession = await _meetingDataProvider.GetUserSessionByStreamIdAsync(Context.ConnectionId).ConfigureAwait(false);
+        var userSession = await _meetingDataProvider.GetUserSessionByStreamIdAsync(streamId).ConfigureAwait(false);
         
         if (userSession != null)
-            Clients.OthersInGroup(MeetingNumber).CanvasDrawingReceived(userSession.UserId, drawingData);
+            Clients.OthersInGroup(meetingNumber).CanvasDrawingReceived(userSession.UserId, drawingData);
     }
     
     public override async Task OnDisconnectedAsync(Exception exception)
     {
-        var userSession = await _meetingDataProvider.GetUserSessionByStreamIdAsync(Context.ConnectionId).ConfigureAwait(false);
+        var userSession = await _meetingDataProvider.GetUserSessionByStreamIdAsync(streamId).ConfigureAwait(false);
         
         if (userSession != null)
         {
             await _antMediaServerUtilService
-                .RemoveStreamFromMeetingAsync(appName, MeetingNumber, Context.ConnectionId).ConfigureAwait(false);
+                .RemoveStreamFromMeetingAsync(appName, meetingNumber, streamId).ConfigureAwait(false);
 
             await _meetingDataProvider
                 .RemoveMeetingUserSessionStreamsAsync(new List<int> { userSession.Id }).ConfigureAwait(false);
@@ -95,7 +97,7 @@ public class MeetingHub : DynamicHub
             await _meetingDataProvider
                 .RemoveMeetingUserSessionsAsync(new List<MeetingUserSession> { userSession }).ConfigureAwait(false);
             
-            Clients.OthersInGroup(MeetingNumber).OtherLeft(userSession);
+            Clients.OthersInGroup(meetingNumber).OtherLeft(userSession);
         }
         
         await base.OnDisconnectedAsync(exception).ConfigureAwait(false);
@@ -103,9 +105,9 @@ public class MeetingHub : DynamicHub
 
     public async Task ConnectionsClosedAsync(IEnumerable<string> peerConnectionIds)
     {
-        await _meetingService.EndMeetingAsync(new EndMeetingCommand { MeetingNumber = MeetingNumber }).ConfigureAwait(false);
+        await _meetingService.EndMeetingAsync(new EndMeetingCommand { MeetingNumber = meetingNumber }).ConfigureAwait(false);
         
-        Clients.OthersInGroup(MeetingNumber).OtherConnectionsClosed(peerConnectionIds);
+        Clients.OthersInGroup(meetingNumber).OtherConnectionsClosed(peerConnectionIds);
     }
     
     public void ProcessOffer(MeetingUserSessionDto sendFromUserSession, MeetingUserSessionDto sendToUserSession,
