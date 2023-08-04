@@ -21,7 +21,7 @@ public interface IAntMediaServerUtilService : IScopedDependency
         string appName, string meetingNumber, string streamId, CancellationToken cancellationToken);
     
     Task<ConferenceRoomResponseBaseDto> RemoveStreamFromMeetingAsync(
-        string appName, string meetingNumber, string streamId, CancellationToken cancellationToken);
+        string appName, string meetingNumber, string streamId, CancellationToken cancellationToken = default);
 }
 
 public class AntMediaServerUtilService : IAntMediaServerUtilService

@@ -30,7 +30,7 @@ public partial interface IMeetingDataProvider
     
     Task AddMeetingUserSessionStreamAsync(MeetingUserSessionStream userSessionStream, CancellationToken cancellationToken);
     
-    Task RemoveMeetingUserSessionStreamsAsync(List<int> userSessionIds, CancellationToken cancellationToken);
+    Task RemoveMeetingUserSessionStreamsAsync(List<int> userSessionIds, CancellationToken cancellationToken = default);
     
     Task<List<MeetingUserSessionStream>> GetMeetingUserSessionStreamsAsync(int userSessionId, CancellationToken cancellationToken);
     
