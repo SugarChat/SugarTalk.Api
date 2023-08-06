@@ -4,12 +4,10 @@ using System.Threading.Tasks;
 using System.Collections.Generic;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.AspNetCore.Authorization;
-using SugarTalk.Core.Domain.Meeting;
 using SugarTalk.Messages.Dto.Meetings;
 using SugarTalk.Core.Services.Account;
 using SugarTalk.Core.Services.Identity;
 using SugarTalk.Core.Services.Meetings;
-using SugarTalk.Messages.Enums.Meeting;
 using SugarTalk.Messages.Commands.Meetings;
 using SugarTalk.Messages.Requests.Meetings;
 using SugarTalk.Core.Services.AntMediaServer;
@@ -20,7 +18,6 @@ namespace SugarTalk.Core.Hubs;
 [Authorize]
 public class MeetingHub : DynamicHub
 {
-    private const string appName = "LiveApp";
     private string streamId => Context.ConnectionId;
     private string meetingNumber => Context.GetHttpContext()?.Request.Query["meetingNumber"];
 
@@ -46,11 +43,7 @@ public class MeetingHub : DynamicHub
 
     public override async Task OnConnectedAsync()
     {
-        var user = await _accountDataProvider.GetUserAccountAsync(id: _currentUser.Id.Value).ConfigureAwait(false);
-
         var meetingSession = await _meetingDataProvider.GetMeetingAsync(meetingNumber).ConfigureAwait(false);
-
-        await _meetingService.ConnectUserToMeetingAsync(user, meetingSession, streamId, MeetingStreamType.Audio).ConfigureAwait(false);
 
         var userSession = meetingSession.UserSessions.SingleOrDefault(
             x => x.UserSessionStreams.FirstOrDefault()?.StreamId == streamId);
@@ -86,18 +79,7 @@ public class MeetingHub : DynamicHub
         var userSession = await _meetingDataProvider.GetUserSessionByStreamIdAsync(streamId).ConfigureAwait(false);
         
         if (userSession != null)
-        {
-            await _antMediaServerUtilService
-                .RemoveStreamFromMeetingAsync(appName, meetingNumber, streamId).ConfigureAwait(false);
-
-            await _meetingDataProvider
-                .RemoveMeetingUserSessionStreamsAsync(new List<int> { userSession.Id }).ConfigureAwait(false);
-            
-            await _meetingDataProvider
-                .RemoveMeetingUserSessionsAsync(new List<MeetingUserSession> { userSession }).ConfigureAwait(false);
-            
             Clients.OthersInGroup(meetingNumber).OtherLeft(userSession);
-        }
         
         await base.OnDisconnectedAsync(exception).ConfigureAwait(false);
     }
