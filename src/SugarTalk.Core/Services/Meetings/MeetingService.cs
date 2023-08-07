@@ -26,7 +26,7 @@ namespace SugarTalk.Core.Services.Meetings
             ScheduleMeetingCommand scheduleMeetingCommand, CancellationToken cancellationToken);
 
         Task<GetMeetingByNumberResponse> GetMeetingByNumberAsync(
-            GetMeetingByNumberRequest request, CancellationToken cancellationToken);
+            GetMeetingByNumberRequest request, CancellationToken cancellationToken = default);
 
         Task<MeetingJoinedEvent> JoinMeetingAsync(
             JoinMeetingCommand command, CancellationToken cancellationToken);
@@ -35,7 +35,10 @@ namespace SugarTalk.Core.Services.Meetings
             OutMeetingCommand command, CancellationToken cancellationToken);
 
         Task<MeetingEndedEvent> EndMeetingAsync(
-            EndMeetingCommand command, CancellationToken cancellationToken);
+            EndMeetingCommand command, CancellationToken cancellationToken = default);
+
+        Task ConnectUserToMeetingAsync(
+            UserAccountDto user, MeetingDto meeting, string streamId, MeetingStreamType streamType, bool? isMuted = null, CancellationToken cancellationToken = default);
     }
     
     public partial class MeetingService : IMeetingService
@@ -162,9 +165,6 @@ namespace SugarTalk.Core.Services.Meetings
             await _meetingDataProvider.RemoveMeetingUserSessionsAsync(
                 _mapper.Map<List<MeetingUserSession>>(meeting.UserSessions), cancellationToken).ConfigureAwait(false);
 
-            await _meetingDataProvider.RemoveMeetingAsync(
-                _mapper.Map<Meeting>(meeting), cancellationToken).ConfigureAwait(false);
-            
             var response = await _antMediaServerUtilService
                 .RemoveMeetingByMeetingNumberAsync(appName, meeting.MeetingNumber, cancellationToken)
                 .ConfigureAwait(false);

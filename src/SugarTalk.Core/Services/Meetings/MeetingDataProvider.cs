@@ -23,9 +23,9 @@ namespace SugarTalk.Core.Services.Meetings
         
         Task PersistMeetingAsync(Meeting meeting, CancellationToken cancellationToken);
 
-        Task<MeetingDto> GetMeetingAsync(string meetingNumber, CancellationToken cancellationToken, bool includeUserSessions = true);
+        Task<MeetingDto> GetMeetingAsync(string meetingNumber, CancellationToken cancellationToken = default, bool includeUserSessions = true);
         
-        Task RemoveMeetingUserSessionsAsync(IEnumerable<MeetingUserSession> meetingUserSessions, CancellationToken cancellationToken);
+        Task RemoveMeetingUserSessionsAsync(IEnumerable<MeetingUserSession> meetingUserSessions, CancellationToken cancellationToken = default);
         
         Task RemoveMeetingAsync(Meeting meeting, CancellationToken cancellationToken);
     }
