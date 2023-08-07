@@ -14,7 +14,7 @@ using SugarTalk.Core.Services.AntMediaServer;
 
 namespace SugarTalk.Core.Hubs;
 
-// [Authorize]
+[Authorize]
 public class MeetingHub : DynamicHub
 {
     private string streamId => Context.ConnectionId;
