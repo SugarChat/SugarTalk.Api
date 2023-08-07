@@ -12,7 +12,6 @@ using SugarTalk.Messages.Commands.Meetings;
 using SugarTalk.Messages.Requests.Meetings;
 using SugarTalk.Core.Services.AntMediaServer;
 
-
 namespace SugarTalk.Core.Hubs;
 
 [Authorize]
