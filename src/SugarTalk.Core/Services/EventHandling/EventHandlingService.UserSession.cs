@@ -29,7 +29,6 @@ public partial class EventHandlingService
 
         await _meetingHub.Clients
             .GroupExcept(meeting.MeetingNumber, @event.MeetingUserSession.UserSessionStreams.FirstOrDefault().StreamId)
-            .SendAsync("OtherScreenSharedAsync", @event.MeetingUserSession, cancellationToken)
-            .ConfigureAwait(false);
+            .SendAsync("OtherScreenSharedAsync", @event.MeetingUserSession, cancellationToken).ConfigureAwait(false);
     }
 }
