@@ -253,7 +253,7 @@ namespace SugarTalk.Core.Services.Meetings
                 await _meetingDataProvider.GetMeetingAsync(cancellationToken).ConfigureAwait(false);
 
             var availableNumbers = Enumerable
-                .Range(_meetingSettings.MeetingNumberBaseValue, _meetingSettings.MeetingNumberCapacity)
+                .Range(_meetingSettings.MeetingNumberBaseCount, _meetingSettings.MeetingNumberCapacity)
                 .Select(num => num.ToString())
                 .Except(meetings.Select(x => x.MeetingNumber)).ToList();
 

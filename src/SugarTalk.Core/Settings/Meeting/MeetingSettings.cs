@@ -8,10 +8,10 @@ public class MeetingSettings : IConfigurationSetting
     {
         MeetingNumberCapacity = configuration.GetValue<int>("MeetingNumberCapacity");
 
-        MeetingNumberBaseValue = configuration.GetValue<int>("MeetingNumberBaseValue");
+        MeetingNumberBaseCount = configuration.GetValue<int>("MeetingNumberBaseCount");
     }
     
     public int MeetingNumberCapacity { get; set; }
     
-    public int MeetingNumberBaseValue { get; set; }
+    public int MeetingNumberBaseCount { get; set; }
 }
