@@ -250,7 +250,7 @@ namespace SugarTalk.Core.Services.Meetings
             var random = new Random();
 
             var meetings =
-                await _meetingDataProvider.GetMeetingAsync(cancellationToken).ConfigureAwait(false);
+                await _meetingDataProvider.GetMeetingsAsync(cancellationToken).ConfigureAwait(false);
 
             var availableNumbers = Enumerable
                 .Range(_meetingSettings.MeetingNumberBaseCount, _meetingSettings.MeetingNumberCapacity)
