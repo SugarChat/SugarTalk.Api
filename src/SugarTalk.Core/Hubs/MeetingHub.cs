@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using System.Collections.Generic;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.AspNetCore.Authorization;
+using Serilog;
 using SugarTalk.Messages.Dto.Meetings;
 using SugarTalk.Core.Services.Account;
 using SugarTalk.Core.Services.Identity;
@@ -42,6 +43,8 @@ public class MeetingHub : DynamicHub
 
     public override async Task OnConnectedAsync()
     {
+        Log.Information("when is OnConnectedAsync, meetingNumber:{0}, streamId:{1}", meetingNumber, streamId);
+        
         var meetingSession = await _meetingDataProvider.GetMeetingAsync(meetingNumber).ConfigureAwait(false);
 
         var userSession = meetingSession.UserSessions.SingleOrDefault(
@@ -59,12 +62,21 @@ public class MeetingHub : DynamicHub
 
     public async Task<MeetingDto> GetMeetingInfoAsync(bool includeUserSession = true)
     {
+        Log.Information("when is GetMeetingInfoAsync, meetingNumber:{0}, streamId:{1}", meetingNumber, streamId);
+        
         var meetingResponse = await _meetingService
             .GetMeetingByNumberAsync(new GetMeetingByNumberRequest { MeetingNumber = meetingNumber, IncludeUserSession = includeUserSession}).ConfigureAwait(false);
         
         return meetingResponse.Data;
     }
     
+    public async Task SendMessageAsync(string message)
+    {
+        Log.Information("when is SendMessageAsync, meetingNumber:{0}, streamId:{1}", meetingNumber, streamId);
+        
+        await Clients.Caller.SendAsync("SendMessageAsync", message);
+    }
+
     public async Task DrawOnCanvasAsync(string drawingData)
     {
         var userSession = await _meetingDataProvider.GetUserSessionByStreamIdAsync(streamId).ConfigureAwait(false);
