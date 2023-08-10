@@ -65,7 +65,7 @@ public class MeetingHub : DynamicHub
         var meetingResponse = await _meetingService
             .GetMeetingByNumberAsync(new GetMeetingByNumberRequest { MeetingNumber = meetingNumber, IncludeUserSession = includeUserSession}).ConfigureAwait(false);
         
-        await Clients.All.SendAsync.SendAsync("GetMeetingInfoAsync", meetingResponse.Data);
+        await Clients.All.SendAsync("GetMeetingInfoAsync", meetingResponse.Data);
     }
     
     public async Task SendMessageAsync(string message)
