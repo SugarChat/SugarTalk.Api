@@ -134,6 +134,7 @@ public partial class MeetingDataProvider
         return await _repository.Query<MeetingUserSession>()
             .Where(x => x.Id != userSessionUserId)
             .Where(x => x.MeetingId == meetingId)
+            .Where(x => x.IsSharingScreen == true)
             .FirstOrDefaultAsync(cancellationToken).ConfigureAwait(false);
     }
 

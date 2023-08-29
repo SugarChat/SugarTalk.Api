@@ -125,7 +125,7 @@ public partial class MeetingService
         var sharingUserSession = await _meetingDataProvider
             .GetSharingUserSessionAsync(meeting.Id, userSession.UserId, cancellationToken).ConfigureAwait(false);
 
-        if (sharingUserSession is null || !sharingUserSession.IsSharingScreen) return false;
+        if (sharingUserSession is null) return false;
         
         var sharingUserSessionStreams = await _meetingDataProvider
             .GetMeetingUserSessionStreamsAsync(sharingUserSession.Id, cancellationToken).ConfigureAwait(false);
