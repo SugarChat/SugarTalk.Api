@@ -37,6 +37,8 @@ public partial interface IMeetingDataProvider
     Task RemoveMeetingUserSessionStreamsAsync(List<MeetingUserSessionStream> userSessionStreams, CancellationToken cancellationToken);
 
     Task<MeetingUserSession> GetUserSessionByStreamIdAsync(string streamId, CancellationToken cancellationToken = default);
+    
+    Task<MeetingUserSession> GetSharingUserSessionAsync(Guid meetingId, int userSessionUserId, CancellationToken cancellationToken);
 }
 
 public partial class MeetingDataProvider
@@ -124,6 +126,14 @@ public partial class MeetingDataProvider
 
         return await _repository
             .Query<MeetingUserSession>(x => x.Id == meetingUserSessionStream.MeetingUserSessionId)
+            .FirstOrDefaultAsync(cancellationToken).ConfigureAwait(false);
+    }
+
+    public async Task<MeetingUserSession> GetSharingUserSessionAsync(Guid meetingId, int userSessionUserId, CancellationToken cancellationToken)
+    {
+        return await _repository.Query<MeetingUserSession>()
+            .Where(x => x.Id != userSessionUserId)
+            .Where(x => x.MeetingId == meetingId)
             .FirstOrDefaultAsync(cancellationToken).ConfigureAwait(false);
     }
 

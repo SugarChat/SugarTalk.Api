@@ -240,6 +240,10 @@ public class MeetingServiceFixture : MeetingFixtureBase
     [InlineData(false, true)]
     public async Task CanShareScreen(bool isSharingScreen, bool expect)
     {
+        const string streamId1 = "95727";
+        const string streamId2 = "52013";
+        var streamIds = new List<string> { streamId1, streamId2 };
+
         var scheduleMeetingResponse = await _meetingUtil.ScheduleMeeting();
 
         var meeting = await _meetingUtil.GetMeeting(scheduleMeetingResponse.Data.MeetingNumber);
@@ -249,13 +253,23 @@ public class MeetingServiceFixture : MeetingFixtureBase
         await _meetingUtil.AddMeetingUserSession(1, meeting.Id, 1);
         await _meetingUtil.AddMeetingUserSession(2, meeting.Id, user.Id, isSharingScreen: isSharingScreen);
 
-        await Run<IMediator>(async mediator =>
+        if(isSharingScreen)
+            await _meetingUtil.AddMeetingUserSessionStream(10, streamId2, MeetingStreamType.ScreenSharing, 2);
+
+        await Run<IMediator, IAntMediaServerUtilService>(async (mediator, antMediaServerUtilService) =>
         {
+            antMediaServerUtilService
+                .GetMeetingByMeetingNumberAsync(Arg.Any<string>(), Arg.Any<string>(), CancellationToken.None)
+                .Returns(new GetMeetingResponseDto
+                {
+                    RoomStreamList = streamIds
+                });
+            
             var response = await mediator.SendAsync<ShareScreenCommand, ShareScreenResponse>(
                 new ShareScreenCommand
                 {
                     MeetingUserSessionId = 1,
-                    StreamId = "123456",
+                    StreamId = streamId1,
                     IsShared = true
                 });
 
@@ -264,12 +278,47 @@ public class MeetingServiceFixture : MeetingFixtureBase
             if (!isSharingScreen)
             {
                 response.Data.MeetingUserSession.UserSessionStreams.Count.ShouldBe(1);
-                response.Data.MeetingUserSession.UserSessionStreams.Single().StreamId.ShouldBe("123456");
+                response.Data.MeetingUserSession.UserSessionStreams.Single().StreamId.ShouldBe(streamId1);
                 response.Data.MeetingUserSession.UserSessionStreams.Single().MeetingUserSessionId.ShouldBe(1);
                 response.Data.MeetingUserSession.UserSessionStreams.Single().StreamType.ShouldBe(MeetingStreamType.ScreenSharing);
             }
             else
                 response.Data.MeetingUserSession.UserSessionStreams.ShouldNotBeNull();
+        }, SetupMocking);
+    }
+
+    [Fact]
+    public async Task ShouldCancelShareScreenWhenDisconnected()
+    {
+        const string streamId1 = "95727";
+        const string streamId2 = "50123";
+        
+        var scheduleMeetingResponse = await _meetingUtil.ScheduleMeeting();
+
+        var meeting = await _meetingUtil.GetMeeting(scheduleMeetingResponse.Data.MeetingNumber);
+
+        var user = await _accountUtil.AddUserAccount("test", "123");
+
+        await _meetingUtil.AddMeetingUserSession(1, meeting.Id, 1);
+        
+        await _meetingUtil.AddMeetingUserSession(2, meeting.Id, user.Id, isSharingScreen: true);
+        await _meetingUtil.AddMeetingUserSessionStream(10, streamId1, MeetingStreamType.ScreenSharing, 2);
+        
+        await Run<IMediator, IAntMediaServerUtilService>(async (mediator, antMediaServerUtilService) =>
+        {
+            antMediaServerUtilService
+                .GetMeetingByMeetingNumberAsync(Arg.Any<string>(), Arg.Any<string>(), CancellationToken.None)
+                .Returns(new GetMeetingResponseDto { RoomStreamList = new List<string>() });
+            
+            var response = await mediator.SendAsync<ShareScreenCommand, ShareScreenResponse>(
+                new ShareScreenCommand
+                {
+                    MeetingUserSessionId = 1,
+                    StreamId = streamId2,
+                    IsShared = true
+                });
+
+            response.Data.MeetingUserSession.IsSharingScreen.ShouldBe(true);
         }, SetupMocking);
     }
 
