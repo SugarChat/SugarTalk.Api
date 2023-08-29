@@ -115,7 +115,7 @@ public partial class MeetingService
             userSessionStreams.Where(x => x.StreamType == streamType).ToList(), cancellationToken).ConfigureAwait(false);
     }
     
-    public async Task<bool> IsOtherSharingAsync(MeetingUserSession userSession, Meeting meeting,  CancellationToken cancellationToken)
+    public async Task<bool> IsOtherSharingAsync(MeetingUserSession userSession, Meeting meeting, CancellationToken cancellationToken)
     {
         var getResponse = await _antMediaServerUtilService
             .GetMeetingByMeetingNumberAsync(appName, meeting.MeetingNumber, cancellationToken).ConfigureAwait(false);

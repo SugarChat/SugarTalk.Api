@@ -242,6 +242,7 @@ public class MeetingServiceFixture : MeetingFixtureBase
     {
         const string streamId1 = "95727";
         const string streamId2 = "52013";
+        
         var streamIds = new List<string> { streamId1, streamId2 };
 
         var scheduleMeetingResponse = await _meetingUtil.ScheduleMeeting();
@@ -260,10 +261,7 @@ public class MeetingServiceFixture : MeetingFixtureBase
         {
             antMediaServerUtilService
                 .GetMeetingByMeetingNumberAsync(Arg.Any<string>(), Arg.Any<string>(), CancellationToken.None)
-                .Returns(new GetMeetingResponseDto
-                {
-                    RoomStreamList = streamIds
-                });
+                .Returns(new GetMeetingResponseDto { RoomStreamList = streamIds });
             
             var response = await mediator.SendAsync<ShareScreenCommand, ShareScreenResponse>(
                 new ShareScreenCommand
