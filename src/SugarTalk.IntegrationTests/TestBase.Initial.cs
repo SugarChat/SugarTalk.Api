@@ -3,6 +3,7 @@ using System.IO;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
 using Autofac;
@@ -14,10 +15,11 @@ using StackExchange.Redis;
 using SugarTalk.Core;
 using SugarTalk.Core.DbUp;
 using SugarTalk.Core.Services.Jobs;
-using SugarTalk.Core.Settings.System;
-using SugarTalk.Core.Settings.Caching;
-using SugarTalk.IntegrationTests.Mocks;
+using SugarTalk.Core.Hubs;
 using SugarTalk.Core.Services.Identity;
+using SugarTalk.Core.Settings.Caching;
+using SugarTalk.Core.Settings.System;
+using SugarTalk.IntegrationTests.Mocks;
 
 namespace SugarTalk.IntegrationTests;
 
@@ -45,6 +47,7 @@ public partial class TestBase
         containerBuilder.RegisterInstance(new TestCurrentUser()).As<ICurrentUser>();
         containerBuilder.RegisterInstance(Substitute.For<IMemoryCache>()).AsImplementedInterfaces();
         containerBuilder.RegisterInstance(Substitute.For<IHttpContextAccessor>()).AsImplementedInterfaces();
+        containerBuilder.RegisterInstance(Substitute.For<IHubContext<MeetingHub>>()).AsImplementedInterfaces();
         
         RegisterRedis(containerBuilder);
         RegisterSugarTalkBackgroundJobClient(containerBuilder);

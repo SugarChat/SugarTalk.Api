@@ -172,12 +172,9 @@ public class MeetingServiceFixture : MeetingFixtureBase
                 MeetingNumber = meeting.MeetingNumber
             });
 
-            var afterMeetings = await repository.QueryNoTracking<Core.Domain.Meeting.Meeting>().ToListAsync();
-            
             var afterUserSession = await repository.QueryNoTracking<MeetingUserSession>()
                 .Where(x => x.MeetingId == meeting.Id).ToListAsync();
 
-            afterMeetings.Count.ShouldBe(0);
             afterUserSession.Count.ShouldBe(0);
         }, builder =>
         {

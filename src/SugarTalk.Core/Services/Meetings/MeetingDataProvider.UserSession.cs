@@ -30,11 +30,13 @@ public partial interface IMeetingDataProvider
     
     Task AddMeetingUserSessionStreamAsync(MeetingUserSessionStream userSessionStream, CancellationToken cancellationToken);
     
-    Task RemoveMeetingUserSessionStreamsAsync(List<int> userSessionIds, CancellationToken cancellationToken);
+    Task RemoveMeetingUserSessionStreamsAsync(List<int> userSessionIds, CancellationToken cancellationToken = default);
     
     Task<List<MeetingUserSessionStream>> GetMeetingUserSessionStreamsAsync(int userSessionId, CancellationToken cancellationToken);
     
     Task RemoveMeetingUserSessionStreamsAsync(List<MeetingUserSessionStream> userSessionStreams, CancellationToken cancellationToken);
+
+    Task<MeetingUserSession> GetUserSessionByStreamIdAsync(string streamId, CancellationToken cancellationToken = default);
 }
 
 public partial class MeetingDataProvider
@@ -110,6 +112,19 @@ public partial class MeetingDataProvider
         if (userSessionStreams is not { Count: > 0 }) return;
 
         await _repository.DeleteAllAsync(userSessionStreams, cancellationToken).ConfigureAwait(false);
+    }
+
+    public async Task<MeetingUserSession> GetUserSessionByStreamIdAsync(string streamId, CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrEmpty(streamId)) return null;
+
+        var meetingUserSessionStream = await _repository
+            .Query<MeetingUserSessionStream>(x => x.StreamId.Equals(streamId))
+            .FirstOrDefaultAsync(cancellationToken).ConfigureAwait(false);
+
+        return await _repository
+            .Query<MeetingUserSession>(x => x.Id == meetingUserSessionStream.MeetingUserSessionId)
+            .FirstOrDefaultAsync(cancellationToken).ConfigureAwait(false);
     }
 
     public async Task RemoveMeetingUserSessionsIfRequiredAsync(int userId, Guid meetingId, CancellationToken cancellationToken)
