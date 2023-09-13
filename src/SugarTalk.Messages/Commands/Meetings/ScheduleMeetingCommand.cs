@@ -8,7 +8,7 @@ namespace SugarTalk.Messages.Commands.Meetings;
 
 public class ScheduleMeetingCommand : ICommand
 {
-    public MeetingStreamMode MeetingStreamMode { get; set; } = MeetingStreamMode.MCU;
+    public MeetingStreamMode MeetingStreamMode { get; set; } = MeetingStreamMode.LEGACY;
     
     public DateTimeOffset StartDate { get; set; }
 
