@@ -120,8 +120,12 @@ namespace SugarTalk.Core.Services.Meetings
             
             var meeting = await _meetingDataProvider.GetMeetingAsync(command.MeetingNumber, cancellationToken).ConfigureAwait(false);
 
-            var response = await _antMediaServerUtilService
-                .AddStreamToMeetingAsync(appName, meeting.MeetingNumber, command.StreamId, cancellationToken).ConfigureAwait(false);
+            var response = new ConferenceRoomResponseBaseDto();
+            
+            // SFU mode does not perform push processing
+            if (meeting.MeetingStreamMode == MeetingStreamMode.MCU)
+                response = await _antMediaServerUtilService
+                    .AddStreamToMeetingAsync(appName, meeting.MeetingNumber, command.StreamId, cancellationToken).ConfigureAwait(false);
 
             await ConnectUserToMeetingAsync(user, meeting, command.StreamId, command.StreamType, command.IsMuted, cancellationToken).ConfigureAwait(false);
             

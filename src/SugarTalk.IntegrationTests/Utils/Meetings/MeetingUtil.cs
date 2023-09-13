@@ -111,4 +111,18 @@ public class MeetingUtil : TestUtil
             }, CancellationToken.None);
         });
     }
+
+    public async Task AddMeetingUserSessionStream(int id, string streamId, MeetingStreamType streamType, int meetingUserSessionId)
+    {
+        await RunWithUnitOfWork<IRepository>(async repository =>
+        {
+            await repository.InsertAsync(new MeetingUserSessionStream
+            {
+                Id = id, 
+                StreamId = streamId, 
+                StreamType = streamType, 
+                MeetingUserSessionId = meetingUserSessionId
+            }, CancellationToken.None);
+        });
+    }
 }

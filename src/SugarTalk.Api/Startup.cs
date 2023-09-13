@@ -4,6 +4,7 @@ using Correlate.DependencyInjection;
 using Serilog;
 using SugarTalk.Api.Extensions;
 using SugarTalk.Api.Filters;
+using SugarTalk.Api.Middlewares;
 using SugarTalk.Core.Hubs;
 using SugarTalk.Messages;
 using Swashbuckle.AspNetCore.SwaggerUI;
@@ -41,6 +42,7 @@ namespace SugarTalk.Api
             services.AddSignalR(config =>
             {
                 config.EnableDetailedErrors = true;
+                config.HandshakeTimeout = TimeSpan.FromSeconds(5);
             }).AddJsonProtocol(options =>
             {
                 options.PayloadSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
@@ -63,6 +65,7 @@ namespace SugarTalk.Api
             app.UseSerilogRequestLogging();
             app.UseCorrelate();
             app.UseRouting();
+            app.UseMiddleware<EnrichAccessTokenMiddleware>();
             app.UseCors();
             app.UseResponseCaching();
             app.UseAuthentication();

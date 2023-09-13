@@ -1,3 +1,5 @@
+using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -54,8 +56,7 @@ public partial class MeetingService
 
         if (command.IsShared)
         {
-            var otherSharing = await _meetingDataProvider
-                .IsOtherSharingAsync(userSession, cancellationToken).ConfigureAwait(false);
+            var otherSharing = await IsOtherSharingAsync(userSession, meeting, cancellationToken).ConfigureAwait(false);
 
             if (!otherSharing && userSession.UserId == _currentUser.Id)
             {
@@ -112,5 +113,32 @@ public partial class MeetingService
 
         await _meetingDataProvider.RemoveMeetingUserSessionStreamsAsync(
             userSessionStreams.Where(x => x.StreamType == streamType).ToList(), cancellationToken).ConfigureAwait(false);
+    }
+    
+    public async Task<bool> IsOtherSharingAsync(MeetingUserSession userSession, Meeting meeting, CancellationToken cancellationToken)
+    {
+        var getResponse = await _antMediaServerUtilService
+            .GetMeetingByMeetingNumberAsync(appName, meeting.MeetingNumber, cancellationToken).ConfigureAwait(false);
+
+        if (getResponse is null) throw new MeetingNotFoundException();
+
+        var sharingUserSession = await _meetingDataProvider
+            .GetSharingUserSessionAsync(meeting.Id, userSession.UserId, cancellationToken).ConfigureAwait(false);
+
+        if (sharingUserSession is null) return false;
+        
+        var sharingUserSessionStreams = await _meetingDataProvider
+            .GetMeetingUserSessionStreamsAsync(sharingUserSession.Id, cancellationToken).ConfigureAwait(false);
+
+        if (!getResponse.RoomStreamList.Any(x => sharingUserSessionStreams.Select(x => x.StreamId).Contains(x)))
+        {
+            sharingUserSession.IsSharingScreen = false;
+
+            await _meetingDataProvider.UpdateMeetingUserSessionAsync(sharingUserSession, cancellationToken).ConfigureAwait(false);
+
+            return false;
+        }
+        
+        return true;
     }
 }
