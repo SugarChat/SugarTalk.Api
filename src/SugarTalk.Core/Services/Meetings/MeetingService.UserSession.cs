@@ -84,7 +84,6 @@ public partial class MeetingService
         };
     }
     
-    
     private async Task AddMeetingUserSessionStreamAsync(
         int userSessionId, string streamId, MeetingStreamType streamType, CancellationToken cancellationToken)
     {
@@ -134,7 +133,11 @@ public partial class MeetingService
         {
             sharingUserSession.IsSharingScreen = false;
 
-            await _meetingDataProvider.UpdateMeetingUserSessionAsync(sharingUserSession, cancellationToken).ConfigureAwait(false);
+            await _meetingDataProvider
+                .RemoveMeetingUserSessionStreamsAsync(sharingUserSessionStreams, cancellationToken).ConfigureAwait(false);
+            
+            await _meetingDataProvider
+                .RemoveMeetingUserSessionsAsync(new List<MeetingUserSession> { sharingUserSession }, cancellationToken).ConfigureAwait(false);
 
             return false;
         }

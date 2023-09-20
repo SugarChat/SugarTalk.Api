@@ -145,8 +145,14 @@ public partial class MeetingDataProvider
             .Where(x => x.MeetingId != meetingId)
             .ToListAsync(cancellationToken).ConfigureAwait(false);
 
+        var meetingUserSessionStreams = await _repository.QueryNoTracking<MeetingUserSessionStream>()
+            .Where(x => meetingUserSessions.Select(s => s.Id).Contains(x.MeetingUserSessionId))
+            .ToListAsync(cancellationToken).ConfigureAwait(false);
+
         if (meetingUserSessions is not { Count: > 0 }) return;
 
         await _repository.DeleteAllAsync(meetingUserSessions, cancellationToken).ConfigureAwait(false);
+        
+        await _repository.DeleteAllAsync(meetingUserSessionStreams, cancellationToken).ConfigureAwait(false);
     }
 }
