@@ -65,6 +65,8 @@ public partial class MeetingService
                 await AddMeetingUserSessionStreamAsync(
                     userSession.Id, command.StreamId, MeetingStreamType.ScreenSharing, cancellationToken).ConfigureAwait(false);
             }
+            else
+                throw new CannotSharingScreenWhenSharingException();
         }
         else
         {
