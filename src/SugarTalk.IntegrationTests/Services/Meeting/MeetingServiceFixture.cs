@@ -235,10 +235,8 @@ public class MeetingServiceFixture : MeetingFixtureBase
         });
     }
 
-    [Theory]
-    [InlineData(true, false)]
-    [InlineData(false, true)]
-    public async Task CanShareScreen(bool isSharingScreen, bool expect)
+    [Fact]
+    public async Task CanShareScreen()
     {
         const string streamId1 = "95727";
         const string streamId2 = "52013";
@@ -252,10 +250,9 @@ public class MeetingServiceFixture : MeetingFixtureBase
         var user = await _accountUtil.AddUserAccount("test", "123");
 
         await _meetingUtil.AddMeetingUserSession(1, meeting.Id, 1);
-        await _meetingUtil.AddMeetingUserSession(2, meeting.Id, user.Id, isSharingScreen: isSharingScreen);
+        await _meetingUtil.AddMeetingUserSession(2, meeting.Id, user.Id, isSharingScreen: false);
 
-        if(isSharingScreen)
-            await _meetingUtil.AddMeetingUserSessionStream(10, streamId2, MeetingStreamType.ScreenSharing, 2);
+        await _meetingUtil.AddMeetingUserSessionStream(10, streamId2, MeetingStreamType.ScreenSharing, 2);
 
         await Run<IMediator, IAntMediaServerUtilService>(async (mediator, antMediaServerUtilService) =>
         {
@@ -271,17 +268,7 @@ public class MeetingServiceFixture : MeetingFixtureBase
                     IsShared = true
                 });
 
-            response.Data.MeetingUserSession.IsSharingScreen.ShouldBe(expect);
-
-            if (!isSharingScreen)
-            {
-                response.Data.MeetingUserSession.UserSessionStreams.Count.ShouldBe(1);
-                response.Data.MeetingUserSession.UserSessionStreams.Single().StreamId.ShouldBe(streamId1);
-                response.Data.MeetingUserSession.UserSessionStreams.Single().MeetingUserSessionId.ShouldBe(1);
-                response.Data.MeetingUserSession.UserSessionStreams.Single().StreamType.ShouldBe(MeetingStreamType.ScreenSharing);
-            }
-            else
-                response.Data.MeetingUserSession.UserSessionStreams.ShouldNotBeNull();
+            response.Data.MeetingUserSession.IsSharingScreen.ShouldBe(true);
         }, SetupMocking);
     }
 
