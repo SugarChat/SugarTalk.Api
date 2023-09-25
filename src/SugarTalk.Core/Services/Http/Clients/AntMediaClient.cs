@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using Newtonsoft.Json;
 using Serilog;
 using SugarTalk.Core.Ioc;
 using SugarTalk.Core.Settings.AntMedia;
@@ -51,7 +52,7 @@ public class AntMediaServerClient : IAntMediaServerClient
             .GetAsync<GetMeetingResponseDto>(
                 $"{_antMediaSetting.BaseUrl}/{appName}/rest/v2/broadcasts/conference-rooms/{meetingNumber}", cancellationToken).ConfigureAwait(false);
 
-        Log.Information("Ant Media to get conference room, response: {response}", response);
+        Log.Information("Ant Media to get conference room, response: {response}", JsonConvert.SerializeObject(response));
         
         return response;
     }
@@ -63,7 +64,7 @@ public class AntMediaServerClient : IAntMediaServerClient
             .GetAsync<List<ConferenceRoomDto>>(
                 $"{_antMediaSetting.BaseUrl}/{appName}/rest/v2/broadcasts/conference-rooms/list/{offset}/{size}", cancellationToken).ConfigureAwait(false);
         
-        Log.Information("Ant Media to get all conference room, response: {response}", response);
+        Log.Information("Ant Media to get all conference room, response: {response}", JsonConvert.SerializeObject(response));
 
         return response;
     }
@@ -75,7 +76,7 @@ public class AntMediaServerClient : IAntMediaServerClient
             .GetAsync<GetConferenceRoomInfoResponseDto>(
                 $"{_antMediaSetting.BaseUrl}/{appName}/rest/v2/broadcasts/conference-rooms/{roomId}/room-info", cancellationToken).ConfigureAwait(false);
     
-        Log.Information("Ant Media to get conference room info, response: {response}", response);
+        Log.Information("Ant Media to get conference room info, response: {response}", JsonConvert.SerializeObject(response));
         
         return response;
     }
@@ -87,7 +88,7 @@ public class AntMediaServerClient : IAntMediaServerClient
             .PostAsJsonAsync<CreateMeetingResponseDto>(
                 $"{_antMediaSetting.BaseUrl}/{appName}/rest/v2/broadcasts/conference-rooms", meetingData, cancellationToken).ConfigureAwait(false);
         
-        Log.Information("Ant Media to create conference room, response: {response}", response);
+        Log.Information("Ant Media to create conference room, response: {response}", JsonConvert.SerializeObject(response));
         
         return response;
     }
@@ -99,7 +100,7 @@ public class AntMediaServerClient : IAntMediaServerClient
             .DeleteAsync<ConferenceRoomResponseBaseDto>(
                 $"{_antMediaSetting.BaseUrl}/{appName}/rest/v2/broadcasts/conference-rooms/{meetingNumber}", cancellationToken).ConfigureAwait(false);
         
-        Log.Information("Ant Media to delete conference room, response: {response}", response);
+        Log.Information("Ant Media to delete conference room, response: {response}", JsonConvert.SerializeObject(response));
         
         return response;
     }
@@ -111,7 +112,7 @@ public class AntMediaServerClient : IAntMediaServerClient
             .PutAsync<ConferenceRoomResponseBaseDto>(
                 $"{_antMediaSetting.BaseUrl}/{appName}/rest/v2/broadcasts/conference-rooms/{meetingNumber}/add?streamId={streamId}", null, cancellationToken).ConfigureAwait(false);
         
-        Log.Information("Ant Media add stream to conference room , response: {response}", response);
+        Log.Information("Ant Media add stream to conference room , response: {response}", JsonConvert.SerializeObject(response));
         
         return response;
     }
@@ -123,7 +124,7 @@ public class AntMediaServerClient : IAntMediaServerClient
             .PutAsync<ConferenceRoomResponseBaseDto>(
                 $"{_antMediaSetting.BaseUrl}/{appName}/rest/v2/broadcasts/conference-rooms/{meetingNumber}/delete?streamId={streamId}", null, cancellationToken).ConfigureAwait(false);
         
-        Log.Information("Ant Media delete stream from conference room, response: {response}", response);
+        Log.Information("Ant Media delete stream from conference room, response: {response}", JsonConvert.SerializeObject(response));
         
         return response;
     }
