@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Newtonsoft.Json;
 using SugarTalk.Messages.Dto.Users;
 using SugarTalk.Messages.Enums.Meeting;
 
@@ -27,6 +28,9 @@ public class MeetingDto
     public long EndDate { get; set; }
 
     public string OriginAddress { get; set; }
+    
+    [JsonProperty("token")]
+    public string MeetingTokenFormLiveKit { get; set; }
     
     public List<MeetingUserSessionDto> UserSessions { get; set; }
 
