@@ -6,12 +6,14 @@ using System.Threading;
 using System.Threading.Tasks;
 using AutoMapper;
 using LiveKit_CSharp.Services.Meeting;
+using Serilog;
 using SugarTalk.Core.Domain.Meeting;
 using SugarTalk.Core.Ioc;
 using SugarTalk.Core.Services.Account;
 using SugarTalk.Core.Services.AntMediaServer;
 using SugarTalk.Core.Services.Exceptions;
 using SugarTalk.Core.Services.Identity;
+using SugarTalk.Core.Services.LiveKit;
 using SugarTalk.Core.Settings.LiveKit;
 using SugarTalk.Messages.Commands.Meetings;
 using SugarTalk.Messages.Dto.Meetings;
@@ -51,6 +53,7 @@ namespace SugarTalk.Core.Services.Meetings
         private readonly ICurrentUser _currentUser;
         private readonly IAccountDataProvider _accountDataProvider;
         private readonly IMeetingDataProvider _meetingDataProvider;
+        private readonly ILiveKitServerUtilService _liveKitServerUtilService;
         private readonly IAntMediaServerUtilService _antMediaServerUtilService;
 
         private readonly LiveKitServerSetting _liveKitServerSetting;
@@ -61,12 +64,14 @@ namespace SugarTalk.Core.Services.Meetings
             IMeetingDataProvider meetingDataProvider,
             IAccountDataProvider accountDataProvider,
             IAntMediaServerUtilService antMediaServerUtilService, 
+            ILiveKitServerUtilService liveKitServerUtilService,
             LiveKitServerSetting liveKitServerSetting)
         {
             _mapper = mapper;
             _currentUser = currentUser;
             _accountDataProvider = accountDataProvider;
             _meetingDataProvider = meetingDataProvider;
+            _liveKitServerUtilService = liveKitServerUtilService;
             _antMediaServerUtilService = antMediaServerUtilService;
             _liveKitServerSetting = liveKitServerSetting;
         }
@@ -81,22 +86,9 @@ namespace SugarTalk.Core.Services.Meetings
                 EndDate = command.EndDate.ToUnixTimeSeconds()
             };
             
-            var response = await _antMediaServerUtilService.CreateMeetingAsync(appName, postData, cancellationToken).ConfigureAwait(false);
-
-            if (response == null) throw new CannotCreateMeetingException();
+            var meeting = await GenerateMeetingInfoFromThirdPartyServicesAsync(command.IsLiveKit, postData, cancellationToken).ConfigureAwait(false);
             
-            var meeting = new Meeting
-            {
-                MeetingMasterUserId = _currentUser.Id.Value,
-                MeetingStreamMode = command.MeetingStreamMode,
-                MeetingNumber = response.MeetingNumber,
-                OriginAddress = response.OriginAddress,
-                StartDate = response.StartDate,
-                EndDate = response.EndDate
-            };
-                
-            await _meetingDataProvider
-                .PersistMeetingAsync(meeting, cancellationToken).ConfigureAwait(false);
+            await _meetingDataProvider.PersistMeetingAsync(meeting, cancellationToken).ConfigureAwait(false);
 
             return new MeetingScheduledEvent
             {
@@ -260,6 +252,48 @@ namespace SugarTalk.Core.Services.Meetings
             await _meetingDataProvider.AddMeetingUserSessionStreamAsync(userSessionStream, cancellationToken).ConfigureAwait(false);
 
             return _mapper.Map<MeetingUserSessionStreamDto>(userSessionStream);
+        }
+        
+        private async Task<Meeting> GenerateMeetingInfoFromThirdPartyServicesAsync(bool isLiveKit, CreateMeetingDto postData, CancellationToken cancellationToken)
+        {
+            var user = await _accountDataProvider.GetUserAccountAsync(_currentUser.Id, cancellationToken: cancellationToken).ConfigureAwait(false);
+            
+            var meeting = new Meeting
+            {
+                MeetingMasterUserId = _currentUser.Id.Value,
+                MeetingStreamMode = MeetingStreamMode.LEGACY,
+                StartDate = postData.StartDate,
+                EndDate = postData.EndDate
+            };
+
+            if (isLiveKit)
+            {
+                var generateAccessToken = new GenerateAccessToken();
+                
+                var token = generateAccessToken.CreateMeeting(
+                    postData.MeetingNumber, _liveKitServerSetting.Apikey, _liveKitServerSetting.ApiSecret, user.Id.ToString(), user.UserName);
+
+                var liveKitResponse = await _liveKitServerUtilService
+                    .CreateMeetingAsync(postData.MeetingNumber, token, cancellationToken: cancellationToken).ConfigureAwait(false);
+
+                Log.Information("Create meeting from liveKit response:{response}", liveKitResponse);
+                
+                if (liveKitResponse == null) throw new CannotCreateMeetingException();
+                
+                meeting.MeetingMasterUserId = _currentUser.Id.Value;
+                meeting.MeetingNumber = liveKitResponse.RoomInfo.MeetingNumber;
+            }
+            else
+            {
+                var response = await _antMediaServerUtilService.CreateMeetingAsync(appName, postData, cancellationToken).ConfigureAwait(false);
+
+                if (response == null) throw new CannotCreateMeetingException();
+
+                meeting.MeetingNumber = postData.MeetingNumber;
+                meeting.OriginAddress = response.OriginAddress;
+            }
+
+            return meeting;
         }
 
         private string GenerateMeetingNumber()
