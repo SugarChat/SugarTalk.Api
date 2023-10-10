@@ -10,8 +10,10 @@ using NSubstitute;
 using SugarTalk.Core.Data;
 using SugarTalk.Core.Domain.Meeting;
 using SugarTalk.Core.Services.AntMediaServer;
+using SugarTalk.Core.Services.LiveKit;
 using SugarTalk.Core.Services.Meetings;
 using SugarTalk.Messages.Commands.Meetings;
+using SugarTalk.Messages.Dto.LiveKit;
 using SugarTalk.Messages.Dto.Meetings;
 using SugarTalk.Messages.Dto.Users;
 using SugarTalk.Messages.Enums.Meeting;
@@ -32,7 +34,8 @@ public class MeetingUtil : TestUtil
             var response = await mediator.SendAsync<ScheduleMeetingCommand, ScheduleMeetingResponse>(
                 new ScheduleMeetingCommand
                 {
-                    MeetingStreamMode = MeetingStreamMode.MCU
+                    StartDate = DateTimeOffset.Now,
+                    EndDate = DateTimeOffset.Now.AddDays(1)
                 });
             
             return response;
@@ -40,14 +43,25 @@ public class MeetingUtil : TestUtil
         {
             var meetingUtilService = Substitute.For<IAntMediaServerUtilService>();
 
+            var liveKitServerUtilService = Substitute.For<ILiveKitServerUtilService>();
+
             meetingUtilService.CreateMeetingAsync(Arg.Any<string>(), Arg.Any<CreateMeetingDto>(), Arg.Any<CancellationToken>())
                 .Returns(new CreateMeetingResponseDto
                 {
-                    MeetingNumber = "123",
-                    Mode = "mcu"
+                    MeetingNumber = "123_ams"
+                });
+
+            liveKitServerUtilService.CreateMeetingAsync(Arg.Any<string>(), Arg.Any<string>())
+                .Returns(new CreateMeetingFromLiveKitResponseDto
+                {
+                    RoomInfo = new LiveKitRoom
+                    {
+                        MeetingNumber = "123_livekit"
+                    }
                 });
             
             builder.RegisterInstance(meetingUtilService);
+            builder.RegisterInstance(liveKitServerUtilService);
         });
     }
 

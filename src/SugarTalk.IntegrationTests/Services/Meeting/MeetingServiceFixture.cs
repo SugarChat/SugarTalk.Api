@@ -41,7 +41,7 @@ public class MeetingServiceFixture : MeetingFixtureBase
         var response = await _meetingUtil.ScheduleMeeting();
 
         response.Data.ShouldNotBeNull();
-        response.Data.MeetingStreamMode.ShouldBe(MeetingStreamMode.MCU);
+        response.Data.MeetingStreamMode.ShouldBe(MeetingStreamMode.LEGACY);
     }
 
     [Fact]
@@ -79,7 +79,7 @@ public class MeetingServiceFixture : MeetingFixtureBase
                 .SingleAsync(CancellationToken.None);
 
             response.Data.Meeting.MeetingNumber.ShouldBe(meetingResult.MeetingNumber);
-            response.Data.Meeting.MeetingStreamMode.ShouldBe(MeetingStreamMode.MCU);
+            response.Data.Meeting.MeetingStreamMode.ShouldBe(MeetingStreamMode.LEGACY);
             response.Data.Meeting.Id.ShouldBe(meetingResult.Id);
         }, builder =>
         {
@@ -227,7 +227,7 @@ public class MeetingServiceFixture : MeetingFixtureBase
 
             response.Data.ShouldNotBeNull();
             response.Data.UserSessions.Count.ShouldBe(3);
-            response.Data.MeetingStreamMode.ShouldBe(MeetingStreamMode.MCU);
+            response.Data.MeetingStreamMode.ShouldBe(MeetingStreamMode.LEGACY);
             response.Data.MeetingNumber.ShouldBe(scheduleMeetingResponse.Data.MeetingNumber);
             response.Data.UserSessions.Single(x => x.UserId == 1).UserName.ShouldBe("TEST_USER");
             response.Data.UserSessions.Single(x => x.UserId == user1.Id).UserName.ShouldBe("mars");

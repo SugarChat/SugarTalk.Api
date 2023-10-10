@@ -280,7 +280,6 @@ namespace SugarTalk.Core.Services.Meetings
                 
                 if (liveKitResponse == null) throw new CannotCreateMeetingException();
                 
-                meeting.MeetingMasterUserId = _currentUser.Id.Value;
                 meeting.MeetingNumber = liveKitResponse.RoomInfo.MeetingNumber;
             }
             else
@@ -289,7 +288,7 @@ namespace SugarTalk.Core.Services.Meetings
 
                 if (response == null) throw new CannotCreateMeetingException();
 
-                meeting.MeetingNumber = postData.MeetingNumber;
+                meeting.MeetingNumber = response.MeetingNumber;
                 meeting.OriginAddress = response.OriginAddress;
             }
 
