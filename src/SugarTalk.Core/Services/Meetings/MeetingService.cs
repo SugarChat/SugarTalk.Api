@@ -276,7 +276,7 @@ namespace SugarTalk.Core.Services.Meetings
                 var liveKitResponse = await _liveKitServerUtilService
                     .CreateMeetingAsync(postData.MeetingNumber, token, cancellationToken: cancellationToken).ConfigureAwait(false);
 
-                Log.Information("Create meeting from liveKit response:{response}", liveKitResponse);
+                Log.Information("Create to meeting from liveKit response:{response}", liveKitResponse);
                 
                 if (liveKitResponse == null) throw new CannotCreateMeetingException();
                 
