@@ -64,6 +64,15 @@ public class MeetingController : ControllerBase
         return Ok(response);
     }
     
+    [Route("get/userSession/list"), HttpGet]
+    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(GetMeetingUserSessionsResponse))]
+    public async Task<IActionResult> GetMeetingUserSessionsAsync([FromQuery] GetMeetingUserSessionsRequest request)
+    {
+        var response = await _mediator.RequestAsync<GetMeetingUserSessionsRequest, GetMeetingUserSessionsResponse>(request);
+
+        return Ok(response);
+    }
+
     [Route("screen/share"), HttpPost]
     [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ShareScreenResponse))]
     public async Task<IActionResult> ShareScreenAsync(ShareScreenCommand command)

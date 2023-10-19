@@ -312,7 +312,8 @@ namespace SugarTalk.Core.Services.Meetings
             {
                 UserId = user.Id,
                 IsMuted = isMuted,
-                MeetingId = meetingId
+                MeetingId = meetingId,
+                Name = user.UserName
             };
         }
     }

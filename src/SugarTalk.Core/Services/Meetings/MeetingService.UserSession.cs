@@ -1,11 +1,14 @@
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using SugarTalk.Core.Domain.Meeting;
 using SugarTalk.Core.Services.Exceptions;
 using SugarTalk.Messages.Commands.Meetings;
+using SugarTalk.Messages.Dto.Meetings;
 using SugarTalk.Messages.Enums.Meeting;
 using SugarTalk.Messages.Events.Meeting;
+using SugarTalk.Messages.Requests.Meetings;
 
 namespace SugarTalk.Core.Services.Meetings;
 
@@ -16,6 +19,9 @@ public partial interface IMeetingService
 
     Task<ScreenSharedEvent> ShareScreenAsync(
         ShareScreenCommand command, CancellationToken cancellationToken);
+
+    Task<GetMeetingUserSessionsResponse> GetMeetingUserSessionsAsync(
+        GetMeetingUserSessionsRequest request, CancellationToken cancellationToken);
 }
 
 public partial class MeetingService
@@ -83,6 +89,16 @@ public partial class MeetingService
         };
     }
     
+    public async Task<GetMeetingUserSessionsResponse> GetMeetingUserSessionsAsync(GetMeetingUserSessionsRequest request, CancellationToken cancellationToken)
+    {
+        var meetingUserSessions = await _meetingDataProvider
+            .GetMeetingUserSessionsAsync(request.Ids, cancellationToken).ConfigureAwait(false);
+
+        return new GetMeetingUserSessionsResponse
+        {
+            Data = _mapper.Map<List<MeetingUserSessionDto>>(meetingUserSessions)
+        };
+    }
     
     private async Task AddMeetingUserSessionStreamAsync(
         int userSessionId, string streamId, MeetingStreamType streamType, CancellationToken cancellationToken)
