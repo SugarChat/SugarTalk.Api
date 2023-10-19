@@ -22,6 +22,9 @@ public partial interface IMeetingService
 
     Task<GetMeetingUserSessionsResponse> GetMeetingUserSessionsAsync(
         GetMeetingUserSessionsRequest request, CancellationToken cancellationToken);
+
+    Task<GetMeetingUserSessionByUserIdResponse> GetMeetingUserSessionByUserIdAsync(
+        GetMeetingUserSessionByUserIdRequest request, CancellationToken cancellationToken);
 }
 
 public partial class MeetingService
@@ -100,6 +103,17 @@ public partial class MeetingService
         };
     }
     
+    public async Task<GetMeetingUserSessionByUserIdResponse> GetMeetingUserSessionByUserIdAsync(
+        GetMeetingUserSessionByUserIdRequest request, CancellationToken cancellationToken)
+    {
+        var userSession = await _meetingDataProvider.GetMeetingUserSessionByUserIdAsync(request.UserId, cancellationToken).ConfigureAwait(false);
+
+        return new GetMeetingUserSessionByUserIdResponse
+        {
+            Data = _mapper.Map<MeetingUserSessionDto>(userSession)
+        };
+    }
+
     private async Task AddMeetingUserSessionStreamAsync(
         int userSessionId, string streamId, MeetingStreamType streamType, CancellationToken cancellationToken)
     {
