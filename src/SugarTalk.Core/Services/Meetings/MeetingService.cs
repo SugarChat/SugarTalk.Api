@@ -278,9 +278,9 @@ namespace SugarTalk.Core.Services.Meetings
 
                 Log.Information("Create to meeting from liveKit response:{response}", liveKitResponse);
                 
-                if (liveKitResponse == null) throw new CannotCreateMeetingException();
+                if (liveKitResponse is null && string.IsNullOrEmpty(token)) throw new CannotCreateMeetingException();
                 
-                meeting.MeetingNumber = liveKitResponse.RoomInfo.MeetingNumber;
+                meeting.MeetingNumber = liveKitResponse?.RoomInfo?.MeetingNumber ?? postData.MeetingNumber;
             }
             else
             {
