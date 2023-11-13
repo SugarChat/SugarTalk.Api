@@ -3,6 +3,7 @@ using System.Security.Claims;
 using System.Text.Encodings.Web;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.Extensions.Options;
+using Serilog;
 using SugarTalk.Core.Constants;
 using SugarTalk.Core.Services.Account;
 using SugarTalk.Core.Services.Caching;
@@ -34,6 +35,8 @@ public class WiltechsAuthenticationHandler : AuthenticationHandler<WiltechsAuthe
 
         var authorization = Request.Headers["Authorization"].ToString();
 
+        Log.Information("request headers for authorization:{authorization}", authorization);
+
         if (string.IsNullOrWhiteSpace(authorization) || !authorization.StartsWith("Bearer"))
             return AuthenticateResult.NoResult();
 
@@ -48,6 +51,8 @@ public class WiltechsAuthenticationHandler : AuthenticationHandler<WiltechsAuthe
                 return await _clientFactory
                     .GetAsync<WiltechsUserInfo>(Options.Authority, CancellationToken.None, headers: headers).ConfigureAwait(false);
             }, CachingType.RedisCache, TimeSpan.FromDays(30), CancellationToken.None).ConfigureAwait(false);
+            
+            Log.Information("Get wiltechUser info :{wiltechUser}", wiltechUser);
 
             if (wiltechUser.UserId == Guid.Empty && string.IsNullOrWhiteSpace(wiltechUser.UserName))
             {

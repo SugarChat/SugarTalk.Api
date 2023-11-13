@@ -3,6 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using AutoMapper;
 using Microsoft.AspNetCore.Http;
+using Serilog;
 using SugarTalk.Core.Domain.Account.Exceptions;
 using SugarTalk.Core.Ioc;
 using SugarTalk.Core.Services.Identity;
@@ -47,6 +48,8 @@ namespace SugarTalk.Core.Services.Account
         {
             var (canLogin, account) = await _accountDataProvider
                 .AuthenticateAsync(request.UserName, request.Password, cancellationToken).ConfigureAwait(false);
+            
+            Log.Information("canLogin:{canLogin}, account:{account}", canLogin, account);
 
             if (!canLogin)
                 return new LoginResponse { Code = HttpStatusCode.Unauthorized };
