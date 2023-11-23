@@ -58,3 +58,26 @@ public class MeetingBaseDto
     
     public bool IsRecorded { get; set; } = false;
 }
+
+public class UpdateMeetingDto
+{
+    public Guid Id { get; set; }
+    
+    public string Title { get; set; }
+    
+    public string TimeZone { get; set; }
+    
+    public string SecurityCode { get; set;}
+    
+    public DateTimeOffset StartDate { get; set; }
+
+    public DateTimeOffset EndDate { get; set; }
+    
+    public MeetingPeriodType PeriodType { get; set; }
+
+    public MeetingStreamMode MeetingStreamMode { get; set; } = MeetingStreamMode.LEGACY;
+
+    public bool IsMuted { get; set; } = false;
+    
+    public bool IsRecorded { get; set; } = false;
+}

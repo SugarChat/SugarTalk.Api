@@ -418,8 +418,6 @@ public class MeetingServiceFixture : MeetingFixtureBase
         meeting.Title = "greg meeting";
         meeting.SecurityCode = "123456";
         meeting.PeriodType = MeetingPeriodType.Weekly;
-        meeting.StartDate = startDate.AddDays(5).ToUnixTimeSeconds();
-        meeting.EndDate = startDate.AddDays(5).AddHours(1).ToUnixTimeSeconds();
         meeting.TimeZone = "UTC";
         meeting.IsMuted = true;
         meeting.IsRecorded = true;
@@ -430,12 +428,10 @@ public class MeetingServiceFixture : MeetingFixtureBase
             {
                 Id = meeting.Id,
                 Title = meeting.Title,
-                MeetingNumber = meeting.MeetingNumber,
-                MeetingMasterUserId = meeting.MeetingMasterUserId,
                 SecurityCode = meeting.SecurityCode,
                 PeriodType = meeting.PeriodType,
-                StartDate = meeting.StartDate,
-                EndDate = meeting.EndDate,
+                StartDate = startDate.AddDays(7),
+                EndDate = startDate.AddDays(8),
                 TimeZone = meeting.TimeZone,
                 IsMuted = meeting.IsMuted,
                 IsRecorded = meeting.IsRecorded
@@ -445,11 +441,12 @@ public class MeetingServiceFixture : MeetingFixtureBase
         var response = await _meetingUtil.GetMeeting(meeting.MeetingNumber);
         response.Id.ShouldBe(meeting.Id);
         response.Title.ShouldBe(meeting.Title);
+        response.MeetingNumber.ShouldBe(meeting.MeetingNumber);
         response.MeetingMasterUserId.ShouldBe(currentUser.Id.Value);
         response.SecurityCode.ShouldBe("123456".ToSha256());
         response.PeriodType.ShouldBe(MeetingPeriodType.Weekly);
-        response.StartDate.ShouldBe(startDate.AddDays(5).ToUnixTimeSeconds());
-        response.EndDate.ShouldBe(startDate.AddDays(5).AddHours(1).ToUnixTimeSeconds());
+        response.StartDate.ShouldBe(startDate.AddDays(7).ToUnixTimeSeconds());
+        response.EndDate.ShouldBe(startDate.AddDays(8).ToUnixTimeSeconds());
         response.TimeZone.ShouldBe("UTC");
         response.IsMuted.ShouldBeTrue();
         response.IsRecorded.ShouldBeTrue();

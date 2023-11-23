@@ -243,18 +243,18 @@ namespace SugarTalk.Core.Services.Meetings
 
         public async Task<UpdateMeetingResponse> UpdateMeetingAsync(UpdateMeetingCommand command, CancellationToken cancellationToken)
         {
-            Log.Information("Meeting master userId:{masterId}, current userId{currentUserId}",
-                command.MeetingMasterUserId, _currentUser.Id.Value);
-            
-            if (command.MeetingMasterUserId != _currentUser.Id.Value)
-                throw new CannotUpdateMeetingWhenMasterUserIdMismatchException();
-            
             var meeting = await _meetingDataProvider
                 .GetMeetingByIdAsync(command.Id, cancellationToken).ConfigureAwait(false);
 
             if (meeting is null) throw new MeetingNotFoundException();
+            
+            Log.Information("Meeting master userId:{masterId}, current userId{currentUserId}",
+                meeting.MeetingMasterUserId, _currentUser.Id.Value);
+            
+            if (meeting.MeetingMasterUserId != _currentUser.Id.Value)
+                throw new CannotUpdateMeetingWhenMasterUserIdMismatchException();
 
-            var updateMeeting = _mapper.Map<Meeting>(command);
+            var updateMeeting = _mapper.Map(command, meeting);
 
             updateMeeting.SecurityCode = command.SecurityCode.ToSha256();
             

@@ -4,9 +4,8 @@ using SugarTalk.Messages.Responses;
 
 namespace SugarTalk.Messages.Commands.Meetings;
 
-public class UpdateMeetingCommand : MeetingBaseDto, ICommand
+public class UpdateMeetingCommand : UpdateMeetingDto, ICommand
 {
-    public string SecurityCode { get; set;}
 }
 
 public class UpdateMeetingResponse : SugarTalkResponse
