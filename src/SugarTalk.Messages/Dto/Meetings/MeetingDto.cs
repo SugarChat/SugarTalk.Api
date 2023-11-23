@@ -16,6 +16,8 @@ public class MeetingDto : MeetingBaseDto
     
     public List<MeetingUserSessionDto> UserSessions { get; set; }
 
+    public int UserSessionCount => UserSessions.Count;
+
     public void AddUserSession(MeetingUserSessionDto userSession)
     {
         UserSessions.Add(userSession);
