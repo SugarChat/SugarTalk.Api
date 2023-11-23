@@ -31,4 +31,10 @@ public class MeetingUserSession : IEntity
     
     [Column("is_sharing_screen", TypeName = "tinyint(1)")]
     public bool IsSharingScreen { get; set; }
+    
+    [Column("name"), StringLength(128)]
+    public string Name { get; set; }
+    
+    [Column("picture_url"), StringLength(512)]
+    public string PictureUrl { get; set; }
 }

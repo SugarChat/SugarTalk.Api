@@ -14,6 +14,8 @@ public class JoinMeetingCommand : ICommand
     public MeetingStreamType StreamType { get; set; }
 
     public bool IsMuted { get; set; }
+
+    public bool IsLiveKit { get; set; } = false;
 }
 
 public class JoinMeetingResponse : SugarTalkResponse<JoinMeetingResponseData>

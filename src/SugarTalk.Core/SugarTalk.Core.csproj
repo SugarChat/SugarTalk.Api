@@ -10,6 +10,7 @@
       <PackageReference Include="Autofac.Extensions.DependencyInjection" Version="8.0.0" />
       <PackageReference Include="AutoMapper" Version="12.0.1" />
       <PackageReference Include="AutoMapper.Contrib.Autofac.DependencyInjection" Version="7.1.0" />
+      <PackageReference Include="C-sharp-livekit-sdk" Version="0.0.3" />
       <PackageReference Include="dbup" Version="5.0.8" />
       <PackageReference Include="dbup-mysql" Version="5.0.10" />
       <PackageReference Include="Destructurama.JsonNet" Version="2.0.0" />
@@ -56,6 +57,7 @@
         <EmbeddedResource Include="DbUp\Scripts_2023\Script0004_add_user_session_and_update_meeting_tables.sql" />
         <EmbeddedResource Include="DbUp\Scripts_2023\Script0005_add_meeting_master_user_id_for_meeting_table.sql" />
         <EmbeddedResource Include="DbUp\Scripts_2023\Script0006_add_meeting_user_session_stream_table.sql" />
+        <EmbeddedResource Include="DbUp\Scripts_2023\Script0007_add_user_and_picture_for_meeting_user_session_table.sql" />
     </ItemGroup>
     
     <ItemGroup>
