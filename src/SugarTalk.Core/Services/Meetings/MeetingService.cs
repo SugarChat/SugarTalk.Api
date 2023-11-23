@@ -85,13 +85,15 @@ namespace SugarTalk.Core.Services.Meetings
             var postData = new CreateMeetingDto
             {
                 MeetingNumber = GenerateMeetingNumber(),
-                Mode = command.MeetingStreamMode.ToString().ToLower(),
-                StartDate = command.StartDate.ToUnixTimeSeconds(),
-                EndDate = command.EndDate.ToUnixTimeSeconds()
+                Mode = command.MeetingStreamMode.ToString().ToLower()
             };
             
             var meeting = await GenerateMeetingInfoFromThirdPartyServicesAsync(command.IsLiveKit, postData, cancellationToken).ConfigureAwait(false);
-            
+            meeting.MeetingMasterUserId = _currentUser.Id.Value;
+            meeting.MeetingStreamMode = MeetingStreamMode.LEGACY;
+
+            meeting = _mapper.Map(command, meeting);
+
             await _meetingDataProvider.PersistMeetingAsync(meeting, cancellationToken).ConfigureAwait(false);
 
             return new MeetingScheduledEvent
@@ -282,16 +284,10 @@ namespace SugarTalk.Core.Services.Meetings
         
         private async Task<Meeting> GenerateMeetingInfoFromThirdPartyServicesAsync(bool isLiveKit, CreateMeetingDto postData, CancellationToken cancellationToken)
         {
+            var meeting = new Meeting();
+            
             var user = await _accountDataProvider.GetUserAccountAsync(_currentUser.Id, cancellationToken: cancellationToken).ConfigureAwait(false);
             
-            var meeting = new Meeting
-            {
-                MeetingMasterUserId = _currentUser.Id.Value,
-                MeetingStreamMode = MeetingStreamMode.LEGACY,
-                StartDate = postData.StartDate,
-                EndDate = postData.EndDate
-            };
-
             if (isLiveKit)
             {
                 var generateAccessToken = new GenerateAccessToken();

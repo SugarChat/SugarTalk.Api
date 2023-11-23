@@ -1,23 +1,19 @@
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 using Autofac;
-using Mediator.Net;
-using Microsoft.EntityFrameworkCore;
+using System.Linq;
 using NSubstitute;
+using Mediator.Net;
+using System.Threading;
 using SugarTalk.Core.Data;
+using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore;
 using SugarTalk.Core.Domain.Meeting;
-using SugarTalk.Core.Services.AntMediaServer;
-using SugarTalk.Core.Services.LiveKit;
-using SugarTalk.Core.Services.Meetings;
-using SugarTalk.Messages.Commands.Meetings;
 using SugarTalk.Messages.Dto.LiveKit;
 using SugarTalk.Messages.Dto.Meetings;
-using SugarTalk.Messages.Dto.Users;
+using SugarTalk.Core.Services.LiveKit;
 using SugarTalk.Messages.Enums.Meeting;
-using SugarTalk.Messages.Requests.Meetings;
+using SugarTalk.Messages.Commands.Meetings;
+using SugarTalk.Core.Services.AntMediaServer;
 
 namespace SugarTalk.IntegrationTests.Utils.Meetings;
 
@@ -27,15 +23,24 @@ public class MeetingUtil : TestUtil
     {
     }
 
-    public async Task<ScheduleMeetingResponse> ScheduleMeeting()
+    public async Task<ScheduleMeetingResponse> ScheduleMeeting(
+        string title = null, string timezone = null, string securityCode = null, 
+        DateTimeOffset? startDate = null, DateTimeOffset? endDate = null, 
+        MeetingPeriodType periodType = MeetingPeriodType.None, bool isMuted = false, bool isRecorded = false)
     {
         return await Run<IMediator, ScheduleMeetingResponse>(async (mediator) =>
         {
             var response = await mediator.SendAsync<ScheduleMeetingCommand, ScheduleMeetingResponse>(
                 new ScheduleMeetingCommand
                 {
-                    StartDate = DateTimeOffset.Now,
-                    EndDate = DateTimeOffset.Now.AddDays(1)
+                    Title = title,
+                    TimeZone = timezone,
+                    SecurityCode = securityCode,
+                    StartDate = startDate ?? DateTimeOffset.Now,
+                    EndDate = endDate ?? DateTimeOffset.Now.AddDays(2),
+                    PeriodType = periodType,
+                    IsMuted = isMuted,
+                    IsRecorded = isRecorded
                 });
             
             return response;

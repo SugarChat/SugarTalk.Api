@@ -20,6 +20,9 @@ namespace SugarTalk.Core.Mapping
             CreateMap<UpdateMeetingCommand, Meeting>()
                 .ForMember(dest => dest.StartDate, source => source.MapFrom(x => x.StartDate.ToUnixTimeSeconds()))
                 .ForMember(dest => dest.EndDate, source => source.MapFrom(x => x.EndDate.ToUnixTimeSeconds()));
+            CreateMap<ScheduleMeetingCommand, Meeting>()
+                .ForMember(dest => dest.StartDate, source => source.MapFrom(x => x.StartDate.ToUnixTimeSeconds()))
+                .ForMember(dest => dest.EndDate, source => source.MapFrom(x => x.EndDate.ToUnixTimeSeconds()));
         }
     }
 }

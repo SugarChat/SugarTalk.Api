@@ -59,10 +59,8 @@ public class MeetingBaseDto
     public bool IsRecorded { get; set; } = false;
 }
 
-public class UpdateMeetingDto
+public class AddOrUpdateMeetingDto
 {
-    public Guid Id { get; set; }
-    
     public string Title { get; set; }
     
     public string TimeZone { get; set; }
