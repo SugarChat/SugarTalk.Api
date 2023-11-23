@@ -61,6 +61,13 @@ public class MeetingBaseDto
 
 public class AddOrUpdateMeetingDto
 {
+    public AddOrUpdateMeetingDto()
+    {
+        StartDate = DateTimeOffset.Now;
+        EndDate = DateTimeOffset.Now.AddDays(1);
+        MeetingStreamMode = MeetingStreamMode.LEGACY;
+    }
+
     public string Title { get; set; }
     
     public string TimeZone { get; set; }
@@ -73,7 +80,7 @@ public class AddOrUpdateMeetingDto
     
     public MeetingPeriodType PeriodType { get; set; }
 
-    public MeetingStreamMode MeetingStreamMode { get; set; } = MeetingStreamMode.LEGACY;
+    public MeetingStreamMode MeetingStreamMode { get; set; }
 
     public bool IsMuted { get; set; } = false;
     
