@@ -295,6 +295,8 @@ namespace SugarTalk.Core.Services.Meetings
                 var token = generateAccessToken.CreateMeeting(
                     postData.MeetingNumber, _liveKitServerSetting.Apikey, _liveKitServerSetting.ApiSecret, user.Id.ToString(), user.UserName);
 
+                Log.Information("Generate liveKit token:{token}", token);
+
                 var liveKitResponse = await _liveKitServerUtilService
                     .CreateMeetingAsync(postData.MeetingNumber, token, cancellationToken: cancellationToken).ConfigureAwait(false);
 
@@ -308,7 +310,7 @@ namespace SugarTalk.Core.Services.Meetings
             {
                 var response = await _antMediaServerUtilService.CreateMeetingAsync(appName, postData, cancellationToken).ConfigureAwait(false);
 
-                if (response == null) throw new CannotCreateMeetingException();
+                if (response is null) throw new CannotCreateMeetingException();
 
                 meeting.MeetingNumber = response.MeetingNumber;
                 meeting.OriginAddress = response.OriginAddress;
