@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.Intrinsics.Arm;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -8,6 +9,7 @@ using AutoMapper;
 using LiveKit_CSharp.Services.Meeting;
 using Serilog;
 using SugarTalk.Core.Domain.Meeting;
+using SugarTalk.Core.Extensions;
 using SugarTalk.Core.Ioc;
 using SugarTalk.Core.Services.Account;
 using SugarTalk.Core.Services.AntMediaServer;
@@ -43,6 +45,8 @@ namespace SugarTalk.Core.Services.Meetings
 
         Task ConnectUserToMeetingAsync(
             UserAccountDto user, MeetingDto meeting, string streamId, MeetingStreamType streamType, bool? isMuted = null, CancellationToken cancellationToken = default);
+
+        Task<UpdateMeetingResponse> UpdateMeetingAsync(UpdateMeetingCommand command, CancellationToken cancellationToken);
     }
     
     public partial class MeetingService : IMeetingService
@@ -235,6 +239,28 @@ namespace SugarTalk.Core.Services.Meetings
                 
                 meeting.UpdateUserSession(updateUserSession);
             }
+        }
+
+        public async Task<UpdateMeetingResponse> UpdateMeetingAsync(UpdateMeetingCommand command, CancellationToken cancellationToken)
+        {
+            Log.Information("Meeting master userId:{masterId}, current userId{currentUserId}",
+                command.MeetingMasterUserId, _currentUser.Id.Value);
+            
+            if (command.MeetingMasterUserId != _currentUser.Id.Value)
+                throw new CannotUpdateMeetingWhenMasterUserIdMismatchException();
+            
+            var meeting = await _meetingDataProvider
+                .GetMeetingByIdAsync(command.Id, cancellationToken).ConfigureAwait(false);
+
+            if (meeting is null) throw new MeetingNotFoundException();
+
+            var updateMeeting = _mapper.Map<Meeting>(command);
+
+            updateMeeting.SecurityCode = command.SecurityCode.ToSha256();
+            
+            await _meetingDataProvider.UpdateMeetingAsync(updateMeeting, cancellationToken).ConfigureAwait(false);
+
+            return new UpdateMeetingResponse();
         }
 
         private async Task<MeetingUserSessionStreamDto> AddMeetingUserSessionStreamIfRequiredAsync(

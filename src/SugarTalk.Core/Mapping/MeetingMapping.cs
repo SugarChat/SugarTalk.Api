@@ -17,6 +17,7 @@ namespace SugarTalk.Core.Mapping
             CreateMap<MeetingUserSessionDto, MeetingUserSession>()
                 .ForMember(dest => dest.Name, source => source.MapFrom(x => x.UserName));
             CreateMap<MeetingUserSessionStream, MeetingUserSessionStreamDto>().ReverseMap();
+            CreateMap<UpdateMeetingCommand, Meeting>();
         }
     }
 }

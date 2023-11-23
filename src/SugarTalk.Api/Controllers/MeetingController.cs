@@ -46,6 +46,15 @@ public class MeetingController : ControllerBase
         return Ok(response);
     }
     
+    [Route("update"), HttpPost]
+    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(UpdateMeetingResponse))]
+    public async Task<IActionResult> UpdateMeetingAsync([FromBody] UpdateMeetingCommand command)
+    {
+        var response = await _mediator.SendAsync<UpdateMeetingCommand, UpdateMeetingResponse>(command);
+
+        return Ok(response);
+    }
+
     [Route("end"), HttpPost]
     [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(EndMeetingResponse))]
     public async Task<IActionResult> EndMeetingAsync([FromBody] EndMeetingCommand command)
