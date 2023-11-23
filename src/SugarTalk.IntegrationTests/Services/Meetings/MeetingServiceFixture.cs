@@ -439,15 +439,16 @@ public class MeetingServiceFixture : MeetingFixtureBase
         });
 
         var response = await _meetingUtil.GetMeeting(meeting.MeetingNumber);
+        
         response.Id.ShouldBe(meeting.Id);
+        response.TimeZone.ShouldBe("UTC");
         response.Title.ShouldBe(meeting.Title);
-        response.MeetingNumber.ShouldBe(meeting.MeetingNumber);
-        response.MeetingMasterUserId.ShouldBe(currentUser.Id.Value);
         response.SecurityCode.ShouldBe("123456".ToSha256());
         response.PeriodType.ShouldBe(MeetingPeriodType.Weekly);
+        response.MeetingNumber.ShouldBe(meeting.MeetingNumber);
+        response.MeetingMasterUserId.ShouldBe(currentUser.Id.Value);
         response.StartDate.ShouldBe(startDate.AddDays(7).ToUnixTimeSeconds());
         response.EndDate.ShouldBe(startDate.AddDays(8).ToUnixTimeSeconds());
-        response.TimeZone.ShouldBe("UTC");
         response.IsMuted.ShouldBeTrue();
         response.IsRecorded.ShouldBeTrue();
     }
