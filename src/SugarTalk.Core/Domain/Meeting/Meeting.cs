@@ -49,13 +49,13 @@ public class Meeting : IEntity
 
     [Column("period_type")] 
     public MeetingPeriodType PeriodType { get; set; }
+    
+    [Column("status")]
+    public MeetingStatus Status { get; set; }
 
     [Column("is_muted")] 
     public bool IsMuted { get; set; }
 
     [Column("is_recorded")] 
     public bool IsRecorded { get; set; }
-
-    [Column("is_active")] 
-    public bool IsActive { get; set; }
 }
