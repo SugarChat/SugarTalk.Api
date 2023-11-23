@@ -32,6 +32,8 @@ public static class HangfireExtension
         {
             IgnoreAntiforgeryToken = true
         });
+
+        app.ScanHangfireRecurringJobs();
     }
     
     public static void ScanHangfireRecurringJobs(this IApplicationBuilder app)
