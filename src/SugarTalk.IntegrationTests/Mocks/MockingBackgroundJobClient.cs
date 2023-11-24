@@ -1,13 +1,19 @@
 using System;
 using Autofac;
+using Hangfire.Storage;
 using System.Threading.Tasks;
 using System.Linq.Expressions;
+using System.Collections.Generic;
 using SugarTalk.Core.Services.Jobs;
 
 namespace SugarTalk.IntegrationTests.Mocks;
 
 public class MockingBackgroundJobClient : ISugarTalkBackgroundJobClient
 {
+    public static readonly List<string> TestJobs = new ();
+
+    public static readonly List<string> TestStore = new ();
+    
     private readonly IComponentContext _componentContext;
 
     public MockingBackgroundJobClient()
@@ -46,7 +52,7 @@ public class MockingBackgroundJobClient : ISugarTalkBackgroundJobClient
         var dependency = _componentContext.Resolve<T>();
         var func = methodCall.Compile();
         func(dependency).Wait();
-        return string.Empty;
+        return nameof(Enqueue);
     }
 
     public string Schedule(Expression<Func<Task>> methodCall, TimeSpan delay, string queue = "default")
@@ -62,6 +68,21 @@ public class MockingBackgroundJobClient : ISugarTalkBackgroundJobClient
         func().Wait();
         return string.Empty;
     }
+    
+    public string Schedule<T>(Expression<Func<T, Task>> methodCall, TimeSpan delay, string queue = "default")
+    {
+        var dependency = _componentContext.Resolve<T>();
+        var func = methodCall.Compile();
+        func(dependency).Wait();
+        TestJobs.Add("Add");
+        return nameof(Schedule);
+    }
+
+    public string Schedule<T>(Expression<Func<T, Task>> methodCall, DateTimeOffset enqueueAt, string queue = "default")
+    {
+        TestJobs.Add("add Delayed");
+        return "";
+    }
 
     public string ContinueJobWith(string parentJobId, Expression<Func<Task>> methodCall, string queue = "default")
     {
@@ -75,13 +96,34 @@ public class MockingBackgroundJobClient : ISugarTalkBackgroundJobClient
         var dependency = _componentContext.Resolve<T>();
         var func = methodCall.Compile();
         func(dependency).Wait();
-        return string.Empty;
+        return nameof(ContinueJobWith);
     }
 
     public void AddOrUpdateRecurringJob<T>(string recurringJobId, Expression<Func<T, Task>> methodCall, string cronExpression, TimeZoneInfo timeZone = null, string queue = "default")
     {
         var dependency = _componentContext.Resolve<T>();
         var func = methodCall.Compile();
+        TestJobs.Add("Add Recurring");
         func(dependency).Wait();
+    }
+
+    public bool DeleteJob(string jobId)
+    {
+        return TestJobs.Count > 0 ? TestJobs.Remove(jobId) : default;
+    }
+
+    public void RemoveRecurringJobIfExists(string jobId)
+    {
+        TestStore.Add("Trigger remove");
+    }
+
+    public List<RecurringJobDto> GetRecurringJobs()
+    {
+        return new List<RecurringJobDto>();
+    }
+
+    public StateData GetJobState(string jobId)
+    {
+        return new StateData();
     }
 }
