@@ -89,15 +89,11 @@ public class MeetingUtil : TestUtil
         });
     }
 
-    public async Task AddMeeting(Guid meetingId, string meetingNumber)
+    public async Task AddMeeting(Meeting meeting)
     {
         await RunWithUnitOfWork<IRepository>(async (repository) =>
         {
-            await repository.InsertAsync(new Meeting
-            {
-                Id = meetingId,
-                MeetingNumber = meetingNumber,
-            }, CancellationToken.None).ConfigureAwait(false);
+            await repository.InsertAsync(meeting, CancellationToken.None).ConfigureAwait(false);
         });
     }
     
