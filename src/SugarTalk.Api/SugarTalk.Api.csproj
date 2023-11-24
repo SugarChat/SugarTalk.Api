@@ -23,6 +23,7 @@
         <PackageReference Include="Correlate.AspNetCore" Version="4.0.0" />
         <PackageReference Include="Correlate.DependencyInjection" Version="4.0.0" />
         <PackageReference Include="Google.Apis.Auth" Version="1.60.0" />
+        <PackageReference Include="Hangfire.Correlate" Version="2.0.0" />
         <PackageReference Include="Mediator.Net" Version="4.7.0" />
         <PackageReference Include="Mediator.Net.Autofac" Version="4.7.0" />
         <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="7.0.4" />

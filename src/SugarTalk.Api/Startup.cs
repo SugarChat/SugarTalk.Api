@@ -37,6 +37,8 @@ namespace SugarTalk.Api
             {
                 options.Filters.Add<GlobalExceptionFilter>();
             });
+            
+            services.AddHangfireInternal(Configuration);
 
             services.AddSignalR(config =>
             {
@@ -67,6 +69,7 @@ namespace SugarTalk.Api
             app.UseResponseCaching();
             app.UseAuthentication();
             app.UseAuthorization();
+            app.UseHangfireInternal();
             
             app.UseEndpoints(endpoints =>
             {

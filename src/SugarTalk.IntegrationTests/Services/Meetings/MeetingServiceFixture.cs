@@ -1,14 +1,14 @@
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Collections.Generic;
 using Autofac;
-using Mediator.Net;
-using Microsoft.EntityFrameworkCore;
-using NSubstitute;
 using Shouldly;
+using NSubstitute;
+using Mediator.Net;
 using SugarTalk.Core.Data;
+using Microsoft.EntityFrameworkCore;
 using SugarTalk.Core.Domain.Meeting;
 using SugarTalk.Core.Extensions;
 using SugarTalk.Core.Services.AntMediaServer;
@@ -20,6 +20,7 @@ using SugarTalk.Messages.Commands.Meetings;
 using SugarTalk.Messages.Dto.Meetings;
 using SugarTalk.Messages.Enums.Meeting;
 using SugarTalk.Messages.Requests.Meetings;
+
 using Xunit;
 
 namespace SugarTalk.IntegrationTests.Services.Meetings;
