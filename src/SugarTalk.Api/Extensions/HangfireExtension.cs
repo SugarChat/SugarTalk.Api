@@ -1,7 +1,7 @@
-using Hangfire;
-using Hangfire.Correlate;
-using Newtonsoft.Json;
 using Serilog;
+using Hangfire;
+using Newtonsoft.Json;
+using Hangfire.Correlate;
 using SugarTalk.Core.Jobs;
 using SugarTalk.Core.Services.Jobs;
 using SugarTalk.Core.Settings.Caching;
