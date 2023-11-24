@@ -10,9 +10,9 @@ using NSubstitute;
 using Shouldly;
 using SugarTalk.Core.Data;
 using SugarTalk.Core.Domain.Meeting;
+using SugarTalk.Core.Extensions;
 using SugarTalk.Core.Services.AntMediaServer;
 using SugarTalk.Core.Services.Exceptions;
-using SugarTalk.Core.Services.Identity;
 using SugarTalk.IntegrationTests.TestBaseClasses;
 using SugarTalk.IntegrationTests.Utils.Account;
 using SugarTalk.IntegrationTests.Utils.Meetings;
@@ -22,7 +22,7 @@ using SugarTalk.Messages.Enums.Meeting;
 using SugarTalk.Messages.Requests.Meetings;
 using Xunit;
 
-namespace SugarTalk.IntegrationTests.Services.Meeting;
+namespace SugarTalk.IntegrationTests.Services.Meetings;
 
 public class MeetingServiceFixture : MeetingFixtureBase
 {
@@ -49,7 +49,13 @@ public class MeetingServiceFixture : MeetingFixtureBase
     {
         var meetingId = Guid.NewGuid();
 
-        await _meetingUtil.AddMeeting(meetingId, "123");
+        var meeting = new Core.Domain.Meeting.Meeting
+        {
+            Id = meetingId,
+            MeetingNumber = "123"
+        };
+        
+        await _meetingUtil.AddMeeting(meeting);
 
         await Run<IRepository>(async repository =>
         {
@@ -391,6 +397,60 @@ public class MeetingServiceFixture : MeetingFixtureBase
             response.Data.MeetingNumber.ShouldBe(scheduleMeetingResponse.Data.MeetingNumber);
             response.Data.MeetingStreamMode.ShouldBe(scheduleMeetingResponse.Data.MeetingStreamMode);
         });
+    }
+
+    [Fact]
+    public async Task CanUpdateMeeting()
+    {
+        var currentUser = new TestCurrentUser();
+
+        var startDate = DateTimeOffset.Now;
+
+        var meeting = new Meeting
+        {
+            Id = Guid.NewGuid(), MeetingNumber = "123456",
+            MeetingMasterUserId = currentUser.Id.Value, MeetingStreamMode = MeetingStreamMode.LEGACY,
+            StartDate = startDate.ToUnixTimeSeconds(), EndDate = startDate.AddDays(5).ToUnixTimeSeconds()
+        };
+        
+        await _meetingUtil.AddMeeting(meeting);
+
+        meeting.Title = "greg meeting";
+        meeting.SecurityCode = "123456";
+        meeting.PeriodType = MeetingPeriodType.Weekly;
+        meeting.TimeZone = "UTC";
+        meeting.IsMuted = true;
+        meeting.IsRecorded = true;
+
+        await Run<IMediator>(async mediator =>
+        {
+            await mediator.SendAsync<UpdateMeetingCommand, UpdateMeetingResponse>(new UpdateMeetingCommand
+            {
+                Id = meeting.Id,
+                Title = meeting.Title,
+                SecurityCode = meeting.SecurityCode,
+                PeriodType = meeting.PeriodType,
+                StartDate = startDate.AddDays(7),
+                EndDate = startDate.AddDays(8),
+                TimeZone = meeting.TimeZone,
+                IsMuted = meeting.IsMuted,
+                IsRecorded = meeting.IsRecorded
+            });
+        });
+
+        var response = await _meetingUtil.GetMeeting(meeting.MeetingNumber);
+        
+        response.Id.ShouldBe(meeting.Id);
+        response.TimeZone.ShouldBe("UTC");
+        response.Title.ShouldBe(meeting.Title);
+        response.SecurityCode.ShouldBe("123456".ToSha256());
+        response.PeriodType.ShouldBe(MeetingPeriodType.Weekly);
+        response.MeetingNumber.ShouldBe(meeting.MeetingNumber);
+        response.MeetingMasterUserId.ShouldBe(currentUser.Id.Value);
+        response.StartDate.ShouldBe(startDate.AddDays(7).ToUnixTimeSeconds());
+        response.EndDate.ShouldBe(startDate.AddDays(8).ToUnixTimeSeconds());
+        response.IsMuted.ShouldBeTrue();
+        response.IsRecorded.ShouldBeTrue();
     }
 
     private void SetupMocking(ContainerBuilder builder)
