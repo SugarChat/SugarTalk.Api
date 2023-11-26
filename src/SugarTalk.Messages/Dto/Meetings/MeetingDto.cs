@@ -16,6 +16,8 @@ public class MeetingDto : MeetingBaseDto
     
     public List<MeetingUserSessionDto> UserSessions { get; set; }
 
+    public int UserSessionCount => UserSessions.Count;
+
     public void AddUserSession(MeetingUserSessionDto userSession)
     {
         UserSessions.Add(userSession);
@@ -59,10 +61,15 @@ public class MeetingBaseDto
     public bool IsRecorded { get; set; } = false;
 }
 
-public class UpdateMeetingDto
+public class AddOrUpdateMeetingDto
 {
-    public Guid Id { get; set; }
-    
+    public AddOrUpdateMeetingDto()
+    {
+        StartDate = DateTimeOffset.Now;
+        EndDate = DateTimeOffset.Now.AddDays(1);
+        MeetingStreamMode = MeetingStreamMode.LEGACY;
+    }
+
     public string Title { get; set; }
     
     public string TimeZone { get; set; }
@@ -75,7 +82,7 @@ public class UpdateMeetingDto
     
     public MeetingPeriodType PeriodType { get; set; }
 
-    public MeetingStreamMode MeetingStreamMode { get; set; } = MeetingStreamMode.LEGACY;
+    public MeetingStreamMode MeetingStreamMode { get; set; }
 
     public bool IsMuted { get; set; } = false;
     

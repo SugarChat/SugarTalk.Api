@@ -63,6 +63,8 @@ namespace SugarTalk.Core.Services.Meetings
 
         public async Task PersistMeetingAsync(Meeting meeting, CancellationToken cancellationToken)
         {
+            if (meeting is null) return;
+            
             await _repository.InsertAsync(meeting, cancellationToken).ConfigureAwait(false);
         }
         

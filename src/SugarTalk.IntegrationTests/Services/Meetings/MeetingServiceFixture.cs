@@ -39,9 +39,13 @@ public class MeetingServiceFixture : MeetingFixtureBase
     [Fact]
     public async Task ShouldScheduleMeeting()
     {
-        var response = await _meetingUtil.ScheduleMeeting();
+        var response = await _meetingUtil.ScheduleMeeting(
+            title: "sugarTalk每周例会", timezone: "UTC", periodType: MeetingPeriodType.Weekly);
 
         response.Data.ShouldNotBeNull();
+        response.Data.TimeZone.ShouldBe("UTC");
+        response.Data.Title.ShouldBe("sugarTalk每周例会");
+        response.Data.PeriodType.ShouldBe(MeetingPeriodType.Weekly);
         response.Data.MeetingStreamMode.ShouldBe(MeetingStreamMode.LEGACY);
     }
 
