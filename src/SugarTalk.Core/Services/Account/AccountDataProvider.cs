@@ -37,6 +37,8 @@ namespace SugarTalk.Core.Services.Account
         List<Claim> GenerateClaimsFromUserAccount(UserAccountDto account);
         
         Task AllocateUserToRoleAsync(int userId, int roleId, CancellationToken cancellationToken);
+        
+        Task<List<UserAccount>> GetUserAccountsAsync(List<int> userIds, CancellationToken cancellationToken);
     }
     
     public partial class AccountDataProvider : IAccountDataProvider
@@ -151,6 +153,14 @@ namespace SugarTalk.Core.Services.Account
                     Uuid = Guid.NewGuid()
                 }, cancellationToken).ConfigureAwait(false);
             }
+        }
+
+        public async Task<List<UserAccount>> GetUserAccountsAsync(List<int> userIds, CancellationToken cancellationToken)
+        {
+            if (userIds is not { Count: > 0 }) return new List<UserAccount>();
+
+            return await _repository.QueryNoTracking<UserAccount>()
+                .Where(x => userIds.Contains(x.Id)).ToListAsync(cancellationToken).ConfigureAwait(false);
         }
     }
 }

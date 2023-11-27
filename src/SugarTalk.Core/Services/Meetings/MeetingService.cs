@@ -14,6 +14,7 @@ using SugarTalk.Core.Ioc;
 using SugarTalk.Core.Services.Account;
 using SugarTalk.Core.Services.AntMediaServer;
 using SugarTalk.Core.Services.Exceptions;
+using SugarTalk.Core.Services.Http.Clients;
 using SugarTalk.Core.Services.Identity;
 using SugarTalk.Core.Services.LiveKit;
 using SugarTalk.Core.Settings.LiveKit;
@@ -55,6 +56,7 @@ namespace SugarTalk.Core.Services.Meetings
 
         private readonly IMapper _mapper;
         private readonly ICurrentUser _currentUser;
+        private readonly ISpeechClient _speechClient;
         private readonly IAccountDataProvider _accountDataProvider;
         private readonly IMeetingDataProvider _meetingDataProvider;
         private readonly ILiveKitServerUtilService _liveKitServerUtilService;
@@ -69,10 +71,11 @@ namespace SugarTalk.Core.Services.Meetings
             IAccountDataProvider accountDataProvider,
             IAntMediaServerUtilService antMediaServerUtilService, 
             ILiveKitServerUtilService liveKitServerUtilService,
-            LiveKitServerSetting liveKitServerSetting)
+            LiveKitServerSetting liveKitServerSetting, ISpeechClient speechClient)
         {
             _mapper = mapper;
             _currentUser = currentUser;
+            _speechClient = speechClient;
             _accountDataProvider = accountDataProvider;
             _meetingDataProvider = meetingDataProvider;
             _liveKitServerUtilService = liveKitServerUtilService;
