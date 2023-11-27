@@ -16,7 +16,7 @@ public class MeetingDto : MeetingBaseDto
     
     public List<MeetingUserSessionDto> UserSessions { get; set; }
 
-    public int UserSessionCount => UserSessions.Count;
+    public int UserSessionCount => UserSessions is { Count: > 0 } ? UserSessions.Count : 0;
 
     public void AddUserSession(MeetingUserSessionDto userSession)
     {
