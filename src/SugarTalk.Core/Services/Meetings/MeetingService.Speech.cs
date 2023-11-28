@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using System.Collections.Generic;
 using SugarTalk.Core.Domain.Meeting;
 using System.Text.RegularExpressions;
+using SugarTalk.Core.Services.Exceptions;
 using SugarTalk.Messages.Commands.Speech;
 using SugarTalk.Messages.Requests.Speech;
 using SugarTalk.Messages.Dto.Meetings.Speech;
@@ -47,10 +48,15 @@ public partial class MeetingService
 
         if (responseToText is null) return result;
 
+        var userSetting = await _meetingDataProvider
+            .GetMeetingUserSettingByUserIdAsync(_currentUser.Id.Value, cancellationToken).ConfigureAwait(false);
+
+        if (userSetting is null) throw new NoFoundMeetingUserSettingForCurrentUserException(_currentUser.Id.Value);
+
         var responseToTranslatedText = await _speechClient.TranslateTextAsync(new TextTranslationDto
         {
             Text = responseToText.Result,
-            TargetLanguageType = command.TargetLanguageType
+            TargetLanguageType = userSetting.TargetLanguageType
         }, cancellationToken).ConfigureAwait(false);
         
         Log.Information("SugarTalk response to translated text :{responseToTranslatedText}", responseToTranslatedText);
@@ -60,7 +66,7 @@ public partial class MeetingService
         var responseToVoice = await _speechClient.GetAudioFromTextAsync(new TextToSpeechDto
         {
             Text = responseToText.Result,
-            VoiceType = command.ListenedLanguageType,
+            VoiceType = userSetting.ListenedLanguageType,
             FileFormat = "wav",
             ResponseFormat = "url"
         }, cancellationToken).ConfigureAwait(false);

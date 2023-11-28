@@ -10,7 +10,7 @@ public class GetMeetingAudioListRequest : IRequest
 {
     public Guid MeetingId { get; set; }
 
-    public bool FilterHasCanceledAudio { get; set; } = false;
+    public bool FilterHasCanceledAudio { get; set; } = true;
 }
 
 public class GetMeetingAudioListResponse : SugarTalkResponse<List<MeetingSpeechDto>>

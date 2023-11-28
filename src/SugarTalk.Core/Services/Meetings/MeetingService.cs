@@ -19,11 +19,14 @@ using SugarTalk.Core.Services.Identity;
 using SugarTalk.Core.Services.LiveKit;
 using SugarTalk.Core.Settings.LiveKit;
 using SugarTalk.Messages.Commands.Meetings;
+using SugarTalk.Messages.Commands.Speech;
 using SugarTalk.Messages.Dto.Meetings;
+using SugarTalk.Messages.Dto.Meetings.User;
 using SugarTalk.Messages.Dto.Users;
 using SugarTalk.Messages.Enums.Meeting;
 using SugarTalk.Messages.Events.Meeting;
 using SugarTalk.Messages.Requests.Meetings;
+using SugarTalk.Messages.Requests.Meetings.User;
 
 namespace SugarTalk.Core.Services.Meetings
 {
@@ -48,6 +51,11 @@ namespace SugarTalk.Core.Services.Meetings
             UserAccountDto user, MeetingDto meeting, string streamId, MeetingStreamType streamType, bool? isMuted = null, CancellationToken cancellationToken = default);
 
         Task<UpdateMeetingResponse> UpdateMeetingAsync(UpdateMeetingCommand command, CancellationToken cancellationToken);
+        
+        Task<AddOrUpdateMeetingUserSettingResponse> AddOrUpdateMeetingUserSettingAsync(
+            AddOrUpdateMeetingUserSettingCommand command, CancellationToken cancellationToken);
+
+        Task<GetMeetingUserSettingResponse> GetMeetingUserSettingAsync(GetMeetingUserSettingRequest request, CancellationToken cancellationToken);
     }
     
     public partial class MeetingService : IMeetingService
@@ -266,6 +274,58 @@ namespace SugarTalk.Core.Services.Meetings
             await _meetingDataProvider.UpdateMeetingAsync(updateMeeting, cancellationToken).ConfigureAwait(false);
 
             return new UpdateMeetingResponse();
+        }
+
+        public async Task<AddOrUpdateMeetingUserSettingResponse> AddOrUpdateMeetingUserSettingAsync(
+            AddOrUpdateMeetingUserSettingCommand command, CancellationToken cancellationToken)
+        {
+            var result = new AddOrUpdateMeetingUserSettingResponse();
+
+            if (!_currentUser.Id.HasValue) return result;
+
+            var userSetting = await _meetingDataProvider
+                .GetMeetingUserSettingByUserIdAsync(_currentUser.Id.Value, cancellationToken).ConfigureAwait(false);
+
+            if (userSetting is null)
+            {
+                await _meetingDataProvider.AddMeetingUserSettingAsync(new MeetingUserSetting
+                {
+                    UserId = _currentUser.Id.Value,
+                    TargetLanguageType = command.TargetLanguageType,
+                    ListenedLanguageType = command.ListenedLanguageType
+                }, cancellationToken).ConfigureAwait(false);
+            }
+            else
+            {
+                userSetting.LastModifiedDate = DateTimeOffset.Now;
+                userSetting.TargetLanguageType = command.TargetLanguageType;
+                userSetting.ListenedLanguageType = command.ListenedLanguageType;
+                
+                await _meetingDataProvider.UpdateMeetingUserSettingAsync(userSetting, cancellationToken).ConfigureAwait(false);
+            }
+            
+            return result;
+        }
+
+        public async Task<GetMeetingUserSettingResponse> GetMeetingUserSettingAsync(GetMeetingUserSettingRequest request, CancellationToken cancellationToken)
+        {
+            if (!_currentUser.Id.HasValue) throw new UnauthorizedAccessException();
+
+            var userAccounts = await _accountDataProvider
+                .GetUserAccountsAsync(_currentUser.Id.Value, cancellationToken).ConfigureAwait(false);
+
+            var userIds = userAccounts.Select(x => x.Id).ToList();
+            
+            var userSettings = await _meetingDataProvider.GetMeetingUserSettingsAsync(userIds, cancellationToken).ConfigureAwait(false);
+
+            if (userSettings is not { Count: > 0 }) return new GetMeetingUserSettingResponse();
+
+            userSettings = userSettings.OrderBy(x => x.LastModifiedDate).ToList();
+
+            return new GetMeetingUserSettingResponse
+            {
+                Data = _mapper.Map<MeetingUserSettingDto>(userSettings.First())
+            };
         }
 
         private async Task<MeetingUserSessionStreamDto> AddMeetingUserSessionStreamIfRequiredAsync(

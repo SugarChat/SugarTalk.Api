@@ -3,6 +3,7 @@ using SugarTalk.Core.Domain.Meeting;
 using SugarTalk.Messages.Commands.Meetings;
 using SugarTalk.Messages.Dto.Meetings;
 using SugarTalk.Messages.Dto.Meetings.Speech;
+using SugarTalk.Messages.Dto.Meetings.User;
 using SugarTalk.Messages.Dto.Users;
 
 namespace SugarTalk.Core.Mapping
@@ -25,6 +26,7 @@ namespace SugarTalk.Core.Mapping
                 .ForMember(dest => dest.StartDate, source => source.MapFrom(x => x.StartDate.ToUnixTimeSeconds()))
                 .ForMember(dest => dest.EndDate, source => source.MapFrom(x => x.EndDate.ToUnixTimeSeconds()));
             CreateMap<MeetingSpeech, MeetingSpeechDto>();
+            CreateMap<MeetingUserSetting, MeetingUserSettingDto>();
         }
     }
 }
