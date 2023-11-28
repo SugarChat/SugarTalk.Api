@@ -7,7 +7,7 @@ using SugarTalk.Messages.Commands.Speech;
 
 namespace SugarTalk.Core.Handlers.CommandHandlers.Meetings.Speech;
 
-public class SaveMeetingAudioCommandHandler : ICommandHandler<SaveMeetingAudioCommand>
+public class SaveMeetingAudioCommandHandler : ICommandHandler<SaveMeetingAudioCommand, SaveMeetingAudioResponse>
 {
     private readonly IMeetingService _meetingService;
 
@@ -16,8 +16,8 @@ public class SaveMeetingAudioCommandHandler : ICommandHandler<SaveMeetingAudioCo
         _meetingService = meetingService;
     }
     
-    public async Task Handle(IReceiveContext<SaveMeetingAudioCommand> context, CancellationToken cancellationToken)
+    public async Task<SaveMeetingAudioResponse> Handle(IReceiveContext<SaveMeetingAudioCommand> context, CancellationToken cancellationToken)
     {
-        await _meetingService.SaveMeetingAudioAsync(context.Message, cancellationToken).ConfigureAwait(false);
+        return await _meetingService.SaveMeetingAudioAsync(context.Message, cancellationToken).ConfigureAwait(false);
     }
 }

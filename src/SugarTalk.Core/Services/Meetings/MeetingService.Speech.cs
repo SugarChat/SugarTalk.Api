@@ -14,15 +14,17 @@ namespace SugarTalk.Core.Services.Meetings;
 
 public partial interface IMeetingService
 {
-    Task SaveMeetingAudioAsync(SaveMeetingAudioCommand command, CancellationToken cancellationToken);
+    Task<SaveMeetingAudioResponse> SaveMeetingAudioAsync(SaveMeetingAudioCommand command, CancellationToken cancellationToken);
     
     Task<GetMeetingAudioListResponse> GetMeetingAudioListAsync(GetMeetingAudioListRequest request, CancellationToken cancellationToken);
 }
 
 public partial class MeetingService
 {
-    public async Task SaveMeetingAudioAsync(SaveMeetingAudioCommand command, CancellationToken cancellationToken)
+    public async Task<SaveMeetingAudioResponse> SaveMeetingAudioAsync(SaveMeetingAudioCommand command, CancellationToken cancellationToken)
     {
+        var result = new SaveMeetingAudioResponse { Data = "Unsuccessful" };
+        
         if (!_currentUser.Id.HasValue) throw new UnauthorizedAccessException();
 
         var base64WithoutPrefix = Regex.Replace(command.AudioForBase64, @"^data:[^;]+;[^,]+,", "");
@@ -43,7 +45,7 @@ public partial class MeetingService
 
         Log.Information("SugarTalk response to text :{responseToText}", responseToText);
 
-        if (responseToText is null) return;
+        if (responseToText is null) return result;
 
         var responseToTranslatedText = await _speechClient.TranslateTextAsync(new TextTranslationDto
         {
@@ -53,7 +55,7 @@ public partial class MeetingService
         
         Log.Information("SugarTalk response to translated text :{responseToTranslatedText}", responseToTranslatedText);
 
-        if (responseToTranslatedText is null) return;
+        if (responseToTranslatedText is null) return result;
 
         var speech = new MeetingSpeech
         {
@@ -64,6 +66,10 @@ public partial class MeetingService
         };
         
         await _meetingDataProvider.PersistMeetingSpeechAsync(speech, cancellationToken).ConfigureAwait(false);
+        
+        result.Data = "Successful";
+        
+        return result;
     }
 
     public async Task<GetMeetingAudioListResponse> GetMeetingAudioListAsync(GetMeetingAudioListRequest request, CancellationToken cancellationToken)
