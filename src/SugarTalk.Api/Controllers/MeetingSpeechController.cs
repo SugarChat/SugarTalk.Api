@@ -29,7 +29,7 @@ public class MeetingSpeechController : ControllerBase
     
     [Route("list"), HttpGet]
     [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(GetMeetingAudioListResponse))]
-    public async Task<IActionResult> GetMeetingAudioListAsync(GetMeetingAudioListRequest request)
+    public async Task<IActionResult> GetMeetingAudioListAsync([FromQuery] GetMeetingAudioListRequest request)
     {
         var response = await _mediator.RequestAsync<GetMeetingAudioListRequest, GetMeetingAudioListResponse>(request);
             
