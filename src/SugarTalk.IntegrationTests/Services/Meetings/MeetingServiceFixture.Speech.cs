@@ -94,7 +94,7 @@ public partial class MeetingServiceFixture
                     OriginalText = "text2",
                     TranslatedText = "translated_text2",
                     CreatedDate = now.AddHours(1),
-                    UserId = user2.Id
+                    UserId = user1.Id
                 },
                 new()
                 {

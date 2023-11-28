@@ -10,7 +10,6 @@ using Microsoft.EntityFrameworkCore;
 using SugarTalk.Core.Constants;
 using SugarTalk.Core.Data;
 using SugarTalk.Core.Domain.Account;
-using SugarTalk.Core.Domain.Account.Exceptions;
 using SugarTalk.Core.Extensions;
 using SugarTalk.Core.Ioc;
 using SugarTalk.Messages.Dto.Users;
@@ -170,10 +169,10 @@ namespace SugarTalk.Core.Services.Account
             var user = await _repository.QueryNoTracking<UserAccount>()
                 .Where(x => userId == x.Id).FirstOrDefaultAsync(cancellationToken).ConfigureAwait(false);
             
-            if (user == null) return new List<UserAccount>();
+            if (user is null) return new List<UserAccount>();
 
             return await _repository.QueryNoTracking<UserAccount>()
-                .Where(x => x.UserName.Equals(user.UserName, StringComparison.OrdinalIgnoreCase))
+                .Where(x => x.UserName.ToUpper().Contains(user.UserName.ToUpper()))
                 .ToListAsync(cancellationToken).ConfigureAwait(false);
         }
     }

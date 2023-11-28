@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using System.Collections.Generic;
 using SugarTalk.Core.Domain.Meeting;
 using System.Text.RegularExpressions;
+using Newtonsoft.Json;
 using SugarTalk.Core.Services.Exceptions;
 using SugarTalk.Messages.Commands.Speech;
 using SugarTalk.Messages.Requests.Speech;
@@ -44,7 +45,7 @@ public partial class MeetingService
             ResponseFormat = "text"
         }, cancellationToken).ConfigureAwait(false);
 
-        Log.Information("SugarTalk response to text :{responseToText}", responseToText);
+        Log.Information("SugarTalk response to text :{responseToText}", JsonConvert.SerializeObject(responseToText));
 
         if (responseToText is null) return result;
 
@@ -59,7 +60,7 @@ public partial class MeetingService
             TargetLanguageType = userSetting.TargetLanguageType
         }, cancellationToken).ConfigureAwait(false);
         
-        Log.Information("SugarTalk response to translated text :{responseToTranslatedText}", responseToTranslatedText);
+        Log.Information("SugarTalk response to translated text :{responseToTranslatedText}", JsonConvert.SerializeObject(responseToTranslatedText));
 
         if (responseToTranslatedText is null) return result;
 
@@ -71,7 +72,7 @@ public partial class MeetingService
             ResponseFormat = "url"
         }, cancellationToken).ConfigureAwait(false);
         
-        Log.Information("SugarTalk response to voice :{responseToVoice}", responseToVoice);
+        Log.Information("SugarTalk response to voice :{responseToVoice}", JsonConvert.SerializeObject(responseToVoice));
 
         if (responseToVoice is null) return result;
 
@@ -93,8 +94,6 @@ public partial class MeetingService
 
     public async Task<GetMeetingAudioListResponse> GetMeetingAudioListAsync(GetMeetingAudioListRequest request, CancellationToken cancellationToken)
     {
-        var updateMeetingSpeech = new List<MeetingSpeechDto>();
-        
         var meetingSpeeches = await _meetingDataProvider
             .GetMeetingSpeechAsync(request.MeetingId, cancellationToken, request.FilterHasCanceledAudio).ConfigureAwait(false);
 
@@ -105,18 +104,18 @@ public partial class MeetingService
         var users = await _accountDataProvider
             .GetUserAccountsAsync(userIds, cancellationToken).ConfigureAwait(false);
 
-        var meetingSpeechDic = meetingSpeechesDto
-            .OrderBy(x => x.CreatedDate)
-            .ToDictionary(x => x.UserId, x => x);
+        meetingSpeechesDto = meetingSpeechesDto.OrderBy(x => x.CreatedDate).ToList();
 
-        foreach (var user in users)
+        var userDictionary = users.ToDictionary(user => user.Id, user => user);
+
+        foreach (var meetingSpeech in meetingSpeechesDto)
         {
-            meetingSpeechDic.TryGetValue(user.Id, out var meetingSpeech);
-            if (meetingSpeech == null) continue;
-            meetingSpeech.UserName = user.UserName;
-            updateMeetingSpeech.Add(meetingSpeech);
+            if (userDictionary.TryGetValue(meetingSpeech.UserId, out var userAccount))
+            {
+                meetingSpeech.UserName = userAccount.UserName;
+            }
         }
 
-        return new GetMeetingAudioListResponse { Data = updateMeetingSpeech };
+        return new GetMeetingAudioListResponse { Data = meetingSpeechesDto };
     }
 }
