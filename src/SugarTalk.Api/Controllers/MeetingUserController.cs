@@ -6,7 +6,7 @@ using SugarTalk.Messages.Requests.Meetings.User;
 
 namespace SugarTalk.Api.Controllers;
 
-// [Authorize]
+[Authorize]
 [ApiController]
 [Route("[controller]")]
 public class MeetingUserController : ControllerBase
