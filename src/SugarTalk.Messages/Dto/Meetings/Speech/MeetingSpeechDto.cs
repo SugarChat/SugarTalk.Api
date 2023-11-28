@@ -14,6 +14,8 @@ public class MeetingSpeechDto
     
     public string UserName { get; set; }
     
+    public string VoiceUrl { get; set; }
+    
     public string OriginalText { get; set; }
 
     public string TranslatedText { get; set; }
@@ -41,7 +43,7 @@ public class TextToSpeechDto
     public string Text { get; set; }
 
     [JsonProperty("voice_id")]
-    public int VoiceId { get; set; }
+    public VoiceSamplesByLanguageType VoiceType { get; set; }
 
     [JsonProperty("file_format")]
     public string FileFormat { get; set; }

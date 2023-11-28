@@ -10,11 +10,14 @@ public class SaveMeetingAudioCommand : ICommand
     public SaveMeetingAudioCommand()
     {
         TargetLanguageType = SpeechTargetLanguageType.Cantonese;
+        ListenedLanguageType = VoiceSamplesByLanguageType.Cantonese_XiaoMinNeural;
     }
 
     public Guid MeetingId { get; set; }
     
     public string AudioForBase64 { get; set; }
+    
+    public VoiceSamplesByLanguageType ListenedLanguageType { get; set; }
 
     public SpeechTargetLanguageType TargetLanguageType { get; set; } 
 }

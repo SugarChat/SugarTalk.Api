@@ -41,6 +41,7 @@ public partial class MeetingServiceFixture
             
             meetingSpeech.MeetingId.ShouldBe(command.MeetingId);
             meetingSpeech.OriginalText.ShouldBe("text");
+            meetingSpeech.VoiceUrl.ShouldBe("text.url");
             meetingSpeech.TranslatedText.ShouldBe("translated_text");
             meetingSpeech.UserId.ShouldBe(currentUser.Id.Value);
         }, builder =>
@@ -52,6 +53,9 @@ public partial class MeetingServiceFixture
             
             speechClient.GetTextFromAudioAsync(Arg.Any<SpeechToTextDto>(), CancellationToken.None)
                 .Returns(new SpeechResponseDto { Result = "text" });
+            
+            speechClient.GetAudioFromTextAsync(Arg.Any<TextToSpeechDto>(), CancellationToken.None)
+                .Returns(new SpeechResponseDto { Result = "text.url" });
 
             builder.RegisterInstance(speechClient);
         });
@@ -77,6 +81,7 @@ public partial class MeetingServiceFixture
                     MeetingId = meetingId,
                     OriginalText = "text",
                     TranslatedText = "translated_text",
+                    VoiceUrl = "test.url",
                     CreatedDate = now,
                     UserId = user1.Id
                 },
@@ -112,6 +117,7 @@ public partial class MeetingServiceFixture
             response.Data.First().UserName.ShouldBe(user1.UserName);
             response.Data.First().MeetingId.ShouldBe(meetingId);
             response.Data.First().OriginalText.ShouldBe("text");
+            response.Data.First().VoiceUrl.ShouldBe("test.url");
             response.Data.First().TranslatedText.ShouldBe("translated_text");
         });
     }

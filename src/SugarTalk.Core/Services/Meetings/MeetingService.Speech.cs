@@ -57,10 +57,23 @@ public partial class MeetingService
 
         if (responseToTranslatedText is null) return result;
 
+        var responseToVoice = await _speechClient.GetAudioFromTextAsync(new TextToSpeechDto
+        {
+            Text = responseToText.Result,
+            VoiceType = command.ListenedLanguageType,
+            FileFormat = "wav",
+            ResponseFormat = "url"
+        }, cancellationToken).ConfigureAwait(false);
+        
+        Log.Information("SugarTalk response to voice :{responseToVoice}", responseToVoice);
+
+        if (responseToVoice is null) return result;
+
         var speech = new MeetingSpeech
         {
             MeetingId = command.MeetingId,
             UserId = _currentUser.Id.Value,
+            VoiceUrl = responseToVoice.Result,
             OriginalText = responseToText.Result,
             TranslatedText = responseToTranslatedText.Result
         };

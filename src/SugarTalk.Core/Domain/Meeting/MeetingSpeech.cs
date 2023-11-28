@@ -30,6 +30,9 @@ public class MeetingSpeech : IEntity
     [Column("translated_text")] 
     public string TranslatedText { get; set; }
 
+    [Column("voice_url"), StringLength(512)]
+    public string VoiceUrl { get; set; }
+
     [Column("created_date")] 
     public DateTimeOffset CreatedDate { get; set; }
 
