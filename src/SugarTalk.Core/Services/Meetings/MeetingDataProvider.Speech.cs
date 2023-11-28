@@ -20,6 +20,8 @@ public partial class MeetingDataProvider
 {
     public async Task PersistMeetingSpeechAsync(MeetingSpeech meetingSpeech, CancellationToken cancellationToken)
     {
+        if (meetingSpeech is null) return;
+
         await _repository.InsertAsync(meetingSpeech, cancellationToken).ConfigureAwait(false);
         
         await _unitOfWork.SaveChangesAsync(cancellationToken).ConfigureAwait(false);

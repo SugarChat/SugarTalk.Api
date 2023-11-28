@@ -1,13 +1,14 @@
 using System;
-using System.Collections.Generic;
+using Serilog;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Serilog;
+using System.Collections.Generic;
 using SugarTalk.Core.Domain.Meeting;
+using System.Text.RegularExpressions;
 using SugarTalk.Messages.Commands.Speech;
-using SugarTalk.Messages.Dto.Meetings.Speech;
 using SugarTalk.Messages.Requests.Speech;
+using SugarTalk.Messages.Dto.Meetings.Speech;
 
 namespace SugarTalk.Core.Services.Meetings;
 
@@ -23,6 +24,8 @@ public partial class MeetingService
     public async Task SaveMeetingAudioAsync(SaveMeetingAudioCommand command, CancellationToken cancellationToken)
     {
         if (!_currentUser.Id.HasValue) throw new UnauthorizedAccessException();
+
+        var base64WithoutPrefix = Regex.Replace(command.AudioForBase64, @"^data:[^;]+;[^,]+,", "");
         
         var responseToText = await _speechClient.GetTextFromAudioAsync(new SpeechToTextDto
         {
@@ -30,7 +33,7 @@ public partial class MeetingService
             {
                 Base64 = new Base64
                 {
-                    Encoded = command.AudioForBase64,
+                    Encoded = base64WithoutPrefix,
                     FileFormat = "wav"
                 }
             },
