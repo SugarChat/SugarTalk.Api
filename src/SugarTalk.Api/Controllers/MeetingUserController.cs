@@ -18,7 +18,7 @@ public class MeetingUserController : ControllerBase
         _mediator = mediator;
     }
     
-    [Route("addOrUpdate/user/setting"), HttpPost]
+    [Route("user/setting/addOrUpdate"), HttpPost]
     [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(AddOrUpdateMeetingUserSettingResponse))]
     public async Task<IActionResult> AddOrUpdateMeetingUserSettingAsync(AddOrUpdateMeetingUserSettingCommand command)
     {
