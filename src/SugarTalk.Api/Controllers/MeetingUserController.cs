@@ -6,7 +6,7 @@ using SugarTalk.Messages.Requests.Meetings.User;
 
 namespace SugarTalk.Api.Controllers;
 
-[Authorize]
+// [Authorize]
 [ApiController]
 [Route("[controller]")]
 public class MeetingUserController : ControllerBase
@@ -29,7 +29,7 @@ public class MeetingUserController : ControllerBase
     
     [Route("get/user/setting"), HttpGet]
     [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(GetMeetingUserSettingResponse))]
-    public async Task<IActionResult> GetMeetingUserSettingAsync(GetMeetingUserSettingRequest request)
+    public async Task<IActionResult> GetMeetingUserSettingAsync([FromQuery] GetMeetingUserSettingRequest request)
     {
         var response = await _mediator.RequestAsync<GetMeetingUserSettingRequest, GetMeetingUserSettingResponse>(request);
             
