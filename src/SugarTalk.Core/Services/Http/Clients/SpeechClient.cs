@@ -1,4 +1,5 @@
 using Serilog;
+using Newtonsoft.Json;
 using System.Threading;
 using SugarTalk.Core.Ioc;
 using System.Threading.Tasks;
@@ -37,7 +38,7 @@ public class SpeechClient : ISpeechClient
 
     public async Task<SpeechResponseDto> GetTextFromAudioAsync(SpeechToTextDto speechToText, CancellationToken cancellationToken)
     {
-        Log.Information("SugarTalk, voice turn to text :{speechToText}", speechToText);
+        Log.Information("SugarTalk, voice turn to text :{speechToText}", JsonConvert.SerializeObject(speechToText));
         
         return await _httpClientFactory
             .PostAsJsonAsync<SpeechResponseDto>(
@@ -46,7 +47,7 @@ public class SpeechClient : ISpeechClient
 
     public async Task<SpeechResponseDto> GetAudioFromTextAsync(TextToSpeechDto textToSpeech, CancellationToken cancellationToken)
     {
-        Log.Information("SugarTalk, text turn to voice :{textToSpeech}", textToSpeech);
+        Log.Information("SugarTalk, text turn to voice :{textToSpeech}", JsonConvert.SerializeObject(textToSpeech));
         
         return await _httpClientFactory
             .PostAsJsonAsync<SpeechResponseDto>(
@@ -55,7 +56,7 @@ public class SpeechClient : ISpeechClient
 
     public async Task<SpeechResponseDto> TranslateTextAsync(TextTranslationDto textTranslation, CancellationToken cancellationToken)
     {
-        Log.Information("SugarTalk, translate text :{textTranslation}", textTranslation);
+        Log.Information("SugarTalk, translate text :{textTranslation}", JsonConvert.SerializeObject(textTranslation));
         
         return await _httpClientFactory
             .PostAsJsonAsync<SpeechResponseDto>(

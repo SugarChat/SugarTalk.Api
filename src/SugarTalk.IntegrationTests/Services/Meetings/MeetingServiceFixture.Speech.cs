@@ -123,4 +123,42 @@ public partial class MeetingServiceFixture
             response.Data.First().TranslatedText.ShouldBe("translated_text");
         });
     }
+
+    [Fact]
+    public async Task ShouldUpdateMeetingSpeech()
+    {
+        var currentUser = new TestCurrentUser();
+
+        var speechId = Guid.NewGuid();
+        
+        await RunWithUnitOfWork<IMediator, IRepository>(async (mediator, repository) =>
+        {
+            await repository.InsertAllAsync(new List<MeetingSpeech>
+            {
+                new()
+                {
+                    Id = speechId,
+                    MeetingId = Guid.NewGuid(),
+                    OriginalText = "text",
+                    TranslatedText = "translated_text",
+                    VoiceUrl = "test.url",
+                    UserId = currentUser.Id.Value,
+                    Status = SpeechStatus.UnViewed
+                }
+            }, CancellationToken.None);
+        });
+        
+        await Run<IMediator, IRepository>(async (mediator, db) =>
+        {
+            await mediator.SendAsync<UpdateMeetingSpeechCommand, UpdateMeetingAudioResponse>(new UpdateMeetingSpeechCommand
+            {
+                MeetingSpeechId = speechId,
+                Status = SpeechStatus.Viewed
+            });
+
+            var meetingSpeech = await db.Query<MeetingSpeech>().ToListAsync(CancellationToken.None);
+
+            meetingSpeech.First().Status.ShouldBe(SpeechStatus.Viewed);
+        });
+    }
 }

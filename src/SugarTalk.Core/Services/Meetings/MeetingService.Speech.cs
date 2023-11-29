@@ -19,6 +19,8 @@ public partial interface IMeetingService
     Task<SaveMeetingAudioResponse> SaveMeetingAudioAsync(SaveMeetingAudioCommand command, CancellationToken cancellationToken);
     
     Task<GetMeetingAudioListResponse> GetMeetingAudioListAsync(GetMeetingAudioListRequest request, CancellationToken cancellationToken);
+    
+    Task<UpdateMeetingAudioResponse> UpdateMeetingSpeechAsync(UpdateMeetingSpeechCommand command, CancellationToken cancellationToken);
 }
 
 public partial class MeetingService
@@ -95,7 +97,7 @@ public partial class MeetingService
     public async Task<GetMeetingAudioListResponse> GetMeetingAudioListAsync(GetMeetingAudioListRequest request, CancellationToken cancellationToken)
     {
         var meetingSpeeches = await _meetingDataProvider
-            .GetMeetingSpeechAsync(request.MeetingId, cancellationToken, request.FilterHasCanceledAudio).ConfigureAwait(false);
+            .GetMeetingSpeechesAsync(request.MeetingId, cancellationToken, request.FilterHasCanceledAudio).ConfigureAwait(false);
 
         var meetingSpeechesDto = _mapper.Map<List<MeetingSpeechDto>>(meetingSpeeches);
         
@@ -117,5 +119,20 @@ public partial class MeetingService
         }
 
         return new GetMeetingAudioListResponse { Data = meetingSpeechesDto };
+    }
+
+    public async Task<UpdateMeetingAudioResponse> UpdateMeetingSpeechAsync(
+        UpdateMeetingSpeechCommand command, CancellationToken cancellationToken)
+    {
+        var meetingSpeech = await _meetingDataProvider
+            .GetMeetingSpeechByIdAsync(command.MeetingSpeechId, cancellationToken).ConfigureAwait(false);
+
+        if (meetingSpeech is null) return new UpdateMeetingAudioResponse { Data = "unsuccessful" };
+
+        meetingSpeech.Status = command.Status;
+
+        await _unitOfWork.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+
+        return new UpdateMeetingAudioResponse { Data = "success" };
     }
 }

@@ -27,6 +27,15 @@ public class MeetingSpeechController : ControllerBase
         return Ok(response);
     }
     
+    [Route("update"), HttpPost]
+    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(UpdateMeetingAudioResponse))]
+    public async Task<IActionResult> UpdateMeetingSpeechAsync(UpdateMeetingSpeechCommand command)
+    {
+        var response = await _mediator.SendAsync<UpdateMeetingSpeechCommand, UpdateMeetingAudioResponse>(command);
+            
+        return Ok(response);
+    }
+    
     [Route("list"), HttpGet]
     [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(GetMeetingAudioListResponse))]
     public async Task<IActionResult> GetMeetingAudioListAsync([FromQuery] GetMeetingAudioListRequest request)

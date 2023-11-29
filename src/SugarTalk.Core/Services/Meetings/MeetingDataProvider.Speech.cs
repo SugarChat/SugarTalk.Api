@@ -13,7 +13,9 @@ public partial interface IMeetingDataProvider
 {
     Task PersistMeetingSpeechAsync(MeetingSpeech meetingSpeech, CancellationToken cancellationToken);
     
-    Task<List<MeetingSpeech>> GetMeetingSpeechAsync(Guid meetingId, CancellationToken cancellationToken, bool filterHasCanceledAudio = false);
+    Task<List<MeetingSpeech>> GetMeetingSpeechesAsync(Guid meetingId, CancellationToken cancellationToken, bool filterHasCanceledAudio = false);
+    
+    Task<MeetingSpeech> GetMeetingSpeechByIdAsync(Guid meetingSpeechId, CancellationToken cancellationToken);
 }
 
 public partial class MeetingDataProvider
@@ -27,7 +29,7 @@ public partial class MeetingDataProvider
         await _unitOfWork.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
     }
 
-    public async Task<List<MeetingSpeech>> GetMeetingSpeechAsync(
+    public async Task<List<MeetingSpeech>> GetMeetingSpeechesAsync(
         Guid meetingId, CancellationToken cancellationToken, bool filterHasCanceledAudio = false)
     {
         var query = _repository.QueryNoTracking<MeetingSpeech>().Where(x => x.MeetingId == meetingId);
@@ -38,5 +40,12 @@ public partial class MeetingDataProvider
         }
         
         return await query.ToListAsync(cancellationToken).ConfigureAwait(false);
+    }
+
+    public async Task<MeetingSpeech> GetMeetingSpeechByIdAsync(Guid meetingSpeechId, CancellationToken cancellationToken)
+    {
+        return await _repository.Query<MeetingSpeech>()
+            .Where(x => x.Id == meetingSpeechId)
+            .FirstOrDefaultAsync(cancellationToken).ConfigureAwait(false);
     }
 }

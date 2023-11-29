@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using AutoMapper;
 using LiveKit_CSharp.Services.Meeting;
 using Serilog;
+using SugarTalk.Core.Data;
 using SugarTalk.Core.Domain.Meeting;
 using SugarTalk.Core.Extensions;
 using SugarTalk.Core.Ioc;
@@ -63,6 +64,7 @@ namespace SugarTalk.Core.Services.Meetings
         private const string appName = "LiveApp";
 
         private readonly IMapper _mapper;
+        private readonly IUnitOfWork _unitOfWork;
         private readonly ICurrentUser _currentUser;
         private readonly ISpeechClient _speechClient;
         private readonly IAccountDataProvider _accountDataProvider;
@@ -74,6 +76,7 @@ namespace SugarTalk.Core.Services.Meetings
         
         public MeetingService(
             IMapper mapper, 
+            IUnitOfWork unitOfWork,
             ICurrentUser currentUser,
             IMeetingDataProvider meetingDataProvider,
             IAccountDataProvider accountDataProvider,
@@ -82,6 +85,7 @@ namespace SugarTalk.Core.Services.Meetings
             LiveKitServerSetting liveKitServerSetting, ISpeechClient speechClient)
         {
             _mapper = mapper;
+            _unitOfWork = unitOfWork;
             _currentUser = currentUser;
             _speechClient = speechClient;
             _accountDataProvider = accountDataProvider;
