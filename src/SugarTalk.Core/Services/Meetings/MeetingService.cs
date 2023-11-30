@@ -298,6 +298,7 @@ namespace SugarTalk.Core.Services.Meetings
                 await _meetingDataProvider.AddMeetingUserSettingAsync(new MeetingUserSetting
                 {
                     UserId = _currentUser.Id.Value,
+                    MeetingId = command.MeetingId,
                     TargetLanguageType = command.TargetLanguageType,
                 }, cancellationToken).ConfigureAwait(false);
             }
