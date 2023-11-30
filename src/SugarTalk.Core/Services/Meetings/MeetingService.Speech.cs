@@ -93,21 +93,21 @@ public partial class MeetingService
             }
         }
 
-        await GenerateTextByTranslateAsync(meetingSpeechesDto, cancellationToken).ConfigureAwait(false);
+        await GenerateTextByTranslateAsync(request.LanguageType, meetingSpeechesDto, cancellationToken).ConfigureAwait(false);
 
         await GenerateVoiceByLanguageTypeAsync(request.LanguageType, request.MeetingId, meetingSpeechesDto, cancellationToken).ConfigureAwait(false);
 
         return new GetMeetingAudioListResponse { Data = meetingSpeechesDto };
     }
 
-    private async Task GenerateTextByTranslateAsync(List<MeetingSpeechDto> meetingSpeechList, CancellationToken cancellationToken)
+    private async Task GenerateTextByTranslateAsync(SpeechTargetLanguageType languageType, List<MeetingSpeechDto> meetingSpeechList, CancellationToken cancellationToken)
     {
         foreach (var meetingSpeech in meetingSpeechList)
         {
             meetingSpeech.TranslatedText = (await _speechClient.TranslateTextAsync(new TextTranslationDto
             {
                 Text = meetingSpeech.OriginalText,
-                TargetLanguageType = SpeechTargetLanguageType.Mandarin
+                TargetLanguageType = languageType
             }, cancellationToken).ConfigureAwait(false)).Result;
         }
     }

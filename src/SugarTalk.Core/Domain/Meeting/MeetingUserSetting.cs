@@ -15,6 +15,7 @@ public class MeetingUserSetting : IEntity
         CantoneseToneType = CantoneseToneType.XiaoMinNeural;
         EnglishToneType = EnglishToneType.AmberNeural;
         MandarinToneType = MandarinToneType.XiaochenNeural;
+        TargetLanguageType = SpeechTargetLanguageType.Cantonese;
     }
 
     [Key]

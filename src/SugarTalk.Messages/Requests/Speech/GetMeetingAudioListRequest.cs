@@ -12,7 +12,7 @@ public class GetMeetingAudioListRequest : IRequest
     public Guid MeetingId { get; set; }
     
     //我听到的语种设置
-    public SpeechTargetLanguageType LanguageType { get; set; }
+    public SpeechTargetLanguageType LanguageType { get; set; } = SpeechTargetLanguageType.Cantonese;
 
     public bool FilterHasCanceledAudio { get; set; } = true;
 }

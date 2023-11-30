@@ -7,6 +7,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using AutoMapper;
 using LiveKit_CSharp.Services.Meeting;
+using Newtonsoft.Json;
 using Serilog;
 using SugarTalk.Core.Data;
 using SugarTalk.Core.Domain.Meeting;
@@ -157,6 +158,8 @@ namespace SugarTalk.Core.Services.Meetings
             await ConnectUserToMeetingAsync(user, meeting, command.StreamId, command.StreamType, command.IsMuted, cancellationToken).ConfigureAwait(false);
             
             var userSetting = await _meetingDataProvider.DistributeLanguageForMeetingUserAsync(meeting.Id, cancellationToken).ConfigureAwait(false);
+            
+            Log.Information("SugarTalk get userSetting from JoinMeetingAsync :{userSetting}", JsonConvert.SerializeObject(userSetting));
 
             return new MeetingJoinedEvent
             {
