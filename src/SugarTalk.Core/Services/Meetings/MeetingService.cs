@@ -156,10 +156,13 @@ namespace SugarTalk.Core.Services.Meetings
 
             await ConnectUserToMeetingAsync(user, meeting, command.StreamId, command.StreamType, command.IsMuted, cancellationToken).ConfigureAwait(false);
             
+            var userSetting = await _meetingDataProvider.DistributeLanguageForMeetingUserAsync(meeting.Id, cancellationToken).ConfigureAwait(false);
+
             return new MeetingJoinedEvent
             {
                 Meeting = meeting,
-                Response = response
+                Response = response,
+                MeetingUserSetting = _mapper.Map<MeetingUserSettingDto>(userSetting)
             };
         }
         
@@ -296,14 +299,12 @@ namespace SugarTalk.Core.Services.Meetings
                 {
                     UserId = _currentUser.Id.Value,
                     TargetLanguageType = command.TargetLanguageType,
-                    ListenedLanguageType = command.ListenedLanguageType
                 }, cancellationToken).ConfigureAwait(false);
             }
             else
             {
                 userSetting.LastModifiedDate = DateTimeOffset.Now;
                 userSetting.TargetLanguageType = command.TargetLanguageType;
-                userSetting.ListenedLanguageType = command.ListenedLanguageType;
                 
                 await _meetingDataProvider.UpdateMeetingUserSettingAsync(userSetting, cancellationToken).ConfigureAwait(false);
             }

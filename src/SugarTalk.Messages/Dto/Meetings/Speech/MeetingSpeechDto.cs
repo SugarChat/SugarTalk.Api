@@ -43,13 +43,38 @@ public class TextToSpeechDto
     public string Text { get; set; }
 
     [JsonProperty("voice_id")]
-    public VoiceSamplesByLanguageType VoiceType { get; set; }
+    public int VoiceId {
+        get
+        {
+            if (MandarinToneType != null)
+                return (int)MandarinToneType;
+            if (CantoneseToneType != null)
+                return (int)CantoneseToneType;
+            if (EnglishToneType != null)
+                return (int)EnglishToneType;
+            if (SpanishToneType != null)
+                return (int)SpanishToneType;
+            return 110;
+        }
+    }
 
-    [JsonProperty("file_format")]
-    public string FileFormat { get; set; }
+    [JsonProperty("file_format")] 
+    public string FileFormat { get; set; } = "wav";
 
-    [JsonProperty("response_format")]
-    public string ResponseFormat { get; set; }
+    [JsonProperty("response_format")] 
+    public string ResponseFormat { get; set; } = "url";
+    
+    [JsonIgnore]
+    public MandarinToneType? MandarinToneType { get; set; }
+    
+    [JsonIgnore]
+    public EnglishToneType? EnglishToneType { get; set; }
+    
+    [JsonIgnore]
+    public CantoneseToneType? CantoneseToneType { get; set; }
+    
+    [JsonIgnore]
+    public SpanishToneType? SpanishToneType { get; set; }
 }
 
 public class TextTranslationDto

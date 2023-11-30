@@ -128,8 +128,8 @@ public class MeetingUtil : TestUtil
         });
     }
     
-    public async Task AddMeetingUserSetting(Guid id, int userId, 
-        SpeechTargetLanguageType targetLanguageType, VoiceSamplesByLanguageType listenedLanguageType, DateTimeOffset? lastModifiedDate = null)
+    public async Task AddMeetingUserSetting(Guid id, int userId, Guid meetingId,
+        SpeechTargetLanguageType targetLanguageType, CantoneseToneType? cantoneseToneType, DateTimeOffset? lastModifiedDate = null)
     {
         await RunWithUnitOfWork<IRepository>(async repository =>
         {
@@ -137,8 +137,9 @@ public class MeetingUtil : TestUtil
             {
                 Id = id,
                 UserId = userId,
+                MeetingId = meetingId,
                 TargetLanguageType = targetLanguageType,
-                ListenedLanguageType = listenedLanguageType,
+                CantoneseToneType = cantoneseToneType ?? CantoneseToneType.HiuGaaiNeural,
                 LastModifiedDate = lastModifiedDate ?? DateTimeOffset.Now
             }, CancellationToken.None);
         });

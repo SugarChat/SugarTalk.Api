@@ -9,7 +9,13 @@ public class MeetingUserSettingDto
 
     public int UserId { get; set; }
 
-    public VoiceSamplesByLanguageType ListenedLanguageType { get; set; } 
+    public SpanishToneType SpanishToneType { get; set; }
+    
+    public MandarinToneType MandarinToneType { get; set; }
+    
+    public EnglishToneType EnglishToneType{ get; set; }
+    
+    public CantoneseToneType CantoneseToneType { get; set; }
 
     public SpeechTargetLanguageType TargetLanguageType { get; set; } 
 }

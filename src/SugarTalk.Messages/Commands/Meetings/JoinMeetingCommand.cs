@@ -1,5 +1,6 @@
 using Mediator.Net.Contracts;
 using SugarTalk.Messages.Dto.Meetings;
+using SugarTalk.Messages.Dto.Meetings.User;
 using SugarTalk.Messages.Enums.Meeting;
 using SugarTalk.Messages.Responses;
 
@@ -25,6 +26,8 @@ public class JoinMeetingResponse : SugarTalkResponse<JoinMeetingResponseData>
 public class JoinMeetingResponseData
 {
     public MeetingDto Meeting { get; set; }
+    
+    public MeetingUserSettingDto MeetingUserSetting { get; set; }
     
     public ConferenceRoomResponseBaseDto Response { get; set; }
 }

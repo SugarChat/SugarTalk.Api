@@ -11,6 +11,7 @@ using SugarTalk.Core.Services.Exceptions;
 using SugarTalk.Messages.Commands.Speech;
 using SugarTalk.Messages.Requests.Speech;
 using SugarTalk.Messages.Dto.Meetings.Speech;
+using SugarTalk.Messages.Enums.Speech;
 
 namespace SugarTalk.Core.Services.Meetings;
 
@@ -30,8 +31,6 @@ public partial class MeetingService
         var result = new SaveMeetingAudioResponse { Data = "Unsuccessful" };
         
         if (!_currentUser.Id.HasValue) throw new UnauthorizedAccessException();
-
-        var base64WithoutPrefix = Regex.Replace(command.AudioForBase64, @"^data:[^;]+;[^,]+,", "");
         
         var responseToText = await _speechClient.GetTextFromAudioAsync(new SpeechToTextDto
         {
@@ -39,7 +38,7 @@ public partial class MeetingService
             {
                 Base64 = new Base64
                 {
-                    Encoded = base64WithoutPrefix,
+                    Encoded = HandleToBase64(command.AudioForBase64),
                     FileFormat = "wav"
                 }
             },
@@ -56,35 +55,11 @@ public partial class MeetingService
 
         if (userSetting is null) throw new NoFoundMeetingUserSettingForCurrentUserException(_currentUser.Id.Value);
 
-        var responseToTranslatedText = await _speechClient.TranslateTextAsync(new TextTranslationDto
-        {
-            Text = responseToText.Result,
-            TargetLanguageType = userSetting.TargetLanguageType
-        }, cancellationToken).ConfigureAwait(false);
-        
-        Log.Information("SugarTalk response to translated text :{responseToTranslatedText}", JsonConvert.SerializeObject(responseToTranslatedText));
-
-        if (responseToTranslatedText is null) return result;
-
-        var responseToVoice = await _speechClient.GetAudioFromTextAsync(new TextToSpeechDto
-        {
-            Text = responseToText.Result,
-            VoiceType = userSetting.ListenedLanguageType,
-            FileFormat = "wav",
-            ResponseFormat = "url"
-        }, cancellationToken).ConfigureAwait(false);
-        
-        Log.Information("SugarTalk response to voice :{responseToVoice}", JsonConvert.SerializeObject(responseToVoice));
-
-        if (responseToVoice is null) return result;
-
         var speech = new MeetingSpeech
         {
             MeetingId = command.MeetingId,
             UserId = _currentUser.Id.Value,
-            VoiceUrl = responseToVoice.Result,
-            OriginalText = responseToText.Result,
-            TranslatedText = responseToTranslatedText.Result
+            OriginalText = responseToText.Result
         };
         
         await _meetingDataProvider.PersistMeetingSpeechAsync(speech, cancellationToken).ConfigureAwait(false);
@@ -118,7 +93,47 @@ public partial class MeetingService
             }
         }
 
+        await GenerateTextByTranslateAsync(meetingSpeechesDto, cancellationToken).ConfigureAwait(false);
+
+        await GenerateVoiceByLanguageTypeAsync(request.LanguageType, request.MeetingId, meetingSpeechesDto, cancellationToken).ConfigureAwait(false);
+
         return new GetMeetingAudioListResponse { Data = meetingSpeechesDto };
+    }
+
+    private async Task GenerateTextByTranslateAsync(List<MeetingSpeechDto> meetingSpeechList, CancellationToken cancellationToken)
+    {
+        foreach (var meetingSpeech in meetingSpeechList)
+        {
+            meetingSpeech.TranslatedText = (await _speechClient.TranslateTextAsync(new TextTranslationDto
+            {
+                Text = meetingSpeech.OriginalText,
+                TargetLanguageType = SpeechTargetLanguageType.Mandarin
+            }, cancellationToken).ConfigureAwait(false)).Result;
+        }
+    }
+
+    private async Task GenerateVoiceByLanguageTypeAsync(
+        SpeechTargetLanguageType languageType, Guid meetingId, List<MeetingSpeechDto> meetingSpeechList, CancellationToken cancellationToken)
+    {
+        var userSettings = await _meetingDataProvider
+            .GetMeetingUserSettingsAsync(meetingId, cancellationToken).ConfigureAwait(false);
+
+        if (userSettings is null) return;
+
+        foreach (var meetingSpeech in meetingSpeechList)
+        {
+            var userSetting = userSettings.FirstOrDefault(x=>x.UserId == meetingSpeech.UserId);
+
+            var targetLanguage = languageType switch
+            {
+                SpeechTargetLanguageType.Cantonese => new TextToSpeechDto { Text = meetingSpeech.TranslatedText, CantoneseToneType = userSetting?.CantoneseToneType },
+                SpeechTargetLanguageType.Mandarin => new TextToSpeechDto { Text = meetingSpeech.TranslatedText, MandarinToneType = userSetting?.MandarinToneType },
+                SpeechTargetLanguageType.English => new TextToSpeechDto { Text = meetingSpeech.TranslatedText, EnglishToneType = userSetting?.EnglishToneType },
+                SpeechTargetLanguageType.Spanish => new TextToSpeechDto { Text = meetingSpeech.TranslatedText, SpanishToneType = userSetting?.SpanishToneType }
+            };
+            
+            meetingSpeech.VoiceUrl = (await _speechClient.GetAudioFromTextAsync(targetLanguage, cancellationToken).ConfigureAwait(false)).Result;
+        }
     }
 
     public async Task<UpdateMeetingAudioResponse> UpdateMeetingSpeechAsync(
@@ -134,5 +149,10 @@ public partial class MeetingService
         await _unitOfWork.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
 
         return new UpdateMeetingAudioResponse { Data = "success" };
+    }
+    
+    private static string HandleToBase64(string base64)
+    {
+        return Regex.Replace(base64, @"^data:[^;]+;[^,]+,", "");
     }
 }
