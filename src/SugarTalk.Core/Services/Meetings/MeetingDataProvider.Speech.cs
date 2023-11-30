@@ -65,7 +65,7 @@ public partial class MeetingDataProvider
 
         if (existMeetingUserSetting != null) return existMeetingUserSetting;
 
-        if (userSettings.Count is 0 or > 10) return null;
+        if (userSettings.Count > 10) return null;
         
         AssignTone(userSettings, x => x.SpanishToneType, meetingUserSetting);
         AssignTone(userSettings, x => x.EnglishToneType, meetingUserSetting);
