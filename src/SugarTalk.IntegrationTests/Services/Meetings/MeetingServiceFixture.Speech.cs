@@ -17,6 +17,7 @@ using SugarTalk.Messages.Commands.Speech;
 using SugarTalk.Messages.Dto.Meetings;
 using SugarTalk.Messages.Dto.Meetings.Speech;
 using SugarTalk.Messages.Enums.Speech;
+using SugarTalk.Messages.Requests.Meetings.User;
 using SugarTalk.Messages.Requests.Speech;
 using Xunit;
 
@@ -186,11 +187,11 @@ public partial class MeetingServiceFixture
     public async Task CanGetMeetingUserSettingWhenJoinMeeting()
     {
         var currentUser = new TestCurrentUser();
-        var user2 = await _accountUtil.AddUserAccount("greg", "123456").ConfigureAwait(false);
         var scheduleMeetingResponse = await _meetingUtil.ScheduleMeeting();
 
-        await _meetingUtil.AddMeetingUserSetting(Guid.NewGuid(), user2.Id, meetingId: scheduleMeetingResponse.Data.Id, 
-            SpeechTargetLanguageType.Cantonese, CantoneseToneType.WanLungNeural);
+        var meeting = await _meetingUtil.GetMeeting(scheduleMeetingResponse.Data.MeetingNumber);
+
+        await _meetingUtil.JoinMeeting(meeting.MeetingNumber, "streamId");
         
         await Run<IMediator, IRepository>(async (mediator, repository) =>
         {
@@ -201,6 +202,13 @@ public partial class MeetingServiceFixture
             });
 
             response.Data.MeetingUserSetting.UserId.ShouldBe(currentUser.Id.Value);
+            
+            var responseUserSetting = await mediator.RequestAsync<GetMeetingUserSettingRequest, GetMeetingUserSettingResponse>(new GetMeetingUserSettingRequest
+            {
+                MeetingId = meeting.Id
+            });
+            
+            responseUserSetting.Data.UserId.ShouldBe(currentUser.Id.Value);
 
         }, builder =>
         {
