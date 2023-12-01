@@ -327,12 +327,13 @@ namespace SugarTalk.Core.Services.Meetings
             
             var userSettings = await _meetingDataProvider.GetMeetingUserSettingsAsync(userIds, cancellationToken).ConfigureAwait(false);
 
+            userSettings = userSettings.Where(x => x.MeetingId == request.MeetingId).ToList();
+            
             if (userSettings is not { Count: > 0 }) return new GetMeetingUserSettingResponse();
 
             return new GetMeetingUserSettingResponse
             {
-                Data = _mapper.Map<MeetingUserSettingDto>(
-                    userSettings.FirstOrDefault(x => x.MeetingId == request.MeetingId))
+                Data = _mapper.Map<MeetingUserSettingDto>(userSettings.FirstOrDefault())
             };
         }
 
