@@ -108,7 +108,7 @@ public partial class MeetingService
             {
                 Text = meetingSpeech.OriginalText,
                 TargetLanguageType = languageType
-            }, cancellationToken).ConfigureAwait(false)).Result;
+            }, cancellationToken).ConfigureAwait(false))?.Result;
         }
     }
 
