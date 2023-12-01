@@ -9,8 +9,6 @@ public class AddOrUpdateMeetingUserSettingCommand : ICommand
 {
     public Guid MeetingId { get; set; }
     
-    public VoiceSamplesByLanguageType ListenedLanguageType { get; set; }
-
     public SpeechTargetLanguageType TargetLanguageType { get; set; } 
 }
 

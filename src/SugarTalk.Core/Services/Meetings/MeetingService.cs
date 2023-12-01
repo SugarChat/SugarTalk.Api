@@ -329,7 +329,8 @@ namespace SugarTalk.Core.Services.Meetings
 
             if (userSettings is not { Count: > 0 }) return new GetMeetingUserSettingResponse();
 
-            userSettings = userSettings.OrderBy(x => x.LastModifiedDate).ToList();
+            userSettings = userSettings.Where(x => x.MeetingId == request.MeetingId)
+                .OrderBy(x => x.LastModifiedDate).ToList();
 
             return new GetMeetingUserSettingResponse
             {
