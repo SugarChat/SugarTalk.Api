@@ -29,13 +29,14 @@ public partial class MeetingServiceFixture
     {
         var currentUser = new TestCurrentUser();
         
+        var meetingId = Guid.NewGuid();
         var command = new SaveMeetingAudioCommand
         {
-            MeetingId = Guid.NewGuid(),
+            MeetingId = meetingId,
             AudioForBase64 = "巴卡巴卡巴卡"
         };
 
-        await _meetingUtil.AddMeetingUserSetting(Guid.NewGuid(), currentUser.Id.Value, meetingId: Guid.NewGuid(), 
+        await _meetingUtil.AddMeetingUserSetting(Guid.NewGuid(), currentUser.Id.Value, meetingId: meetingId, 
             SpeechTargetLanguageType.Cantonese, CantoneseToneType.WanLungNeural);
         
         await Run<IMediator, IRepository>(async (mediator, repository) =>
