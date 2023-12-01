@@ -51,7 +51,7 @@ public partial class MeetingService
         if (responseToText is null) return result;
 
         var userSetting = await _meetingDataProvider
-            .GetMeetingUserSettingByUserIdAsync(_currentUser.Id.Value, cancellationToken).ConfigureAwait(false);
+            .GetMeetingUserSettingByUserIdAsync(_currentUser.Id.Value, command.MeetingId, cancellationToken).ConfigureAwait(false);
 
         if (userSetting is null) throw new NoFoundMeetingUserSettingForCurrentUserException(_currentUser.Id.Value);
 

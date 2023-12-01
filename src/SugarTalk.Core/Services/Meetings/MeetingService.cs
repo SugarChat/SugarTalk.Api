@@ -294,8 +294,8 @@ namespace SugarTalk.Core.Services.Meetings
             if (!_currentUser.Id.HasValue) return result;
 
             var userSetting = await _meetingDataProvider
-                .GetMeetingUserSettingByUserIdAsync(_currentUser.Id.Value, cancellationToken).ConfigureAwait(false);
-
+                .GetMeetingUserSettingByUserIdAsync(_currentUser.Id.Value, command.MeetingId, cancellationToken).ConfigureAwait(false);
+            
             if (userSetting is null)
             {
                 await _meetingDataProvider.AddMeetingUserSettingAsync(new MeetingUserSetting

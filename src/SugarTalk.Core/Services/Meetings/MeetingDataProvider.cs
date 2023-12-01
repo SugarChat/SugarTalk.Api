@@ -42,7 +42,7 @@ namespace SugarTalk.Core.Services.Meetings
         
         Task UpdateMeetingUserSettingAsync(MeetingUserSetting meetingUserSetting, CancellationToken cancellationToken);
         
-        Task<MeetingUserSetting> GetMeetingUserSettingByUserIdAsync(int userId, CancellationToken cancellationToken);
+        Task<MeetingUserSetting> GetMeetingUserSettingByUserIdAsync(int userId, Guid meetingId, CancellationToken cancellationToken);
     }
     
     public partial class MeetingDataProvider : IMeetingDataProvider
@@ -182,10 +182,10 @@ namespace SugarTalk.Core.Services.Meetings
             await _repository.UpdateAsync(meetingUserSetting, cancellationToken).ConfigureAwait(false);
         }
 
-        public async Task<MeetingUserSetting> GetMeetingUserSettingByUserIdAsync(int userId, CancellationToken cancellationToken)
+        public async Task<MeetingUserSetting> GetMeetingUserSettingByUserIdAsync(int userId, Guid meetingId, CancellationToken cancellationToken)
         {
             return await _repository.QueryNoTracking<MeetingUserSetting>()
-                .Where(x => x.UserId == userId)
+                .Where(x => x.UserId == userId && x.MeetingId == meetingId)
                 .FirstOrDefaultAsync(cancellationToken).ConfigureAwait(false);
         }
     }
