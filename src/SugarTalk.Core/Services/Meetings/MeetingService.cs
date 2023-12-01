@@ -329,12 +329,10 @@ namespace SugarTalk.Core.Services.Meetings
 
             if (userSettings is not { Count: > 0 }) return new GetMeetingUserSettingResponse();
 
-            userSettings = userSettings.Where(x => x.MeetingId == request.MeetingId)
-                .OrderBy(x => x.LastModifiedDate).ToList();
-
             return new GetMeetingUserSettingResponse
             {
-                Data = _mapper.Map<MeetingUserSettingDto>(userSettings.First())
+                Data = _mapper.Map<MeetingUserSettingDto>(
+                    userSettings.FirstOrDefault(x => x.MeetingId == request.MeetingId))
             };
         }
 
