@@ -4,6 +4,7 @@ using Mediator.Net.Context;
 using Mediator.Net.Contracts;
 using SugarTalk.Core.Services.Meetings;
 using SugarTalk.Messages.Commands.Speech;
+using SugarTalk.Messages.Events.Meeting.Speech;
 
 namespace SugarTalk.Core.Handlers.CommandHandlers.Meetings.Speech;
 
@@ -18,6 +19,13 @@ public class SaveMeetingAudioCommandHandler : ICommandHandler<SaveMeetingAudioCo
     
     public async Task<SaveMeetingAudioResponse> Handle(IReceiveContext<SaveMeetingAudioCommand> context, CancellationToken cancellationToken)
     {
-        return await _meetingService.SaveMeetingAudioAsync(context.Message, cancellationToken).ConfigureAwait(false);
+        var @event = await _meetingService.SaveMeetingAudioAsync(context.Message, cancellationToken).ConfigureAwait(false);
+        
+        await context.PublishAsync(@event, cancellationToken).ConfigureAwait(false);
+
+        return new SaveMeetingAudioResponse
+        {
+            Data = @event.Result
+        };
     }
 }

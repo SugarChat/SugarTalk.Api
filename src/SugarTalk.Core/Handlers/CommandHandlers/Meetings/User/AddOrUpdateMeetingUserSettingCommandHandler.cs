@@ -18,6 +18,10 @@ public class AddOrUpdateMeetingUserSettingCommandHandler : ICommandHandler<AddOr
     
     public async Task<AddOrUpdateMeetingUserSettingResponse> Handle(IReceiveContext<AddOrUpdateMeetingUserSettingCommand> context, CancellationToken cancellationToken)
     {
-        return await _meetingService.AddOrUpdateMeetingUserSettingAsync(context.Message, cancellationToken).ConfigureAwait(false);
+        var @event = await _meetingService.AddOrUpdateMeetingUserSettingAsync(context.Message, cancellationToken).ConfigureAwait(false);
+        
+        await context.PublishAsync(@event, cancellationToken).ConfigureAwait(false);
+
+        return new AddOrUpdateMeetingUserSettingResponse();
     }
 }

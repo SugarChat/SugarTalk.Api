@@ -171,7 +171,7 @@ public partial class MeetingServiceFixture
         
         await Run<IMediator, IRepository>(async (mediator, db) =>
         {
-            await mediator.SendAsync<UpdateMeetingSpeechCommand, UpdateMeetingAudioResponse>(new UpdateMeetingSpeechCommand
+            await mediator.SendAsync<UpdateMeetingSpeechCommand, UpdateMeetingSpeechResponse>(new UpdateMeetingSpeechCommand
             {
                 MeetingSpeechId = speechId,
                 Status = SpeechStatus.Viewed

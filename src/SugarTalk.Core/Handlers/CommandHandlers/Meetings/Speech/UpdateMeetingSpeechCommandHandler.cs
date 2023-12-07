@@ -7,7 +7,7 @@ using SugarTalk.Messages.Commands.Speech;
 
 namespace SugarTalk.Core.Handlers.CommandHandlers.Meetings.Speech;
 
-public class UpdateMeetingSpeechCommandHandler : ICommandHandler<UpdateMeetingSpeechCommand, UpdateMeetingAudioResponse>
+public class UpdateMeetingSpeechCommandHandler : ICommandHandler<UpdateMeetingSpeechCommand, UpdateMeetingSpeechResponse>
 {
     private readonly IMeetingService _meetingService;
 
@@ -16,9 +16,16 @@ public class UpdateMeetingSpeechCommandHandler : ICommandHandler<UpdateMeetingSp
         _meetingService = meetingService;
     }
     
-    public async Task<UpdateMeetingAudioResponse> Handle(
+    public async Task<UpdateMeetingSpeechResponse> Handle(
         IReceiveContext<UpdateMeetingSpeechCommand> context, CancellationToken cancellationToken)
     {
-        return await _meetingService.UpdateMeetingSpeechAsync(context.Message, cancellationToken).ConfigureAwait(false);
+        var @event = await _meetingService.UpdateMeetingSpeechAsync(context.Message, cancellationToken).ConfigureAwait(false);
+        
+        await context.PublishAsync(@event, cancellationToken).ConfigureAwait(false);
+
+        return new UpdateMeetingSpeechResponse
+        {
+            Data = @event.Result
+        };
     }
 }

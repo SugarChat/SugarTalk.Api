@@ -12,6 +12,6 @@ public class UpdateMeetingSpeechCommand : ICommand
     public SpeechStatus Status { get; set; }
 }
 
-public class UpdateMeetingAudioResponse : SugarTalkResponse<string>
+public class UpdateMeetingSpeechResponse : SugarTalkResponse<string>
 {
 }

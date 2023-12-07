@@ -12,23 +12,24 @@ using SugarTalk.Messages.Commands.Speech;
 using SugarTalk.Messages.Requests.Speech;
 using SugarTalk.Messages.Dto.Meetings.Speech;
 using SugarTalk.Messages.Enums.Speech;
+using SugarTalk.Messages.Events.Meeting.Speech;
 
 namespace SugarTalk.Core.Services.Meetings;
 
 public partial interface IMeetingService
 {
-    Task<SaveMeetingAudioResponse> SaveMeetingAudioAsync(SaveMeetingAudioCommand command, CancellationToken cancellationToken);
+    Task<MeetingAudioSavedEvent> SaveMeetingAudioAsync(SaveMeetingAudioCommand command, CancellationToken cancellationToken);
     
     Task<GetMeetingAudioListResponse> GetMeetingAudioListAsync(GetMeetingAudioListRequest request, CancellationToken cancellationToken);
     
-    Task<UpdateMeetingAudioResponse> UpdateMeetingSpeechAsync(UpdateMeetingSpeechCommand command, CancellationToken cancellationToken);
+    Task<MeetingSpeechUpdatedEvent> UpdateMeetingSpeechAsync(UpdateMeetingSpeechCommand command, CancellationToken cancellationToken);
 }
 
 public partial class MeetingService
 {
-    public async Task<SaveMeetingAudioResponse> SaveMeetingAudioAsync(SaveMeetingAudioCommand command, CancellationToken cancellationToken)
+    public async Task<MeetingAudioSavedEvent> SaveMeetingAudioAsync(SaveMeetingAudioCommand command, CancellationToken cancellationToken)
     {
-        var result = new SaveMeetingAudioResponse { Data = "Unsuccessful" };
+        var response = new MeetingAudioSavedEvent { Result = "Unsuccessful" };
         
         if (!_currentUser.Id.HasValue) throw new UnauthorizedAccessException();
         
@@ -48,7 +49,7 @@ public partial class MeetingService
 
         Log.Information("SugarTalk response to text :{responseToText}", JsonConvert.SerializeObject(responseToText));
 
-        if (responseToText is null) return result;
+        if (responseToText is null) return response;
 
         var userSetting = await _meetingDataProvider
             .GetMeetingUserSettingByUserIdAsync(_currentUser.Id.Value, command.MeetingId, cancellationToken).ConfigureAwait(false);
@@ -64,9 +65,9 @@ public partial class MeetingService
         
         await _meetingDataProvider.PersistMeetingSpeechAsync(speech, cancellationToken).ConfigureAwait(false);
         
-        result.Data = "Successful";
+        response.Result = "Successful";
         
-        return result;
+        return response;
     }
 
     public async Task<GetMeetingAudioListResponse> GetMeetingAudioListAsync(GetMeetingAudioListRequest request, CancellationToken cancellationToken)
@@ -136,19 +137,19 @@ public partial class MeetingService
         }
     }
 
-    public async Task<UpdateMeetingAudioResponse> UpdateMeetingSpeechAsync(
+    public async Task<MeetingSpeechUpdatedEvent> UpdateMeetingSpeechAsync(
         UpdateMeetingSpeechCommand command, CancellationToken cancellationToken)
     {
         var meetingSpeech = await _meetingDataProvider
             .GetMeetingSpeechByIdAsync(command.MeetingSpeechId, cancellationToken).ConfigureAwait(false);
 
-        if (meetingSpeech is null) return new UpdateMeetingAudioResponse { Data = "unsuccessful" };
+        if (meetingSpeech is null) return new MeetingSpeechUpdatedEvent { Result = "unsuccessful" };
 
         meetingSpeech.Status = command.Status;
 
         await _unitOfWork.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
 
-        return new UpdateMeetingAudioResponse { Data = "success" };
+        return new MeetingSpeechUpdatedEvent { Result = "success" };
     }
     
     private static string HandleToBase64(string base64)

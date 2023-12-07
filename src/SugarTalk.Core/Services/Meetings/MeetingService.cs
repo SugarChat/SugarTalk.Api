@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.Intrinsics.Arm;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -27,6 +26,7 @@ using SugarTalk.Messages.Dto.Meetings.User;
 using SugarTalk.Messages.Dto.Users;
 using SugarTalk.Messages.Enums.Meeting;
 using SugarTalk.Messages.Events.Meeting;
+using SugarTalk.Messages.Events.Meeting.User;
 using SugarTalk.Messages.Requests.Meetings;
 using SugarTalk.Messages.Requests.Meetings.User;
 
@@ -54,7 +54,7 @@ namespace SugarTalk.Core.Services.Meetings
 
         Task<UpdateMeetingResponse> UpdateMeetingAsync(UpdateMeetingCommand command, CancellationToken cancellationToken);
         
-        Task<AddOrUpdateMeetingUserSettingResponse> AddOrUpdateMeetingUserSettingAsync(
+        Task<MeetingUserSettingAddOrUpdatedEvent> AddOrUpdateMeetingUserSettingAsync(
             AddOrUpdateMeetingUserSettingCommand command, CancellationToken cancellationToken);
 
         Task<GetMeetingUserSettingResponse> GetMeetingUserSettingAsync(GetMeetingUserSettingRequest request, CancellationToken cancellationToken);
@@ -286,12 +286,12 @@ namespace SugarTalk.Core.Services.Meetings
             return new UpdateMeetingResponse();
         }
 
-        public async Task<AddOrUpdateMeetingUserSettingResponse> AddOrUpdateMeetingUserSettingAsync(
+        public async Task<MeetingUserSettingAddOrUpdatedEvent> AddOrUpdateMeetingUserSettingAsync(
             AddOrUpdateMeetingUserSettingCommand command, CancellationToken cancellationToken)
         {
-            var result = new AddOrUpdateMeetingUserSettingResponse();
+            var response = new MeetingUserSettingAddOrUpdatedEvent();
 
-            if (!_currentUser.Id.HasValue) return result;
+            if (!_currentUser.Id.HasValue) return response;
 
             var userSetting = await _meetingDataProvider
                 .GetMeetingUserSettingByUserIdAsync(_currentUser.Id.Value, command.MeetingId, cancellationToken).ConfigureAwait(false);
@@ -313,7 +313,7 @@ namespace SugarTalk.Core.Services.Meetings
                 await _meetingDataProvider.UpdateMeetingUserSettingAsync(userSetting, cancellationToken).ConfigureAwait(false);
             }
             
-            return result;
+            return response;
         }
 
         public async Task<GetMeetingUserSettingResponse> GetMeetingUserSettingAsync(GetMeetingUserSettingRequest request, CancellationToken cancellationToken)

@@ -28,10 +28,10 @@ public class MeetingSpeechController : ControllerBase
     }
     
     [Route("update"), HttpPost]
-    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(UpdateMeetingAudioResponse))]
+    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(UpdateMeetingSpeechResponse))]
     public async Task<IActionResult> UpdateMeetingSpeechAsync(UpdateMeetingSpeechCommand command)
     {
-        var response = await _mediator.SendAsync<UpdateMeetingSpeechCommand, UpdateMeetingAudioResponse>(command);
+        var response = await _mediator.SendAsync<UpdateMeetingSpeechCommand, UpdateMeetingSpeechResponse>(command);
             
         return Ok(response);
     }
