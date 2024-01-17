@@ -37,7 +37,7 @@ public partial class MeetingService
         {
             Source = new Source
             {
-                Base64 = new Base64
+                Base64 = new Base64EncodedAudio
                 {
                     Encoded = HandleToBase64(command.AudioForBase64),
                     FileFormat = "wav"

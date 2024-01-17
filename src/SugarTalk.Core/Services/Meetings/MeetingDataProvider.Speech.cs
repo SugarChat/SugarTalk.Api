@@ -60,7 +60,6 @@ public partial class MeetingDataProvider
             .Where(x => x.MeetingId == meetingId)
             .ToListAsync(cancellationToken).ConfigureAwait(false);
         
-        //todo:
         var existMeetingUserSetting = userSettings.FirstOrDefault(x => x.UserId == _currentUser.Id.Value);
 
         if (existMeetingUserSetting != null) return existMeetingUserSetting;

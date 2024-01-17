@@ -88,11 +88,14 @@ public class TextTranslationDto
 
 public class Source
 {
-    [JsonProperty("base64")]
-    public Base64 Base64 { get; set; }
+    [JsonProperty("base64", NullValueHandling = NullValueHandling.Ignore)]
+    public Base64EncodedAudio Base64 { get; set; }
+
+    [JsonProperty("url", NullValueHandling = NullValueHandling.Ignore)]
+    public string Url { get; set; }
 }
 
-public class Base64
+public class Base64EncodedAudio
 {
     [JsonProperty("encoded")]
     public string Encoded { get; set; }
