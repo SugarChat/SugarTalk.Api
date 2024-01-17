@@ -4,7 +4,6 @@ using Mediator.Net.Context;
 using Mediator.Net.Contracts;
 using SugarTalk.Core.Services.Meetings;
 using SugarTalk.Messages.Commands.Speech;
-using SugarTalk.Messages.Events.Meeting.Speech;
 
 namespace SugarTalk.Core.Handlers.CommandHandlers.Meetings.Speech;
 

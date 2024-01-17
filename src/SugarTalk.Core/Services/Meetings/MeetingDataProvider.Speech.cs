@@ -5,7 +5,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using SugarTalk.Core.Domain.Meeting;
-using SugarTalk.Messages.Dto.Meetings.User;
 using SugarTalk.Messages.Enums.Speech;
 
 namespace SugarTalk.Core.Services.Meetings;
