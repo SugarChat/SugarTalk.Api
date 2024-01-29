@@ -29,8 +29,6 @@ public partial class MeetingService
 {
     public async Task<MeetingAudioSavedEvent> SaveMeetingAudioAsync(SaveMeetingAudioCommand command, CancellationToken cancellationToken)
     {
-        var response = new MeetingAudioSavedEvent { Result = "Unsuccessful" };
-        
         if (!_currentUser.Id.HasValue) throw new UnauthorizedAccessException();
 
         var responseToText = await _speechClient.GetTextFromAudioAsync(
@@ -50,25 +48,16 @@ public partial class MeetingService
 
         Log.Information("SugarTalk response to text :{responseToText}", JsonConvert.SerializeObject(responseToText));
 
-        if (responseToText is null) return response;
+        if (responseToText is null) return new MeetingAudioSavedEvent { Result = "Ai does not recognize the audio content" };
 
-        var userSetting = await _meetingDataProvider
-            .GetMeetingUserSettingByUserIdAsync(_currentUser.Id.Value, command.MeetingId, cancellationToken).ConfigureAwait(false);
-
-        if (userSetting is null) throw new NoFoundMeetingUserSettingForCurrentUserException(_currentUser.Id.Value);
-
-        var speech = new MeetingSpeech
+        await _meetingDataProvider.PersistMeetingSpeechAsync(new MeetingSpeech
         {
             MeetingId = command.MeetingId,
             UserId = _currentUser.Id.Value,
             OriginalText = responseToText.Result
-        };
+        }, cancellationToken).ConfigureAwait(false);
         
-        await _meetingDataProvider.PersistMeetingSpeechAsync(speech, cancellationToken).ConfigureAwait(false);
-        
-        response.Result = "Successful";
-        
-        return response;
+        return new MeetingAudioSavedEvent();
     }
 
     public async Task<GetMeetingAudioListResponse> GetMeetingAudioListAsync(GetMeetingAudioListRequest request, CancellationToken cancellationToken)
