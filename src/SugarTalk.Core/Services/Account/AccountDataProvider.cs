@@ -10,7 +10,6 @@ using Microsoft.EntityFrameworkCore;
 using SugarTalk.Core.Constants;
 using SugarTalk.Core.Data;
 using SugarTalk.Core.Domain.Account;
-using SugarTalk.Core.Domain.Account.Exceptions;
 using SugarTalk.Core.Extensions;
 using SugarTalk.Core.Ioc;
 using SugarTalk.Messages.Dto.Users;
@@ -37,6 +36,10 @@ namespace SugarTalk.Core.Services.Account
         List<Claim> GenerateClaimsFromUserAccount(UserAccountDto account);
         
         Task AllocateUserToRoleAsync(int userId, int roleId, CancellationToken cancellationToken);
+        
+        Task<List<UserAccount>> GetUserAccountsAsync(List<int> userIds, CancellationToken cancellationToken);
+        
+        Task<List<UserAccount>> GetUserAccountsAsync(int userId, CancellationToken cancellationToken);
     }
     
     public partial class AccountDataProvider : IAccountDataProvider
@@ -151,6 +154,26 @@ namespace SugarTalk.Core.Services.Account
                     Uuid = Guid.NewGuid()
                 }, cancellationToken).ConfigureAwait(false);
             }
+        }
+
+        public async Task<List<UserAccount>> GetUserAccountsAsync(List<int> userIds, CancellationToken cancellationToken)
+        {
+            if (userIds is not { Count: > 0 }) return new List<UserAccount>();
+
+            return await _repository.QueryNoTracking<UserAccount>()
+                .Where(x => userIds.Contains(x.Id)).ToListAsync(cancellationToken).ConfigureAwait(false);
+        }
+
+        public async Task<List<UserAccount>> GetUserAccountsAsync(int userId, CancellationToken cancellationToken)
+        {
+            var user = await _repository.QueryNoTracking<UserAccount>()
+                .Where(x => userId == x.Id).FirstOrDefaultAsync(cancellationToken).ConfigureAwait(false);
+            
+            if (user is null) return new List<UserAccount>();
+
+            return await _repository.QueryNoTracking<UserAccount>()
+                .Where(x => x.UserName.ToUpper().Contains(user.UserName.ToUpper()))
+                .ToListAsync(cancellationToken).ConfigureAwait(false);
         }
     }
 }

@@ -14,6 +14,7 @@ using SugarTalk.Core.Services.LiveKit;
 using SugarTalk.Messages.Enums.Meeting;
 using SugarTalk.Messages.Commands.Meetings;
 using SugarTalk.Core.Services.AntMediaServer;
+using SugarTalk.Messages.Enums.Speech;
 
 namespace SugarTalk.IntegrationTests.Utils.Meetings;
 
@@ -123,6 +124,23 @@ public class MeetingUtil : TestUtil
                 IsMuted = isMuted,
                 MeetingId = meetingId,
                 IsSharingScreen = isSharingScreen
+            }, CancellationToken.None);
+        });
+    }
+    
+    public async Task AddMeetingUserSetting(Guid id, int userId, Guid meetingId,
+        SpeechTargetLanguageType targetLanguageType, CantoneseToneType? cantoneseToneType, DateTimeOffset? lastModifiedDate = null)
+    {
+        await RunWithUnitOfWork<IRepository>(async repository =>
+        {
+            await repository.InsertAsync(new MeetingUserSetting
+            {
+                Id = id,
+                UserId = userId,
+                MeetingId = meetingId,
+                TargetLanguageType = targetLanguageType,
+                CantoneseToneType = cantoneseToneType ?? CantoneseToneType.HiuGaaiNeural,
+                LastModifiedDate = lastModifiedDate ?? DateTimeOffset.Now
             }, CancellationToken.None);
         });
     }

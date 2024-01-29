@@ -221,6 +221,23 @@ public class AccountFixture : AccountFixtureBase
         });
     }
 
+    [Fact]
+    public async Task CanGetSimilarUser()
+    {
+        var userAccount = await _accountUtil.AddUserAccount("greg.l", "123456", isActive: true);
+        
+        await _accountUtil.AddUserAccount("Greg.Liu", "123456", isActive: true);
+        await _accountUtil.AddUserAccount("GREG.L", "123456", isActive: true);
+        
+        await Run<IAccountDataProvider>(async accountDataProvider =>
+        {
+            var userAccounts = await accountDataProvider.GetUserAccountsAsync(userAccount.Id, CancellationToken.None);
+            
+            userAccounts.ShouldNotBeNull();
+            userAccounts.Count.ShouldBe(3);
+        });
+    }
+
     private async Task MarkUserAccountAsUnActivate(UserAccount userAccount)
     {
         userAccount.IsActive = false;

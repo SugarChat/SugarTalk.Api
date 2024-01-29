@@ -25,7 +25,7 @@ using Xunit;
 
 namespace SugarTalk.IntegrationTests.Services.Meetings;
 
-public class MeetingServiceFixture : MeetingFixtureBase
+public partial class MeetingServiceFixture : MeetingFixtureBase
 {
     private readonly MeetingUtil _meetingUtil;
     private readonly AccountUtil _accountUtil;

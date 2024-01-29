@@ -1,28 +1,34 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.Intrinsics.Arm;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using AutoMapper;
 using LiveKit_CSharp.Services.Meeting;
+using Newtonsoft.Json;
 using Serilog;
+using SugarTalk.Core.Data;
 using SugarTalk.Core.Domain.Meeting;
 using SugarTalk.Core.Extensions;
 using SugarTalk.Core.Ioc;
 using SugarTalk.Core.Services.Account;
 using SugarTalk.Core.Services.AntMediaServer;
 using SugarTalk.Core.Services.Exceptions;
+using SugarTalk.Core.Services.Http.Clients;
 using SugarTalk.Core.Services.Identity;
 using SugarTalk.Core.Services.LiveKit;
 using SugarTalk.Core.Settings.LiveKit;
 using SugarTalk.Messages.Commands.Meetings;
+using SugarTalk.Messages.Commands.Speech;
 using SugarTalk.Messages.Dto.Meetings;
+using SugarTalk.Messages.Dto.Meetings.User;
 using SugarTalk.Messages.Dto.Users;
 using SugarTalk.Messages.Enums.Meeting;
 using SugarTalk.Messages.Events.Meeting;
+using SugarTalk.Messages.Events.Meeting.User;
 using SugarTalk.Messages.Requests.Meetings;
+using SugarTalk.Messages.Requests.Meetings.User;
 
 namespace SugarTalk.Core.Services.Meetings
 {
@@ -47,6 +53,11 @@ namespace SugarTalk.Core.Services.Meetings
             UserAccountDto user, MeetingDto meeting, string streamId, MeetingStreamType streamType, bool? isMuted = null, CancellationToken cancellationToken = default);
 
         Task<UpdateMeetingResponse> UpdateMeetingAsync(UpdateMeetingCommand command, CancellationToken cancellationToken);
+        
+        Task<MeetingUserSettingAddOrUpdatedEvent> AddOrUpdateMeetingUserSettingAsync(
+            AddOrUpdateMeetingUserSettingCommand command, CancellationToken cancellationToken);
+
+        Task<GetMeetingUserSettingResponse> GetMeetingUserSettingAsync(GetMeetingUserSettingRequest request, CancellationToken cancellationToken);
     }
     
     public partial class MeetingService : IMeetingService
@@ -54,7 +65,9 @@ namespace SugarTalk.Core.Services.Meetings
         private const string appName = "LiveApp";
 
         private readonly IMapper _mapper;
+        private readonly IUnitOfWork _unitOfWork;
         private readonly ICurrentUser _currentUser;
+        private readonly ISpeechClient _speechClient;
         private readonly IAccountDataProvider _accountDataProvider;
         private readonly IMeetingDataProvider _meetingDataProvider;
         private readonly ILiveKitServerUtilService _liveKitServerUtilService;
@@ -64,15 +77,18 @@ namespace SugarTalk.Core.Services.Meetings
         
         public MeetingService(
             IMapper mapper, 
+            IUnitOfWork unitOfWork,
             ICurrentUser currentUser,
             IMeetingDataProvider meetingDataProvider,
             IAccountDataProvider accountDataProvider,
             IAntMediaServerUtilService antMediaServerUtilService, 
             ILiveKitServerUtilService liveKitServerUtilService,
-            LiveKitServerSetting liveKitServerSetting)
+            LiveKitServerSetting liveKitServerSetting, ISpeechClient speechClient)
         {
             _mapper = mapper;
+            _unitOfWork = unitOfWork;
             _currentUser = currentUser;
+            _speechClient = speechClient;
             _accountDataProvider = accountDataProvider;
             _meetingDataProvider = meetingDataProvider;
             _liveKitServerUtilService = liveKitServerUtilService;
@@ -141,10 +157,15 @@ namespace SugarTalk.Core.Services.Meetings
 
             await ConnectUserToMeetingAsync(user, meeting, command.StreamId, command.StreamType, command.IsMuted, cancellationToken).ConfigureAwait(false);
             
+            var userSetting = await _meetingDataProvider.DistributeLanguageForMeetingUserAsync(meeting.Id, cancellationToken).ConfigureAwait(false);
+            
+            Log.Information("SugarTalk get userSetting from JoinMeetingAsync :{userSetting}", JsonConvert.SerializeObject(userSetting));
+
             return new MeetingJoinedEvent
             {
                 Meeting = meeting,
-                Response = response
+                Response = response,
+                MeetingUserSetting = _mapper.Map<MeetingUserSettingDto>(userSetting)
             };
         }
         
@@ -263,6 +284,57 @@ namespace SugarTalk.Core.Services.Meetings
             await _meetingDataProvider.UpdateMeetingAsync(updateMeeting, cancellationToken).ConfigureAwait(false);
 
             return new UpdateMeetingResponse();
+        }
+
+        public async Task<MeetingUserSettingAddOrUpdatedEvent> AddOrUpdateMeetingUserSettingAsync(
+            AddOrUpdateMeetingUserSettingCommand command, CancellationToken cancellationToken)
+        {
+            var response = new MeetingUserSettingAddOrUpdatedEvent();
+
+            if (!_currentUser.Id.HasValue) return response;
+
+            var userSetting = await _meetingDataProvider
+                .GetMeetingUserSettingByUserIdAsync(_currentUser.Id.Value, command.MeetingId, cancellationToken).ConfigureAwait(false);
+            
+            if (userSetting is null)
+            {
+                await _meetingDataProvider.AddMeetingUserSettingAsync(new MeetingUserSetting
+                {
+                    UserId = _currentUser.Id.Value,
+                    MeetingId = command.MeetingId,
+                    TargetLanguageType = command.TargetLanguageType,
+                }, cancellationToken).ConfigureAwait(false);
+            }
+            else
+            {
+                userSetting.LastModifiedDate = DateTimeOffset.Now;
+                userSetting.TargetLanguageType = command.TargetLanguageType;
+                
+                await _meetingDataProvider.UpdateMeetingUserSettingAsync(userSetting, cancellationToken).ConfigureAwait(false);
+            }
+            
+            return response;
+        }
+
+        public async Task<GetMeetingUserSettingResponse> GetMeetingUserSettingAsync(GetMeetingUserSettingRequest request, CancellationToken cancellationToken)
+        {
+            if (!_currentUser.Id.HasValue) throw new UnauthorizedAccessException();
+
+            var userAccounts = await _accountDataProvider
+                .GetUserAccountsAsync(_currentUser.Id.Value, cancellationToken).ConfigureAwait(false);
+
+            var userIds = userAccounts.Select(x => x.Id).ToList();
+            
+            var userSettings = await _meetingDataProvider.GetMeetingUserSettingsAsync(userIds, cancellationToken).ConfigureAwait(false);
+
+            userSettings = userSettings.Where(x => x.MeetingId == request.MeetingId).ToList();
+            
+            if (userSettings is not { Count: > 0 }) return new GetMeetingUserSettingResponse();
+
+            return new GetMeetingUserSettingResponse
+            {
+                Data = _mapper.Map<MeetingUserSettingDto>(userSettings.FirstOrDefault())
+            };
         }
 
         private async Task<MeetingUserSessionStreamDto> AddMeetingUserSessionStreamIfRequiredAsync(
