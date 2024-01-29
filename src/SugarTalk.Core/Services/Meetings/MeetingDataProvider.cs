@@ -9,6 +9,7 @@ using Microsoft.EntityFrameworkCore;
 using SugarTalk.Core.Data;
 using SugarTalk.Core.Domain.Account;
 using SugarTalk.Core.Domain.Meeting;
+using SugarTalk.Core.Extensions;
 using SugarTalk.Core.Ioc;
 using SugarTalk.Core.Services.Account;
 using SugarTalk.Core.Services.Exceptions;
@@ -43,6 +44,8 @@ namespace SugarTalk.Core.Services.Meetings
         Task UpdateMeetingUserSettingAsync(MeetingUserSetting meetingUserSetting, CancellationToken cancellationToken);
         
         Task<MeetingUserSetting> GetMeetingUserSettingByUserIdAsync(int userId, Guid meetingId, CancellationToken cancellationToken);
+        
+        Task CheckMeetingSecurityCodeAsync(Guid meetingId, string securityCode, CancellationToken cancellationToken);
     }
     
     public partial class MeetingDataProvider : IMeetingDataProvider
@@ -96,6 +99,11 @@ namespace SugarTalk.Core.Services.Meetings
             if (meeting == null) throw new MeetingNotFoundException();
 
             var updateMeeting = _mapper.Map<MeetingDto>(meeting);
+
+            if (!string.IsNullOrEmpty(meeting.SecurityCode))
+            {
+                updateMeeting.IsPasswordEnabled = true;
+            }
 
             if (includeUserSessions)
             {
@@ -177,6 +185,16 @@ namespace SugarTalk.Core.Services.Meetings
             return await _repository.QueryNoTracking<MeetingUserSetting>()
                 .Where(x => x.UserId == userId && x.MeetingId == meetingId)
                 .FirstOrDefaultAsync(cancellationToken).ConfigureAwait(false);
+        }
+
+        public async Task CheckMeetingSecurityCodeAsync(Guid meetingId, string securityCode, CancellationToken cancellationToken)
+        {
+            var code = securityCode.ToSha256();
+
+            var isCorrect = await _repository.AnyAsync<Meeting>(x =>
+                x.Id == meetingId && x.SecurityCode == code, cancellationToken).ConfigureAwait(false);
+
+            if (!isCorrect) throw new MeetingSecurityCodeNotMatchException();
         }
     }
 }

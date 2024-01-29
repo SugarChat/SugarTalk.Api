@@ -59,6 +59,8 @@ public class MeetingBaseDto
     public bool IsMuted { get; set; } = false;
     
     public bool IsRecorded { get; set; } = false;
+    
+    public bool IsPasswordEnabled { get; set; } = false;
 }
 
 public class AddOrUpdateMeetingDto

@@ -422,6 +422,41 @@ public partial class MeetingServiceFixture : MeetingFixtureBase
         response.IsRecorded.ShouldBeTrue();
     }
 
+    [Fact]
+    public async Task ShouldCannotJoinMeetingWhenInputIncorrectMeetingPassword()
+    {
+        var scheduleMeetingResponse = await _meetingUtil.ScheduleMeeting(securityCode: "123456");
+        
+        await Run<IMediator>(async (mediator) =>
+        {
+            var meetingInfo = await mediator.RequestAsync<GetMeetingByNumberRequest, GetMeetingByNumberResponse>(
+                new GetMeetingByNumberRequest
+                {
+                    MeetingNumber = scheduleMeetingResponse.Data.MeetingNumber,
+                    IncludeUserSession = false
+                });
+            
+            meetingInfo.Data.IsPasswordEnabled.ShouldBeTrue();
+
+            await Assert.ThrowsAsync<MeetingSecurityCodeNotMatchException>(async () =>
+            {
+                await mediator.SendAsync<JoinMeetingCommand, JoinMeetingResponse>(new JoinMeetingCommand
+                {
+                    MeetingNumber = scheduleMeetingResponse.Data.MeetingNumber,
+                    SecurityCode = "666"
+                });
+            });
+        }, builder =>
+        {
+            var liveKitServerUtilService = Substitute.For<ILiveKitServerUtilService>();
+
+            liveKitServerUtilService.GenerateTokenForJoinMeeting(Arg.Any<UserAccountDto>(), Arg.Any<string>())
+                .Returns("token123");
+            
+            builder.RegisterInstance(liveKitServerUtilService);
+        });
+    }
+
     private void SetupMocking(ContainerBuilder builder)
     {
         var antMediaServerUtilService = Substitute.For<IAntMediaServerUtilService>();

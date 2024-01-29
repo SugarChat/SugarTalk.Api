@@ -105,10 +105,15 @@ namespace SugarTalk.Core.Services.Meetings
             };
             
             var meeting = await GenerateMeetingInfoFromThirdPartyServicesAsync(command.IsLiveKit, postData, cancellationToken).ConfigureAwait(false);
+
+            meeting = _mapper.Map(command, meeting);
             meeting.MeetingMasterUserId = _currentUser.Id.Value;
             meeting.MeetingStreamMode = MeetingStreamMode.LEGACY;
 
-            meeting = _mapper.Map(command, meeting);
+            if (!string.IsNullOrEmpty(command.SecurityCode))
+            {
+                meeting.SecurityCode = command.SecurityCode.ToSha256();
+            }
 
             await _meetingDataProvider.PersistMeetingAsync(meeting, cancellationToken).ConfigureAwait(false);
 
@@ -139,6 +144,12 @@ namespace SugarTalk.Core.Services.Meetings
             var user = await _accountDataProvider.GetUserAccountAsync(_currentUser.Id, cancellationToken: cancellationToken).ConfigureAwait(false);
             
             var meeting = await _meetingDataProvider.GetMeetingAsync(command.MeetingNumber, cancellationToken).ConfigureAwait(false);
+
+            if (meeting.IsPasswordEnabled)
+            {
+                await _meetingDataProvider
+                    .CheckMeetingSecurityCodeAsync(meeting.Id, command.SecurityCode, cancellationToken).ConfigureAwait(false);
+            }
 
             if (!command.IsLiveKit) return new MeetingJoinedEvent();
 

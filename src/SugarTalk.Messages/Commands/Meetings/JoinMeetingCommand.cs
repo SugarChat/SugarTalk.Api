@@ -12,6 +12,8 @@ public class JoinMeetingCommand : ICommand
     
     public string StreamId { get; set; }
     
+    public string SecurityCode { get; set; }
+    
     public MeetingStreamType StreamType { get; set; }
 
     public bool IsMuted { get; set; }
