@@ -40,23 +40,6 @@ public class MeetingHub : DynamicHub
         _antMediaServerUtilService = antMediaServerUtilService;
     }
 
-    public override async Task OnConnectedAsync()
-    {
-        var meetingSession = await _meetingDataProvider.GetMeetingAsync(meetingNumber).ConfigureAwait(false);
-
-        var userSession = meetingSession.UserSessions.SingleOrDefault(
-            x => x.UserSessionStreams.FirstOrDefault()?.StreamId == streamId);
-        
-        var otherUserSessions = meetingSession.UserSessions
-            .Where(x => x.UserSessionStreams.FirstOrDefault()?.StreamId != streamId).ToList();
-
-        await Groups.AddToGroupAsync(streamId, meetingNumber).ConfigureAwait(false);
-
-        Clients.Caller.SetLocalUser(userSession);
-        Clients.Caller.SetOtherUsers(otherUserSessions);
-        Clients.OthersInGroup(meetingNumber).OtherJoined(userSession);
-    }
-
     public async Task<MeetingDto> GetMeetingInfoAsync(bool includeUserSession = true)
     {
         var meetingResponse = await _meetingService
@@ -88,20 +71,6 @@ public class MeetingHub : DynamicHub
         await _meetingService.EndMeetingAsync(new EndMeetingCommand { MeetingNumber = meetingNumber }).ConfigureAwait(false);
         
         Clients.OthersInGroup(meetingNumber).OtherConnectionsClosed(peerConnectionIds);
-    }
-    
-    public void ProcessOffer(MeetingUserSessionDto sendFromUserSession, MeetingUserSessionDto sendToUserSession,
-        OfferPeerConnectionMediaType offerPeerConnectionMediaType, string offerPeerConnectionId, string offerToJson, string[] candidatesToJson)
-    {
-        Clients.Client(sendToUserSession.UserSessionStreams?.FirstOrDefault()?.StreamId)
-            .OtherOfferSent(sendFromUserSession, offerPeerConnectionMediaType, offerPeerConnectionId, offerToJson, candidatesToJson);
-    }
-
-    public void ProcessAnswer(MeetingUserSessionDto sendFromUserSession, MeetingUserSessionDto sendToUserSession,
-        string offerPeerConnectionId, string answerPeerConnectionId, string answerToJson, string[] candidatesToJson)
-    {
-        Clients.Client(sendToUserSession.UserSessionStreams?.FirstOrDefault()?.StreamId)
-            .OtherAnswerSent(sendFromUserSession, offerPeerConnectionId, answerPeerConnectionId, answerToJson, candidatesToJson);
     }
     
     public enum OfferPeerConnectionMediaType

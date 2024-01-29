@@ -12,7 +12,7 @@ public class MeetingDto : MeetingBaseDto
 
     //用于Live Kit server
     [JsonProperty("token")]
-    public string MeetingTokenFormLiveKit { get; set; }
+    public string MeetingTokenFromLiveKit { get; set; }
     
     public List<MeetingUserSessionDto> UserSessions { get; set; }
 

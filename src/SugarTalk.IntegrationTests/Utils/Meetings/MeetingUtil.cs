@@ -7,6 +7,7 @@ using System.Threading;
 using SugarTalk.Core.Data;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
+using SugarTalk.Core.Domain.Account;
 using SugarTalk.Core.Domain.Meeting;
 using SugarTalk.Messages.Dto.LiveKit;
 using SugarTalk.Messages.Dto.Meetings;
@@ -14,6 +15,7 @@ using SugarTalk.Core.Services.LiveKit;
 using SugarTalk.Messages.Enums.Meeting;
 using SugarTalk.Messages.Commands.Meetings;
 using SugarTalk.Core.Services.AntMediaServer;
+using SugarTalk.Messages.Dto.Users;
 using SugarTalk.Messages.Enums.Speech;
 
 namespace SugarTalk.IntegrationTests.Utils.Meetings;
@@ -47,15 +49,7 @@ public class MeetingUtil : TestUtil
             return response;
         }, builder =>
         {
-            var meetingUtilService = Substitute.For<IAntMediaServerUtilService>();
-
             var liveKitServerUtilService = Substitute.For<ILiveKitServerUtilService>();
-
-            meetingUtilService.CreateMeetingAsync(Arg.Any<string>(), Arg.Any<CreateMeetingDto>(), Arg.Any<CancellationToken>())
-                .Returns(new CreateMeetingResponseDto
-                {
-                    MeetingNumber = "123_ams"
-                });
 
             liveKitServerUtilService.CreateMeetingAsync(Arg.Any<string>(), Arg.Any<string>())
                 .Returns(new CreateMeetingFromLiveKitResponseDto
@@ -65,8 +59,10 @@ public class MeetingUtil : TestUtil
                         MeetingNumber = "123_livekit"
                     }
                 });
+
+            liveKitServerUtilService.GenerateTokenForCreateMeeting(Arg.Any<UserAccountDto>(), Arg.Any<string>())
+                .Returns("token123");
             
-            builder.RegisterInstance(meetingUtilService);
             builder.RegisterInstance(liveKitServerUtilService);
         });
     }
@@ -85,13 +81,12 @@ public class MeetingUtil : TestUtil
             return response.Data.Meeting;
         }, builder =>
         {
-            var antMediaServerUtilService = Substitute.For<IAntMediaServerUtilService>();
+            var liveKitServerUtilService = Substitute.For<ILiveKitServerUtilService>();
 
-            antMediaServerUtilService.AddStreamToMeetingAsync(Arg.Any<string>(), Arg.Any<string>(),
-                    Arg.Any<string>(), CancellationToken.None)
-                .Returns(new ConferenceRoomResponseBaseDto { Success = true });
-
-            builder.RegisterInstance(antMediaServerUtilService);
+            liveKitServerUtilService.GenerateTokenForJoinMeeting(Arg.Any<UserAccountDto>(), Arg.Any<string>())
+                .Returns("token123");
+            
+            builder.RegisterInstance(liveKitServerUtilService);
         });
     }
 

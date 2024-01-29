@@ -140,20 +140,9 @@ namespace SugarTalk.Core.Services.Meetings
             
             var meeting = await _meetingDataProvider.GetMeetingAsync(command.MeetingNumber, cancellationToken).ConfigureAwait(false);
 
-            var response = new ConferenceRoomResponseBaseDto();
-            
-            if (command.IsLiveKit)
-            {
-                var generateAccessToken = new GenerateAccessToken();
+            if (!command.IsLiveKit) return new MeetingJoinedEvent();
 
-                meeting.MeetingTokenFormLiveKit = generateAccessToken.JoinMeeting(
-                    meeting.MeetingNumber, _liveKitServerSetting.Apikey, _liveKitServerSetting.ApiSecret, user.Id.ToString(), user.UserName);
-            }
-            else
-            {
-                response = await _antMediaServerUtilService
-                    .AddStreamToMeetingAsync(appName, meeting.MeetingNumber, command.StreamId, cancellationToken).ConfigureAwait(false);
-            }
+            meeting.MeetingTokenFromLiveKit = _liveKitServerUtilService.GenerateTokenForJoinMeeting(user, meeting.MeetingNumber);
 
             await ConnectUserToMeetingAsync(user, meeting, command.StreamId, command.StreamType, command.IsMuted, cancellationToken).ConfigureAwait(false);
             
@@ -164,7 +153,6 @@ namespace SugarTalk.Core.Services.Meetings
             return new MeetingJoinedEvent
             {
                 Meeting = meeting,
-                Response = response,
                 MeetingUserSetting = _mapper.Map<MeetingUserSettingDto>(userSetting)
             };
         }
@@ -176,18 +164,9 @@ namespace SugarTalk.Core.Services.Meetings
 
             if (userSession == null) return new MeetingOutedEvent();
 
-            var meeting = await _meetingDataProvider.GetMeetingByIdAsync(command.MeetingId, cancellationToken).ConfigureAwait(false);
+            // TODO: 更新用户退出会议时间, 会议时长
 
-            var response = await _antMediaServerUtilService
-                .RemoveStreamFromMeetingAsync(appName, meeting.MeetingNumber, command.StreamId, cancellationToken).ConfigureAwait(false);
-
-            await _meetingDataProvider
-                .RemoveMeetingUserSessionStreamsAsync(new List<int> { userSession.Id }, cancellationToken).ConfigureAwait(false);
-           
-            await _meetingDataProvider
-                .RemoveMeetingUserSessionsAsync(new List<MeetingUserSession> { userSession }, cancellationToken).ConfigureAwait(false);
-            
-            return new MeetingOutedEvent { Response = response };
+            return new MeetingOutedEvent();
         }
         
         public async Task<MeetingEndedEvent> EndMeetingAsync(EndMeetingCommand command, CancellationToken cancellationToken)
@@ -196,17 +175,7 @@ namespace SugarTalk.Core.Services.Meetings
 
             if (meeting.MeetingMasterUserId != _currentUser.Id) throw new CannotEndMeetingWhenUnauthorizedException();
 
-            await _meetingDataProvider.RemoveMeetingUserSessionStreamsAsync(
-                meeting.UserSessions.Select(x => x.Id).ToList(), cancellationToken).ConfigureAwait(false);
-
-            await _meetingDataProvider.RemoveMeetingUserSessionsAsync(
-                _mapper.Map<List<MeetingUserSession>>(meeting.UserSessions), cancellationToken).ConfigureAwait(false);
-
-            var response = await _antMediaServerUtilService
-                .RemoveMeetingByMeetingNumberAsync(appName, meeting.MeetingNumber, cancellationToken)
-                .ConfigureAwait(false);
-
-            if (!response.Success) return new MeetingEndedEvent();
+            // TODO: 更新会议结束时间, 会议时长，更新会议中的用户状态
 
             return new MeetingEndedEvent
             {
@@ -234,11 +203,6 @@ namespace SugarTalk.Core.Services.Meetings
                 await _meetingDataProvider.AddMeetingUserSessionAsync(userSession, cancellationToken).ConfigureAwait(false);
                 
                 var updateUserSession = _mapper.Map<MeetingUserSessionDto>(userSession);
-                
-                var userSessionStream =
-                    await AddMeetingUserSessionStreamIfRequiredAsync(updateUserSession.Id, streamId, streamType, cancellationToken).ConfigureAwait(false);
-
-                updateUserSession.UserSessionStreams = new List<MeetingUserSessionStreamDto> { userSessionStream };
 
                 updateUserSession.UserName = user.UserName;
                 
@@ -250,11 +214,6 @@ namespace SugarTalk.Core.Services.Meetings
                     userSession.IsMuted = isMuted.Value;
 
                 var updateUserSession = _mapper.Map<MeetingUserSessionDto>(userSession);
-
-                var userSessionStreams = 
-                    await _meetingDataProvider.GetMeetingUserSessionStreamsAsync(updateUserSession.Id, cancellationToken).ConfigureAwait(false);
-
-                updateUserSession.UserSessionStreams = _mapper.Map<List<MeetingUserSessionStreamDto>>(userSessionStreams);
 
                 updateUserSession.UserName = user.UserName;
 
@@ -362,10 +321,7 @@ namespace SugarTalk.Core.Services.Meetings
             
             if (isLiveKit)
             {
-                var generateAccessToken = new GenerateAccessToken();
-                
-                var token = generateAccessToken.CreateMeeting(
-                    postData.MeetingNumber, _liveKitServerSetting.Apikey, _liveKitServerSetting.ApiSecret, user.Id.ToString(), user.UserName);
+                var token = _liveKitServerUtilService.GenerateTokenForCreateMeeting(user, postData.MeetingNumber);
 
                 Log.Information("Generate liveKit token:{token}", token);
 

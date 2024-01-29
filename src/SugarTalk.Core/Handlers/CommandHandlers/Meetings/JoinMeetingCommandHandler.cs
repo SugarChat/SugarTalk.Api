@@ -27,7 +27,6 @@ namespace SugarTalk.Core.Handlers.CommandHandlers.Meetings
                 Data = new JoinMeetingResponseData
                 {
                     Meeting = @event.Meeting,
-                    Response = @event.Response,
                     MeetingUserSetting = @event.MeetingUserSetting
                 }
             };

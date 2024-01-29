@@ -113,24 +113,14 @@ namespace SugarTalk.Core.Services.Meetings
         {
             var userIds = userSessions.Select(x => x.UserId);
 
-            var userSessionIds = userSessions.Select(x => x.Id);
-
             var userAccounts = await _repository
                 .ToListAsync<UserAccount>(x => userIds.Contains(x.Id), cancellationToken).ConfigureAwait(false);
-
-            var userSessionStreams = await _repository.Query<MeetingUserSessionStream>()
-                .Where(x => userSessionIds.Contains(x.MeetingUserSessionId))
-                .ProjectTo<MeetingUserSessionStreamDto>(_mapper.ConfigurationProvider)
-                .ToListAsync(cancellationToken).ConfigureAwait(false);
 
             userSessions.ForEach(userSession =>
             {
                 userSession.UserName = userAccounts
                     .Where(x => x.Id == userSession.UserId)
                     .Select(x => x.UserName).FirstOrDefault();
-
-                userSession.UserSessionStreams =
-                    userSessionStreams.Where(x => x.MeetingUserSessionId == userSession.Id).ToList();
             });
         }
         

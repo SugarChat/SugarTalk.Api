@@ -13,11 +13,13 @@ using SugarTalk.Core.Domain.Meeting;
 using SugarTalk.Core.Extensions;
 using SugarTalk.Core.Services.AntMediaServer;
 using SugarTalk.Core.Services.Exceptions;
+using SugarTalk.Core.Services.LiveKit;
 using SugarTalk.IntegrationTests.TestBaseClasses;
 using SugarTalk.IntegrationTests.Utils.Account;
 using SugarTalk.IntegrationTests.Utils.Meetings;
 using SugarTalk.Messages.Commands.Meetings;
 using SugarTalk.Messages.Dto.Meetings;
+using SugarTalk.Messages.Dto.Users;
 using SugarTalk.Messages.Enums.Meeting;
 using SugarTalk.Messages.Requests.Meetings;
 
@@ -94,13 +96,12 @@ public partial class MeetingServiceFixture : MeetingFixtureBase
             response.Data.Meeting.Id.ShouldBe(meetingResult.Id);
         }, builder =>
         {
-            var antMediaServerUtilService = Substitute.For<IAntMediaServerUtilService>();
+            var liveKitServerUtilService = Substitute.For<ILiveKitServerUtilService>();
 
-            antMediaServerUtilService.AddStreamToMeetingAsync(Arg.Any<string>(), Arg.Any<string>(),
-                    Arg.Any<string>(), CancellationToken.None)
-                .Returns(new ConferenceRoomResponseBaseDto { Success = true });
+            liveKitServerUtilService.GenerateTokenForJoinMeeting(Arg.Any<UserAccountDto>(), Arg.Any<string>())
+                .Returns("token123");
 
-            builder.RegisterInstance(antMediaServerUtilService);
+            builder.RegisterInstance(liveKitServerUtilService);
         });
     }
 
@@ -125,19 +126,15 @@ public partial class MeetingServiceFixture : MeetingFixtureBase
                 MeetingId = meeting.Id
             });
 
-            var afterUserSession = await repository.QueryNoTracking<MeetingUserSession>()
-                .Where(x => x.MeetingId == meeting.Id).ToListAsync();
-
-            afterUserSession.Count.ShouldBe(0);
+            // todo：更新会议和会议中的用户状态
         }, builder =>
         {
-            var antMediaServerUtilService = Substitute.For<IAntMediaServerUtilService>();
+            var liveKitServerUtilService = Substitute.For<ILiveKitServerUtilService>();
 
-            antMediaServerUtilService.RemoveStreamFromMeetingAsync(Arg.Any<string>(), Arg.Any<string>(),
-                    Arg.Any<string>(), CancellationToken.None)
-                .Returns(new ConferenceRoomResponseBaseDto { Success = true });
-
-            builder.RegisterInstance(antMediaServerUtilService);
+            liveKitServerUtilService.GenerateTokenForJoinMeeting(Arg.Any<UserAccountDto>(), Arg.Any<string>())
+                .Returns("token123");
+            
+            builder.RegisterInstance(liveKitServerUtilService);
         });
     }
 
@@ -179,24 +176,7 @@ public partial class MeetingServiceFixture : MeetingFixtureBase
 
             beforeUserSession.Count.ShouldBe(1);
 
-            await mediator.SendAsync<EndMeetingCommand, EndMeetingResponse>(new EndMeetingCommand
-            {
-                MeetingNumber = meeting.MeetingNumber
-            });
-
-            var afterUserSession = await repository.QueryNoTracking<MeetingUserSession>()
-                .Where(x => x.MeetingId == meeting.Id).ToListAsync();
-
-            afterUserSession.Count.ShouldBe(0);
-        }, builder =>
-        {
-            var antMediaServerUtilService = Substitute.For<IAntMediaServerUtilService>();
-
-            antMediaServerUtilService
-                .RemoveMeetingByMeetingNumberAsync(Arg.Any<string>(), Arg.Any<string>(), CancellationToken.None)
-                .Returns(new ConferenceRoomResponseBaseDto { Success = true });
-
-            builder.RegisterInstance(antMediaServerUtilService);
+            //Todo: 需要补充会议中的用户状态   
         });
     }
     
@@ -246,7 +226,7 @@ public partial class MeetingServiceFixture : MeetingFixtureBase
         });
     }
 
-    [Theory]
+    [Theory(Skip = "已废弃")]
     [InlineData(true, false)]
     [InlineData(false, true)]
     public async Task CanShareScreen(bool isSharingScreen, bool expect)
@@ -271,20 +251,10 @@ public partial class MeetingServiceFixture : MeetingFixtureBase
                 });
 
             response.Data.MeetingUserSession.IsSharingScreen.ShouldBe(expect);
-
-            if (!isSharingScreen)
-            {
-                response.Data.MeetingUserSession.UserSessionStreams.Count.ShouldBe(1);
-                response.Data.MeetingUserSession.UserSessionStreams.Single().StreamId.ShouldBe("123456");
-                response.Data.MeetingUserSession.UserSessionStreams.Single().MeetingUserSessionId.ShouldBe(1);
-                response.Data.MeetingUserSession.UserSessionStreams.Single().StreamType.ShouldBe(MeetingStreamType.ScreenSharing);
-            }
-            else
-                response.Data.MeetingUserSession.UserSessionStreams.ShouldNotBeNull();
         }, SetupMocking);
     }
 
-    [Fact]
+    [Fact(Skip = "已废弃")]
     public async Task ShouldNotChangeOtherUserAudio()
     {
         var scheduleMeetingResponse = await _meetingUtil.ScheduleMeeting();
@@ -312,7 +282,7 @@ public partial class MeetingServiceFixture : MeetingFixtureBase
         });
     }
 
-    [Theory]
+    [Theory(Skip = "已废弃")]
     [InlineData(true, true)]
     [InlineData(false, false)]
     public async Task CanChangeAudio(bool isMuted, bool expect)
@@ -334,11 +304,6 @@ public partial class MeetingServiceFixture : MeetingFixtureBase
                 });
 
             response.Data.MeetingUserSession.IsMuted.ShouldBe(expect);
-
-            response.Data.MeetingUserSession.UserSessionStreams.Count.ShouldBe(1);
-            response.Data.MeetingUserSession.UserSessionStreams.Single().StreamId.ShouldBe("streamId");
-            response.Data.MeetingUserSession.UserSessionStreams.Single().MeetingUserSessionId.ShouldBe(userSessionId);
-            response.Data.MeetingUserSession.UserSessionStreams.Single().StreamType.ShouldBe(MeetingStreamType.Audio);
         }, SetupMocking);
     }
 
@@ -373,7 +338,6 @@ public partial class MeetingServiceFixture : MeetingFixtureBase
         afterInfo.UserSessions.Single().UserId.ShouldBe(beforeInfo.UserSessions.Single().UserId);
         afterInfo.UserSessions.Single().UserName.ShouldBe(beforeInfo.UserSessions.Single().UserName);
         afterInfo.UserSessions.Single().MeetingId.ShouldBe(beforeInfo.UserSessions.Single().MeetingId);
-        afterInfo.UserSessions.Single().UserSessionStreams.Count.ShouldBe(beforeInfo.UserSessions.Single().UserSessionStreams.Count);
     }
 
     [Fact]

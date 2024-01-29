@@ -16,7 +16,7 @@ public class JoinMeetingCommand : ICommand
 
     public bool IsMuted { get; set; }
 
-    public bool IsLiveKit { get; set; } = false;
+    public bool IsLiveKit { get; set; } = true;
 }
 
 public class JoinMeetingResponse : SugarTalkResponse<JoinMeetingResponseData>
@@ -28,6 +28,4 @@ public class JoinMeetingResponseData
     public MeetingDto Meeting { get; set; }
     
     public MeetingUserSettingDto MeetingUserSetting { get; set; }
-    
-    public ConferenceRoomResponseBaseDto Response { get; set; }
 }

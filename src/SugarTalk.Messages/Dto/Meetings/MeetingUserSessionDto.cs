@@ -1,6 +1,4 @@
 using System;
-using System.Collections.Generic;
-using Newtonsoft.Json;
 
 namespace SugarTalk.Messages.Dto.Meetings;
 
@@ -19,6 +17,4 @@ public class MeetingUserSessionDto
     public bool IsMuted { get; set; }
     
     public bool IsSharingScreen { get; set; }
-    
-    public List<MeetingUserSessionStreamDto> UserSessionStreams { get; set; }
 }

@@ -10,25 +10,11 @@ public partial class EventHandlingService
 {
     public async Task HandlingEventAsync(AudioChangedEvent @event, CancellationToken cancellationToken)
     {
-        if (@event?.MeetingUserSession == null) return;
-
-        var meeting = await _meetingDataProvider
-            .GetMeetingByIdAsync(@event.MeetingUserSession.MeetingId, cancellationToken).ConfigureAwait(false);
-
-        await _meetingHub.Clients
-            .GroupExcept(meeting.MeetingNumber, @event.MeetingUserSession.UserSessionStreams.FirstOrDefault().StreamId)
-            .SendAsync("OtherAudioChangedAsync", @event.MeetingUserSession, cancellationToken).ConfigureAwait(false);
+        // 现已使用LiveKit的SDK控制
     }
 
     public async Task HandlingEventAsync(ScreenSharedEvent @event, CancellationToken cancellationToken)
     {
-        if (@event?.MeetingUserSession.UserSessionStreams is not { Count: > 0 }) return;
-        
-        var meeting = await _meetingDataProvider
-            .GetMeetingByIdAsync(@event.MeetingUserSession.MeetingId, cancellationToken).ConfigureAwait(false);
-
-        await _meetingHub.Clients
-            .GroupExcept(meeting.MeetingNumber, @event.MeetingUserSession.UserSessionStreams.FirstOrDefault().StreamId)
-            .SendAsync("OtherScreenSharedAsync", @event.MeetingUserSession, cancellationToken).ConfigureAwait(false);
+        // 现已使用LiveKit的SDK控制
     }
 }

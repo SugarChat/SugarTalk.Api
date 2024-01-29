@@ -22,6 +22,6 @@ public class OutMeetingCommandHandler : ICommandHandler<OutMeetingCommand, OutMe
         
         await context.PublishAsync(@event, cancellationToken).ConfigureAwait(false);
 
-        return new OutMeetingResponse { Data = @event.Response };
+        return new OutMeetingResponse();
     }
 }

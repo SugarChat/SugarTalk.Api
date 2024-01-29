@@ -9,6 +9,4 @@ public class MeetingJoinedEvent : IEvent
     public MeetingDto Meeting { get; set; }
     
     public MeetingUserSettingDto MeetingUserSetting { get; set; }
-    
-    public ConferenceRoomResponseBaseDto Response { get; set; }
 }

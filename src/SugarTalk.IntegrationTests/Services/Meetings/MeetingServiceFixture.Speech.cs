@@ -10,12 +10,12 @@ using NSubstitute;
 using Shouldly;
 using SugarTalk.Core.Data;
 using SugarTalk.Core.Domain.Meeting;
-using SugarTalk.Core.Services.AntMediaServer;
 using SugarTalk.Core.Services.Http.Clients;
+using SugarTalk.Core.Services.LiveKit;
 using SugarTalk.Messages.Commands.Meetings;
 using SugarTalk.Messages.Commands.Speech;
-using SugarTalk.Messages.Dto.Meetings;
 using SugarTalk.Messages.Dto.Meetings.Speech;
+using SugarTalk.Messages.Dto.Users;
 using SugarTalk.Messages.Enums.Speech;
 using SugarTalk.Messages.Requests.Meetings.User;
 using SugarTalk.Messages.Requests.Speech;
@@ -209,16 +209,14 @@ public partial class MeetingServiceFixture
             });
             
             responseUserSetting.Data.UserId.ShouldBe(currentUser.Id.Value);
-
         }, builder =>
         {
-            var antMediaServerUtilService = Substitute.For<IAntMediaServerUtilService>();
+            var liveKitServerUtilService = Substitute.For<ILiveKitServerUtilService>();
 
-            antMediaServerUtilService.AddStreamToMeetingAsync(Arg.Any<string>(), Arg.Any<string>(),
-                    Arg.Any<string>(), CancellationToken.None)
-                .Returns(new ConferenceRoomResponseBaseDto { Success = true });
-
-            builder.RegisterInstance(antMediaServerUtilService);
+            liveKitServerUtilService.GenerateTokenForJoinMeeting(Arg.Any<UserAccountDto>(), Arg.Any<string>())
+                .Returns("token123");
+            
+            builder.RegisterInstance(liveKitServerUtilService);
         });
     }
 }
