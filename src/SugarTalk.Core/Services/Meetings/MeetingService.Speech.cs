@@ -32,20 +32,21 @@ public partial class MeetingService
         var response = new MeetingAudioSavedEvent { Result = "Unsuccessful" };
         
         if (!_currentUser.Id.HasValue) throw new UnauthorizedAccessException();
-        
-        var responseToText = await _speechClient.GetTextFromAudioAsync(new SpeechToTextDto
-        {
-            Source = new Source
+
+        var responseToText = await _speechClient.GetTextFromAudioAsync(
+            new SpeechToTextDto
             {
-                Base64 = new Base64EncodedAudio
+                Source = new Source
                 {
-                    Encoded = HandleToBase64(command.AudioForBase64),
-                    FileFormat = "wav"
-                }
-            },
-            LanguageId = 20,
-            ResponseFormat = "text"
-        }, cancellationToken).ConfigureAwait(false);
+                    Base64 = new Base64EncodedAudio
+                    {
+                        Encoded = HandleToBase64(command.AudioForBase64),
+                        FileFormat = "wav"
+                    }
+                },
+                LanguageId = 20,
+                ResponseFormat = "text"
+            }, cancellationToken).ConfigureAwait(false);
 
         Log.Information("SugarTalk response to text :{responseToText}", JsonConvert.SerializeObject(responseToText));
 
