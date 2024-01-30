@@ -1,16 +1,12 @@
 using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Security.Authentication;
 using System.Threading;
 using System.Threading.Tasks;
-using Serilog;
-using SugarTalk.Core.Domain.Meeting;
+using System.Collections.Generic;
 using SugarTalk.Core.Services.Exceptions;
-using SugarTalk.Messages.Commands.Meetings;
 using SugarTalk.Messages.Dto.Meetings;
-using SugarTalk.Messages.Enums.Meeting;
 using SugarTalk.Messages.Events.Meeting;
+using SugarTalk.Messages.Commands.Meetings;
 using SugarTalk.Messages.Requests.Meetings;
 
 namespace SugarTalk.Core.Services.Meetings;
@@ -115,8 +111,6 @@ public partial class MeetingService
 
         if (user is null) throw new UnauthorizedAccessException();
         
-        Log.Information("userSession: {userSession}", userSession);
-
         var userSessionDto = _mapper.Map<MeetingUserSessionDto>(userSession);
         userSessionDto.UserName = user.UserName;
         

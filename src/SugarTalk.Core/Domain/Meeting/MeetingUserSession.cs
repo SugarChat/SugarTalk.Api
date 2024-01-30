@@ -28,16 +28,16 @@ public class MeetingUserSession : IEntity
     public MeetingAttendeeStatus Status { get; set; }
     
     [Column("first_join_time")]
-    public long FirstJoinTime { get; set; }
+    public long? FirstJoinTime { get; set; }
     
     [Column("last_quit_time")]
-    public long LastQuitTime { get; set; }
+    public long? LastQuitTime { get; set; }
     
     [Column("total_join_count")]
     public int TotalJoinCount { get; set; }
     
     [Column("cumulative_time")]
-    public long CumulativeTime { get; set; }
+    public long? CumulativeTime { get; set; }
 
     [Column("is_muted", TypeName = "tinyint(1)")]
     public bool IsMuted { get; set; }
