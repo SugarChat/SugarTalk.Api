@@ -64,6 +64,7 @@
         <EmbeddedResource Include="DbUp\Scripts_2023\Script0010_add_parameter_for_meeting_speech_table.sql" />
         <EmbeddedResource Include="DbUp\Scripts_2023\Script0011_add_meeting_user_setting_table.sql" />
         <EmbeddedResource Include="DbUp\Scripts_2023\Script0012_alter_meeting_user_setting_table.sql" />
+        <EmbeddedResource Include="DbUp\Scripts_2024\Script0001_alter_meeting_table.sql" />
     </ItemGroup>
     
     <ItemGroup>

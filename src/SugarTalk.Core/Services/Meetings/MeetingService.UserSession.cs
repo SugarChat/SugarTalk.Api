@@ -70,15 +70,15 @@ public partial class MeetingService
             {
                 userSession.IsSharingScreen = true;
                 
-                await AddMeetingUserSessionStreamAsync(
-                    userSession.Id, command.StreamId, MeetingStreamType.ScreenSharing, cancellationToken).ConfigureAwait(false);
+                // await AddMeetingUserSessionStreamAsync(
+                //     userSession.Id, command.StreamId, MeetingStreamType.ScreenSharing, cancellationToken).ConfigureAwait(false);
             }
         }
         else
         {
             userSession.IsSharingScreen = false;
 
-            await RemoveMeetingUserSessionStreamAsync(userSession.Id, MeetingStreamType.ScreenSharing, cancellationToken).ConfigureAwait(false);
+            // await RemoveMeetingUserSessionStreamAsync(userSession.Id, MeetingStreamType.ScreenSharing, cancellationToken).ConfigureAwait(false);
         }
 
         await _meetingDataProvider
@@ -112,35 +112,5 @@ public partial class MeetingService
         {
             Data = _mapper.Map<MeetingUserSessionDto>(userSession)
         };
-    }
-
-    private async Task AddMeetingUserSessionStreamAsync(
-        int userSessionId, string streamId, MeetingStreamType streamType, CancellationToken cancellationToken)
-    {
-        var userSessionStream = new MeetingUserSessionStream
-        {
-            StreamId = streamId,
-            StreamType = streamType,
-            MeetingUserSessionId = userSessionId
-        };
-
-        var userSessionStreams = 
-            await _meetingDataProvider.GetMeetingUserSessionStreamsAsync(userSessionId, cancellationToken).ConfigureAwait(false);
-
-        if (userSessionStreams.Any(x => x.StreamType == streamType))
-            throw new CannotAddStreamWhenStreamTypeExistException(streamType);
-        
-        await _meetingDataProvider
-            .AddMeetingUserSessionStreamAsync(userSessionStream, cancellationToken).ConfigureAwait(false);
-    }
-
-    private async Task RemoveMeetingUserSessionStreamAsync(
-        int userSessionId, MeetingStreamType streamType, CancellationToken cancellationToken)
-    {
-        var userSessionStreams = await _meetingDataProvider
-            .GetMeetingUserSessionStreamsAsync(userSessionId, cancellationToken).ConfigureAwait(false);
-
-        await _meetingDataProvider.RemoveMeetingUserSessionStreamsAsync(
-            userSessionStreams.Where(x => x.StreamType == streamType).ToList(), cancellationToken).ConfigureAwait(false);
     }
 }

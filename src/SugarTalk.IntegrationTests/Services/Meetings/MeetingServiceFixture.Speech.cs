@@ -161,8 +161,6 @@ public partial class MeetingServiceFixture
                     Id = speechId,
                     MeetingId = Guid.NewGuid(),
                     OriginalText = "text",
-                    TranslatedText = "translated_text",
-                    VoiceUrl = "test.url",
                     UserId = currentUser.Id.Value,
                     Status = SpeechStatus.UnViewed
                 }

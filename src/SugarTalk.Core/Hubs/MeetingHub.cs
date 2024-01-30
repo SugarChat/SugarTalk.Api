@@ -50,20 +50,10 @@ public class MeetingHub : DynamicHub
     
     public async Task DrawOnCanvasAsync(string drawingData)
     {
-        var userSession = await _meetingDataProvider.GetUserSessionByStreamIdAsync(streamId).ConfigureAwait(false);
-        
-        if (userSession != null)
-            Clients.OthersInGroup(meetingNumber).CanvasDrawingReceived(userSession.UserId, drawingData);
     }
     
     public override async Task OnDisconnectedAsync(Exception exception)
     {
-        var userSession = await _meetingDataProvider.GetUserSessionByStreamIdAsync(streamId).ConfigureAwait(false);
-        
-        if (userSession != null)
-            Clients.OthersInGroup(meetingNumber).OtherLeft(userSession);
-        
-        await base.OnDisconnectedAsync(exception).ConfigureAwait(false);
     }
 
     public async Task ConnectionsClosedAsync(IEnumerable<string> peerConnectionIds)
