@@ -1,35 +1,27 @@
 using System;
-using SugarTalk.Messages.Enums.Speech;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace SugarTalk.Core.Domain.Meeting;
 
-[Table("meeting_speech")]
-public class MeetingSpeech : IEntity
+[Table("meeting_record")]
+public class MeetingRecord : IEntity
 {
-    public MeetingSpeech()
+    public MeetingRecord()
     {
-        Status = SpeechStatus.UnViewed;
         CreatedDate = DateTimeOffset.Now;
     }
 
     [Key]
     [Column("id", TypeName = "char(36)")]
     public Guid Id { get; set; }
-
+    
     [Column("meeting_id", TypeName = "char(36)")]
     public Guid MeetingId { get; set; }
-
-    [Column("user_id")] 
-    public int UserId { get; set; }
-
-    [Column("original_text")] 
-    public string OriginalText { get; set; }
-
-    [Column("created_date")] 
+    
+    [Column("url"), StringLength(512)]
+    public string Url { get; set; }
+    
+    [Column("created_date")]
     public DateTimeOffset CreatedDate { get; set; }
-
-    [Column("status")]
-    public SpeechStatus Status { get; set; }
 }

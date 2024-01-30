@@ -187,9 +187,6 @@ namespace SugarTalk.Core.Services.Meetings
         public async Task ConnectUserToMeetingAsync(
             UserAccountDto user, MeetingDto meeting, string streamId, MeetingStreamType streamType, bool? isMuted = null, CancellationToken cancellationToken = default)
         {
-            await _meetingDataProvider
-                .RemoveMeetingUserSessionsIfRequiredAsync(user.Id, meeting.Id, cancellationToken).ConfigureAwait(false);
-            
             var userSession = meeting.UserSessions
                 .Where(x => x.UserId == user.Id)
                 .OrderByDescending(x => x.CreatedDate)
@@ -213,12 +210,12 @@ namespace SugarTalk.Core.Services.Meetings
                 if (isMuted.HasValue)
                     userSession.IsMuted = isMuted.Value;
 
+                await _meetingDataProvider.UpdateMeetingUserSessionAsync(userSession, cancellationToken).ConfigureAwait(false);
+                
                 var updateUserSession = _mapper.Map<MeetingUserSessionDto>(userSession);
 
                 updateUserSession.UserName = user.UserName;
 
-                await _meetingDataProvider.UpdateMeetingUserSessionAsync(userSession, cancellationToken).ConfigureAwait(false);
-                
                 meeting.UpdateUserSession(updateUserSession);
             }
         }
@@ -296,23 +293,6 @@ namespace SugarTalk.Core.Services.Meetings
             };
         }
 
-        private async Task<MeetingUserSessionStreamDto> AddMeetingUserSessionStreamIfRequiredAsync(
-            int userSessionId, string streamId, MeetingStreamType streamType, CancellationToken cancellationToken = default)
-        {
-            if (string.IsNullOrEmpty(streamId)) return null;
-            
-            var userSessionStream = new MeetingUserSessionStream
-            {
-                StreamId = streamId,
-                StreamType = streamType,
-                MeetingUserSessionId = userSessionId
-            };
-
-            await _meetingDataProvider.AddMeetingUserSessionStreamAsync(userSessionStream, cancellationToken).ConfigureAwait(false);
-
-            return _mapper.Map<MeetingUserSessionStreamDto>(userSessionStream);
-        }
-        
         private async Task<Meeting> GenerateMeetingInfoFromThirdPartyServicesAsync(bool isLiveKit, CreateMeetingDto postData, CancellationToken cancellationToken)
         {
             var meeting = new Meeting();
@@ -364,8 +344,7 @@ namespace SugarTalk.Core.Services.Meetings
             {
                 UserId = user.Id,
                 IsMuted = isMuted,
-                MeetingId = meetingId,
-                Name = user.UserName
+                MeetingId = meetingId
             };
         }
     }
