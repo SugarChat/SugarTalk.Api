@@ -6,7 +6,6 @@ namespace SugarTalk.Messages.Commands.Meetings;
 
 public class ScheduleMeetingCommand : AddOrUpdateMeetingDto, ICommand
 {
-    public bool IsLiveKit { get; set; } = true;
 }
 
 public class ScheduleMeetingResponse : SugarTalkResponse<MeetingDto>

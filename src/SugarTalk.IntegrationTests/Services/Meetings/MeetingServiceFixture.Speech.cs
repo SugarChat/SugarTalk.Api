@@ -189,7 +189,7 @@ public partial class MeetingServiceFixture
 
         var meeting = await _meetingUtil.GetMeeting(scheduleMeetingResponse.Data.MeetingNumber);
 
-        await _meetingUtil.JoinMeeting(meeting.MeetingNumber, "streamId");
+        await _meetingUtil.JoinMeeting(meeting.MeetingNumber);
         
         await Run<IMediator, IRepository>(async (mediator, repository) =>
         {

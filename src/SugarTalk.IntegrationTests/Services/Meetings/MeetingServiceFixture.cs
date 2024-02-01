@@ -14,10 +14,12 @@ using SugarTalk.Core.Extensions;
 using SugarTalk.Core.Services.AntMediaServer;
 using SugarTalk.Core.Services.Exceptions;
 using SugarTalk.Core.Services.LiveKit;
+using SugarTalk.Core.Services.Utils;
 using SugarTalk.IntegrationTests.TestBaseClasses;
 using SugarTalk.IntegrationTests.Utils.Account;
 using SugarTalk.IntegrationTests.Utils.Meetings;
 using SugarTalk.Messages.Commands.Meetings;
+using SugarTalk.Messages.Dto.LiveKit;
 using SugarTalk.Messages.Dto.Meetings;
 using SugarTalk.Messages.Dto.Users;
 using SugarTalk.Messages.Enums.Meeting;
@@ -56,7 +58,7 @@ public partial class MeetingServiceFixture : MeetingFixtureBase
     {
         var meetingId = Guid.NewGuid();
 
-        var meeting = new Core.Domain.Meeting.Meeting
+        var meeting = new Meeting
         {
             Id = meetingId,
             MeetingNumber = "123"
@@ -67,7 +69,7 @@ public partial class MeetingServiceFixture : MeetingFixtureBase
         await Run<IRepository>(async repository =>
         {
             var response = await repository
-                .Query<Core.Domain.Meeting.Meeting>(x => x.Id == meetingId)
+                .Query<Meeting>(x => x.Id == meetingId)
                 .SingleAsync(CancellationToken.None);
 
             response.ShouldNotBeNull();
@@ -112,7 +114,7 @@ public partial class MeetingServiceFixture : MeetingFixtureBase
 
         var meeting = await _meetingUtil.GetMeeting(scheduleMeetingResponse.Data.MeetingNumber);
 
-        await _meetingUtil.JoinMeeting(meeting.MeetingNumber, "streamId");
+        await _meetingUtil.JoinMeeting(meeting.MeetingNumber);
 
         await Run<IMediator, IRepository>(async (mediator, repository) =>
         {
@@ -149,8 +151,8 @@ public partial class MeetingServiceFixture : MeetingFixtureBase
 
             var meeting = await _meetingUtil.GetMeeting(scheduleMeetingResponse.Data.MeetingNumber);
 
-            await _meetingUtil.JoinMeeting(meeting.MeetingNumber, "streamId1");
-            await _meetingUtil.JoinMeeting(meeting.MeetingNumber, "streamId2");
+            await _meetingUtil.JoinMeeting(meeting.MeetingNumber);
+            await _meetingUtil.JoinMeeting(meeting.MeetingNumber);
         }
         catch (Exception ex)
         {
@@ -167,7 +169,7 @@ public partial class MeetingServiceFixture : MeetingFixtureBase
 
         var meeting = await _meetingUtil.GetMeeting(scheduleMeetingResponse.Data.MeetingNumber);
 
-        await _meetingUtil.JoinMeeting(meeting.MeetingNumber, "streamId");
+        await _meetingUtil.JoinMeeting(meeting.MeetingNumber);
         
         await Run<IMediator, IRepository>(async (mediator, repository) =>
         {
@@ -188,7 +190,7 @@ public partial class MeetingServiceFixture : MeetingFixtureBase
         var user1 = await _accountUtil.AddUserAccount("mars", "123");
         var user2 = await _accountUtil.AddUserAccount("greg", "123");
 
-        await _meetingUtil.JoinMeeting(scheduleMeetingResponse.Data.MeetingNumber, "streamId");
+        await _meetingUtil.JoinMeeting(scheduleMeetingResponse.Data.MeetingNumber);
 
         await Run<IMediator, IRepository, IUnitOfWork>(async (mediator, repository, unitOfWork) =>
         {
@@ -290,7 +292,7 @@ public partial class MeetingServiceFixture : MeetingFixtureBase
         var scheduleMeetingResponse = await _meetingUtil.ScheduleMeeting();
 
         var joinMeeting =
-            await _meetingUtil.JoinMeeting(scheduleMeetingResponse.Data.MeetingNumber, "streamId", !isMuted);
+            await _meetingUtil.JoinMeeting(scheduleMeetingResponse.Data.MeetingNumber, !isMuted);
 
         var userSessionId = joinMeeting.UserSessions.Single().Id;
 
@@ -318,7 +320,6 @@ public partial class MeetingServiceFixture : MeetingFixtureBase
                     new JoinMeetingCommand
                     {
                         MeetingNumber = "5201314",
-                        StreamId = "123456",
                         IsMuted = true
                     });
             });
@@ -330,9 +331,9 @@ public partial class MeetingServiceFixture : MeetingFixtureBase
     {
         var scheduleMeetingResponse = await _meetingUtil.ScheduleMeeting();
 
-        var beforeInfo = await _meetingUtil.JoinMeeting(scheduleMeetingResponse.Data.MeetingNumber, "streamId");
+        var beforeInfo = await _meetingUtil.JoinMeeting(scheduleMeetingResponse.Data.MeetingNumber);
 
-        var afterInfo = await _meetingUtil.JoinMeeting(scheduleMeetingResponse.Data.MeetingNumber, "streamId");
+        var afterInfo = await _meetingUtil.JoinMeeting(scheduleMeetingResponse.Data.MeetingNumber);
 
         afterInfo.UserSessions.Count.ShouldBe(beforeInfo.UserSessions.Count);
         afterInfo.UserSessions.Single().UserId.ShouldBe(beforeInfo.UserSessions.Single().UserId);
@@ -345,7 +346,7 @@ public partial class MeetingServiceFixture : MeetingFixtureBase
     {
         var scheduleMeetingResponse = await _meetingUtil.ScheduleMeeting();
         
-        await _meetingUtil.JoinMeeting(scheduleMeetingResponse.Data.MeetingNumber, "streamId");
+        await _meetingUtil.JoinMeeting(scheduleMeetingResponse.Data.MeetingNumber);
 
         await Run<IMediator>(async mediator =>
         {
@@ -386,7 +387,6 @@ public partial class MeetingServiceFixture : MeetingFixtureBase
 
         meeting.Title = "greg meeting";
         meeting.SecurityCode = "123456";
-        meeting.PeriodType = MeetingPeriodType.Weekly;
         meeting.TimeZone = "UTC";
         meeting.IsMuted = true;
         meeting.IsRecorded = true;
@@ -398,7 +398,6 @@ public partial class MeetingServiceFixture : MeetingFixtureBase
                 Id = meeting.Id,
                 Title = meeting.Title,
                 SecurityCode = meeting.SecurityCode,
-                PeriodType = meeting.PeriodType,
                 StartDate = startDate.AddDays(7),
                 EndDate = startDate.AddDays(8),
                 TimeZone = meeting.TimeZone,
@@ -413,7 +412,6 @@ public partial class MeetingServiceFixture : MeetingFixtureBase
         response.TimeZone.ShouldBe("UTC");
         response.Title.ShouldBe(meeting.Title);
         response.SecurityCode.ShouldBe("123456".ToSha256());
-        response.PeriodType.ShouldBe(MeetingPeriodType.Weekly);
         response.MeetingNumber.ShouldBe(meeting.MeetingNumber);
         response.MeetingMasterUserId.ShouldBe(currentUser.Id.Value);
         response.StartDate.ShouldBe(startDate.AddDays(7).ToUnixTimeSeconds());
@@ -457,6 +455,103 @@ public partial class MeetingServiceFixture : MeetingFixtureBase
         });
     }
 
+    [Theory]
+    [InlineData(MeetingPeriodType.Daily, 29)]
+    [InlineData(MeetingPeriodType.Weekly, 5)]
+    [InlineData(MeetingPeriodType.BiWeekly, 3)]
+    [InlineData(MeetingPeriodType.Monthly, 1)]
+    [InlineData(MeetingPeriodType.EveryWeekday, 21)]
+    public async Task CanCreatePeriodMeeting(MeetingPeriodType periodType, int expectSubMeetingCount)
+    {
+        await Run<IMediator, IRepository ,IClock>(async (mediator, repository ,clock) =>
+        {
+            var command = new ScheduleMeetingCommand
+            {
+                Title = "Test Meeting",
+                TimeZone = "Asia/Shanghai",
+                SecurityCode = "123456",
+                StartDate = clock.Now.AddHours(5),
+                EndDate = clock.Now.AddHours(6),
+                UtilDate = clock.Now.AddMonths(1),
+                PeriodType = periodType,
+                AppointmentType = MeetingAppointmentType.Appointment
+            };
+
+            await mediator.SendAsync<ScheduleMeetingCommand, ScheduleMeetingResponse>(command);
+            
+            var meeting = await repository.Query<Meeting>().FirstOrDefaultAsync();
+            meeting.ShouldNotBeNull();
+        
+            var meetingPeriodRule = await repository.Query<MeetingPeriodRule>().FirstOrDefaultAsync();
+            meetingPeriodRule.ShouldNotBeNull();
+            meetingPeriodRule.MeetingId.ShouldBe(meeting.Id);
+            meetingPeriodRule.PeriodType.ShouldBe(command.PeriodType);
+            meetingPeriodRule.UntilDate.ShouldBe(command.UtilDate.Value);
+
+            var subMeetingList = await repository.Query<MeetingSubMeeting>().ToListAsync();
+            subMeetingList.ShouldNotBeNull();
+            subMeetingList.Count.ShouldBe(expectSubMeetingCount);
+        }, builder =>
+        {
+            MockLiveKitService(builder);
+            MockClock(builder, new DateTimeOffset(2024, 2, 1, 7, 0, 0, TimeSpan.Zero));
+        });
+    }
+    
+    [Fact]
+    public async Task CanCreatePeriodMeetingWhenUtilDateIsNull()
+    {
+        await Run<IMediator, IRepository ,IClock>(async (mediator, repository ,clock) =>
+        {
+            var command = new ScheduleMeetingCommand
+            {
+                Title = "Test Meeting",
+                TimeZone = "Asia/Shanghai",
+                SecurityCode = "123456",
+                StartDate = clock.Now.AddHours(5),
+                EndDate = clock.Now.AddHours(6),
+                UtilDate = null,
+                PeriodType = MeetingPeriodType.Monthly,
+                AppointmentType = MeetingAppointmentType.Appointment
+            };
+
+            await mediator.SendAsync<ScheduleMeetingCommand, ScheduleMeetingResponse>(command);
+            
+            var meeting = await repository.Query<Meeting>().FirstOrDefaultAsync();
+            meeting.ShouldNotBeNull();
+        
+            var meetingPeriodRule = await repository.Query<MeetingPeriodRule>().FirstOrDefaultAsync();
+            meetingPeriodRule.ShouldNotBeNull();
+            meetingPeriodRule.MeetingId.ShouldBe(meeting.Id);
+            meetingPeriodRule.PeriodType.ShouldBe(command.PeriodType);
+            meetingPeriodRule.UntilDate.ShouldBeNull();
+
+            var subMeetingList = await repository.Query<MeetingSubMeeting>().ToListAsync();
+            subMeetingList.ShouldNotBeNull();
+            subMeetingList.Count.ShouldBe(7);
+        }, builder =>
+        {
+            MockLiveKitService(builder);
+            MockClock(builder, new DateTimeOffset(2024, 2, 1, 7, 0, 0, TimeSpan.Zero));
+        });
+    }
+
+    private static void MockLiveKitService(ContainerBuilder builder)
+    {
+        var liveKitServerUtilService = Substitute.For<ILiveKitServerUtilService>();
+
+        liveKitServerUtilService.GenerateTokenForJoinMeeting(Arg.Any<UserAccountDto>(), Arg.Any<string>())
+            .Returns("token123");
+
+        liveKitServerUtilService.CreateMeetingAsync(Arg.Any<string>(), Arg.Any<string>())
+            .Returns(new CreateMeetingFromLiveKitResponseDto
+            {
+                RoomInfo = new LiveKitRoom { MeetingNumber = "123_liveKit" }
+            });
+
+        builder.RegisterInstance(liveKitServerUtilService);
+    }
+    
     private void SetupMocking(ContainerBuilder builder)
     {
         var antMediaServerUtilService = Substitute.For<IAntMediaServerUtilService>();

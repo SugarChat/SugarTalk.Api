@@ -15,7 +15,7 @@ using SugarTalk.Core.Services.Account;
 using SugarTalk.Core.Services.Exceptions;
 using SugarTalk.Core.Services.Identity;
 using SugarTalk.Messages.Dto.Meetings;
-using SugarTalk.Messages.Dto.Meetings.User;
+using SugarTalk.Messages.Enums.Meeting;
 
 namespace SugarTalk.Core.Services.Meetings
 {
@@ -46,6 +46,14 @@ namespace SugarTalk.Core.Services.Meetings
         Task<MeetingUserSetting> GetMeetingUserSettingByUserIdAsync(int userId, Guid meetingId, CancellationToken cancellationToken);
         
         Task CheckMeetingSecurityCodeAsync(Guid meetingId, string securityCode, CancellationToken cancellationToken);
+        
+        Task UpdateMeetingsAsync(List<Meeting> meetingList, CancellationToken cancellationToken);
+        
+        Task PersistMeetingPeriodRuleAsync(MeetingPeriodRule meetingPeriodRule, CancellationToken cancellationToken);
+        
+        Task PersistMeetingSubMeetingsAsync(List<MeetingSubMeeting> subMeetingList, CancellationToken cancellationToken);
+        
+        Task UpdateMeetingStatusAsync(Guid meetingId, CancellationToken cancellationToken);
     }
     
     public partial class MeetingDataProvider : IMeetingDataProvider
@@ -195,6 +203,38 @@ namespace SugarTalk.Core.Services.Meetings
                 x.Id == meetingId && x.SecurityCode == code, cancellationToken).ConfigureAwait(false);
 
             if (!isCorrect) throw new MeetingSecurityCodeNotMatchException();
+        }
+
+        public async Task UpdateMeetingsAsync(List<Meeting> meetingList, CancellationToken cancellationToken)
+        {
+            await _repository.UpdateAllAsync(meetingList, cancellationToken).ConfigureAwait(false);
+            
+            await _unitOfWork.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        }
+
+        public async Task PersistMeetingPeriodRuleAsync(MeetingPeriodRule meetingPeriodRule, CancellationToken cancellationToken)
+        {
+            if (meetingPeriodRule is null) return;
+            
+            await _repository.InsertAsync(meetingPeriodRule, cancellationToken).ConfigureAwait(false);
+        }
+
+        public async Task PersistMeetingSubMeetingsAsync(List<MeetingSubMeeting> subMeetingList, CancellationToken cancellationToken)
+        {
+            if (subMeetingList is not { Count: > 0 }) return;
+            
+            await _repository.InsertAllAsync(subMeetingList, cancellationToken).ConfigureAwait(false);
+        }
+
+        public async Task UpdateMeetingStatusAsync(Guid meetingId, CancellationToken cancellationToken)
+        {
+            var meeting = await _repository.Query<Meeting>().Where(x=>x.Id == meetingId).FirstOrDefaultAsync(cancellationToken).ConfigureAwait(false);
+
+            if (meeting is null) return;
+
+            meeting.Status = MeetingStatus.InProgress;
+
+            await _unitOfWork.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
         }
     }
 }

@@ -40,8 +40,6 @@ public class MeetingBaseDto
 
     public string MeetingNumber { get; set; }
     
-    public string MergedStream => $"{MeetingNumber}Merged";
-    
     public long StartDate { get; set; }
 
     public long EndDate { get; set; }
@@ -70,6 +68,7 @@ public class AddOrUpdateMeetingDto
         StartDate = DateTimeOffset.Now;
         EndDate = DateTimeOffset.Now.AddDays(1);
         MeetingStreamMode = MeetingStreamMode.LEGACY;
+        AppointmentType = MeetingAppointmentType.Quick;
     }
 
     public string Title { get; set; }
@@ -82,10 +81,14 @@ public class AddOrUpdateMeetingDto
 
     public DateTimeOffset EndDate { get; set; }
     
+    public DateTimeOffset? UtilDate { get; set; }
+    
     public MeetingPeriodType PeriodType { get; set; }
 
     public MeetingStreamMode MeetingStreamMode { get; set; }
 
+    public MeetingAppointmentType AppointmentType { get; set; }
+    
     public bool IsMuted { get; set; } = false;
     
     public bool IsRecorded { get; set; } = false;

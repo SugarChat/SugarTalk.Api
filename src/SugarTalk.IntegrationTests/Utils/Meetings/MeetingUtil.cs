@@ -67,14 +67,13 @@ public class MeetingUtil : TestUtil
         });
     }
 
-    public async Task<MeetingDto> JoinMeeting(string meetingNumber, string streamId, bool isMuted = false)
+    public async Task<MeetingDto> JoinMeeting(string meetingNumber, bool isMuted = false)
     {
         return await Run<IMediator, MeetingDto>(async (mediator) =>
         {
             var response = await mediator.SendAsync<JoinMeetingCommand, JoinMeetingResponse>(new JoinMeetingCommand
             {
                 MeetingNumber = meetingNumber,
-                StreamId = streamId,
                 IsMuted = isMuted
             });
 
