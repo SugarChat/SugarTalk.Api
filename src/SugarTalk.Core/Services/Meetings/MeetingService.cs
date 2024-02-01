@@ -110,13 +110,9 @@ namespace SugarTalk.Core.Services.Meetings
         
         public async Task<MeetingScheduledEvent> ScheduleMeetingAsync(ScheduleMeetingCommand command, CancellationToken cancellationToken)
         {
-            var postData = new CreateMeetingDto
-            {
-                MeetingNumber = GenerateMeetingNumber(),
-                Mode = command.MeetingStreamMode.ToString().ToLower()
-            };
+            var meetingNumber = GenerateMeetingNumber();
             
-            var meeting = await GenerateMeetingInfoFromThirdPartyServicesAsync(postData, cancellationToken).ConfigureAwait(false);
+            var meeting = await GenerateMeetingInfoFromThirdPartyServicesAsync(meetingNumber, cancellationToken).ConfigureAwait(false);
             meeting = _mapper.Map(command, meeting);
             meeting.Id = Guid.NewGuid();
             meeting.MeetingMasterUserId = _currentUser.Id.Value;
@@ -442,24 +438,24 @@ namespace SugarTalk.Core.Services.Meetings
             };
         }
 
-        private async Task<Meeting> GenerateMeetingInfoFromThirdPartyServicesAsync(CreateMeetingDto postData, CancellationToken cancellationToken)
+        private async Task<Meeting> GenerateMeetingInfoFromThirdPartyServicesAsync(string meetingNumber, CancellationToken cancellationToken)
         {
             var meeting = new Meeting();
             
             var user = await _accountDataProvider.GetUserAccountAsync(_currentUser.Id, cancellationToken: cancellationToken).ConfigureAwait(false);
             
-            var token = _liveKitServerUtilService.GenerateTokenForCreateMeeting(user, postData.MeetingNumber);
+            var token = _liveKitServerUtilService.GenerateTokenForCreateMeeting(user, meetingNumber);
 
             Log.Information("Generate liveKit token:{token}", token);
 
             var liveKitResponse = await _liveKitServerUtilService
-                .CreateMeetingAsync(postData.MeetingNumber, token, cancellationToken: cancellationToken).ConfigureAwait(false);
+                .CreateMeetingAsync(meetingNumber, token, cancellationToken: cancellationToken).ConfigureAwait(false);
 
             Log.Information("Create to meeting from liveKit response:{response}", liveKitResponse);
             
             if (liveKitResponse is null && string.IsNullOrEmpty(token)) throw new CannotCreateMeetingException();
             
-            meeting.MeetingNumber = liveKitResponse?.RoomInfo?.MeetingNumber ?? postData.MeetingNumber;
+            meeting.MeetingNumber = liveKitResponse?.RoomInfo?.MeetingNumber ?? meetingNumber;
 
             return meeting;
         }
