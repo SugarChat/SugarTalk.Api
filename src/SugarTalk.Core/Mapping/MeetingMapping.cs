@@ -24,6 +24,8 @@ namespace SugarTalk.Core.Mapping
                 .ForMember(dest => dest.EndDate, source => source.MapFrom(x => x.EndDate.ToUnixTimeSeconds()));
             CreateMap<MeetingSpeech, MeetingSpeechDto>();
             CreateMap<MeetingUserSetting, MeetingUserSettingDto>().ReverseMap();
+            CreateMap<Meeting, AppointmentMeetingDto>()
+                .ForMember(dest => dest.MeetingId, opt => opt.MapFrom(src => src.Id));
         }
     }
 }

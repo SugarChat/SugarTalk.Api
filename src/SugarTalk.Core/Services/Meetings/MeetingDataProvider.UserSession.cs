@@ -31,6 +31,10 @@ public partial interface IMeetingDataProvider
     Task<List<MeetingUserSession>> GetMeetingUserSessionsAsync(List<int> ids, CancellationToken cancellationToken);
     
     Task<MeetingUserSession> GetMeetingUserSessionByUserIdAsync(int userId, CancellationToken cancellationToken);
+
+    Task<List<Meeting>> GetAppointmentMeetingsByUserIdAsync(int userId, CancellationToken cancellationToken);
+
+    Task<List<MeetingSubMeeting>> GetSubMeetingTimeByUserIdAsync(Guid meetingId, CancellationToken cancellationToken);
 }
 
 public partial class MeetingDataProvider
@@ -98,5 +102,23 @@ public partial class MeetingDataProvider
         if (meetingUserSessions is not { Count: > 0 }) return;
 
         await _repository.DeleteAllAsync(meetingUserSessions, cancellationToken).ConfigureAwait(false);
+    }
+
+    public async Task<List<Meeting>> GetAppointmentMeetingsByUserIdAsync(int userId, CancellationToken cancellationToken)
+    {
+        return await _repository.Query<Meeting>()
+            .Where(meeting => meeting.AppointmentType == MeetingAppointmentType.Appointment)
+            .Where(meeting => meeting.MeetingMasterUserId == userId)
+            .OrderByDescending(meeting => meeting.CreatedDate)
+            .ToListAsync(cancellationToken)
+            .ConfigureAwait(false);
+    }
+
+    public async Task<List<MeetingSubMeeting>> GetSubMeetingTimeByUserIdAsync(Guid meetingId, CancellationToken cancellationToken)
+    {
+        return await _repository.Query<MeetingSubMeeting>()
+            .Where(subMeeting => subMeeting.MeetingId == meetingId)
+            .ToListAsync(cancellationToken)
+            .ConfigureAwait(false);
     }
 }

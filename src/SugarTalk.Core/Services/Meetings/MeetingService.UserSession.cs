@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -6,7 +7,6 @@ using SugarTalk.Core.Domain.Meeting;
 using SugarTalk.Core.Services.Exceptions;
 using SugarTalk.Messages.Commands.Meetings;
 using SugarTalk.Messages.Dto.Meetings;
-using SugarTalk.Messages.Enums.Meeting;
 using SugarTalk.Messages.Events.Meeting;
 using SugarTalk.Messages.Requests.Meetings;
 
@@ -25,6 +25,8 @@ public partial interface IMeetingService
 
     Task<GetMeetingUserSessionByUserIdResponse> GetMeetingUserSessionByUserIdAsync(
         GetMeetingUserSessionByUserIdRequest request, CancellationToken cancellationToken);
+    
+    Task<GetAppointmentMeetingResponse>GetAppointmentMeetingAsync(GetAppointmentMeetingRequest request, CancellationToken cancellationToken);
 }
 
 public partial class MeetingService
@@ -111,6 +113,30 @@ public partial class MeetingService
         return new GetMeetingUserSessionByUserIdResponse
         {
             Data = _mapper.Map<MeetingUserSessionDto>(userSession)
+        };
+    }
+
+    public async Task<GetAppointmentMeetingResponse> GetAppointmentMeetingAsync(GetAppointmentMeetingRequest request, CancellationToken cancellationToken)
+    {
+        var meetingList = await _meetingDataProvider.GetAppointmentMeetingsByUserIdAsync(request.UserId, cancellationToken);
+        
+        var list = _mapper.Map<List<AppointmentMeetingDto>>(meetingList);
+
+        foreach (var item in list)
+        {
+            var subMeeting =  await _meetingDataProvider.GetSubMeetingTimeByUserIdAsync(item.MeetingId, cancellationToken);
+
+            if (subMeeting.Any())
+            {
+                var firstSubMeeting = subMeeting.First();
+                item.StartDate = firstSubMeeting.StartTime;
+                item.EndDate = firstSubMeeting.EndTime;
+            }
+        }
+        
+        return new GetAppointmentMeetingResponse
+        {
+            Data = list
         };
     }
 }
