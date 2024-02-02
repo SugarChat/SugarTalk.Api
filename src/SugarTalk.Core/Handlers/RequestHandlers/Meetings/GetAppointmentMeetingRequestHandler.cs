@@ -7,11 +7,11 @@ using SugarTalk.Messages.Requests.Meetings;
 
 namespace SugarTalk.Core.Handlers.RequestHandlers.Meetings;
 
-public class GetMeetingListRequestHandler : IRequestHandler<GetAppointmentMeetingRequest, GetAppointmentMeetingResponse>
+public class GetAppointmentMeetingRequestHandler : IRequestHandler<GetAppointmentMeetingRequest, GetAppointmentMeetingResponse>
 {
     private readonly IMeetingService _meetingService;
 
-    public GetMeetingListRequestHandler(IMeetingService meetingService)
+    public GetAppointmentMeetingRequestHandler(IMeetingService meetingService)
     {
         _meetingService = meetingService;
     }
