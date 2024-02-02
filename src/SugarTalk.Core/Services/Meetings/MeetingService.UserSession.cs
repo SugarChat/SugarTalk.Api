@@ -120,9 +120,9 @@ public partial class MeetingService
     {
         var meetingList = await _meetingDataProvider.GetAppointmentMeetingsByUserIdAsync(request.UserId, cancellationToken);
         
-        var list = _mapper.Map<List<AppointmentMeetingDto>>(meetingList);
+        var appointmentList = _mapper.Map<List<AppointmentMeetingDto>>(meetingList);
 
-        foreach (var item in list)
+        foreach (var item in appointmentList)
         {
             var subMeeting =  await _meetingDataProvider.GetSubMeetingTimeByUserIdAsync(item.MeetingId, cancellationToken);
 
@@ -136,7 +136,7 @@ public partial class MeetingService
         
         return new GetAppointmentMeetingResponse
         {
-            Data = list
+            Data = appointmentList
         };
     }
 }
