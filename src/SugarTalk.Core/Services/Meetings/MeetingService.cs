@@ -156,97 +156,6 @@ namespace SugarTalk.Core.Services.Meetings
             await _meetingDataProvider.PersistMeetingSubMeetingsAsync(subMeetingList, cancellationToken).ConfigureAwait(false);
         }
 
-        private List<MeetingSubMeeting> GenerateSubMeetings(
-            Guid meetingId, DateTimeOffset startDate, DateTimeOffset endDate, DateTimeOffset? utilDate, MeetingRepeatType repeatType)
-        {
-            var subMeetingList = new List<MeetingSubMeeting>();
-            
-            var loopCount = utilDate.HasValue ? CalculateLoopCount(startDate, utilDate.Value, repeatType) : 7;
-
-            for (var i = 0; i < loopCount; i++)
-            {
-                // 跳过非工作日，不计入循环次数
-                if (repeatType == MeetingRepeatType.EveryWeekday && !IsWorkday(startDate))
-                {
-                    --i;
-                }
-                else
-                {
-                    subMeetingList.Add(new MeetingSubMeeting
-                    {
-                        Id = Guid.NewGuid(),
-                        MeetingId = meetingId,
-                        StartTime = startDate.ToUnixTimeSeconds(),
-                        EndTime = endDate.ToUnixTimeSeconds()
-                    });
-                }
-
-                IncrementDates(ref startDate, ref endDate, repeatType);
-            }
-
-            return subMeetingList;
-        }
-        
-        private int CalculateLoopCount(DateTimeOffset startDate, DateTimeOffset utilDate, MeetingRepeatType repeatType)
-        {
-            var count = 0;
-            
-            while (startDate <= utilDate)
-            {
-                if (repeatType != MeetingRepeatType.EveryWeekday || IsWorkday(startDate))
-                {
-                    ++count;
-                }
-
-                startDate = GetNextMeetingDate(startDate, repeatType);
-            }
-            
-            return count;
-        }
-
-        private void IncrementDates(ref DateTimeOffset startDate, ref DateTimeOffset endDate, MeetingRepeatType repeatType)
-        {
-            startDate = GetNextMeetingDate(startDate, repeatType);
-            endDate = GetNextMeetingDate(endDate, repeatType);
-        }
-        
-        private DateTimeOffset GetNextMeetingDate(DateTimeOffset currentDate, MeetingRepeatType repeatType)
-        {
-            var nextDate = currentDate;
-
-            switch (repeatType)
-            {
-                case MeetingRepeatType.Daily:
-                case MeetingRepeatType.EveryWeekday:
-                    nextDate = currentDate.AddDays(1);
-                    break;
-                case MeetingRepeatType.Weekly:
-                    nextDate = currentDate.AddDays(7);
-                    break;
-                case MeetingRepeatType.BiWeekly:
-                    nextDate = currentDate.AddDays(14);
-                    break;
-                case MeetingRepeatType.Monthly:
-                    nextDate = currentDate.AddMonths(1);
-                    break;
-            }
-
-            // Adjust for weekdays required
-            if (repeatType == MeetingRepeatType.EveryWeekday && nextDate.DayOfWeek is DayOfWeek.Saturday or DayOfWeek.Sunday)
-            {
-                var daysToAdd = nextDate.DayOfWeek is DayOfWeek.Saturday ? 2 : 1;
-                nextDate = nextDate.AddDays(daysToAdd);
-            }
-
-            return nextDate;
-        }
-        
-        private bool IsWorkday(DateTimeOffset date)
-        {
-            var workday = date.DayOfWeek;
-            return workday != DayOfWeek.Saturday && workday != DayOfWeek.Sunday;
-        }
-
         public async Task<GetMeetingByNumberResponse> GetMeetingByNumberAsync(GetMeetingByNumberRequest request,
             CancellationToken cancellationToken)
         {
@@ -455,6 +364,97 @@ namespace SugarTalk.Core.Services.Meetings
             meeting.MeetingNumber = liveKitResponse?.RoomInfo?.MeetingNumber ?? meetingNumber;
 
             return meeting;
+        }
+        
+        private List<MeetingSubMeeting> GenerateSubMeetings(
+            Guid meetingId, DateTimeOffset startDate, DateTimeOffset endDate, DateTimeOffset? utilDate, MeetingRepeatType repeatType)
+        {
+            var subMeetingList = new List<MeetingSubMeeting>();
+            
+            var loopCount = utilDate.HasValue ? CalculateLoopCount(startDate, utilDate.Value, repeatType) : 7;
+
+            for (var i = 0; i < loopCount; i++)
+            {
+                // 跳过非工作日，不计入循环次数
+                if (repeatType == MeetingRepeatType.EveryWeekday && !IsWorkday(startDate))
+                {
+                    --i;
+                }
+                else
+                {
+                    subMeetingList.Add(new MeetingSubMeeting
+                    {
+                        Id = Guid.NewGuid(),
+                        MeetingId = meetingId,
+                        StartTime = startDate.ToUnixTimeSeconds(),
+                        EndTime = endDate.ToUnixTimeSeconds()
+                    });
+                }
+
+                IncrementDates(ref startDate, ref endDate, repeatType);
+            }
+
+            return subMeetingList;
+        }
+        
+        private int CalculateLoopCount(DateTimeOffset startDate, DateTimeOffset utilDate, MeetingRepeatType repeatType)
+        {
+            var count = 0;
+            
+            while (startDate <= utilDate)
+            {
+                if (repeatType != MeetingRepeatType.EveryWeekday || IsWorkday(startDate))
+                {
+                    ++count;
+                }
+
+                startDate = GetNextMeetingDate(startDate, repeatType);
+            }
+            
+            return count;
+        }
+
+        private void IncrementDates(ref DateTimeOffset startDate, ref DateTimeOffset endDate, MeetingRepeatType repeatType)
+        {
+            startDate = GetNextMeetingDate(startDate, repeatType);
+            endDate = GetNextMeetingDate(endDate, repeatType);
+        }
+        
+        private DateTimeOffset GetNextMeetingDate(DateTimeOffset currentDate, MeetingRepeatType repeatType)
+        {
+            var nextDate = currentDate;
+
+            switch (repeatType)
+            {
+                case MeetingRepeatType.Daily:
+                case MeetingRepeatType.EveryWeekday:
+                    nextDate = currentDate.AddDays(1);
+                    break;
+                case MeetingRepeatType.Weekly:
+                    nextDate = currentDate.AddDays(7);
+                    break;
+                case MeetingRepeatType.BiWeekly:
+                    nextDate = currentDate.AddDays(14);
+                    break;
+                case MeetingRepeatType.Monthly:
+                    nextDate = currentDate.AddMonths(1);
+                    break;
+            }
+
+            // Adjust for weekdays required
+            if (repeatType == MeetingRepeatType.EveryWeekday && nextDate.DayOfWeek is DayOfWeek.Saturday or DayOfWeek.Sunday)
+            {
+                var daysToAdd = nextDate.DayOfWeek is DayOfWeek.Saturday ? 2 : 1;
+                nextDate = nextDate.AddDays(daysToAdd);
+            }
+
+            return nextDate;
+        }
+        
+        private bool IsWorkday(DateTimeOffset date)
+        {
+            var workday = date.DayOfWeek;
+            return workday != DayOfWeek.Saturday && workday != DayOfWeek.Sunday;
         }
 
         private string GenerateMeetingNumber()
