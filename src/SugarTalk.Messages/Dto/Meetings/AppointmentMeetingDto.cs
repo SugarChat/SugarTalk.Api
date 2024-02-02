@@ -14,8 +14,8 @@ public class AppointmentMeetingDto
     public MeetingAppointmentType AppointmentType { get; set; }
     
     public long StartDate { get; set; }
-
-    public long EndDate { get; set; }
     
-    public DateTimeOffset CreatedDate { get; set; }
+    public long EndDate { get; set; }
+
+    public MeetingStatus Status { get; set; }
 }

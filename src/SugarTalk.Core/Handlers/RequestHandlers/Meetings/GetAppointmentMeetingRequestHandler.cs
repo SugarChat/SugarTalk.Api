@@ -18,6 +18,6 @@ public class GetAppointmentMeetingRequestHandler : IRequestHandler<GetAppointmen
 
     public async Task<GetAppointmentMeetingResponse> Handle(IReceiveContext<GetAppointmentMeetingRequest> context, CancellationToken cancellationToken)
     {
-        return await _meetingService.GetAppointmentMeetingAsync(context.Message, cancellationToken).ConfigureAwait(false);
+        return await _meetingService.GetAppointmentMeetingsAsync(context.Message, cancellationToken).ConfigureAwait(false);
     }
 }

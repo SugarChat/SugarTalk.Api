@@ -32,9 +32,7 @@ public partial interface IMeetingDataProvider
     
     Task<MeetingUserSession> GetMeetingUserSessionByUserIdAsync(int userId, CancellationToken cancellationToken);
 
-    Task<List<Meeting>> GetAppointmentMeetingsByUserIdAsync(int userId, CancellationToken cancellationToken);
-
-    Task<List<MeetingSubMeeting>> GetSubMeetingTimeByUserIdAsync(Guid meetingId, CancellationToken cancellationToken);
+    Task<List<AppointmentMeetingDto>> GetAppointmentMeetingsByUserIdAsync(int userId, CancellationToken cancellationToken);
 }
 
 public partial class MeetingDataProvider
@@ -104,21 +102,35 @@ public partial class MeetingDataProvider
         await _repository.DeleteAllAsync(meetingUserSessions, cancellationToken).ConfigureAwait(false);
     }
 
-    public async Task<List<Meeting>> GetAppointmentMeetingsByUserIdAsync(int userId, CancellationToken cancellationToken)
+    public async Task<List<AppointmentMeetingDto>> GetAppointmentMeetingsByUserIdAsync(int userId, CancellationToken cancellationToken)
     {
-        return await _repository.Query<Meeting>()
-            .Where(meeting => meeting.AppointmentType == MeetingAppointmentType.Appointment)
-            .Where(meeting => meeting.MeetingMasterUserId == userId)
-            .OrderByDescending(meeting => meeting.CreatedDate)
-            .ToListAsync(cancellationToken)
-            .ConfigureAwait(false);
-    }
+        var query = 
+            from meeting in _repository.Query<Meeting>()
+            join rules in _repository.Query<MeetingRepeatRule>()
+                on meeting.Id equals rules.MeetingId
+            join subMeetings in _repository.Query<MeetingSubMeeting>()
+                on meeting.Id equals subMeetings.MeetingId into subMeetingGroup
+            from subMeeting in subMeetingGroup.DefaultIfEmpty()
+            where meeting.MeetingMasterUserId == userId
+            select new AppointmentMeetingDto
+            {
+                MeetingId = meeting.Id,
+                MeetingNumber = meeting.MeetingNumber,
+                StartDate = rules.RepeatType == MeetingRepeatType.None ? meeting.StartDate : subMeeting.StartTime,
+                EndDate = rules.RepeatType == MeetingRepeatType.None ? meeting.StartDate : subMeeting.EndTime,
+                Status = meeting.Status,
+                Title = meeting.Title,
+                AppointmentType = meeting.AppointmentType
+            };
+    
+        var result = await query.ToListAsync(cancellationToken).ConfigureAwait(false);
 
-    public async Task<List<MeetingSubMeeting>> GetSubMeetingTimeByUserIdAsync(Guid meetingId, CancellationToken cancellationToken)
-    {
-        return await _repository.Query<MeetingSubMeeting>()
-            .Where(subMeeting => subMeeting.MeetingId == meetingId)
-            .ToListAsync(cancellationToken)
-            .ConfigureAwait(false);
+        if (!result.Any()) return null;
+
+        var sortedResult = result
+            .OrderBy(m => (DateTimeOffset.FromUnixTimeSeconds(m.StartDate) - DateTimeOffset.Now).TotalSeconds)
+            .ToList();
+        
+        return sortedResult;
     }
 }
