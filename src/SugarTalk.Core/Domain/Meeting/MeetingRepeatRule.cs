@@ -5,8 +5,8 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace SugarTalk.Core.Domain.Meeting;
 
-[Table("meeting_period_rule")]
-public class MeetingPeriodRule : IEntity
+[Table("meeting_repeat_rule")]
+public class MeetingRepeatRule : IEntity
 {
     [Key]
     [Column("id", TypeName = "char(36)")]
@@ -15,9 +15,9 @@ public class MeetingPeriodRule : IEntity
     [Column("meeting_id", TypeName = "char(36)")]
     public Guid MeetingId { get; set; }
     
-    [Column("period_type")] 
-    public MeetingPeriodType PeriodType { get; set; }
+    [Column("repeat_type")] 
+    public MeetingRepeatType RepeatType { get; set; }
     
-    [Column("until_date")]
-    public DateTimeOffset? UntilDate { get; set; }
+    [Column("repeat_until_date")]
+    public DateTimeOffset? RepeatUntilDate { get; set; }
 }

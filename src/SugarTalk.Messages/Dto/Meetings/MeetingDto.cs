@@ -50,7 +50,7 @@ public class MeetingBaseDto
     
     public string Title { get; set; }
     
-    public MeetingPeriodType PeriodType { get; set; }
+    public MeetingRepeatType RepeatType { get; set; }
     
     public MeetingStreamMode MeetingStreamMode { get; set; }
 
@@ -83,11 +83,11 @@ public class AddOrUpdateMeetingDto
     
     public DateTimeOffset? UtilDate { get; set; }
     
-    public MeetingPeriodType PeriodType { get; set; }
-
-    public MeetingStreamMode MeetingStreamMode { get; set; }
+    public MeetingRepeatType RepeatType { get; set; }
 
     public MeetingAppointmentType AppointmentType { get; set; }
+    
+    public MeetingStreamMode MeetingStreamMode { get; set; }
     
     public bool IsMuted { get; set; } = false;
     

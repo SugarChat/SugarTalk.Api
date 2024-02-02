@@ -44,12 +44,12 @@ public partial class MeetingServiceFixture : MeetingFixtureBase
     public async Task ShouldScheduleMeeting()
     {
         var response = await _meetingUtil.ScheduleMeeting(
-            title: "sugarTalk每周例会", timezone: "UTC", periodType: MeetingPeriodType.Weekly);
+            title: "sugarTalk每周例会", timezone: "UTC", repeatType: MeetingRepeatType.Weekly);
 
         response.Data.ShouldNotBeNull();
         response.Data.TimeZone.ShouldBe("UTC");
         response.Data.Title.ShouldBe("sugarTalk每周例会");
-        response.Data.PeriodType.ShouldBe(MeetingPeriodType.Weekly);
+        response.Data.RepeatType.ShouldBe(MeetingRepeatType.Weekly);
         response.Data.MeetingStreamMode.ShouldBe(MeetingStreamMode.LEGACY);
     }
 
@@ -456,12 +456,12 @@ public partial class MeetingServiceFixture : MeetingFixtureBase
     }
 
     [Theory]
-    [InlineData(MeetingPeriodType.Daily, 29)]
-    [InlineData(MeetingPeriodType.Weekly, 5)]
-    [InlineData(MeetingPeriodType.BiWeekly, 3)]
-    [InlineData(MeetingPeriodType.Monthly, 1)]
-    [InlineData(MeetingPeriodType.EveryWeekday, 21)]
-    public async Task CanCreatePeriodMeeting(MeetingPeriodType periodType, int expectSubMeetingCount)
+    [InlineData(MeetingRepeatType.Daily, 29)]
+    [InlineData(MeetingRepeatType.Weekly, 5)]
+    [InlineData(MeetingRepeatType.BiWeekly, 3)]
+    [InlineData(MeetingRepeatType.Monthly, 1)]
+    [InlineData(MeetingRepeatType.EveryWeekday, 21)]
+    public async Task CanCreateRepeatMeeting(MeetingRepeatType repeatType, int expectSubMeetingCount)
     {
         await Run<IMediator, IRepository ,IClock>(async (mediator, repository ,clock) =>
         {
@@ -473,7 +473,7 @@ public partial class MeetingServiceFixture : MeetingFixtureBase
                 StartDate = clock.Now.AddHours(5),
                 EndDate = clock.Now.AddHours(6),
                 UtilDate = clock.Now.AddMonths(1),
-                PeriodType = periodType,
+                RepeatType = repeatType,
                 AppointmentType = MeetingAppointmentType.Appointment
             };
 
@@ -482,11 +482,11 @@ public partial class MeetingServiceFixture : MeetingFixtureBase
             var meeting = await repository.Query<Meeting>().FirstOrDefaultAsync();
             meeting.ShouldNotBeNull();
         
-            var meetingPeriodRule = await repository.Query<MeetingPeriodRule>().FirstOrDefaultAsync();
+            var meetingPeriodRule = await repository.Query<MeetingRepeatRule>().FirstOrDefaultAsync();
             meetingPeriodRule.ShouldNotBeNull();
             meetingPeriodRule.MeetingId.ShouldBe(meeting.Id);
-            meetingPeriodRule.PeriodType.ShouldBe(command.PeriodType);
-            meetingPeriodRule.UntilDate.ShouldBe(command.UtilDate.Value);
+            meetingPeriodRule.RepeatType.ShouldBe(command.RepeatType);
+            meetingPeriodRule.RepeatUntilDate.ShouldBe(command.UtilDate.Value);
 
             var subMeetingList = await repository.Query<MeetingSubMeeting>().ToListAsync();
             subMeetingList.ShouldNotBeNull();
@@ -511,7 +511,7 @@ public partial class MeetingServiceFixture : MeetingFixtureBase
                 StartDate = clock.Now.AddHours(5),
                 EndDate = clock.Now.AddHours(6),
                 UtilDate = null,
-                PeriodType = MeetingPeriodType.Monthly,
+                RepeatType = MeetingRepeatType.Monthly,
                 AppointmentType = MeetingAppointmentType.Appointment
             };
 
@@ -520,11 +520,11 @@ public partial class MeetingServiceFixture : MeetingFixtureBase
             var meeting = await repository.Query<Meeting>().FirstOrDefaultAsync();
             meeting.ShouldNotBeNull();
         
-            var meetingPeriodRule = await repository.Query<MeetingPeriodRule>().FirstOrDefaultAsync();
+            var meetingPeriodRule = await repository.Query<MeetingRepeatRule>().FirstOrDefaultAsync();
             meetingPeriodRule.ShouldNotBeNull();
             meetingPeriodRule.MeetingId.ShouldBe(meeting.Id);
-            meetingPeriodRule.PeriodType.ShouldBe(command.PeriodType);
-            meetingPeriodRule.UntilDate.ShouldBeNull();
+            meetingPeriodRule.RepeatType.ShouldBe(command.RepeatType);
+            meetingPeriodRule.RepeatUntilDate.ShouldBeNull();
 
             var subMeetingList = await repository.Query<MeetingSubMeeting>().ToListAsync();
             subMeetingList.ShouldNotBeNull();

@@ -49,7 +49,7 @@ namespace SugarTalk.Core.Services.Meetings
         
         Task UpdateMeetingsAsync(List<Meeting> meetingList, CancellationToken cancellationToken);
         
-        Task PersistMeetingPeriodRuleAsync(MeetingPeriodRule meetingPeriodRule, CancellationToken cancellationToken);
+        Task PersistMeetingRepeatRuleAsync(MeetingRepeatRule repeatRule, CancellationToken cancellationToken);
         
         Task PersistMeetingSubMeetingsAsync(List<MeetingSubMeeting> subMeetingList, CancellationToken cancellationToken);
         
@@ -212,11 +212,11 @@ namespace SugarTalk.Core.Services.Meetings
             await _unitOfWork.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
         }
 
-        public async Task PersistMeetingPeriodRuleAsync(MeetingPeriodRule meetingPeriodRule, CancellationToken cancellationToken)
+        public async Task PersistMeetingRepeatRuleAsync(MeetingRepeatRule repeatRule, CancellationToken cancellationToken)
         {
-            if (meetingPeriodRule is null) return;
+            if (repeatRule is null) return;
             
-            await _repository.InsertAsync(meetingPeriodRule, cancellationToken).ConfigureAwait(false);
+            await _repository.InsertAsync(repeatRule, cancellationToken).ConfigureAwait(false);
         }
 
         public async Task PersistMeetingSubMeetingsAsync(List<MeetingSubMeeting> subMeetingList, CancellationToken cancellationToken)

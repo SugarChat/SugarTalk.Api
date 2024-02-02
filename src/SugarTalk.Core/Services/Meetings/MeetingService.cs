@@ -59,13 +59,12 @@ namespace SugarTalk.Core.Services.Meetings
 
         Task<GetMeetingUserSettingResponse> GetMeetingUserSettingAsync(GetMeetingUserSettingRequest request, CancellationToken cancellationToken);
 
-        Task HandleToPeriodMeetingAsync(
+        Task HandleToRepeatMeetingAsync(
             Guid meetingId,
             DateTimeOffset startDate,
             DateTimeOffset endDate,
             DateTimeOffset? utilDate,
-            MeetingPeriodType periodType,
-            MeetingAppointmentType appointmentType, CancellationToken cancellationToken);
+            MeetingRepeatType repeatType, CancellationToken cancellationToken);
     }
     
     public partial class MeetingService : IMeetingService
@@ -119,57 +118,55 @@ namespace SugarTalk.Core.Services.Meetings
             meeting.MeetingStreamMode = MeetingStreamMode.LEGACY;
             meeting.SecurityCode = !string.IsNullOrEmpty(command.SecurityCode) ? command.SecurityCode.ToSha256() : null;
 
-            // 处理周期性会议生成的子会议
-            await HandleToPeriodMeetingAsync(
-                meeting.Id, 
-                command.StartDate, 
-                command.EndDate,
-                command.UtilDate,
-                command.PeriodType,
-                command.AppointmentType, cancellationToken).ConfigureAwait(false);
+            // 处理周期性预定会议生成的子会议
+            if (command.AppointmentType == MeetingAppointmentType.Appointment && command.RepeatType != MeetingRepeatType.None)
+            {
+                await HandleToRepeatMeetingAsync(
+                    meeting.Id,
+                    command.StartDate,
+                    command.EndDate,
+                    command.UtilDate,
+                    command.RepeatType, cancellationToken).ConfigureAwait(false);
+            }
+
+            await _meetingDataProvider.PersistMeetingRepeatRuleAsync(new MeetingRepeatRule
+            {
+                MeetingId = meeting.Id,
+                RepeatType = command.RepeatType,
+                RepeatUntilDate = command.UtilDate
+            }, cancellationToken).ConfigureAwait(false);
 
             await _meetingDataProvider.PersistMeetingAsync(meeting, cancellationToken).ConfigureAwait(false);
 
             var meetingDto = _mapper.Map<MeetingDto>(meeting);
-            meetingDto.PeriodType = command.PeriodType;
+            meetingDto.RepeatType = command.RepeatType;
             
             return new MeetingScheduledEvent { Meeting = meetingDto };
         }
         
-        public async Task HandleToPeriodMeetingAsync(
+        public async Task HandleToRepeatMeetingAsync(
             Guid meetingId, 
             DateTimeOffset startDate, 
             DateTimeOffset endDate, 
             DateTimeOffset? utilDate,
-            MeetingPeriodType periodType,
-            MeetingAppointmentType appointmentType, CancellationToken cancellationToken)
+            MeetingRepeatType repeatType, CancellationToken cancellationToken)
         {
-            if (periodType is MeetingPeriodType.None || appointmentType != MeetingAppointmentType.Appointment) return;
+            var subMeetingList = GenerateSubMeetings(meetingId, startDate, endDate, utilDate, repeatType);
             
-            var meetingPeriodRule = new MeetingPeriodRule
-            {
-                MeetingId = meetingId,
-                PeriodType = periodType,
-                UntilDate = utilDate
-            };
-            
-            var subMeetingList = GenerateSubMeetings(meetingId, startDate, endDate, utilDate, periodType);
-            
-            await _meetingDataProvider.PersistMeetingPeriodRuleAsync(meetingPeriodRule, cancellationToken).ConfigureAwait(false);
             await _meetingDataProvider.PersistMeetingSubMeetingsAsync(subMeetingList, cancellationToken).ConfigureAwait(false);
         }
 
         private List<MeetingSubMeeting> GenerateSubMeetings(
-            Guid meetingId, DateTimeOffset startDate, DateTimeOffset endDate, DateTimeOffset? utilDate, MeetingPeriodType periodType)
+            Guid meetingId, DateTimeOffset startDate, DateTimeOffset endDate, DateTimeOffset? utilDate, MeetingRepeatType repeatType)
         {
             var subMeetingList = new List<MeetingSubMeeting>();
             
-            var loopCount = utilDate.HasValue ? CalculateLoopCount(startDate, utilDate.Value, periodType) : 7;
+            var loopCount = utilDate.HasValue ? CalculateLoopCount(startDate, utilDate.Value, repeatType) : 7;
 
             for (var i = 0; i < loopCount; i++)
             {
                 // 跳过非工作日，不计入循环次数
-                if (periodType == MeetingPeriodType.EveryWeekday && !IsWorkday(startDate))
+                if (repeatType == MeetingRepeatType.EveryWeekday && !IsWorkday(startDate))
                 {
                     --i;
                 }
@@ -184,58 +181,58 @@ namespace SugarTalk.Core.Services.Meetings
                     });
                 }
 
-                IncrementDates(ref startDate, ref endDate, periodType);
+                IncrementDates(ref startDate, ref endDate, repeatType);
             }
 
             return subMeetingList;
         }
         
-        private int CalculateLoopCount(DateTimeOffset startDate, DateTimeOffset utilDate, MeetingPeriodType periodType)
+        private int CalculateLoopCount(DateTimeOffset startDate, DateTimeOffset utilDate, MeetingRepeatType repeatType)
         {
             var count = 0;
             
             while (startDate <= utilDate)
             {
-                if (periodType != MeetingPeriodType.EveryWeekday || IsWorkday(startDate))
+                if (repeatType != MeetingRepeatType.EveryWeekday || IsWorkday(startDate))
                 {
                     ++count;
                 }
 
-                startDate = GetNextMeetingDate(startDate, periodType);
+                startDate = GetNextMeetingDate(startDate, repeatType);
             }
             
             return count;
         }
 
-        private void IncrementDates(ref DateTimeOffset startDate, ref DateTimeOffset endDate, MeetingPeriodType periodType)
+        private void IncrementDates(ref DateTimeOffset startDate, ref DateTimeOffset endDate, MeetingRepeatType repeatType)
         {
-            startDate = GetNextMeetingDate(startDate, periodType);
-            endDate = GetNextMeetingDate(endDate, periodType);
+            startDate = GetNextMeetingDate(startDate, repeatType);
+            endDate = GetNextMeetingDate(endDate, repeatType);
         }
         
-        private DateTimeOffset GetNextMeetingDate(DateTimeOffset currentDate, MeetingPeriodType periodType)
+        private DateTimeOffset GetNextMeetingDate(DateTimeOffset currentDate, MeetingRepeatType repeatType)
         {
             var nextDate = currentDate;
 
-            switch (periodType)
+            switch (repeatType)
             {
-                case MeetingPeriodType.Daily:
-                case MeetingPeriodType.EveryWeekday:
+                case MeetingRepeatType.Daily:
+                case MeetingRepeatType.EveryWeekday:
                     nextDate = currentDate.AddDays(1);
                     break;
-                case MeetingPeriodType.Weekly:
+                case MeetingRepeatType.Weekly:
                     nextDate = currentDate.AddDays(7);
                     break;
-                case MeetingPeriodType.BiWeekly:
+                case MeetingRepeatType.BiWeekly:
                     nextDate = currentDate.AddDays(14);
                     break;
-                case MeetingPeriodType.Monthly:
+                case MeetingRepeatType.Monthly:
                     nextDate = currentDate.AddMonths(1);
                     break;
             }
 
             // Adjust for weekdays required
-            if (periodType == MeetingPeriodType.EveryWeekday && nextDate.DayOfWeek is DayOfWeek.Saturday or DayOfWeek.Sunday)
+            if (repeatType == MeetingRepeatType.EveryWeekday && nextDate.DayOfWeek is DayOfWeek.Saturday or DayOfWeek.Sunday)
             {
                 var daysToAdd = nextDate.DayOfWeek is DayOfWeek.Saturday ? 2 : 1;
                 nextDate = nextDate.AddDays(daysToAdd);
