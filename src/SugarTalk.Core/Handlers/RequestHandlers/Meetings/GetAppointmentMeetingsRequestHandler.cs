@@ -7,16 +7,16 @@ using SugarTalk.Messages.Requests.Meetings;
 
 namespace SugarTalk.Core.Handlers.RequestHandlers.Meetings;
 
-public class GetAppointmentMeetingRequestHandler : IRequestHandler<GetAppointmentMeetingRequest, GetAppointmentMeetingResponse>
+public class GetAppointmentMeetingsRequestHandler : IRequestHandler<GetAppointmentMeetingsRequest, GetAppointmentMeetingsResponse>
 {
     private readonly IMeetingService _meetingService;
 
-    public GetAppointmentMeetingRequestHandler(IMeetingService meetingService)
+    public GetAppointmentMeetingsRequestHandler(IMeetingService meetingService)
     {
         _meetingService = meetingService;
     }
 
-    public async Task<GetAppointmentMeetingResponse> Handle(IReceiveContext<GetAppointmentMeetingRequest> context, CancellationToken cancellationToken)
+    public async Task<GetAppointmentMeetingsResponse> Handle(IReceiveContext<GetAppointmentMeetingsRequest> context, CancellationToken cancellationToken)
     {
         return await _meetingService.GetAppointmentMeetingsAsync(context.Message, cancellationToken).ConfigureAwait(false);
     }

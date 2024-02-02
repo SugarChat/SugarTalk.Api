@@ -5,11 +5,11 @@ using SugarTalk.Messages.Responses;
 
 namespace SugarTalk.Messages.Requests.Meetings;
 
-public class GetAppointmentMeetingRequest : IRequest
+public class GetAppointmentMeetingsRequest : IRequest
 {
     public int UserId { get; set; }
 }
 
-public class GetAppointmentMeetingResponse : SugarTalkResponse<List<AppointmentMeetingDto>>
+public class GetAppointmentMeetingsResponse : SugarTalkResponse<List<AppointmentMeetingDto>>
 {
 }

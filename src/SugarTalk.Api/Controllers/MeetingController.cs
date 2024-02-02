@@ -112,10 +112,10 @@ public class MeetingController : ControllerBase
     }
     
     [Route("appointment"), HttpGet]
-    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(GetAppointmentMeetingResponse))]
-    public async Task<IActionResult> GetAppointmentMeetingsAsync([FromQuery]GetAppointmentMeetingRequest request)
+    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(GetAppointmentMeetingsResponse))]
+    public async Task<IActionResult> GetAppointmentMeetingsAsync([FromQuery]GetAppointmentMeetingsRequest request)
     {
-        var response = await _mediator.RequestAsync<GetAppointmentMeetingRequest, GetAppointmentMeetingResponse>(request);
+        var response = await _mediator.RequestAsync<GetAppointmentMeetingsRequest, GetAppointmentMeetingsResponse>(request);
 
         return Ok(response);
     }

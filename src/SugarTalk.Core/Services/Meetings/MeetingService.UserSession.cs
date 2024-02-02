@@ -26,7 +26,7 @@ public partial interface IMeetingService
     Task<GetMeetingUserSessionByUserIdResponse> GetMeetingUserSessionByUserIdAsync(
         GetMeetingUserSessionByUserIdRequest request, CancellationToken cancellationToken);
     
-    Task<GetAppointmentMeetingResponse> GetAppointmentMeetingsAsync(GetAppointmentMeetingRequest request, CancellationToken cancellationToken);
+    Task<GetAppointmentMeetingsResponse> GetAppointmentMeetingsAsync(GetAppointmentMeetingsRequest request, CancellationToken cancellationToken);
 }
 
 public partial class MeetingService
@@ -116,11 +116,11 @@ public partial class MeetingService
         };
     }
 
-    public async Task<GetAppointmentMeetingResponse> GetAppointmentMeetingsAsync(GetAppointmentMeetingRequest request, CancellationToken cancellationToken)
+    public async Task<GetAppointmentMeetingsResponse> GetAppointmentMeetingsAsync(GetAppointmentMeetingsRequest request, CancellationToken cancellationToken)
     {
         var meetingList = await _meetingDataProvider.GetAppointmentMeetingsByUserIdAsync(request.UserId, cancellationToken).ConfigureAwait(false);
         
-        return new GetAppointmentMeetingResponse
+        return new GetAppointmentMeetingsResponse
         {
             Data = meetingList
         };
