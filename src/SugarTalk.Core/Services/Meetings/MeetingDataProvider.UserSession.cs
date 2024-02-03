@@ -34,7 +34,7 @@ public partial interface IMeetingDataProvider
     
     Task<MeetingUserSession> GetMeetingUserSessionByUserIdAsync(int userId, CancellationToken cancellationToken);
 
-    Task<(int Count, List<AppointmentMeetingDto> Records)> GetAppointmentMeetingsByUserIdAsync(GetAppointmentMeetingsRequest request, int? id = null, CancellationToken cancellationToken = default);
+    Task<(int Count, List<AppointmentMeetingDto> Records)> GetAppointmentMeetingsByUserIdAsync(GetAppointmentMeetingsRequest request, CancellationToken cancellationToken);
 }
 
 public partial class MeetingDataProvider
@@ -104,7 +104,7 @@ public partial class MeetingDataProvider
         await _repository.DeleteAllAsync(meetingUserSessions, cancellationToken).ConfigureAwait(false);
     }
 
-    public async Task<(int Count, List<AppointmentMeetingDto> Records)> GetAppointmentMeetingsByUserIdAsync(GetAppointmentMeetingsRequest request, int? userId, CancellationToken cancellationToken)
+    public async Task<(int Count, List<AppointmentMeetingDto> Records)> GetAppointmentMeetingsByUserIdAsync(GetAppointmentMeetingsRequest request, CancellationToken cancellationToken)
     {
         var query = 
             from meeting in _repository.Query<Meeting>()
@@ -113,7 +113,7 @@ public partial class MeetingDataProvider
             join subMeetings in _repository.Query<MeetingSubMeeting>()
                 on meeting.Id equals subMeetings.MeetingId into subMeetingGroup
             from subMeeting in subMeetingGroup.DefaultIfEmpty()
-            where meeting.MeetingMasterUserId == userId
+            where meeting.MeetingMasterUserId == _currentUser.Id
             select new AppointmentMeetingDto
             {
                 MeetingId = meeting.Id,
@@ -125,8 +125,8 @@ public partial class MeetingDataProvider
                 AppointmentType = meeting.AppointmentType
             }; 
     
-        var count = await query.CountAsync(cancellationToken);
-    
+        var count = await query.CountAsync(cancellationToken).ConfigureAwait(false);
+
         var records = await query
             .OrderBy(m => (m.StartDate - _clock.Now.ToUnixTimeSeconds()))
             .Skip((request.Page - 1) * request.PageSize) 

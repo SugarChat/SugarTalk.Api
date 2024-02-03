@@ -1,0 +1,3 @@
+ALTER TABLE meeting
+    MODIFY COLUMN start_date BIGINT NOT NULL,
+    MODIFY COLUMN end_date BIGINT NOT NULL;

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -118,11 +119,13 @@ public partial class MeetingService
 
     public async Task<GetAppointmentMeetingsResponse> GetAppointmentMeetingsAsync(GetAppointmentMeetingsRequest request, CancellationToken cancellationToken)
     {
-        var currentUserId = _currentUser.Id;
+        var user = await _accountDataProvider.GetUserAccountAsync(_currentUser.Id.Value, cancellationToken: cancellationToken)
+            .ConfigureAwait(false);
 
-        if (currentUserId == null) return new GetAppointmentMeetingsResponse();
-        
-        var (count,records) = await _meetingDataProvider.GetAppointmentMeetingsByUserIdAsync(request, currentUserId, cancellationToken).ConfigureAwait(false);
+        if (user is null) throw new UnreachableException();
+
+        var (count, records) = await _meetingDataProvider
+            .GetAppointmentMeetingsByUserIdAsync(request, cancellationToken).ConfigureAwait(false);
         
         return new GetAppointmentMeetingsResponse
         {
