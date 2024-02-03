@@ -59,6 +59,8 @@ namespace SugarTalk.Core.Services.Meetings
 
         Task<GetMeetingUserSettingResponse> GetMeetingUserSettingAsync(GetMeetingUserSettingRequest request, CancellationToken cancellationToken);
 
+        Task<GetMeetingHistoriesByUserResponse> GetMeetingHistoriesByUserAsync(GetMeetingHistoriesByUserRequest request, CancellationToken cancellationToken);
+        
         Task HandleToRepeatMeetingAsync(
             Guid meetingId,
             DateTimeOffset startDate,
@@ -144,6 +146,24 @@ namespace SugarTalk.Core.Services.Meetings
             return new MeetingScheduledEvent { Meeting = meetingDto };
         }
         
+        public async Task<GetMeetingHistoriesByUserResponse> GetMeetingHistoriesByUserAsync(
+            GetMeetingHistoriesByUserRequest request, CancellationToken cancellationToken)
+        {
+            var user = await _accountDataProvider
+                .GetUserAccountAsync(_currentUser.Id.Value, cancellationToken: cancellationToken).ConfigureAwait(false);
+
+            if (user is null) throw new UnauthorizedAccessException();
+
+            var (meetingHistoryList, totalCount) = await _meetingDataProvider
+                .GetMeetingHistoriesByUserIdAsync(user.Id, request.PageSetting, cancellationToken).ConfigureAwait(false);
+
+            return new GetMeetingHistoriesByUserResponse
+            {
+                MeetingHistoryList = meetingHistoryList,
+                TotalCount = totalCount
+            };
+        }
+
         public async Task HandleToRepeatMeetingAsync(
             Guid meetingId, 
             DateTimeOffset startDate, 
