@@ -536,6 +536,90 @@ public partial class MeetingServiceFixture : MeetingFixtureBase
         });
     }
 
+    [Fact]
+    public async Task CanUpdateMeetingWhenRepeatTypeChanged()
+    {
+        var meetingId = Guid.NewGuid();
+        
+        var now = new DateTimeOffset(2024, 2, 1, 7, 0, 0, TimeSpan.Zero);
+        
+        await Run<IMediator, IRepository, IClock>(async (mediator, repository, clock) =>
+        {
+            var command = new ScheduleMeetingCommand
+            {
+                Title = "Test Meeting",
+                TimeZone = "UTC",
+                SecurityCode = "123456",
+                StartDate = clock.Now.AddHours(5),
+                EndDate = clock.Now.AddHours(6),
+                UtilDate = clock.Now.AddMonths(1),
+                RepeatType = MeetingRepeatType.Daily,
+                AppointmentType = MeetingAppointmentType.Appointment
+            };
+
+            await mediator.SendAsync<ScheduleMeetingCommand, ScheduleMeetingResponse>(command);
+
+            var meeting = await repository.QueryNoTracking<Meeting>().FirstOrDefaultAsync();
+            meeting.ShouldNotBeNull();
+            meetingId = meeting.Id;
+
+            var meetingPeriodRule = await repository.QueryNoTracking<MeetingRepeatRule>().FirstOrDefaultAsync();
+            meetingPeriodRule.ShouldNotBeNull();
+            meetingPeriodRule.MeetingId.ShouldBe(meeting.Id);
+            meetingPeriodRule.RepeatType.ShouldBe(command.RepeatType);
+            meetingPeriodRule.RepeatUntilDate.ShouldBe(command.UtilDate.Value);
+
+            var subMeetingList = await repository.QueryNoTracking<MeetingSubMeeting>().ToListAsync();
+            subMeetingList.ShouldNotBeNull();
+            subMeetingList.Count.ShouldBe(29);
+        }, builder =>
+        {
+            MockLiveKitService(builder);
+            MockClock(builder, now);
+        });
+        
+        await Run<IMediator, IRepository, IClock>(async (mediator, repository, clock) =>
+        {
+            var updateCommand = new UpdateMeetingCommand
+            {
+                Id = meetingId,
+                Title = "Greg Meeting",
+                TimeZone = "Asia/Shanghai",
+                SecurityCode = "777888",
+                StartDate = clock.Now.AddHours(5),
+                EndDate = clock.Now.AddHours(6),
+                UtilDate = clock.Now.AddMonths(1),
+                RepeatType = MeetingRepeatType.Monthly,
+                AppointmentType = MeetingAppointmentType.Appointment
+            };
+
+            await mediator.SendAsync<UpdateMeetingCommand, UpdateMeetingResponse>(updateCommand);
+
+            var updatedMeeting = await repository.QueryNoTracking<Meeting>().FirstOrDefaultAsync();
+            updatedMeeting.ShouldNotBeNull();
+            updatedMeeting.Id.ShouldBe(meetingId);
+            updatedMeeting.Title.ShouldBe(updateCommand.Title);
+            updatedMeeting.AppointmentType.ShouldBe(updateCommand.AppointmentType);
+            updatedMeeting.TimeZone.ShouldBe(updateCommand.TimeZone);
+            updatedMeeting.SecurityCode.ShouldBe(updateCommand.SecurityCode.ToSha256());
+
+            var updatedMeetingRepeatRule = await repository.QueryNoTracking<MeetingRepeatRule>().FirstOrDefaultAsync();
+            updatedMeetingRepeatRule.ShouldNotBeNull();
+            updatedMeetingRepeatRule.MeetingId.ShouldBe(meetingId);
+            updatedMeetingRepeatRule.RepeatType.ShouldBe(updateCommand.RepeatType);
+            updatedMeetingRepeatRule.RepeatUntilDate.ShouldBe(updateCommand.UtilDate.Value);
+
+            var updatedSubMeetingList = await repository.QueryNoTracking<MeetingSubMeeting>()
+                .Where(x => x.SubConferenceStatus == MeetingRecordSubConferenceStatus.Default).ToListAsync();
+            updatedSubMeetingList.ShouldNotBeNull();
+            updatedSubMeetingList.Count.ShouldBe(1);
+        }, builder =>
+        {
+            MockLiveKitService(builder);
+            MockClock(builder, now);
+        });
+    }
+
     private static void MockLiveKitService(ContainerBuilder builder)
     {
         var liveKitServerUtilService = Substitute.For<ILiveKitServerUtilService>();

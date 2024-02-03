@@ -272,6 +272,11 @@ namespace SugarTalk.Core.Services.Meetings
 
         public async Task<UpdateMeetingResponse> UpdateMeetingAsync(UpdateMeetingCommand command, CancellationToken cancellationToken)
         {
+            var currentUser = await _accountDataProvider
+                .GetUserAccountAsync(_currentUser.Id.Value, cancellationToken: cancellationToken).ConfigureAwait(false);
+
+            if (currentUser is null) throw new UnauthorizedAccessException();
+            
             var meeting = await _meetingDataProvider
                 .GetMeetingByIdAsync(command.Id, cancellationToken).ConfigureAwait(false);
 
@@ -287,6 +292,17 @@ namespace SugarTalk.Core.Services.Meetings
 
             if (!string.IsNullOrEmpty(command.SecurityCode))
                 updateMeeting.SecurityCode = command.SecurityCode.ToSha256();
+
+            if (command.AppointmentType == MeetingAppointmentType.Appointment && command.RepeatType != MeetingRepeatType.None)
+            {
+                await _meetingDataProvider.DeleteMeetingSubMeetingsAsync(updateMeeting.Id, cancellationToken).ConfigureAwait(false);
+                
+                var subMeetingList = GenerateSubMeetings(updateMeeting.Id, command.StartDate, command.EndDate, command.UtilDate, command.RepeatType);
+                
+                await _meetingDataProvider.UpdateMeetingRepeatRuleAsync(updateMeeting.Id, command.RepeatType, cancellationToken).ConfigureAwait(false);
+
+                await _meetingDataProvider.PersistMeetingSubMeetingsAsync(subMeetingList, cancellationToken).ConfigureAwait(false);
+            }
             
             await _meetingDataProvider.UpdateMeetingAsync(updateMeeting, cancellationToken).ConfigureAwait(false);
 
