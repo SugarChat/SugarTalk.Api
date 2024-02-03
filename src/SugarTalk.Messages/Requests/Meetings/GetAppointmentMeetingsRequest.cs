@@ -7,9 +7,18 @@ namespace SugarTalk.Messages.Requests.Meetings;
 
 public class GetAppointmentMeetingsRequest : IRequest
 {
-    public int UserId { get; set; }
+    public int Page { get; set; }
+    
+    public int PageSize { get; set; }
 }
 
-public class GetAppointmentMeetingsResponse : SugarTalkResponse<List<AppointmentMeetingDto>>
+public class GetAppointmentMeetingsResponse : SugarTalkResponse<GetAppointmentMeetingsResponseDto>
 {
+}
+
+public class GetAppointmentMeetingsResponseDto
+{
+    public int Count { get; set; }
+
+    public List<AppointmentMeetingDto> Records { get; set; }
 }

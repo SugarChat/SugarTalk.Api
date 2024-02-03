@@ -118,11 +118,19 @@ public partial class MeetingService
 
     public async Task<GetAppointmentMeetingsResponse> GetAppointmentMeetingsAsync(GetAppointmentMeetingsRequest request, CancellationToken cancellationToken)
     {
-        var meetingList = await _meetingDataProvider.GetAppointmentMeetingsByUserIdAsync(request.UserId, cancellationToken).ConfigureAwait(false);
+        var currentUserId = _currentUser.Id;
+
+        if (currentUserId == null) return new GetAppointmentMeetingsResponse();
+        
+        var (count,records) = await _meetingDataProvider.GetAppointmentMeetingsByUserIdAsync(request, currentUserId, cancellationToken).ConfigureAwait(false);
         
         return new GetAppointmentMeetingsResponse
         {
-            Data = meetingList
+            Data = new GetAppointmentMeetingsResponseDto()
+            {
+                Count = count,
+                Records = records
+            }
         };
     }
 }

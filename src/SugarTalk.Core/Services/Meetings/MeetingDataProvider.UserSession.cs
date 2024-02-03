@@ -8,9 +8,11 @@ using Microsoft.EntityFrameworkCore;
 using SugarTalk.Core.Data;
 using SugarTalk.Core.Domain.Meeting;
 using SugarTalk.Core.Ioc;
+using SugarTalk.Core.Services.Identity;
 using SugarTalk.Messages.Dto.Meetings;
 using SugarTalk.Messages.Dto.Users;
 using SugarTalk.Messages.Enums.Meeting;
+using SugarTalk.Messages.Requests.Meetings;
 
 namespace SugarTalk.Core.Services.Meetings;
 
@@ -32,7 +34,7 @@ public partial interface IMeetingDataProvider
     
     Task<MeetingUserSession> GetMeetingUserSessionByUserIdAsync(int userId, CancellationToken cancellationToken);
 
-    Task<List<AppointmentMeetingDto>> GetAppointmentMeetingsByUserIdAsync(int userId, CancellationToken cancellationToken);
+    Task<(int Count, List<AppointmentMeetingDto> Records)> GetAppointmentMeetingsByUserIdAsync(GetAppointmentMeetingsRequest request, int? id = null, CancellationToken cancellationToken = default);
 }
 
 public partial class MeetingDataProvider
@@ -102,7 +104,7 @@ public partial class MeetingDataProvider
         await _repository.DeleteAllAsync(meetingUserSessions, cancellationToken).ConfigureAwait(false);
     }
 
-    public async Task<List<AppointmentMeetingDto>> GetAppointmentMeetingsByUserIdAsync(int userId, CancellationToken cancellationToken)
+    public async Task<(int Count, List<AppointmentMeetingDto> Records)> GetAppointmentMeetingsByUserIdAsync(GetAppointmentMeetingsRequest request, int? userId, CancellationToken cancellationToken)
     {
         var query = 
             from meeting in _repository.Query<Meeting>()
@@ -121,16 +123,17 @@ public partial class MeetingDataProvider
                 Status = meeting.Status,
                 Title = meeting.Title,
                 AppointmentType = meeting.AppointmentType
-            };
+            }; 
     
-        var result = await query.ToListAsync(cancellationToken).ConfigureAwait(false);
-
-        if (!result.Any()) return null;
-
-        var sortedResult = result
-            .OrderBy(m => (DateTimeOffset.FromUnixTimeSeconds(m.StartDate) - DateTimeOffset.Now).TotalSeconds)
-            .ToList();
-        
-        return sortedResult;
+        var count = await query.CountAsync(cancellationToken);
+    
+        var records = await query
+            .OrderBy(m => (m.StartDate - _clock.Now.ToUnixTimeSeconds()))
+            .Skip((request.Page - 1) * request.PageSize) 
+            .Take(request.PageSize) 
+            .ToListAsync(cancellationToken)
+            .ConfigureAwait(false);
+    
+        return (count, records);
     }
 }

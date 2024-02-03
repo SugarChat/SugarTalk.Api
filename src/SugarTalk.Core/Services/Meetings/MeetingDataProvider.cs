@@ -14,6 +14,7 @@ using SugarTalk.Core.Ioc;
 using SugarTalk.Core.Services.Account;
 using SugarTalk.Core.Services.Exceptions;
 using SugarTalk.Core.Services.Identity;
+using SugarTalk.Core.Services.Utils;
 using SugarTalk.Messages.Dto.Meetings;
 using SugarTalk.Messages.Enums.Meeting;
 
@@ -58,6 +59,7 @@ namespace SugarTalk.Core.Services.Meetings
     
     public partial class MeetingDataProvider : IMeetingDataProvider
     {
+        private readonly IClock _clock;
         private readonly IMapper _mapper;
         private readonly IRepository _repository;
         private readonly IUnitOfWork _unitOfWork;
@@ -65,8 +67,9 @@ namespace SugarTalk.Core.Services.Meetings
         private readonly IAccountDataProvider _accountDataProvider;
 
         public MeetingDataProvider(
-            IMapper mapper, IRepository repository, IUnitOfWork unitOfWork, IAccountDataProvider accountDataProvider, ICurrentUser currentUser)
+          IMapper mapper, IRepository repository, IUnitOfWork unitOfWork, IAccountDataProvider accountDataProvider, ICurrentUser currentUser, IClock clock)
         {
+            _clock = clock;
             _mapper = mapper;
             _repository = repository;
             _unitOfWork = unitOfWork;
