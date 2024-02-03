@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Autofac;
 using Mediator.Net;
+using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
 using NSubstitute;
 using Shouldly;
@@ -16,7 +17,9 @@ using SugarTalk.Messages.Commands.Meetings;
 using SugarTalk.Messages.Commands.Speech;
 using SugarTalk.Messages.Dto.Meetings.Speech;
 using SugarTalk.Messages.Dto.Users;
+using SugarTalk.Messages.Enums.Meeting;
 using SugarTalk.Messages.Enums.Speech;
+using SugarTalk.Messages.Requests.Meetings;
 using SugarTalk.Messages.Requests.Meetings.User;
 using SugarTalk.Messages.Requests.Speech;
 using Xunit;
@@ -216,5 +219,66 @@ public partial class MeetingServiceFixture
             
             builder.RegisterInstance(liveKitServerUtilService);
         });
+    }
+    
+    [Fact]
+    public async Task CanGetAppointmentMeetings()
+    {
+        var currentUser = new TestCurrentUser();
+        
+        await RunWithUnitOfWork<IMediator, IRepository>(async (mediator, repository) =>
+        {
+            await repository.InsertAllAsync(new List<Meeting>
+                {
+                    new ()
+                    {
+                        Title = "会议1",
+                        TimeZone = "",
+                        SecurityCode = "",
+                        StartDate = DateTimeOffset.Parse("2024-02-02T03:10:00.825Z").ToUnixTimeMilliseconds(),
+                        EndDate = DateTimeOffset.Parse("2024-02-02T03:11:00.825Z").ToUnixTimeMilliseconds(),
+                        AppointmentType = MeetingAppointmentType.Appointment,
+                        IsMuted = true,
+                        IsRecorded = true,
+                        MeetingNumber = "",
+                        MeetingStreamMode = 0 
+                    },
+                    new ()
+                    {
+                        Title = "会议2",
+                        TimeZone = "",
+                        SecurityCode = "",
+                        StartDate = DateTimeOffset.Parse("2024-02-02T03:11:00.825Z").ToUnixTimeMilliseconds(),
+                        EndDate = DateTimeOffset.Parse("2024-02-02T03:12:00.825Z").ToUnixTimeMilliseconds(),
+                        AppointmentType = MeetingAppointmentType.Appointment,
+                        IsMuted = true,
+                        IsRecorded = true,
+                        MeetingNumber = "",
+                        MeetingStreamMode = 0 
+                    },
+                    new ()
+                    {
+                        Title = "会议3",
+                        TimeZone = "",
+                        SecurityCode = "",
+                        StartDate = DateTimeOffset.Parse("2024-02-02T03:12:00.825Z").ToUnixTimeMilliseconds(),
+                        EndDate = DateTimeOffset.Parse("2024-02-02T03:13:00.825Z").ToUnixTimeMilliseconds(),
+                        AppointmentType = MeetingAppointmentType.Appointment,
+                        IsMuted = true,
+                        IsRecorded = true,
+                        MeetingNumber = "",
+                        MeetingStreamMode = 0 
+                    },
+                }
+           );
+            
+            // var response = await mediator.RequestAsync<GetAppointmentMeetingsRequest, GetAppointmentMeetingsResponse>(
+            //     new GetAppointmentMeetingsRequest { Page = 1, PageSize = 3 });
+            //
+            // response.Data.Count.ShouldBe(3);
+            var modelWhiteList = await repository.Query<Meeting>().FirstOrDefaultAsync();
+            
+        });
+
     }
 }
