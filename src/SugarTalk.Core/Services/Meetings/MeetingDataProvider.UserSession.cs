@@ -129,8 +129,8 @@ public partial class MeetingDataProvider
 
         var records = await query
             .OrderBy(m => (m.StartDate - _clock.Now.ToUnixTimeSeconds()))
-            .Skip((request.Page - 1) * request.PageSize) 
-            .Take(request.PageSize) 
+            .Skip((request.PageSetting.Page - 1) * request.PageSetting.PageSize) 
+            .Take(request.PageSetting.PageSize) 
             .ToListAsync(cancellationToken)
             .ConfigureAwait(false);
     

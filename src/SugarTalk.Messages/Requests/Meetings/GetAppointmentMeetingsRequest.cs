@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using Mediator.Net.Contracts;
+using SugarTalk.Messages.Dto;
 using SugarTalk.Messages.Dto.Meetings;
 using SugarTalk.Messages.Responses;
 
@@ -7,9 +8,7 @@ namespace SugarTalk.Messages.Requests.Meetings;
 
 public class GetAppointmentMeetingsRequest : IRequest
 {
-    public int Page { get; set; }
-    
-    public int PageSize { get; set; }
+    public PageSetting PageSetting { get; set; }
 }
 
 public class GetAppointmentMeetingsResponse : SugarTalkResponse<GetAppointmentMeetingsResponseDto>
