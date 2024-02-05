@@ -50,7 +50,9 @@ public partial class BaseFixture
         _liveKitServerUtilService = Substitute.For<ILiveKitServerUtilService>();
         _accountDataProvider = MockAccountDataProvider(_mapper, _repository, _unitOfWork);
         _meetingDataProvider = MockMeetingDataProvider(_mapper, _repository, _unitOfWork, _accountDataProvider, _currentUser, _clock);
-        _meetingService = MockMeetingService(_clock, _mapper, _unitOfWork, _currentUser, _meetingDataProvider, _accountDataProvider, _antMediaServerUtilService, _liveKitServerUtilService, _liveKitServerSetting, _speechClient);
+        _meetingService = MockMeetingService(_clock, _mapper, _unitOfWork, _currentUser, _speechClient,
+            _meetingDataProvider, _accountDataProvider, _liveKitServerSetting, _liveKitServerUtilService,
+            _antMediaServerUtilService);
         _meetingProcessJobService = MockMeetingProcessJobService(_clock, _unitOfWork, _meetingDataProvider);
     }
 
@@ -69,21 +71,26 @@ public partial class BaseFixture
         IMapper mapper, 
         IUnitOfWork unitOfWork,
         ICurrentUser currentUser,
+        ISpeechClient speechClient,
         IMeetingDataProvider meetingDataProvider,
         IAccountDataProvider accountDataProvider,
-        IAntMediaServerUtilService antMediaServerUtilService, 
-        ILiveKitServerUtilService liveKitServerUtilService,
         LiveKitServerSetting liveKitServerSetting, 
-        ISpeechClient speechClient)
+        ILiveKitServerUtilService liveKitServerUtilService,
+        IAntMediaServerUtilService antMediaServerUtilService
+       )
     {
-        return new MeetingService(clock, mapper, unitOfWork,
+        return new MeetingService(
+            clock,
+            mapper,
+            unitOfWork,
             currentUser,
             speechClient,
             meetingDataProvider,
             accountDataProvider,
             liveKitServerSetting,
             liveKitServerUtilService,
-            antMediaServerUtilService);
+            antMediaServerUtilService
+        );
     }
     
     protected IMeetingDataProvider MockMeetingDataProvider(

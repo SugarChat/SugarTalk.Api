@@ -235,55 +235,53 @@ public partial class MeetingServiceFixture
         await RunWithUnitOfWork<IRepository>(async repository =>
         {
             await repository.InsertAllAsync(new List<Meeting>
+            {
+                new()
                 {
-                    new()
-                    {
-                        Id = meetId1,
-                        Title = "会议1",
-                        TimeZone = "",
-                        SecurityCode = "",
-                        StartDate = DateTimeOffset.Parse("2024-02-02T03:10:00.825Z").ToUnixTimeMilliseconds(),
-                        EndDate = DateTimeOffset.Parse("2024-02-02T03:11:00.825Z").ToUnixTimeMilliseconds(),
-                        AppointmentType = MeetingAppointmentType.Appointment,
-                        IsMuted = true,
-                        IsRecorded = true,
-                        MeetingNumber = "",
-                        MeetingStreamMode = 0,
-                        MeetingMasterUserId = 1
-                    },
-                    new()
-                    {
-                        Id = meetId2,
-                        Title = "会议2",
-                        TimeZone = "",
-                        SecurityCode = "",
-                        StartDate = DateTimeOffset.Parse("2024-02-02T03:11:00.825Z").ToUnixTimeMilliseconds(),
-                        EndDate = DateTimeOffset.Parse("2024-02-02T03:12:00.825Z").ToUnixTimeMilliseconds(),
-                        AppointmentType = MeetingAppointmentType.Appointment,
-                        IsMuted = true,
-                        IsRecorded = true,
-                        MeetingNumber = "",
-                        MeetingStreamMode = 0,
-                        MeetingMasterUserId = 1
-                    },
-                    new()
-                    {
-                        Id = meetId3,
-                        Title = "会议3",
-                        TimeZone = "",
-                        SecurityCode = "",
-                        StartDate = DateTimeOffset.Parse("2024-02-02T03:12:00.825Z").ToUnixTimeMilliseconds(),
-                        EndDate = DateTimeOffset.Parse("2024-02-02T03:13:00.825Z").ToUnixTimeMilliseconds(),
-                        AppointmentType = MeetingAppointmentType.Quick,
-                        IsMuted = true,
-                        IsRecorded = true,
-                        MeetingNumber = "",
-                        MeetingStreamMode = 0,
-                        MeetingMasterUserId = 1
-                    },
+                    Id = meetId1,
+                    Title = "会议1",
+                    TimeZone = "",
+                    SecurityCode = "",
+                    StartDate = DateTimeOffset.Parse("2024-02-02T03:10:00.825Z").ToUnixTimeMilliseconds(),
+                    EndDate = DateTimeOffset.Parse("2024-02-02T03:11:00.825Z").ToUnixTimeMilliseconds(),
+                    AppointmentType = MeetingAppointmentType.Appointment,
+                    IsMuted = true,
+                    IsRecorded = true,
+                    MeetingNumber = "",
+                    MeetingStreamMode = 0,
+                    MeetingMasterUserId = 1
+                },
+                new()
+                {
+                    Id = meetId2,
+                    Title = "会议2",
+                    TimeZone = "",
+                    SecurityCode = "",
+                    StartDate = DateTimeOffset.Parse("2024-02-02T03:11:00.825Z").ToUnixTimeMilliseconds(),
+                    EndDate = DateTimeOffset.Parse("2024-02-02T03:12:00.825Z").ToUnixTimeMilliseconds(),
+                    AppointmentType = MeetingAppointmentType.Appointment,
+                    IsMuted = true,
+                    IsRecorded = true,
+                    MeetingNumber = "",
+                    MeetingStreamMode = 0,
+                    MeetingMasterUserId = 1
+                },
+                new()
+                {
+                    Id = meetId3,
+                    Title = "会议3",
+                    TimeZone = "",
+                    SecurityCode = "",
+                    StartDate = DateTimeOffset.Parse("2024-02-02T03:12:00.825Z").ToUnixTimeMilliseconds(),
+                    EndDate = DateTimeOffset.Parse("2024-02-02T03:13:00.825Z").ToUnixTimeMilliseconds(),
+                    AppointmentType = MeetingAppointmentType.Quick,
+                    IsMuted = true,
+                    IsRecorded = true,
+                    MeetingNumber = "",
+                    MeetingStreamMode = 0,
+                    MeetingMasterUserId = 1
                 }
-            );
-
+            });
        
             await repository.InsertAllAsync(new List<MeetingRepeatRule>
             {
@@ -301,7 +299,7 @@ public partial class MeetingServiceFixture
                 {
                     MeetingId = meetId3,
                     RepeatType = MeetingRepeatType.None
-                },
+                }
             });
 
             await repository.InsertAllAsync(new List<MeetingSubMeeting>
