@@ -55,6 +55,10 @@ namespace SugarTalk.Core.Services.Meetings
         Task PersistMeetingSubMeetingsAsync(List<MeetingSubMeeting> subMeetingList, CancellationToken cancellationToken);
         
         Task UpdateMeetingStatusAsync(Guid meetingId, CancellationToken cancellationToken);
+        
+        Task DeleteMeetingSubMeetingsAsync(Guid meetingId, CancellationToken cancellationToken);
+        
+        Task UpdateMeetingRepeatRuleAsync(Guid meetingId, MeetingRepeatType repeatType, CancellationToken cancellationToken);
     }
     
     public partial class MeetingDataProvider : IMeetingDataProvider
@@ -238,6 +242,25 @@ namespace SugarTalk.Core.Services.Meetings
             meeting.Status = MeetingStatus.InProgress;
 
             await _unitOfWork.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        }
+
+        public async Task DeleteMeetingSubMeetingsAsync(Guid meetingId, CancellationToken cancellationToken)
+        {
+            var meetingSubMeetings = await _repository.Query<MeetingSubMeeting>()
+                .Where(x => x.MeetingId == meetingId)
+                .ToListAsync(cancellationToken).ConfigureAwait(false);
+
+            meetingSubMeetings.ForEach(x => x.SubConferenceStatus = MeetingRecordSubConferenceStatus.NotExist);
+        }
+
+        public async Task UpdateMeetingRepeatRuleAsync(Guid meetingId, MeetingRepeatType repeatType, CancellationToken cancellationToken)
+        {
+            var meetingRepeatRule = await _repository.Query<MeetingRepeatRule>()
+                .FirstOrDefaultAsync(x => x.MeetingId == meetingId, cancellationToken).ConfigureAwait(false);
+
+            if (meetingRepeatRule is null) return;
+            
+            meetingRepeatRule.RepeatType = repeatType;
         }
     }
 }
