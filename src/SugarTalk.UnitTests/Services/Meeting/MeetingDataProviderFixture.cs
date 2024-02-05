@@ -15,7 +15,8 @@ public class MeetingDataProviderFixture : BaseFixture
     {
         const int user1Id = 1;
         const int user2Id = 2;
-        var oneHour = 3600;
+        
+        const int oneHour = 3600;
         
         var meeting1Id = Guid.NewGuid();
         var meeting2Id = Guid.NewGuid();
