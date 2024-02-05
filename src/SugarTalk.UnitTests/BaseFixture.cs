@@ -49,7 +49,7 @@ public partial class BaseFixture
         _currentUser = Substitute.For<ICurrentUser>();
         _liveKitServerUtilService = Substitute.For<ILiveKitServerUtilService>();
         _accountDataProvider = MockAccountDataProvider(_mapper, _repository, _unitOfWork);
-        _meetingDataProvider = MockMeetingDataProvider(_mapper, _repository, _unitOfWork, _accountDataProvider, _currentUser, _clock);
+        _meetingDataProvider = MockMeetingDataProvider(_clock, _mapper, _repository, _unitOfWork, _currentUser, _accountDataProvider);
         _meetingService = MockMeetingService(_clock, _mapper, _unitOfWork, _currentUser, _speechClient,
             _meetingDataProvider, _accountDataProvider, _liveKitServerSetting, _liveKitServerUtilService,
             _antMediaServerUtilService);
@@ -76,32 +76,22 @@ public partial class BaseFixture
         IAccountDataProvider accountDataProvider,
         LiveKitServerSetting liveKitServerSetting, 
         ILiveKitServerUtilService liveKitServerUtilService,
-        IAntMediaServerUtilService antMediaServerUtilService
-       )
+        IAntMediaServerUtilService antMediaServerUtilService)
     {
         return new MeetingService(
-            clock,
-            mapper,
-            unitOfWork,
-            currentUser,
-            speechClient,
-            meetingDataProvider,
-            accountDataProvider,
-            liveKitServerSetting,
-            liveKitServerUtilService,
-            antMediaServerUtilService
-        );
+            clock, mapper, unitOfWork, currentUser, speechClient, meetingDataProvider, accountDataProvider,
+            liveKitServerSetting, liveKitServerUtilService, antMediaServerUtilService);
     }
     
     protected IMeetingDataProvider MockMeetingDataProvider(
+        IClock clock,
         IMapper mapper, 
         IRepository repository,
-        IUnitOfWork unitOfWork,
-        IAccountDataProvider accountDataProvider,
+        IUnitOfWork unitOfWork,         
         ICurrentUser currentUser,
-        IClock clock)
+        IAccountDataProvider accountDataProvider)
     {
-        return new MeetingDataProvider(mapper, repository, unitOfWork, accountDataProvider, currentUser, clock);
+        return new MeetingDataProvider(clock, mapper, repository, unitOfWork, currentUser, accountDataProvider);
     }
     
     protected IMapper CreateMapper()

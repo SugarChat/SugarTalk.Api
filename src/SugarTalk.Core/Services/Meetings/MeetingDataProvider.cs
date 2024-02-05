@@ -74,7 +74,7 @@ namespace SugarTalk.Core.Services.Meetings
         private readonly IAccountDataProvider _accountDataProvider;
 
         public MeetingDataProvider(
-          IMapper mapper, IRepository repository, IUnitOfWork unitOfWork, IAccountDataProvider accountDataProvider, ICurrentUser currentUser, IClock clock)
+            IClock clock, IMapper mapper, IRepository repository, IUnitOfWork unitOfWork, ICurrentUser currentUser, IAccountDataProvider accountDataProvider)
         {
             _clock = clock;
             _mapper = mapper;
