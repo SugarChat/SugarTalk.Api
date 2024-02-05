@@ -29,17 +29,37 @@ public partial class BaseFixture
         };
     }
 
-    protected UserAccount CreateUserAccountEvent(int userId)
+    protected UserAccount CreateUserAccountEvent(int userId, string userName = "test_man")
     {
         return new UserAccount
         {
             Id = userId,
             Uuid = Guid.NewGuid(),
-            UserName = "greg",
+            UserName = userName,
             Password = "123456",
             ThirdPartyUserId = Guid.NewGuid().ToString(),
             Issuer = UserAccountIssuer.Wiltechs,
             IsActive = true
+        };
+    }
+    
+    protected MeetingUserSession CreateUserSessionEvent(int id, int userId, Guid meetingId, 
+        MeetingAttendeeStatus status = MeetingAttendeeStatus.Absent, long firstJoinTime = 0, long lastQuitTime = 0, 
+        int totalJoinCount = 0, long cumulativeTime = 0, bool isMuted = false, bool isSharingScreen = false)
+    {
+        return new MeetingUserSession
+        {
+            Id = id,
+            UserId = userId,
+            MeetingId = meetingId,
+            Status = status,
+            FirstJoinTime = firstJoinTime,
+            LastQuitTime = lastQuitTime,
+            TotalJoinCount = totalJoinCount,
+            CumulativeTime = cumulativeTime,
+            IsMuted = isMuted,
+            IsSharingScreen = isSharingScreen,
+            IsDeleted = false
         };
     }
 }
