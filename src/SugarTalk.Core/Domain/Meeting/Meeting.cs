@@ -47,11 +47,11 @@ public class Meeting : IEntity
     [Column("security_code"), StringLength(128)]
     public string SecurityCode { get; set; }
 
-    [Column("period_type")] 
-    public MeetingPeriodType PeriodType { get; set; }
-    
     [Column("status")]
     public MeetingStatus Status { get; set; }
+    
+    [Column("appointment_type")]
+    public MeetingAppointmentType AppointmentType { get; set; }
 
     [Column("is_muted")] 
     public bool IsMuted { get; set; }

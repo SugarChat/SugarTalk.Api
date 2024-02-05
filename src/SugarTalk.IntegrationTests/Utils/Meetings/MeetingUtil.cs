@@ -29,7 +29,7 @@ public class MeetingUtil : TestUtil
     public async Task<ScheduleMeetingResponse> ScheduleMeeting(
         string title = null, string timezone = null, string securityCode = null, 
         DateTimeOffset? startDate = null, DateTimeOffset? endDate = null, 
-        MeetingPeriodType periodType = MeetingPeriodType.None, bool isMuted = false, bool isRecorded = false)
+        MeetingRepeatType repeatType = MeetingRepeatType.None, bool isMuted = false, bool isRecorded = false)
     {
         return await Run<IMediator, ScheduleMeetingResponse>(async (mediator) =>
         {
@@ -41,7 +41,7 @@ public class MeetingUtil : TestUtil
                     SecurityCode = securityCode,
                     StartDate = startDate ?? DateTimeOffset.Now,
                     EndDate = endDate ?? DateTimeOffset.Now.AddDays(2),
-                    PeriodType = periodType,
+                    RepeatType = repeatType,
                     IsMuted = isMuted,
                     IsRecorded = isRecorded
                 });
@@ -67,14 +67,13 @@ public class MeetingUtil : TestUtil
         });
     }
 
-    public async Task<MeetingDto> JoinMeeting(string meetingNumber, string streamId, bool isMuted = false)
+    public async Task<MeetingDto> JoinMeeting(string meetingNumber, bool isMuted = false)
     {
         return await Run<IMediator, MeetingDto>(async (mediator) =>
         {
             var response = await mediator.SendAsync<JoinMeetingCommand, JoinMeetingResponse>(new JoinMeetingCommand
             {
                 MeetingNumber = meetingNumber,
-                StreamId = streamId,
                 IsMuted = isMuted
             });
 

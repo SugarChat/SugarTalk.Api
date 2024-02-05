@@ -8,7 +8,6 @@ public class JoinMeetingCommandValidator : FluentMessageValidator<JoinMeetingCom
 {
     public JoinMeetingCommandValidator()
     {
-        RuleFor(x => x.StreamId).NotNull();
         RuleFor(x => x.MeetingNumber).NotNull();
     }
 }

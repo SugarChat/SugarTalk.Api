@@ -2,7 +2,7 @@ using System.ComponentModel;
 
 namespace SugarTalk.Messages.Enums.Meeting;
 
-public enum MeetingPeriodType
+public enum MeetingRepeatType
 {
     [Description("不重复")]
     None,

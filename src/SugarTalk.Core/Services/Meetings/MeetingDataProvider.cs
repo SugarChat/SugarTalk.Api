@@ -15,7 +15,7 @@ using SugarTalk.Core.Services.Account;
 using SugarTalk.Core.Services.Exceptions;
 using SugarTalk.Core.Services.Identity;
 using SugarTalk.Messages.Dto.Meetings;
-using SugarTalk.Messages.Dto.Meetings.User;
+using SugarTalk.Messages.Enums.Meeting;
 
 namespace SugarTalk.Core.Services.Meetings
 {
@@ -46,6 +46,18 @@ namespace SugarTalk.Core.Services.Meetings
         Task<MeetingUserSetting> GetMeetingUserSettingByUserIdAsync(int userId, Guid meetingId, CancellationToken cancellationToken);
         
         Task CheckMeetingSecurityCodeAsync(Guid meetingId, string securityCode, CancellationToken cancellationToken);
+        
+        Task UpdateMeetingsAsync(List<Meeting> meetingList, CancellationToken cancellationToken);
+        
+        Task PersistMeetingRepeatRuleAsync(MeetingRepeatRule repeatRule, CancellationToken cancellationToken);
+        
+        Task PersistMeetingSubMeetingsAsync(List<MeetingSubMeeting> subMeetingList, CancellationToken cancellationToken);
+        
+        Task UpdateMeetingStatusAsync(Guid meetingId, CancellationToken cancellationToken);
+        
+        Task DeleteMeetingSubMeetingsAsync(Guid meetingId, CancellationToken cancellationToken);
+        
+        Task UpdateMeetingRepeatRuleAsync(Guid meetingId, MeetingRepeatType repeatType, CancellationToken cancellationToken);
     }
     
     public partial class MeetingDataProvider : IMeetingDataProvider
@@ -195,6 +207,57 @@ namespace SugarTalk.Core.Services.Meetings
                 x.Id == meetingId && x.SecurityCode == code, cancellationToken).ConfigureAwait(false);
 
             if (!isCorrect) throw new MeetingSecurityCodeNotMatchException();
+        }
+
+        public async Task UpdateMeetingsAsync(List<Meeting> meetingList, CancellationToken cancellationToken)
+        {
+            await _repository.UpdateAllAsync(meetingList, cancellationToken).ConfigureAwait(false);
+            
+            await _unitOfWork.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        }
+
+        public async Task PersistMeetingRepeatRuleAsync(MeetingRepeatRule repeatRule, CancellationToken cancellationToken)
+        {
+            if (repeatRule is null) return;
+            
+            await _repository.InsertAsync(repeatRule, cancellationToken).ConfigureAwait(false);
+        }
+
+        public async Task PersistMeetingSubMeetingsAsync(List<MeetingSubMeeting> subMeetingList, CancellationToken cancellationToken)
+        {
+            if (subMeetingList is not { Count: > 0 }) return;
+            
+            await _repository.InsertAllAsync(subMeetingList, cancellationToken).ConfigureAwait(false);
+        }
+
+        public async Task UpdateMeetingStatusAsync(Guid meetingId, CancellationToken cancellationToken)
+        {
+            var meeting = await _repository.Query<Meeting>().Where(x=>x.Id == meetingId).FirstOrDefaultAsync(cancellationToken).ConfigureAwait(false);
+
+            if (meeting is null) return;
+
+            meeting.Status = MeetingStatus.InProgress;
+
+            await _unitOfWork.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        }
+
+        public async Task DeleteMeetingSubMeetingsAsync(Guid meetingId, CancellationToken cancellationToken)
+        {
+            var meetingSubMeetings = await _repository.Query<MeetingSubMeeting>()
+                .Where(x => x.MeetingId == meetingId)
+                .ToListAsync(cancellationToken).ConfigureAwait(false);
+
+            meetingSubMeetings.ForEach(x => x.SubConferenceStatus = MeetingRecordSubConferenceStatus.NotExist);
+        }
+
+        public async Task UpdateMeetingRepeatRuleAsync(Guid meetingId, MeetingRepeatType repeatType, CancellationToken cancellationToken)
+        {
+            var meetingRepeatRule = await _repository.Query<MeetingRepeatRule>()
+                .FirstOrDefaultAsync(x => x.MeetingId == meetingId, cancellationToken).ConfigureAwait(false);
+
+            if (meetingRepeatRule is null) return;
+            
+            meetingRepeatRule.RepeatType = repeatType;
         }
     }
 }

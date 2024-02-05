@@ -1,0 +1,1 @@
+alter table `meeting_repeat_rule` modify `repeat_until_date` datetime(3) null;

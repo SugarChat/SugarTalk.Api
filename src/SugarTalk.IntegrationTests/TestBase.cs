@@ -3,7 +3,9 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using Autofac;
 using Microsoft.Extensions.Configuration;
+using NSubstitute;
 using StackExchange.Redis;
+using SugarTalk.Core.Services.Utils;
 using SugarTalk.IntegrationTests.Utils.Account;
 using Xunit;
 
@@ -49,5 +51,14 @@ public partial class TestBase : TestUtilBase, IAsyncLifetime, IDisposable
         SetupScope(CurrentScope);
 
         _identityUtil = new IdentityUtil(CurrentScope);
+    }
+    
+    protected IClock MockClock(ContainerBuilder builder, DateTimeOffset? mockedDate = null)
+    {
+        mockedDate ??= DateTimeOffset.Now;
+        var clock = Substitute.For<IClock>();
+        clock.Now.Returns(mockedDate.Value);
+        builder.Register(_ => clock);
+        return clock;
     }
 }
