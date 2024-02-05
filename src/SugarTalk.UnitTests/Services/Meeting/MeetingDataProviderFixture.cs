@@ -53,7 +53,10 @@ public class MeetingDataProviderFixture : BaseFixture
             CreateUserSessionEvent(3, user1Id, meeting3Id),
             CreateUserSessionEvent(4, user1Id, meeting4Id),
             CreateUserSessionEvent(5, user2Id, meeting4Id),
-            CreateUserSessionEvent(6, user1Id, meeting5Id)
+            CreateUserSessionEvent(6, user1Id, meeting5Id),
+            
+            CreateUserSessionEvent(7, user1Id, meeting4Id, createdDate: _clock.Now.AddHours(1)),
+            CreateUserSessionEvent(8, user1Id, meeting4Id, createdDate: _clock.Now.AddHours(2))
         });
 
         var response = await _meetingDataProvider

@@ -251,6 +251,8 @@ namespace SugarTalk.Core.Services.Meetings
                 .Where(x => x.MeetingId == meetingId)
                 .ToListAsync(cancellationToken).ConfigureAwait(false);
 
+            if (meetingSubMeetings is not { Count: > 0 }) return;
+
             meetingSubMeetings.ForEach(x => x.SubConferenceStatus = MeetingRecordSubConferenceStatus.NotExist);
         }
 
@@ -296,12 +298,18 @@ namespace SugarTalk.Core.Services.Meetings
 
             var allUserSession = await _repository.QueryNoTracking<MeetingUserSession>()
                 .Where(x => meetingIds.Contains(x.MeetingId)).ToListAsync(cancellationToken).ConfigureAwait(false);
+
+            var latestUserSessions = allUserSession
+                .GroupBy(session => session.MeetingId)
+                .SelectMany(group => group
+                    .GroupBy(subGroup => subGroup.UserId)
+                    .Select(subGroup => subGroup.OrderByDescending(session => session.CreatedDate).First())).ToList();
             
-            var userIds = allUserSession.Select(x => x.UserId).Distinct().ToList();
+            var userIds = latestUserSessions.Select(x => x.UserId).Distinct().ToList();
             
             var userAccounts = await _accountDataProvider.GetUserAccountsAsync(userIds, cancellationToken).ConfigureAwait(false);
 
-            var attendeesByMeetingId = allUserSession.GroupBy(x => x.MeetingId)
+            var attendeesByMeetingId = latestUserSessions.GroupBy(x => x.MeetingId)
                 .ToDictionary(group => group.Key, group =>
                 {
                     var attendees = group

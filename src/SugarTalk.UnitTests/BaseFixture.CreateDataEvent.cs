@@ -43,7 +43,7 @@ public partial class BaseFixture
         };
     }
     
-    protected MeetingUserSession CreateUserSessionEvent(int id, int userId, Guid meetingId, 
+    protected MeetingUserSession CreateUserSessionEvent(int id, int userId, Guid meetingId, DateTimeOffset? createdDate = null,
         MeetingAttendeeStatus status = MeetingAttendeeStatus.Absent, long firstJoinTime = 0, long lastQuitTime = 0, 
         int totalJoinCount = 0, long cumulativeTime = 0, bool isMuted = false, bool isSharingScreen = false)
     {
@@ -57,6 +57,7 @@ public partial class BaseFixture
             LastQuitTime = lastQuitTime,
             TotalJoinCount = totalJoinCount,
             CumulativeTime = cumulativeTime,
+            CreatedDate = createdDate ?? _clock.Now,
             IsMuted = isMuted,
             IsSharingScreen = isSharingScreen,
             IsDeleted = false

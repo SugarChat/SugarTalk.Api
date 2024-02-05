@@ -253,41 +253,19 @@ namespace SugarTalk.Core.Services.Meetings
         public async Task ConnectUserToMeetingAsync(
             UserAccountDto user, MeetingDto meeting, bool? isMuted = null, CancellationToken cancellationToken = default)
         {
-            var userSession = meeting.UserSessions
-                .Where(x => x.UserId == user.Id)
-                .OrderByDescending(x => x.CreatedDate)
-                .Select(x => _mapper.Map<MeetingUserSession>(x))
-                .FirstOrDefault();
+            var userSession = GenerateNewUserSessionFromUser(user, meeting.Id, isMuted ?? false);
 
-            if (userSession == null)
-            {
-                userSession = GenerateNewUserSessionFromUser(user, meeting.Id, isMuted ?? false);
+            await _meetingDataProvider.AddMeetingUserSessionAsync(userSession, cancellationToken).ConfigureAwait(false);
 
-                await _meetingDataProvider.AddMeetingUserSessionAsync(userSession, cancellationToken).ConfigureAwait(false);
-                
-                var updateUserSession = _mapper.Map<MeetingUserSessionDto>(userSession);
+            var updateUserSession = _mapper.Map<MeetingUserSessionDto>(userSession);
 
-                updateUserSession.UserName = user.UserName;
-                
-                meeting.AddUserSession(updateUserSession);
-            }
-            else
-            {
-                if (isMuted.HasValue)
-                    userSession.IsMuted = isMuted.Value;
+            updateUserSession.UserName = user.UserName;
 
-                userSession.Status = MeetingAttendeeStatus.Present;
-                userSession.FirstJoinTime = _clock.Now.ToUnixTimeSeconds();
-                userSession.TotalJoinCount += 1;
+            meeting.AddUserSession(updateUserSession);
 
-                await _meetingDataProvider.UpdateMeetingUserSessionAsync(userSession, cancellationToken).ConfigureAwait(false);
-                
-                var updateUserSession = _mapper.Map<MeetingUserSessionDto>(userSession);
-
-                updateUserSession.UserName = user.UserName;
-
-                meeting.UpdateUserSession(updateUserSession);
-            }
+            meeting.UserSessions = meeting.UserSessions
+                .GroupBy(x => x.UserId)
+                .Select(group => group.OrderByDescending(y => y.CreatedDate).First()).ToList();
         }
 
         public async Task<UpdateMeetingResponse> UpdateMeetingAsync(UpdateMeetingCommand command, CancellationToken cancellationToken)
@@ -313,10 +291,10 @@ namespace SugarTalk.Core.Services.Meetings
             if (!string.IsNullOrEmpty(command.SecurityCode))
                 updateMeeting.SecurityCode = command.SecurityCode.ToSha256();
 
+            await _meetingDataProvider.DeleteMeetingSubMeetingsAsync(updateMeeting.Id, cancellationToken).ConfigureAwait(false);
+            
             if (command.AppointmentType == MeetingAppointmentType.Appointment && command.RepeatType != MeetingRepeatType.None)
             {
-                await _meetingDataProvider.DeleteMeetingSubMeetingsAsync(updateMeeting.Id, cancellationToken).ConfigureAwait(false);
-                
                 var subMeetingList = GenerateSubMeetings(updateMeeting.Id, command.StartDate, command.EndDate, command.UtilDate, command.RepeatType);
                 
                 await _meetingDataProvider.UpdateMeetingRepeatRuleAsync(updateMeeting.Id, command.RepeatType, cancellationToken).ConfigureAwait(false);
