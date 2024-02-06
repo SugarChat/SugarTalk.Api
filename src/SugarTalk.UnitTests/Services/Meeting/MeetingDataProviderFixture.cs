@@ -38,9 +38,9 @@ public class MeetingDataProviderFixture : BaseFixture
                 startDate: _clock.Now.AddDays(-1).ToUnixTimeSeconds(), endDate: _clock.Now.AddDays(-1).AddHours(1).ToUnixTimeSeconds(), status: MeetingStatus.Completed),
             CreateMeetingEvent(meeting2Id, meetingNumber: "111222",
                 startDate: _clock.Now.AddDays(-1).AddHours(1).ToUnixTimeSeconds(), endDate: _clock.Now.AddDays(-1).AddHours(2).ToUnixTimeSeconds(), status: MeetingStatus.Completed),
-            CreateMeetingEvent(meeting3Id, meetingNumber: "111222",
+            CreateMeetingEvent(meeting3Id, meetingNumber: "555666",
                 startDate: _clock.Now.AddDays(-1).AddHours(2).ToUnixTimeSeconds(), endDate: _clock.Now.AddDays(-1).AddHours(3).ToUnixTimeSeconds(), status: MeetingStatus.Completed),
-            CreateMeetingEvent(meeting4Id, meetingNumber: "111222",
+            CreateMeetingEvent(meeting4Id, meetingNumber: "777888",
                 startDate: _clock.Now.AddDays(-1).AddHours(3).ToUnixTimeSeconds(), endDate: _clock.Now.AddDays(-1).AddHours(4).ToUnixTimeSeconds(), status: MeetingStatus.Completed),
             CreateMeetingEvent(meeting5Id, meetingNumber: "222333",
                 startDate: _clock.Now.ToUnixTimeSeconds(), endDate: _clock.Now.AddHours(1).ToUnixTimeSeconds(), status: MeetingStatus.Pending)
@@ -56,13 +56,13 @@ public class MeetingDataProviderFixture : BaseFixture
             CreateUserSessionEvent(6, user1Id, meeting5Id),
             
             CreateUserSessionEvent(7, user1Id, meeting4Id, createdDate: _clock.Now.AddHours(1)),
-            CreateUserSessionEvent(8, user1Id, meeting4Id, createdDate: _clock.Now.AddHours(2))
+            CreateUserSessionEvent(8, user1Id, meeting4Id, createdDate: _clock.Now.AddDays(-1))
         });
 
         var response = await _meetingDataProvider
             .GetMeetingHistoriesByUserIdAsync(user1Id, new PageSetting { Page = 1, PageSize = 2 }, CancellationToken.None);
         
-        response.TotalCount.ShouldBe(4);
+        response.TotalCount.ShouldBe(5);
         
         response.MeetingHistoryList.Count.ShouldBe(2);
         

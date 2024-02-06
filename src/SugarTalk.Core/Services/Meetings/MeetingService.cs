@@ -253,19 +253,40 @@ namespace SugarTalk.Core.Services.Meetings
         public async Task ConnectUserToMeetingAsync(
             UserAccountDto user, MeetingDto meeting, bool? isMuted = null, CancellationToken cancellationToken = default)
         {
-            var userSession = GenerateNewUserSessionFromUser(user, meeting.Id, isMuted ?? false);
+            var userSession = meeting.UserSessions
+                .Where(x => x.UserId == user.Id)
+                .OrderByDescending(x => x.CreatedDate)
+                .Select(x => _mapper.Map<MeetingUserSession>(x))
+                .FirstOrDefault();
 
-            await _meetingDataProvider.AddMeetingUserSessionAsync(userSession, cancellationToken).ConfigureAwait(false);
+            if (userSession == null)
+            {
+                userSession = GenerateNewUserSessionFromUser(user, meeting.Id, isMuted ?? false);
 
-            var updateUserSession = _mapper.Map<MeetingUserSessionDto>(userSession);
+                await _meetingDataProvider.AddMeetingUserSessionAsync(userSession, cancellationToken).ConfigureAwait(false);
 
-            updateUserSession.UserName = user.UserName;
+                var updateUserSession = _mapper.Map<MeetingUserSessionDto>(userSession);
+                updateUserSession.UserName = user.UserName;
 
-            meeting.AddUserSession(updateUserSession);
+                meeting.AddUserSession(updateUserSession);
+            }
+            else
+            {
+                if (isMuted.HasValue)
+                    userSession.IsMuted = isMuted.Value;
 
-            meeting.UserSessions = meeting.UserSessions
-                .GroupBy(x => x.UserId)
-                .Select(group => group.OrderByDescending(y => y.CreatedDate).First()).ToList();
+                userSession.Status = MeetingAttendeeStatus.Present;
+                userSession.FirstJoinTime = _clock.Now.ToUnixTimeSeconds();
+                userSession.TotalJoinCount += 1;
+
+                await _meetingDataProvider.UpdateMeetingUserSessionAsync(userSession, cancellationToken).ConfigureAwait(false);
+
+                var updateUserSession = _mapper.Map<MeetingUserSessionDto>(userSession);
+
+                updateUserSession.UserName = user.UserName;
+
+                meeting.UpdateUserSession(updateUserSession);
+            }
         }
 
         public async Task<UpdateMeetingResponse> UpdateMeetingAsync(UpdateMeetingCommand command, CancellationToken cancellationToken)

@@ -266,39 +266,34 @@ namespace SugarTalk.Core.Services.Meetings
             meetingRepeatRule.RepeatType = repeatType;
         }
 
-        public async Task<(List<MeetingHistoryDto> MeetingHistoryList, int TotalCount)> GetMeetingHistoriesByUserIdAsync(
+        public async Task<(List<MeetingHistoryDto> MeetingHistoryList, int TotalCount)> GetMeetingHistoriesAsync(
             int userId, PageSetting pageSetting, CancellationToken cancellationToken)
         {
             var meetingList = new List<Meeting>();
             var meetingHistoryList = new List<MeetingHistoryDto>();
-
+        
             var meetingIdsByCurrentUser = await _repository.QueryNoTracking<MeetingUserSession>()
                 .Where(x => x.UserId == userId)
                 .Select(x => x.MeetingId)
                 .ToListAsync(cancellationToken).ConfigureAwait(false);
-
+        
             var queryMeetingList = _repository.QueryNoTracking<Meeting>()
                 .Where(x => meetingIdsByCurrentUser.Contains(x.Id) && x.Status == MeetingStatus.Completed)
                 .OrderByDescending(x => x.StartDate);
-
+        
             var totalCount = await queryMeetingList.CountAsync(cancellationToken).ConfigureAwait(false);
-
-            if (pageSetting != null)
-            {
-                meetingList = await queryMeetingList
-                    .Skip((pageSetting.Page - 1) * pageSetting.PageSize).Take(pageSetting.PageSize)
-                    .ToListAsync(cancellationToken).ConfigureAwait(false);
-            }
-            else
-            {
-                meetingList = await queryMeetingList.ToListAsync(cancellationToken).ConfigureAwait(false);
-            }
-
+        
+            var paginatedMeetingList = pageSetting != null
+                ? queryMeetingList.Skip((pageSetting.Page - 1) * pageSetting.PageSize).Take(pageSetting.PageSize)
+                : queryMeetingList;
+            
+            meetingList = await paginatedMeetingList.ToListAsync(cancellationToken).ConfigureAwait(false);
+        
             var meetingIds = meetingList.Select(x => x.Id).Distinct().ToList();
-
+        
             var allUserSession = await _repository.QueryNoTracking<MeetingUserSession>()
                 .Where(x => meetingIds.Contains(x.MeetingId)).ToListAsync(cancellationToken).ConfigureAwait(false);
-
+        
             var latestUserSessions = allUserSession
                 .GroupBy(session => session.MeetingId)
                 .SelectMany(group => group
@@ -308,7 +303,7 @@ namespace SugarTalk.Core.Services.Meetings
             var userIds = latestUserSessions.Select(x => x.UserId).Distinct().ToList();
             
             var userAccounts = await _accountDataProvider.GetUserAccountsAsync(userIds, cancellationToken).ConfigureAwait(false);
-
+        
             var attendeesByMeetingId = latestUserSessions.GroupBy(x => x.MeetingId)
                 .ToDictionary(group => group.Key, group =>
                 {
@@ -316,11 +311,11 @@ namespace SugarTalk.Core.Services.Meetings
                         .Select(x => userAccounts.FirstOrDefault(user => user.Id == x.UserId)?.UserName).ToList();
                     return attendees;
                 });
-
+        
             foreach (var meeting in meetingList)
             {
                 attendeesByMeetingId.TryGetValue(meeting.Id, out var attendees);
-
+        
                 var meetingHistory = new MeetingHistoryDto
                 {
                     MeetingId = meeting.Id,
@@ -333,11 +328,77 @@ namespace SugarTalk.Core.Services.Meetings
                     MeetingCreator = userAccounts.FirstOrDefault(x => x.Id == meeting.MeetingMasterUserId)?.UserName,
                     attendees = attendees
                 };
-
+        
                 meetingHistoryList.Add(meetingHistory);
             }
             
             return (meetingHistoryList, totalCount);
+        }
+
+        public async Task<(List<MeetingHistoryDto> MeetingHistoryList, int TotalCount)> GetMeetingHistoriesByUserIdAsync(
+            int userId, PageSetting pageSetting, CancellationToken cancellationToken)
+        {
+            // 直接从数据库获取每天每个会议的最新用户会话
+            var latestUserSessionsPerMeetingPerDay = await _repository.QueryNoTracking<MeetingUserSession>()
+                .Where(x => x.UserId == userId)
+                .GroupBy(x => new { x.MeetingId, x.CreatedDate.Date })
+                .Select(g => g.MaxBy(x => x.CreatedDate))
+                .OrderByDescending(x => x.CreatedDate)
+                .ToListAsync(cancellationToken).ConfigureAwait(false);
+
+            if (latestUserSessionsPerMeetingPerDay is not { Count: > 0 }) return (null, 0);
+
+            // 提取相关的会议ID
+            var meetingIds = latestUserSessionsPerMeetingPerDay.Select(x => x.MeetingId).Distinct().ToList();
+
+            var userIds = latestUserSessionsPerMeetingPerDay.Select(x => x.UserId).ToList();
+            
+            var userAccounts = await _accountDataProvider.GetUserAccountsAsync(userIds, cancellationToken).ConfigureAwait(false);
+            
+            var attendeesByMeetingId = latestUserSessionsPerMeetingPerDay.GroupBy(x => x.MeetingId)
+                .ToDictionary(group => group.Key, group =>
+                {
+                    var attendees = group
+                        .Select(x => userAccounts.FirstOrDefault(user => user.Id == x.UserId)?.UserName).ToList();
+                    return attendees;
+                });
+
+            // 获取这些会议的详细信息
+            var meetings = await _repository.QueryNoTracking<Meeting>()
+                .Where(x => meetingIds.Contains(x.Id) && x.Status == MeetingStatus.Completed)
+                .ToListAsync(cancellationToken).ConfigureAwait(false);
+
+            // 构建会议历史记录
+            var meetingHistoryList = latestUserSessionsPerMeetingPerDay.Select(session =>
+            {
+                var meeting = meetings.FirstOrDefault(m => m.Id == session.MeetingId);
+                if (meeting == null) return null;
+
+                attendeesByMeetingId.TryGetValue(meeting.Id, out var attendees);
+
+                return new MeetingHistoryDto
+                {
+                    MeetingId = session.MeetingId,
+                    MeetingNumber = meeting.MeetingNumber,
+                    Title = meeting.Title,
+                    StartDate = meeting.StartDate,
+                    EndDate = meeting.EndDate,
+                    Duration = CalculateMeetingDuration(meeting.StartDate, meeting.EndDate),
+                    TimeZone = meeting.TimeZone,
+                    MeetingCreator = userAccounts.FirstOrDefault(x => x.Id == meeting.MeetingMasterUserId)?.UserName,
+                    attendees = attendees
+                };
+            }).Where(x => x != null).ToList();
+
+            // 应用分页
+            var totalCount = meetingHistoryList.Count;
+            var pagedMeetingHistoryList = meetingHistoryList
+                .Skip((pageSetting.Page - 1) * pageSetting.PageSize)
+                .Take(pageSetting.PageSize)
+                .ToList();
+
+            // 返回分页后的历史记录和总数
+            return (pagedMeetingHistoryList, totalCount);
         }
         
         private static long CalculateMeetingDuration(long startDate, long endDate)
