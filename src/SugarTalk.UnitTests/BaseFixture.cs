@@ -87,7 +87,7 @@ public partial class BaseFixture
         IClock clock,
         IMapper mapper, 
         IRepository repository,
-        IUnitOfWork unitOfWork,         
+        IUnitOfWork unitOfWork,     
         ICurrentUser currentUser,
         IAccountDataProvider accountDataProvider)
     {
