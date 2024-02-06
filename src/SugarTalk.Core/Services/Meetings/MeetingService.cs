@@ -34,31 +34,41 @@ namespace SugarTalk.Core.Services.Meetings
 {
     public partial interface IMeetingService : IScopedDependency
     {
+        //安排会议
         Task<MeetingScheduledEvent> ScheduleMeetingAsync(
             ScheduleMeetingCommand scheduleMeetingCommand, CancellationToken cancellationToken);
 
+        //根据会议号获取会议
         Task<GetMeetingByNumberResponse> GetMeetingByNumberAsync(
             GetMeetingByNumberRequest request, CancellationToken cancellationToken = default);
 
+        //加入会议
         Task<MeetingJoinedEvent> JoinMeetingAsync(
             JoinMeetingCommand command, CancellationToken cancellationToken);
         
+        //退出会议
         Task<MeetingOutedEvent> OutMeetingAsync(
             OutMeetingCommand command, CancellationToken cancellationToken);
 
+        //结束会议
         Task<MeetingEndedEvent> EndMeetingAsync(
             EndMeetingCommand command, CancellationToken cancellationToken = default);
 
+        //连接用户到会议
         Task ConnectUserToMeetingAsync(
             UserAccountDto user, MeetingDto meeting, bool? isMuted = null, CancellationToken cancellationToken = default);
 
+        //更新会议
         Task<UpdateMeetingResponse> UpdateMeetingAsync(UpdateMeetingCommand command, CancellationToken cancellationToken);
         
+        //添加或更新用户会议设置
         Task<MeetingUserSettingAddOrUpdatedEvent> AddOrUpdateMeetingUserSettingAsync(
             AddOrUpdateMeetingUserSettingCommand command, CancellationToken cancellationToken);
 
+        //获取用户会议设置
         Task<GetMeetingUserSettingResponse> GetMeetingUserSettingAsync(GetMeetingUserSettingRequest request, CancellationToken cancellationToken);
 
+        ///处理周期性预定会议生成的子会议
         Task HandleToRepeatMeetingAsync(
             Guid meetingId,
             DateTimeOffset startDate,
@@ -143,6 +153,7 @@ namespace SugarTalk.Core.Services.Meetings
             
             return new MeetingScheduledEvent { Meeting = meetingDto };
         }
+
         
         public async Task HandleToRepeatMeetingAsync(
             Guid meetingId, 
@@ -211,7 +222,7 @@ namespace SugarTalk.Core.Services.Meetings
             if (userSession == null) return new MeetingOutedEvent();
 
             // TODO: 更新用户退出会议时间, 会议时长
-
+            userSession.OnlineType =MeetingUserSessionOnlineType.OutMeeting;
             return new MeetingOutedEvent();
         }
         
@@ -238,7 +249,6 @@ namespace SugarTalk.Core.Services.Meetings
                 .OrderByDescending(x => x.CreatedDate)
                 .Select(x => _mapper.Map<MeetingUserSession>(x))
                 .FirstOrDefault();
-
             if (userSession == null)
             {
                 userSession = GenerateNewUserSessionFromUser(user, meeting.Id, isMuted ?? false);
@@ -259,7 +269,7 @@ namespace SugarTalk.Core.Services.Meetings
                 userSession.Status = MeetingAttendeeStatus.Present;
                 userSession.FirstJoinTime = _clock.Now.ToUnixTimeSeconds();
                 userSession.TotalJoinCount += 1;
-
+                userSession.OnlineType = MeetingUserSessionOnlineType.Online;
                 await _meetingDataProvider.UpdateMeetingUserSessionAsync(userSession, cancellationToken).ConfigureAwait(false);
                 
                 var updateUserSession = _mapper.Map<MeetingUserSessionDto>(userSession);
@@ -382,6 +392,7 @@ namespace SugarTalk.Core.Services.Meetings
             return meeting;
         }
         
+
         private List<MeetingSubMeeting> GenerateSubMeetings(
             Guid meetingId, DateTimeOffset startDate, DateTimeOffset endDate, DateTimeOffset? utilDate, MeetingRepeatType repeatType)
         {

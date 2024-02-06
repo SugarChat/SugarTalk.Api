@@ -21,45 +21,54 @@ namespace SugarTalk.Core.Services.Meetings
 {
     public partial interface IMeetingDataProvider : IScopedDependency
     {
+        //通过会议Id获取会议用户会话
         Task<MeetingUserSession> GetMeetingUserSessionByMeetingIdAsync(Guid meetingId, int userId, CancellationToken cancellationToken);
-        
+
+        //通过会议Id获取会议
         Task<Meeting> GetMeetingByIdAsync(Guid meetingId, CancellationToken cancellationToken = default);
-        
+
+        //持久化会议
         Task PersistMeetingAsync(Meeting meeting, CancellationToken cancellationToken);
 
+        //通过会议号获取会议
         Task<MeetingDto> GetMeetingAsync(string meetingNumber, CancellationToken cancellationToken = default, bool includeUserSessions = true);
-        
+
+        //删除会议用户会话
         Task RemoveMeetingUserSessionsAsync(IEnumerable<MeetingUserSession> meetingUserSessions, CancellationToken cancellationToken = default);
-        
+
+        //删除会议
         Task RemoveMeetingAsync(Meeting meeting, CancellationToken cancellationToken);
-        
+
+        //更新会议
         Task UpdateMeetingAsync(Meeting meeting, CancellationToken cancellationToken);
-        
+
+        //通过用户ID集合获取会议用户设置
         Task<List<MeetingUserSetting>> GetMeetingUserSettingsAsync(List<int> userIds, CancellationToken cancellationToken);
-        
+
+        //通过会议Id获取会议用户设置
         Task<List<MeetingUserSetting>> GetMeetingUserSettingsAsync(Guid meetingId, CancellationToken cancellationToken);
-        
+
         Task AddMeetingUserSettingAsync(MeetingUserSetting meetingUserSetting, CancellationToken cancellationToken);
-        
+
         Task UpdateMeetingUserSettingAsync(MeetingUserSetting meetingUserSetting, CancellationToken cancellationToken);
-        
+
         Task<MeetingUserSetting> GetMeetingUserSettingByUserIdAsync(int userId, Guid meetingId, CancellationToken cancellationToken);
-        
+
         Task CheckMeetingSecurityCodeAsync(Guid meetingId, string securityCode, CancellationToken cancellationToken);
-        
+
         Task UpdateMeetingsAsync(List<Meeting> meetingList, CancellationToken cancellationToken);
-        
+
         Task PersistMeetingRepeatRuleAsync(MeetingRepeatRule repeatRule, CancellationToken cancellationToken);
-        
+
         Task PersistMeetingSubMeetingsAsync(List<MeetingSubMeeting> subMeetingList, CancellationToken cancellationToken);
-        
+
         Task UpdateMeetingStatusAsync(Guid meetingId, CancellationToken cancellationToken);
-        
+
         Task DeleteMeetingSubMeetingsAsync(Guid meetingId, CancellationToken cancellationToken);
-        
+
         Task UpdateMeetingRepeatRuleAsync(Guid meetingId, MeetingRepeatType repeatType, CancellationToken cancellationToken);
     }
-    
+
     public partial class MeetingDataProvider : IMeetingDataProvider
     {
         private readonly IMapper _mapper;
@@ -77,7 +86,7 @@ namespace SugarTalk.Core.Services.Meetings
             _currentUser = currentUser;
             _accountDataProvider = accountDataProvider;
         }
-        
+
         public async Task<MeetingUserSession> GetMeetingUserSessionByMeetingIdAsync(Guid meetingId, int userId, CancellationToken cancellationToken)
         {
             return await _repository.QueryNoTracking<MeetingUserSession>()
@@ -93,14 +102,39 @@ namespace SugarTalk.Core.Services.Meetings
                 .SingleOrDefaultAsync(x => x.Id == meetingId, cancellationToken)
                 .ConfigureAwait(false);
         }
+        public async Task<MeetingDto> GetMeetingByIdAsync(Guid meetingId, CancellationToken cancellationToken = default, bool includeUserSessions = true)
+        {
+            var meeting = await _repository.Query<Meeting>().AsNoTracking()
+                 .SingleOrDefaultAsync(x => x.Id == meetingId, cancellationToken)
+                 .ConfigureAwait(false);
+
+            if (meeting == null) throw new MeetingNotFoundException();
+
+            var updateMeeting = _mapper.Map<MeetingDto>(meeting);
+
+            if (!string.IsNullOrEmpty(meeting.SecurityCode))
+            {
+                updateMeeting.IsPasswordEnabled = true;
+            }
+
+            if (includeUserSessions)
+            {
+                updateMeeting.UserSessions =
+                    await GetUserSessionsByMeetingIdAsync(meeting.Id, cancellationToken).ConfigureAwait(false);
+
+                await EnrichMeetingUserSessionsAsync(updateMeeting.UserSessions, cancellationToken).ConfigureAwait(false);
+            }
+
+            return updateMeeting;
+        }
 
         public async Task PersistMeetingAsync(Meeting meeting, CancellationToken cancellationToken)
         {
             if (meeting is null) return;
-            
+
             await _repository.InsertAsync(meeting, cancellationToken).ConfigureAwait(false);
         }
-        
+
         public async Task<MeetingDto> GetMeetingAsync(
             string meetingNumber, CancellationToken cancellationToken, bool includeUserSessions = true)
         {
@@ -124,7 +158,7 @@ namespace SugarTalk.Core.Services.Meetings
 
                 await EnrichMeetingUserSessionsAsync(updateMeeting.UserSessions, cancellationToken).ConfigureAwait(false);
             }
-            
+
             return updateMeeting;
         }
 
@@ -143,7 +177,7 @@ namespace SugarTalk.Core.Services.Meetings
                     .Select(x => x.UserName).FirstOrDefault();
             });
         }
-        
+
         public async Task RemoveMeetingUserSessionsAsync(
             IEnumerable<MeetingUserSession> meetingUserSessions, CancellationToken cancellationToken)
         {
@@ -158,9 +192,9 @@ namespace SugarTalk.Core.Services.Meetings
         public async Task UpdateMeetingAsync(Meeting meeting, CancellationToken cancellationToken)
         {
             if (meeting is null) return;
-            
+
             await _repository.UpdateAsync(meeting, cancellationToken).ConfigureAwait(false);
-            
+
             await _unitOfWork.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
         }
 
@@ -188,7 +222,7 @@ namespace SugarTalk.Core.Services.Meetings
         public async Task UpdateMeetingUserSettingAsync(MeetingUserSetting meetingUserSetting, CancellationToken cancellationToken)
         {
             if (meetingUserSetting is null) return;
-            
+
             await _repository.UpdateAsync(meetingUserSetting, cancellationToken).ConfigureAwait(false);
         }
 
@@ -202,7 +236,6 @@ namespace SugarTalk.Core.Services.Meetings
         public async Task CheckMeetingSecurityCodeAsync(Guid meetingId, string securityCode, CancellationToken cancellationToken)
         {
             var code = securityCode.ToSha256();
-
             var isCorrect = await _repository.AnyAsync<Meeting>(x =>
                 x.Id == meetingId && x.SecurityCode == code, cancellationToken).ConfigureAwait(false);
 
@@ -212,27 +245,27 @@ namespace SugarTalk.Core.Services.Meetings
         public async Task UpdateMeetingsAsync(List<Meeting> meetingList, CancellationToken cancellationToken)
         {
             await _repository.UpdateAllAsync(meetingList, cancellationToken).ConfigureAwait(false);
-            
+
             await _unitOfWork.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
         }
 
         public async Task PersistMeetingRepeatRuleAsync(MeetingRepeatRule repeatRule, CancellationToken cancellationToken)
         {
             if (repeatRule is null) return;
-            
+
             await _repository.InsertAsync(repeatRule, cancellationToken).ConfigureAwait(false);
         }
 
         public async Task PersistMeetingSubMeetingsAsync(List<MeetingSubMeeting> subMeetingList, CancellationToken cancellationToken)
         {
             if (subMeetingList is not { Count: > 0 }) return;
-            
+
             await _repository.InsertAllAsync(subMeetingList, cancellationToken).ConfigureAwait(false);
         }
 
         public async Task UpdateMeetingStatusAsync(Guid meetingId, CancellationToken cancellationToken)
         {
-            var meeting = await _repository.Query<Meeting>().Where(x=>x.Id == meetingId).FirstOrDefaultAsync(cancellationToken).ConfigureAwait(false);
+            var meeting = await _repository.Query<Meeting>().Where(x => x.Id == meetingId).FirstOrDefaultAsync(cancellationToken).ConfigureAwait(false);
 
             if (meeting is null) return;
 
@@ -256,7 +289,7 @@ namespace SugarTalk.Core.Services.Meetings
                 .FirstOrDefaultAsync(x => x.MeetingId == meetingId, cancellationToken).ConfigureAwait(false);
 
             if (meetingRepeatRule is null) return;
-            
+
             meetingRepeatRule.RepeatType = repeatType;
         }
     }

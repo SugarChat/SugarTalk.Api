@@ -1,3 +1,4 @@
+using SugarTalk.Messages.Enums.Meeting;
 using System;
 
 namespace SugarTalk.Messages.Dto.Meetings;
@@ -17,4 +18,12 @@ public class MeetingUserSessionDto
     public bool IsMuted { get; set; }
     
     public bool IsSharingScreen { get; set; }
+
+    /// <summary>
+    /// 是否为会议主持人
+    /// </summary>
+    public bool IsMeetingMaster { get; set; }
+
+    public MeetingUserSessionOnlineType OutType { get; set; }
 }
+
