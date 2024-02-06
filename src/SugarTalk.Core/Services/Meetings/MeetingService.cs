@@ -121,22 +121,23 @@ namespace SugarTalk.Core.Services.Meetings
             meeting.SecurityCode = !string.IsNullOrEmpty(command.SecurityCode) ? command.SecurityCode.ToSha256() : null;
 
             // 处理周期性预定会议生成的子会议
-            if (command.AppointmentType == MeetingAppointmentType.Appointment && command.RepeatType != MeetingRepeatType.None)
+            if (command.AppointmentType == MeetingAppointmentType.Appointment)
             {
-                await HandleToRepeatMeetingAsync(
-                    meeting.Id,
-                    command.StartDate,
-                    command.EndDate,
-                    command.UtilDate,
-                    command.RepeatType, cancellationToken).ConfigureAwait(false);
+                if (command.RepeatType != MeetingRepeatType.None)
+                    await HandleToRepeatMeetingAsync(
+                        meeting.Id,
+                        command.StartDate,
+                        command.EndDate,
+                        command.UtilDate,
+                        command.RepeatType, cancellationToken).ConfigureAwait(false);
+                
+                await _meetingDataProvider.PersistMeetingRepeatRuleAsync(new MeetingRepeatRule
+                {
+                    MeetingId = meeting.Id,
+                    RepeatType = command.RepeatType,
+                    RepeatUntilDate = command.UtilDate
+                }, cancellationToken).ConfigureAwait(false);
             }
-
-            await _meetingDataProvider.PersistMeetingRepeatRuleAsync(new MeetingRepeatRule
-            {
-                MeetingId = meeting.Id,
-                RepeatType = command.RepeatType,
-                RepeatUntilDate = command.UtilDate
-            }, cancellationToken).ConfigureAwait(false);
 
             await _meetingDataProvider.PersistMeetingAsync(meeting, cancellationToken).ConfigureAwait(false);
 
@@ -206,7 +207,7 @@ namespace SugarTalk.Core.Services.Meetings
 
             meeting.MeetingTokenFromLiveKit = _liveKitServerUtilService.GenerateTokenForJoinMeeting(user, meeting.MeetingNumber);
 
-            await _meetingDataProvider.UpdateMeetingStatusAsync(meeting.Id, cancellationToken).ConfigureAwait(false);
+            await _meetingDataProvider.UpdateMeetingIfRequiredAsync(meeting.Id, cancellationToken).ConfigureAwait(false);
             
             await ConnectUserToMeetingAsync(user, meeting, command.IsMuted, cancellationToken).ConfigureAwait(false);
             
@@ -241,6 +242,8 @@ namespace SugarTalk.Core.Services.Meetings
 
             if (meeting.MeetingMasterUserId != _currentUser.Id) throw new CannotEndMeetingWhenUnauthorizedException();
 
+            await PersistMeetingHistoryAsync(meeting, cancellationToken).ConfigureAwait(false);
+            
             // TODO: 更新会议结束时间, 会议时长，更新会议中的用户状态
 
             return new MeetingEndedEvent
@@ -248,6 +251,18 @@ namespace SugarTalk.Core.Services.Meetings
                 MeetingNumber = meeting.MeetingNumber,
                 MeetingUserSessionIds = meeting.UserSessions.Select(x => x.Id).ToList()
             };
+        }
+
+        public async Task PersistMeetingHistoryAsync(MeetingDto meeting, CancellationToken cancellationToken)
+        {
+            var meetingHistory = new MeetingHistory
+            {
+                Id = Guid.NewGuid(),
+                MeetingId = meeting.Id,
+                
+            };
+            
+            
         }
 
         public async Task ConnectUserToMeetingAsync(

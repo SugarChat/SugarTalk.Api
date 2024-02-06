@@ -28,6 +28,9 @@ public class Meeting : IEntity
 
     [Column("end_date")] 
     public long EndDate { get; set; }
+    
+    [Column("creator_join_time")]
+    public long CreatorJoinTime { get; set; }
 
     [Column("meeting_number"), StringLength(256)]
     public string MeetingNumber { get; set; }

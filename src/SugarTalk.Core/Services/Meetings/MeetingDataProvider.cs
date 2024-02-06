@@ -53,15 +53,15 @@ namespace SugarTalk.Core.Services.Meetings
         Task PersistMeetingRepeatRuleAsync(MeetingRepeatRule repeatRule, CancellationToken cancellationToken);
         
         Task PersistMeetingSubMeetingsAsync(List<MeetingSubMeeting> subMeetingList, CancellationToken cancellationToken);
-        
-        Task UpdateMeetingStatusAsync(Guid meetingId, CancellationToken cancellationToken);
-        
+
         Task DeleteMeetingSubMeetingsAsync(Guid meetingId, CancellationToken cancellationToken);
         
         Task UpdateMeetingRepeatRuleAsync(Guid meetingId, MeetingRepeatType repeatType, CancellationToken cancellationToken);
 
         Task<(List<MeetingHistoryDto> MeetingHistoryList, int TotalCount)> GetMeetingHistoriesByUserIdAsync(
             int userId, PageSetting pageSetting, CancellationToken cancellationToken);
+
+        Task UpdateMeetingIfRequiredAsync(Guid meetingId, CancellationToken cancellationToken);
     }
     
     public partial class MeetingDataProvider : IMeetingDataProvider
@@ -234,17 +234,6 @@ namespace SugarTalk.Core.Services.Meetings
             await _repository.InsertAllAsync(subMeetingList, cancellationToken).ConfigureAwait(false);
         }
 
-        public async Task UpdateMeetingStatusAsync(Guid meetingId, CancellationToken cancellationToken)
-        {
-            var meeting = await _repository.Query<Meeting>().Where(x=>x.Id == meetingId).FirstOrDefaultAsync(cancellationToken).ConfigureAwait(false);
-
-            if (meeting is null) return;
-
-            meeting.Status = MeetingStatus.InProgress;
-
-            await _unitOfWork.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
-        }
-
         public async Task DeleteMeetingSubMeetingsAsync(Guid meetingId, CancellationToken cancellationToken)
         {
             var meetingSubMeetings = await _repository.Query<MeetingSubMeeting>()
@@ -401,6 +390,19 @@ namespace SugarTalk.Core.Services.Meetings
             return (pagedMeetingHistoryList, totalCount);
         }
         
+        public async Task UpdateMeetingIfRequiredAsync(Guid meetingId, CancellationToken cancellationToken)
+        {
+            var meeting = await _repository.Query<Meeting>().Where(x=>x.Id == meetingId).FirstOrDefaultAsync(cancellationToken).ConfigureAwait(false);
+
+            if (meeting is null) return;
+
+            meeting.Status = MeetingStatus.InProgress;
+            
+            meeting.CreatorJoinTime = 
+
+            await _unitOfWork.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        }
+
         private static long CalculateMeetingDuration(long startDate, long endDate)
         {
             if (endDate <= 0 || startDate <= 0 || endDate <= startDate) return 0;
