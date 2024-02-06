@@ -324,10 +324,7 @@ public partial class MeetingServiceFixture
             var response = await mediator.RequestAsync<GetAppointmentMeetingsRequest, GetAppointmentMeetingsResponse>(
                 new GetAppointmentMeetingsRequest
                 {
-                   PageSetting = new PageSetting()
-                   {
-                        Page = 1, PageSize = 5
-                   }
+                    Page = 1, PageSize = 5
                 });
 
             response.Data.Count.ShouldBe(3);
