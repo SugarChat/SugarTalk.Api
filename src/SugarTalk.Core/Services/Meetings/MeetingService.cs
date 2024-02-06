@@ -156,7 +156,7 @@ namespace SugarTalk.Core.Services.Meetings
             if (user is null) throw new UnauthorizedAccessException();
 
             var (meetingHistoryList, totalCount) = await _meetingDataProvider
-                .GetMeetingHistoriesByUserIdAsync(user.Id, request.PageSetting, cancellationToken).ConfigureAwait(false);
+                .GetMeetingHistoriesByUserIdAsync(user.Uuid, request.PageSetting, cancellationToken).ConfigureAwait(false);
 
             return new GetMeetingHistoriesByUserResponse
             {
@@ -207,7 +207,7 @@ namespace SugarTalk.Core.Services.Meetings
 
             meeting.MeetingTokenFromLiveKit = _liveKitServerUtilService.GenerateTokenForJoinMeeting(user, meeting.MeetingNumber);
 
-            await _meetingDataProvider.UpdateMeetingIfRequiredAsync(meeting.Id, cancellationToken).ConfigureAwait(false);
+            await _meetingDataProvider.UpdateMeetingIfRequiredAsync(meeting.Id, user.Id, cancellationToken).ConfigureAwait(false);
             
             await ConnectUserToMeetingAsync(user, meeting, command.IsMuted, cancellationToken).ConfigureAwait(false);
             
@@ -242,7 +242,7 @@ namespace SugarTalk.Core.Services.Meetings
 
             if (meeting.MeetingMasterUserId != _currentUser.Id) throw new CannotEndMeetingWhenUnauthorizedException();
 
-            await PersistMeetingHistoryAsync(meeting, cancellationToken).ConfigureAwait(false);
+            await _meetingDataProvider.PersistMeetingHistoryAsync(meeting, cancellationToken).ConfigureAwait(false);
             
             // TODO: 更新会议结束时间, 会议时长，更新会议中的用户状态
 
@@ -251,18 +251,6 @@ namespace SugarTalk.Core.Services.Meetings
                 MeetingNumber = meeting.MeetingNumber,
                 MeetingUserSessionIds = meeting.UserSessions.Select(x => x.Id).ToList()
             };
-        }
-
-        public async Task PersistMeetingHistoryAsync(MeetingDto meeting, CancellationToken cancellationToken)
-        {
-            var meetingHistory = new MeetingHistory
-            {
-                Id = Guid.NewGuid(),
-                MeetingId = meeting.Id,
-                
-            };
-            
-            
         }
 
         public async Task ConnectUserToMeetingAsync(

@@ -49,7 +49,7 @@ public partial class BaseFixture
         _currentUser = Substitute.For<ICurrentUser>();
         _liveKitServerUtilService = Substitute.For<ILiveKitServerUtilService>();
         _accountDataProvider = MockAccountDataProvider(_mapper, _repository, _unitOfWork);
-        _meetingDataProvider = MockMeetingDataProvider(_mapper, _repository, _unitOfWork, _accountDataProvider, _currentUser);
+        _meetingDataProvider = MockMeetingDataProvider(_clock, _mapper, _repository, _unitOfWork, _accountDataProvider, _currentUser);
         _meetingService = MockMeetingService(_clock, _mapper, _unitOfWork, _currentUser, _meetingDataProvider, _accountDataProvider, _antMediaServerUtilService, _liveKitServerUtilService, _liveKitServerSetting, _speechClient);
         _meetingProcessJobService = MockMeetingProcessJobService(_clock, _unitOfWork, _meetingDataProvider);
     }
@@ -87,13 +87,14 @@ public partial class BaseFixture
     }
     
     protected IMeetingDataProvider MockMeetingDataProvider(
+        IClock clock,
         IMapper mapper, 
         IRepository repository,
         IUnitOfWork unitOfWork,
         IAccountDataProvider accountDataProvider,
         ICurrentUser currentUser)
     {
-        return new MeetingDataProvider(mapper, repository, unitOfWork, accountDataProvider, currentUser);
+        return new MeetingDataProvider(clock, mapper, repository, unitOfWork, accountDataProvider, currentUser);
     }
     
     protected IMapper CreateMapper()

@@ -29,12 +29,12 @@ public partial class BaseFixture
         };
     }
 
-    protected UserAccount CreateUserAccountEvent(int userId, string userName = "test_man")
+    protected UserAccount CreateUserAccountEvent(int userId, Guid uuid, string userName = "test_man")
     {
         return new UserAccount
         {
             Id = userId,
-            Uuid = Guid.NewGuid(),
+            Uuid = uuid,
             UserName = userName,
             Password = "123456",
             ThirdPartyUserId = Guid.NewGuid().ToString(),

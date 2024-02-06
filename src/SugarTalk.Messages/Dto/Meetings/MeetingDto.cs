@@ -44,6 +44,8 @@ public class MeetingBaseDto
 
     public long EndDate { get; set; }
     
+    public long CreatorJoinTime { get; set; }
+    
     public string TimeZone { get; set; }
 
     public string OriginAddress { get; set; }

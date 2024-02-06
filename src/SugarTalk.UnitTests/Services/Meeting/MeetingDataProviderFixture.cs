@@ -15,6 +15,9 @@ public class MeetingDataProviderFixture : BaseFixture
     {
         const int user1Id = 1;
         const int user2Id = 2;
+
+        var userEntity1Id = Guid.NewGuid();
+        var userEntity2Id = Guid.NewGuid();
         
         const int oneHour = 3600;
         
@@ -28,8 +31,8 @@ public class MeetingDataProviderFixture : BaseFixture
 
         MockUserAccountsDb(_repository, new List<UserAccount>
         {
-            CreateUserAccountEvent(user1Id, "test1"),
-            CreateUserAccountEvent(user2Id, "test2")
+            CreateUserAccountEvent(user1Id, userEntity1Id, "test1"),
+            CreateUserAccountEvent(user2Id, userEntity2Id, "test2")
         });
 
         MockMeetingDb(_repository, new List<Core.Domain.Meeting.Meeting>
@@ -60,7 +63,7 @@ public class MeetingDataProviderFixture : BaseFixture
         });
 
         var response = await _meetingDataProvider
-            .GetMeetingHistoriesByUserIdAsync(user1Id, new PageSetting { Page = 1, PageSize = 2 }, CancellationToken.None);
+            .GetMeetingHistoriesByUserIdAsync(userEntity1Id, new PageSetting { Page = 1, PageSize = 2 }, CancellationToken.None);
         
         response.TotalCount.ShouldBe(5);
         
