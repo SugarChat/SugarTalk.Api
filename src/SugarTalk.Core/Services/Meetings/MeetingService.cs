@@ -506,8 +506,7 @@ namespace SugarTalk.Core.Services.Meetings
 
             if (user is null) throw new UnreachableException();
 
-            var (count, records) = await _meetingDataProvider
-                .GetAppointmentMeetingsByUserIdAsync(request, cancellationToken).ConfigureAwait(false);
+            var (count, records) = await _meetingDataProvider.GetAppointmentMeetingsByUserIdAsync(request, cancellationToken).ConfigureAwait(false);
         
             return new GetAppointmentMeetingsResponse
             {
