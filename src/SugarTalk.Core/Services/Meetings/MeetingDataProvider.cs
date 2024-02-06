@@ -291,8 +291,8 @@ namespace SugarTalk.Core.Services.Meetings
 
             var records = await query
                 .OrderBy(m => (m.StartDate - _clock.Now.ToUnixTimeSeconds()))
-                .Skip((request.PageSetting.Page - 1) * request.PageSetting.PageSize) 
-                .Take(request.PageSetting.PageSize) 
+                .Skip((request.Page - 1) * request.PageSize) 
+                .Take(request.PageSize) 
                 .ToListAsync(cancellationToken)
                 .ConfigureAwait(false);
     

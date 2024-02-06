@@ -6,9 +6,8 @@ using SugarTalk.Messages.Responses;
 
 namespace SugarTalk.Messages.Requests.Meetings;
 
-public class GetAppointmentMeetingsRequest : IRequest
+public class GetAppointmentMeetingsRequest : PageSetting, IRequest
 {
-    public PageSetting PageSetting { get; set; }
 }
 
 public class GetAppointmentMeetingsResponse : SugarTalkResponse<GetAppointmentMeetingsResponseDto>
