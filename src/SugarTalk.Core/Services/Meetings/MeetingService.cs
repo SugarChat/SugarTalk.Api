@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -65,6 +66,8 @@ namespace SugarTalk.Core.Services.Meetings
             DateTimeOffset endDate,
             DateTimeOffset? utilDate,
             MeetingRepeatType repeatType, CancellationToken cancellationToken);
+        
+        Task<GetAppointmentMeetingsResponse> GetAppointmentMeetingsAsync(GetAppointmentMeetingsRequest request, CancellationToken cancellationToken);
     }
     
     public partial class MeetingService : IMeetingService
@@ -494,6 +497,25 @@ namespace SugarTalk.Core.Services.Meetings
                 Status = MeetingAttendeeStatus.Present,
                 FirstJoinTime = _clock.Now.ToUnixTimeSeconds(),
                 TotalJoinCount = 1
+            };
+        }
+        
+        public async Task<GetAppointmentMeetingsResponse> GetAppointmentMeetingsAsync(GetAppointmentMeetingsRequest request, CancellationToken cancellationToken)
+        {
+            var user = await _accountDataProvider.GetUserAccountAsync(_currentUser.Id, cancellationToken: cancellationToken).ConfigureAwait(false);
+
+            if (user is null) throw new UnreachableException();
+
+            var (count, records) = await _meetingDataProvider
+                .GetAppointmentMeetingsByUserIdAsync(request, cancellationToken).ConfigureAwait(false);
+        
+            return new GetAppointmentMeetingsResponse
+            {
+                Data = new GetAppointmentMeetingsResponseDto()
+                {
+                    Count = count,
+                    Records = records
+                }
             };
         }
     }
