@@ -1,13 +1,12 @@
-using System.Collections.Generic;
+using System;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using SugarTalk.Core.Domain.Meeting;
+using System.Collections.Generic;
 using SugarTalk.Core.Services.Exceptions;
-using SugarTalk.Messages.Commands.Meetings;
 using SugarTalk.Messages.Dto.Meetings;
-using SugarTalk.Messages.Enums.Meeting;
 using SugarTalk.Messages.Events.Meeting;
+using SugarTalk.Messages.Commands.Meetings;
 using SugarTalk.Messages.Requests.Meetings;
 
 namespace SugarTalk.Core.Services.Meetings;
@@ -108,9 +107,16 @@ public partial class MeetingService
     {
         var userSession = await _meetingDataProvider.GetMeetingUserSessionByUserIdAsync(request.UserId, cancellationToken).ConfigureAwait(false);
 
+        var user = await _accountDataProvider.GetUserAccountAsync(_currentUser.Id, cancellationToken: cancellationToken).ConfigureAwait(false);
+
+        if (user is null) throw new UnauthorizedAccessException();
+        
+        var userSessionDto = _mapper.Map<MeetingUserSessionDto>(userSession);
+        userSessionDto.UserName = user.UserName;
+        
         return new GetMeetingUserSessionByUserIdResponse
         {
-            Data = _mapper.Map<MeetingUserSessionDto>(userSession)
+            Data = userSessionDto
         };
     }
 }
