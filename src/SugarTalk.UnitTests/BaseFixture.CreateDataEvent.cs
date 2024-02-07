@@ -42,4 +42,35 @@ public partial class BaseFixture
             IsActive = true
         };
     }
+
+    protected MeetingUserSession CreateMeetingUserSessionEvent(int id, int userId, Guid meetingId,
+        MeetingAttendeeStatus status = MeetingAttendeeStatus.Absent, long firstJoinTime = 0, long lastQuitTime = 0,
+        int totalJoinCount = 0, long cumulativeTime = 0, bool isMuted = false, bool isSharingScreen = false)
+    {
+        return new MeetingUserSession
+        {
+            Id = id,
+            UserId = userId,
+            MeetingId = meetingId,
+            Status = status,
+            FirstJoinTime = firstJoinTime,
+            LastQuitTime = lastQuitTime,
+            TotalJoinCount = totalJoinCount,
+            CumulativeTime = cumulativeTime,
+            IsMuted = isMuted,
+            IsSharingScreen = isSharingScreen,
+            IsDeleted = false
+        };
+    }
+
+    protected MeetingRecord CreateMeetingRecordEvent(Guid id, Guid meetingId, string url, DateTimeOffset createDate)
+    {
+        return new MeetingRecord
+        {
+            Id = id,
+            MeetingId = meetingId,
+            Url = url,
+            CreatedDate = createDate
+        };
+    }
 }
