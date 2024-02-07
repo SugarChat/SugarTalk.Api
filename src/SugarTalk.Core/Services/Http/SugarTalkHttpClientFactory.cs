@@ -26,6 +26,10 @@ public interface ISugarTalkHttpClientFactory : IScopedDependency
     
     Task<T> DeleteAsync<T>(string requestUrl, CancellationToken cancellationToken, 
         TimeSpan? timeout = null, bool beginScope = false, Dictionary<string, string> headers = null);
+    
+    Task<T> PostAsMultipartAsync<T>(
+        string requestUrl, Dictionary<string, string> formData, Dictionary<string, (byte[], string)> fileData,
+        CancellationToken cancellationToken, TimeSpan? timeout = null, bool beginScope = false, Dictionary<string, string> headers = null);
 }
 
 public class SugarTalkHttpClientFactory : ISugarTalkHttpClientFactory
@@ -126,6 +130,37 @@ public class SugarTalkHttpClientFactory : ISugarTalkHttpClientFactory
         }, cancellationToken).ConfigureAwait(false);
     }
 
+    public async Task<T> PostAsMultipartAsync<T>(
+        string requestUrl, Dictionary<string, string> formData, Dictionary<string, (byte[], string)> fileData,
+        CancellationToken cancellationToken, TimeSpan? timeout = null, bool beginScope = false, Dictionary<string, string> headers = null)
+    {
+        return await SafelyProcessRequestAsync(requestUrl, async () =>
+        {
+            var multipartContent = new MultipartFormDataContent();
+
+            foreach (var data in formData)
+            {
+                multipartContent.Add(new StringContent(data.Value), data.Key);
+            }
+
+            foreach (var file in fileData)
+            {
+                multipartContent.Add(new ByteArrayContent(file.Value.Item1), file.Key, file.Value.Item2);
+            }
+
+            var request = new HttpRequestMessage(HttpMethod.Post, requestUrl)
+            {
+                Content = multipartContent
+            };
+
+            var response = await CreateClient(timeout: timeout, beginScope: beginScope, headers: headers)
+                .SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
+
+            return await ReadAndLogResponseAsync<T>(requestUrl, HttpMethod.Post, response, cancellationToken).ConfigureAwait(false);
+
+        }, cancellationToken).ConfigureAwait(false);
+    }
+    
     private static async Task<T> ReadAndLogResponseAsync<T>(string requestUrl, HttpMethod httpMethod, HttpResponseMessage response, CancellationToken cancellationToken)
     {
         if (response.IsSuccessStatusCode)
