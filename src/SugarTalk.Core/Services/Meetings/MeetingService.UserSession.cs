@@ -116,24 +116,27 @@ public partial class MeetingService
     public async Task<VerifyMeetingUserPermissionResponse> VerifyMeetingUserPermissionAsync(
                VerifyMeetingUserPermissionCommand request, CancellationToken cancellationToken)
     {
+        if (request.UserId != _currentUser.Id) throw new UnauthorizedAccessException();
         //拿到会议
         var meeting = await _meetingDataProvider.GetMeetingByIdAsync(request.MeetingId, cancellationToken).ConfigureAwait(false);
         if (meeting == null) { throw new MeetingNotFoundException(); }
 
         //拿到用户会话
         var userSession = await _meetingDataProvider.GetMeetingUserSessionByMeetingIdAsync(request.MeetingId, request.UserId, cancellationToken).ConfigureAwait(false);
-
         //如果用户会话为空，抛出异常
         if (userSession is null) throw new MeetingUserSessionNotFoundException();
-        //如果用户会话的用户ID不等于当前用户ID，抛出异常
-        if (userSession.UserId != _currentUser.Id) throw new UnauthorizedAccessException();
 
-        var meetingUserSessionDto = _mapper.Map<MeetingUserSessionDto>(userSession);
+        //如果用户是主持人，直接返回
         if (meeting.Id == userSession.MeetingId && meeting.MeetingMasterUserId == userSession.UserId)
         {
-            meetingUserSessionDto.IsMeetingMaster = true;
+            if (userSession.IsMeetingMaster == true)
+            {
+                return new VerifyMeetingUserPermissionResponse() { Data = _mapper.Map<MeetingUserSessionDto>(userSession) };
+            }
+            userSession.IsMeetingMaster = true;
+            await _meetingDataProvider.UpdateMeetingUserSessionAsync(userSession, cancellationToken).ConfigureAwait(false);
         }
-        return new VerifyMeetingUserPermissionResponse() { Data = meetingUserSessionDto };
+        return new VerifyMeetingUserPermissionResponse() { Data = _mapper.Map<MeetingUserSessionDto>(userSession) };
     }
 
     public async Task<KickOutMeetingByUserIdResponse> KickOutMeetingAsync(KickOutMeetingByUserIdCommand command, CancellationToken cancellationToken)
@@ -148,12 +151,15 @@ public partial class MeetingService
         if (MasterUserSession.UserId != _currentUser.Id) throw new UnauthorizedAccessException();
         //改变被踢出用户并更新退出状态
         var kickOutUserSession = await _meetingDataProvider.GetMeetingUserSessionByMeetingIdAsync(command.MeetingId, command.KickOutUserId, cancellationToken).ConfigureAwait(false);
+        if (kickOutUserSession is null) throw new MeetingUserSessionNotFoundException();
         kickOutUserSession.OnlineType = MeetingUserSessionOnlineType.KickOutMeeting;
         await _meetingDataProvider.UpdateMeetingUserSessionAsync(kickOutUserSession, cancellationToken).ConfigureAwait(false);
         //拿到更新后的会议dto
         var userSessionDtos = await _meetingDataProvider.GetUserSessionsByMeetingIdAsync(command.MeetingId, cancellationToken);
         var meetingDto = _mapper.Map<MeetingDto>(meeting);
         meetingDto.UserSessions = userSessionDtos;
+        var user = await _accountDataProvider.GetUserAccountAsync(_currentUser.Id, cancellationToken: cancellationToken).ConfigureAwait(false);
+        meetingDto.MeetingTokenFromLiveKit = _liveKitServerUtilService.GenerateTokenForJoinMeeting(user, meeting.MeetingNumber);
         return new KickOutMeetingByUserIdResponse() { Data = meetingDto };
     }
 

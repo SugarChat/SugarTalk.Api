@@ -24,6 +24,6 @@ public class MeetingUserSessionDto
     /// </summary>
     public bool IsMeetingMaster { get; set; }
 
-    public MeetingUserSessionOnlineType OutType { get; set; }
+    public MeetingUserSessionOnlineType OnlineType { get; set; }
 }
 

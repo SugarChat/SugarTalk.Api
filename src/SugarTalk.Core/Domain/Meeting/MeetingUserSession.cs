@@ -83,8 +83,14 @@ public class MeetingUserSession : IEntity
     public DateTimeOffset CreatedDate { get; set; }
 
     /// <summary>
+    /// 用户是否为当前会议的主持人
+    /// </summary>
+    [Column("is_meeting_master")]
+    public bool IsMeetingMaster { get; set; } = false;
+
+    /// <summary>
     /// 退出类型
     /// </summary>
     [Column("online_type")]
-    public MeetingUserSessionOnlineType OnlineType { get; set; }= MeetingUserSessionOnlineType.Online;
+    public MeetingUserSessionOnlineType OnlineType { get; set; } = MeetingUserSessionOnlineType.Online;
 }

@@ -89,9 +89,11 @@ namespace SugarTalk.Core.Services.Meetings
 
         public async Task<MeetingUserSession> GetMeetingUserSessionByMeetingIdAsync(Guid meetingId, int userId, CancellationToken cancellationToken)
         {
+            //获得在线状态的用户会话
             return await _repository.QueryNoTracking<MeetingUserSession>()
                 .Where(x => x.MeetingId == meetingId)
                 .Where(x => x.UserId == userId)
+                .Where(x=>x.OnlineType == MeetingUserSessionOnlineType.Online)
                 .SingleOrDefaultAsync(cancellationToken)
                 .ConfigureAwait(false);
         }
