@@ -347,13 +347,13 @@ namespace SugarTalk.Core.Services.Meetings
             var userAccounts = await _accountDataProvider.GetUserAccountsAsync(userIds, cancellationToken).ConfigureAwait(false);
 
             var meetingHistories = userAccounts.Select(user => new MeetingHistory
-                {
-                    Id = Guid.NewGuid(),
-                    MeetingId = meeting.Id,
-                    CreatorJoinTime = meeting.CreatorJoinTime,
-                    UserEntityId = user.Uuid,
-                    Duration = CalculateMeetingDuration(meeting.CreatorJoinTime, _clock.Now.ToUnixTimeSeconds())
-                }).ToList();
+            {
+                Id = Guid.NewGuid(),
+                MeetingId = meeting.Id,
+                CreatorJoinTime = meeting.CreatorJoinTime,
+                UserEntityId = user.Uuid,
+                Duration = CalculateMeetingDuration(meeting.CreatorJoinTime, _clock.Now.ToUnixTimeSeconds())
+            });
 
             await _repository.InsertAllAsync(meetingHistories, cancellationToken).ConfigureAwait(false);
         }
