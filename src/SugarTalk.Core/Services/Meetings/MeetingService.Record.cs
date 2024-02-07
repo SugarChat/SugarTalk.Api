@@ -9,17 +9,17 @@ namespace SugarTalk.Core.Services.Meetings;
 
 public partial interface IMeetingService
 {
-    public Task<GetMeetingRecordByUserResponse> GetMeetingRecordsByUserIdAsync(GetMeetingRecordByUserRequest request,
+    public Task<GetCurrentUserMeetingRecordResponse> GetCurrentUserMeetingRecordsAsync(GetCurrentUserMeetingRecordRequest request,
         CancellationToken cancellationToken);
 }
 
 public partial class MeetingService
 {
-    public async Task<GetMeetingRecordByUserResponse> GetMeetingRecordsByUserIdAsync(GetMeetingRecordByUserRequest request, CancellationToken cancellationToken)
+    public async Task<GetCurrentUserMeetingRecordResponse> GetCurrentUserMeetingRecordsAsync(GetCurrentUserMeetingRecordRequest request, CancellationToken cancellationToken)
     {
         if (_currentUser.Id == null)
         {
-            return new GetMeetingRecordByUserResponse
+            return new GetCurrentUserMeetingRecordResponse
             {
                 MeetingRecordList = new List<MeetingRecordDto>()
             };
@@ -32,7 +32,7 @@ public partial class MeetingService
             .GetUserAccountsAsync(meetingRecords.Select(x => x.Item2.MeetingMasterUserId).ToList(), cancellationToken)
             .ConfigureAwait(false);
 
-        var response = new GetMeetingRecordByUserResponse
+        var response = new GetCurrentUserMeetingRecordResponse
         {
             MeetingRecordList = meetingRecords.Select(x => new MeetingRecordDto
             {

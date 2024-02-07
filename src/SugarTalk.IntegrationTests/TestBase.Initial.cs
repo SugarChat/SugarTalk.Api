@@ -32,6 +32,7 @@ public partial class TestBase
 
     public async Task InitializeAsync()
     {
+        Console.WriteLine("11111");
         await _identityUtil.CreateUser(new TestCurrentUser());
     }
     

@@ -4,11 +4,11 @@ using SugarTalk.Messages.Dto.Meetings;
 
 namespace SugarTalk.Messages.Requests.Meetings;
 
-public class GetMeetingRecordByUserRequest: IRequest
+public class GetCurrentUserMeetingRecordRequest: IRequest
 {
 }
 
-public class GetMeetingRecordByUserResponse : IResponse
+public class GetCurrentUserMeetingRecordResponse : IResponse
 {
     public List<MeetingRecordDto> MeetingRecordList { get; set; }
 }

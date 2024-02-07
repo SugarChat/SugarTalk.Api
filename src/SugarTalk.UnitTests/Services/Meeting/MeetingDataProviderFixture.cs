@@ -30,29 +30,26 @@ public class MeetingDataProviderFixture : BaseFixture
                 meetingId1,
                 DateTimeOffset.Now.AddDays(-1).ToUnixTimeMilliseconds(),
                 DateTimeOffset.Now.ToUnixTimeMilliseconds(),
-                Guid.NewGuid().ToString(),
-                status: MeetingStatus.Completed
+                Guid.NewGuid().ToString()
             ),
             CreateMeetingEvent(
                 meetingId2,
                 DateTimeOffset.Now.AddDays(-1).ToUnixTimeMilliseconds(),
                 DateTimeOffset.Now.ToUnixTimeMilliseconds(),
-                Guid.NewGuid().ToString(),
-                status: MeetingStatus.Pending
+                Guid.NewGuid().ToString()
             ),
             CreateMeetingEvent(
                 meetingId3,
                 DateTimeOffset.Now.AddDays(-1).ToUnixTimeMilliseconds(),
                 DateTimeOffset.Now.ToUnixTimeMilliseconds(),
-                Guid.NewGuid().ToString(),
-                status: MeetingStatus.Completed
+                Guid.NewGuid().ToString()
             )
         });
 
         MockMeetingUserSessionDb(_repository, new List<MeetingUserSession>
         {
             CreateMeetingUserSessionEvent(1, userId1, meetingId1),
-            CreateMeetingUserSessionEvent(2, userId1, meetingId2),
+            CreateMeetingUserSessionEvent(2, userId2, meetingId2),
             CreateMeetingUserSessionEvent(3, userId2, meetingId3)
         });
 

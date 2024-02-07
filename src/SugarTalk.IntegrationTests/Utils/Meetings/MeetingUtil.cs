@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Autofac;
 using System.Linq;
 using NSubstitute;
@@ -136,6 +137,14 @@ public class MeetingUtil : TestUtil
                 CantoneseToneType = cantoneseToneType ?? CantoneseToneType.HiuGaaiNeural,
                 LastModifiedDate = lastModifiedDate ?? DateTimeOffset.Now
             }, CancellationToken.None);
+        });
+    }
+
+    public async Task AddMeetingRecord(MeetingRecord record)
+    {
+        await RunWithUnitOfWork<IRepository>(async repository =>
+        {
+            await repository.InsertAsync(record).ConfigureAwait(false);
         });
     }
 }

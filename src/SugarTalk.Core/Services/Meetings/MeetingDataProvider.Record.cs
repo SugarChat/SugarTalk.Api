@@ -24,16 +24,17 @@ public partial class MeetingDataProvider
             .ToListAsync(cancellationToken)
             .ConfigureAwait(false);
 
-        var completedMeeting = await _repository.QueryNoTracking<Meeting>()
-            .Where(x => x.Status == MeetingStatus.Completed && historyMeetingIdList.Contains(x.Id))
+        var meetings = await _repository.QueryNoTracking<Meeting>()
+            .Where(x => historyMeetingIdList.Contains(x.Id))
             .ToDictionaryAsync(x => x.Id, x => x, cancellationToken)
             .ConfigureAwait(false);
 
+        var keyCollection = meetings.Keys;
         var meetingRecords = await _repository.QueryNoTracking<MeetingRecord>()
-            .Where(x => completedMeeting.ContainsKey(x.MeetingId))
+            .Where(x => keyCollection.Contains(x.MeetingId))
             .ToListAsync(cancellationToken)
             .ConfigureAwait(false);
 
-        return meetingRecords.Select(x => (x, completedMeeting.GetValueOrDefault(x.MeetingId))).ToList();
+        return meetingRecords.Select(x => (x, meetings.GetValueOrDefault(x.MeetingId))).ToList();
     }
 }
