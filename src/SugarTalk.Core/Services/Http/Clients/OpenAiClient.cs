@@ -1,28 +1,33 @@
-using System.Collections.Generic;
 using System.Threading;
+using SugarTalk.Core.Ioc;
 using System.Threading.Tasks;
 using SugarTalk.Core.Extensions;
-using SugarTalk.Core.Ioc;
+using System.Collections.Generic;
 using SugarTalk.Messages.Dto.OpenAi;
+using SugarTalk.Messages.Enums.OpenAi;
 
 namespace SugarTalk.Core.Services.Http.Clients;
 
 public interface IOpenAiClient : IScopedDependency
 {
-    Task<string> CreateTranscriptionAsync(CreateWhisperTranscriptionRequestDto request, CancellationToken cancellationToken);
+    Task<string> CreateTranscriptionAsync(CreateTranscriptionRequestDto request, CancellationToken cancellationToken);
 }
 
 public class OpenAiClient : IOpenAiClient
 {
+    private readonly IOpenAiClientBuilder _openAiClientBuilder;
     private readonly ISugarTalkHttpClientFactory _httpClientFactory;
 
-    public OpenAiClient(ISugarTalkHttpClientFactory httpClientFactory)
+    public OpenAiClient(IOpenAiClientBuilder openAiClientBuilder, ISugarTalkHttpClientFactory httpClientFactory)
     {
         _httpClientFactory = httpClientFactory;
+        _openAiClientBuilder = openAiClientBuilder;
     }
     
-    public async Task<string> CreateTranscriptionAsync(CreateWhisperTranscriptionRequestDto request, CancellationToken cancellationToken)
+    public async Task<string> CreateTranscriptionAsync(CreateTranscriptionRequestDto request, CancellationToken cancellationToken)
     {
+        var headers = _openAiClientBuilder.GetRequestHeaders(OpenAiProvider.OpenAi);
+        
         var parameters = new Dictionary<string, string>
         {
             { "model", request.Model },
@@ -36,6 +41,6 @@ public class OpenAiClient : IOpenAiClient
         var file = new Dictionary<string, (byte[], string)> { { "file", (request.File, request.FileName) } };
         
         return await _httpClientFactory.PostAsMultipartAsync<string>("https://api.openai.com/v1/audio/transcriptions", 
-            parameters, file, cancellationToken).ConfigureAwait(false);
+            parameters, file, cancellationToken, headers: headers).ConfigureAwait(false);
     }
 }

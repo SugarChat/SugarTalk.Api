@@ -2,7 +2,7 @@ using SugarTalk.Messages.Enums.OpenAi;
 
 namespace SugarTalk.Messages.Dto.OpenAi;
 
-public class CreateWhisperTranscriptionRequestDto
+public class CreateTranscriptionRequestDto
 {
     public byte[] File { get; set; }
     
