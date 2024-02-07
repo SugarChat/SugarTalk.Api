@@ -17,7 +17,7 @@ public class MeetingController : ControllerBase
     {
         _mediator = mediator;
     }
-
+    
     [Route("schedule"), HttpPost]
     [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ScheduleMeetingResponse))]
     public async Task<IActionResult> ScheduleMeetingAsync([FromBody] ScheduleMeetingCommand scheduleMeetingCommand)
@@ -107,6 +107,15 @@ public class MeetingController : ControllerBase
     public async Task<IActionResult> ChangeAudioAsync(ChangeAudioCommand command)
     {
         var response = await _mediator.SendAsync<ChangeAudioCommand, ChangeAudioResponse>(command);
+
+        return Ok(response);
+    }
+    
+    [Route("appointment"), HttpGet]
+    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(GetAppointmentMeetingsResponse))]
+    public async Task<IActionResult> GetAppointmentMeetingsAsync([FromQuery] GetAppointmentMeetingsRequest request)
+    {
+        var response = await _mediator.RequestAsync<GetAppointmentMeetingsRequest, GetAppointmentMeetingsResponse>(request);
 
         return Ok(response);
     }
