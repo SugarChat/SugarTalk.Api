@@ -52,5 +52,8 @@ namespace SugarTalk.Core.Domain.Account
         
         [Column("active", TypeName = "tinyint(1)")]
         public bool IsActive { get; set; }
+
+        [Column("type")]
+        public UserAccountType Type { get; set; }
     }
 }

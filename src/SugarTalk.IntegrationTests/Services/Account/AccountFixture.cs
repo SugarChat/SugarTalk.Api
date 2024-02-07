@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
+using System.Net;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -244,5 +245,29 @@ public class AccountFixture : AccountFixtureBase
         
         await RunWithUnitOfWork<IRepository>(async repository => 
             await repository.UpdateAsync(userAccount).ConfigureAwait(false));
+    }
+
+    [Fact]
+    public async Task ShouldCreateUserAccountWhenVisitorLogin()
+    {
+        await Run<IMediator, IRepository>(async (mediator, repository) =>
+        {
+            var response = await mediator.RequestAsync<LoginRequest, LoginResponse>(new LoginRequest
+            {
+                UserName = Guid.NewGuid().ToString(),
+                Password = Guid.NewGuid().ToString()
+            });
+            response.Code.ShouldBe(HttpStatusCode.Unauthorized);
+
+            response = await mediator.RequestAsync<LoginRequest, LoginResponse>(new LoginRequest
+            {
+                UserName = Guid.NewGuid().ToString(),
+                Password = Guid.NewGuid().ToString(),
+                UserAccountType = UserAccountType.Visitor
+            });
+            response.Code.ShouldBe(HttpStatusCode.OK);
+            response.Data.ShouldNotBeNull();
+            await repository.SingleOrDefaultAsync<UserAccount>(x => x.Type == UserAccountType.Visitor).ShouldNotBeNull();
+        });
     }
 }
