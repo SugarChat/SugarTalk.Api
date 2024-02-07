@@ -183,6 +183,25 @@ public partial class MeetingServiceFixture : MeetingFixtureBase
     }
     
     [Fact]
+    public async Task ShouldChangeStatusAfterEndMeeting()
+    {
+        var scheduleMeetingResponse = await _meetingUtil.ScheduleMeeting(securityCode: "123456");
+        
+        await Run<IMediator>(async (mediator) =>
+        {
+            var meetingInfo = await mediator.SendAsync<EndMeetingCommand, EndMeetingResponse>(
+                new EndMeetingCommand
+                {
+                    MeetingNumber = scheduleMeetingResponse.Data.MeetingNumber
+                });
+
+            var meetingNumber = meetingInfo.Data.MeetingNumber;
+            var response = await _meetingUtil.GetMeeting(meetingNumber);
+            response.Status.ShouldBe(MeetingStatus.Completed);
+            response.EndDate.ShouldNotBe(0);
+        });
+    }
+    [Fact]
     public async Task CanGetMeetingByNumber()
     {
         var scheduleMeetingResponse = await _meetingUtil.ScheduleMeeting();
