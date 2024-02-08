@@ -200,12 +200,14 @@ public partial class MeetingServiceFixture : MeetingFixtureBase
                 {
                     UserId = user1.Id,
                     IsMuted = false,
+                    UserEntityId = user1.Uuid,
                     MeetingId = scheduleMeetingResponse.Data.Id
                 },
                 new()
                 {
                     UserId = user2.Id,
                     IsMuted = true,
+                    UserEntityId = user2.Uuid,
                     MeetingId = scheduleMeetingResponse.Data.Id
                 }
             });
@@ -359,8 +361,6 @@ public partial class MeetingServiceFixture : MeetingFixtureBase
     
             response.Data.ShouldNotBeNull();
     
-            response.Data.AppName.ShouldBe("LiveApp");
-
             response.Data.UserSessions.ShouldBeNull();
             response.Data.StartDate.ShouldBe(scheduleMeetingResponse.Data.StartDate);
             response.Data.EndDate.ShouldBe(scheduleMeetingResponse.Data.EndDate);
@@ -378,7 +378,7 @@ public partial class MeetingServiceFixture : MeetingFixtureBase
 
         var meeting = new Meeting
         {
-            Id = Guid.NewGuid(), MeetingNumber = "123456",
+            Id = Guid.NewGuid(), MeetingNumber = "123456", CreatorUserId = currentUser.UserId.Value,
             MeetingMasterUserId = currentUser.Id.Value, MeetingStreamMode = MeetingStreamMode.LEGACY,
             StartDate = startDate.ToUnixTimeSeconds(), EndDate = startDate.AddDays(5).ToUnixTimeSeconds()
         };

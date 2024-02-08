@@ -24,6 +24,9 @@ public class MeetingUserSession : IEntity
     [Column("user_id")]
     public int UserId { get; set; }
     
+    [Column("user_entity_id", TypeName = "char(36)")]
+    public Guid UserEntityId { get; set; }
+
     [Column("status")]
     public MeetingAttendeeStatus Status { get; set; }
     

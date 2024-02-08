@@ -12,6 +12,8 @@ public class MeetingUserSessionDto
         
     public int UserId { get; set; }
     
+    public Guid UserEntityId { get; set; }
+    
     public string UserName { set; get; }
 
     public bool IsMuted { get; set; }

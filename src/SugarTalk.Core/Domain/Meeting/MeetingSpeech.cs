@@ -23,6 +23,9 @@ public class MeetingSpeech : IEntity
 
     [Column("user_id")] 
     public int UserId { get; set; }
+    
+    [Column("user_entity_id", TypeName = "char(36)")]
+    public Guid UserEntityId { get; set; }
 
     [Column("original_text")] 
     public string OriginalText { get; set; }

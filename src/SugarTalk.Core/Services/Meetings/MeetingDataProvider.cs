@@ -21,7 +21,7 @@ namespace SugarTalk.Core.Services.Meetings
 {
     public partial interface IMeetingDataProvider : IScopedDependency
     {
-        Task<MeetingUserSession> GetMeetingUserSessionByMeetingIdAsync(Guid meetingId, int userId, CancellationToken cancellationToken);
+        Task<MeetingUserSession> GetMeetingUserSessionByMeetingIdAsync(Guid meetingId, Guid userId, CancellationToken cancellationToken);
         
         Task<Meeting> GetMeetingByIdAsync(Guid meetingId, CancellationToken cancellationToken = default);
         
@@ -78,11 +78,11 @@ namespace SugarTalk.Core.Services.Meetings
             _accountDataProvider = accountDataProvider;
         }
         
-        public async Task<MeetingUserSession> GetMeetingUserSessionByMeetingIdAsync(Guid meetingId, int userId, CancellationToken cancellationToken)
+        public async Task<MeetingUserSession> GetMeetingUserSessionByMeetingIdAsync(Guid meetingId, Guid userId, CancellationToken cancellationToken)
         {
             return await _repository.QueryNoTracking<MeetingUserSession>()
                 .Where(x => x.MeetingId == meetingId)
-                .Where(x => x.UserId == userId)
+                .Where(x => x.UserEntityId == userId)
                 .SingleOrDefaultAsync(cancellationToken)
                 .ConfigureAwait(false);
         }
@@ -131,15 +131,15 @@ namespace SugarTalk.Core.Services.Meetings
         private async Task EnrichMeetingUserSessionsAsync(
             List<MeetingUserSessionDto> userSessions, CancellationToken cancellationToken)
         {
-            var userIds = userSessions.Select(x => x.UserId);
+            var userIds = userSessions.Select(x => x.UserEntityId);
 
             var userAccounts = await _repository
-                .ToListAsync<UserAccount>(x => userIds.Contains(x.Id), cancellationToken).ConfigureAwait(false);
+                .ToListAsync<UserAccount>(x => userIds.Contains(x.Uuid), cancellationToken).ConfigureAwait(false);
 
             userSessions.ForEach(userSession =>
             {
                 userSession.UserName = userAccounts
-                    .Where(x => x.Id == userSession.UserId)
+                    .Where(x => x.Uuid == userSession.UserEntityId)
                     .Select(x => x.UserName).FirstOrDefault();
             });
         }
@@ -245,7 +245,10 @@ namespace SugarTalk.Core.Services.Meetings
         {
             var meetingSubMeetings = await _repository.Query<MeetingSubMeeting>()
                 .Where(x => x.MeetingId == meetingId)
+                .Where(x => x.SubConferenceStatus == MeetingRecordSubConferenceStatus.Default)
                 .ToListAsync(cancellationToken).ConfigureAwait(false);
+
+            if (meetingSubMeetings is not { Count: > 0 }) return;
 
             meetingSubMeetings.ForEach(x => x.SubConferenceStatus = MeetingRecordSubConferenceStatus.NotExist);
         }

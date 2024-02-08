@@ -67,6 +67,7 @@ public class WiltechsAuthenticationHandler : AuthenticationHandler<WiltechsAuthe
             {
                 new Claim(ClaimTypes.Name, userAccount.UserName),
                 new Claim(ClaimTypes.NameIdentifier, userAccount.Id.ToString()),
+                new Claim(ClaimTypes.SerialNumber, userAccount.Uuid.ToString()),
                 new Claim(ClaimTypes.Authentication, UserAccountIssuer.Wiltechs.ToString())
             }, AuthenticationSchemeConstants.WiltechsAuthenticationScheme);
 

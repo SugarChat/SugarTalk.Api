@@ -19,6 +19,9 @@ public class Meeting : IEntity
 
     [Column("meeting_master_user_id")] 
     public int MeetingMasterUserId { get; set; }
+    
+    [Column("creator_user_id")]
+    public Guid CreatorUserId { get; set; }
 
     [Column("created_date")] 
     public DateTimeOffset CreatedDate { get; set; }

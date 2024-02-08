@@ -3,6 +3,7 @@ using System.Linq;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Http;
 using SugarTalk.Core.Constants;
+using SugarTalk.Messages.Constants;
 using SugarTalk.Messages.Enums.Account;
 
 namespace SugarTalk.Core.Services.Identity;
@@ -10,6 +11,8 @@ namespace SugarTalk.Core.Services.Identity;
 public interface ICurrentUser
 {
     int? Id { get; }
+    
+    Guid? UserId { get; }
     
     UserAccountIssuer AuthType { get; }
 }
@@ -36,6 +39,16 @@ public class CurrentUser : ICurrentUser
         }
     }
 
+    public Guid? UserId
+    {
+        get
+        {
+            return _httpContextAccessor.HttpContext == null
+                ? throw new ApplicationException("HttpContext is not available")
+                : Guid.Parse(_httpContextAccessor.HttpContext.User.Claims.Single(x => x.Type == ClaimTypes.SerialNumber).Value);
+        }
+    }
+
     public UserAccountIssuer AuthType
     {
         get
@@ -54,7 +67,9 @@ public class CurrentUser : ICurrentUser
 
 public class InternalUser : ICurrentUser
 {
-    public int? Id => 1;
+    public int? Id => CurrentUsers.InternalUser.Id;
+    
+    public Guid? UserId => CurrentUsers.InternalUser.UserId;
 
     public UserAccountIssuer AuthType => UserAccountIssuer.Wiltechs;
 }

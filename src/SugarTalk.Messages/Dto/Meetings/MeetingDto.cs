@@ -36,6 +36,8 @@ public class MeetingBaseDto
 {
     public Guid Id { get; set; }
     
+    public Guid CreatorUserId { get; set; }
+    
     public int MeetingMasterUserId { get; set; }
 
     public string MeetingNumber { get; set; }

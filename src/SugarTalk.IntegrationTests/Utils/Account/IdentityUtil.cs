@@ -27,7 +27,7 @@ public class IdentityUtil : TestUtil
             {
                 Id = testUser.Id.Value,
                 UserName = testUser.UserName,
-                Uuid = new Guid("c2af213e-df6e-11ed-b5ea-0242ac120002"),
+                Uuid = testUser.UserId.Value,
                 Password = "123456",
                 ThirdPartyUserId = testUser.ThirdPartyId
             });

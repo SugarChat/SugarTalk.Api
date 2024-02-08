@@ -27,7 +27,7 @@ namespace SugarTalk.Core.Services.Account
 
         Task PersistUser(UserAccount user, CancellationToken cancellationToken);
         
-        Task<UserAccountDto> GetUserAccountAsync(int? id = null, string username = null, string thirdPartyUserId = null, bool includeRoles = false,
+        Task<UserAccountDto> GetUserAccountAsync(int? id = null, Guid? uuid = null, string username = null, string thirdPartyUserId = null, bool includeRoles = false,
             CancellationToken cancellationToken = default);
 
         Task<UserAccount> CreateUserAccountAsync(string userName, string password, string thirdPartyUserId = null,
@@ -67,12 +67,14 @@ namespace SugarTalk.Core.Services.Account
         }
         
         public async Task<UserAccountDto> GetUserAccountAsync(
-            int? id = null, string username = null, string thirdPartyUserId = null, bool includeRoles = false, CancellationToken cancellationToken = default)
+            int? id = null, Guid? uuid = null, string username = null, string thirdPartyUserId = null, bool includeRoles = false, CancellationToken cancellationToken = default)
         {
             var query = _repository.QueryNoTracking<UserAccount>();
 
             if (id.HasValue)
                 query = query.Where(x => x.Id == id);
+            if (uuid.HasValue)
+                query = query.Where(x => x.Uuid == uuid);
             if (!string.IsNullOrEmpty(username))
                 query = query.Where(x => x.UserName == username);
             if (thirdPartyUserId != null)
@@ -129,6 +131,7 @@ namespace SugarTalk.Core.Services.Account
             {
                 new(ClaimTypes.Name, account.UserName),
                 new(ClaimTypes.NameIdentifier, account.Id.ToString()),
+                new(ClaimTypes.SerialNumber, account.Uuid.ToString()),
                 new(ClaimTypes.Authentication, AuthenticationSchemeConstants.SelfAuthenticationScheme)
             };
             claims.AddRange(account.Roles.Select(r => new Claim(ClaimTypes.Role, r.Name)));

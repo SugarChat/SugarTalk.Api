@@ -72,6 +72,7 @@ public partial class MeetingDataProvider
 
         meetingUserSetting.MeetingId = meetingId;
         meetingUserSetting.UserId = _currentUser.Id.Value;
+        meetingUserSetting.UserEntityId = _currentUser.UserId.Value;
 
         await _repository.InsertAsync(meetingUserSetting, cancellationToken).ConfigureAwait(false);
 
