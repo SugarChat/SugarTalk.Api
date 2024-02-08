@@ -63,8 +63,16 @@ public partial class MeetingDataProvider
                 StartDate = x.Meeting.StartDate,
                 EndDate = x.Meeting.EndDate,
                 Timezone = x.Meeting.TimeZone,
-                MeetingCreator = x.User.UserName
+                MeetingCreator = x.User.UserName,
+                Duration = CalculateMeetingDuration(x.Meeting.StartDate, x.Meeting.EndDate)
             })
             .ToList();
+    }
+
+    private static long CalculateMeetingDuration(long startDate, long endDate)
+    {
+        if (endDate <= 0 || startDate <= 0 || endDate <= startDate) return 0;
+
+        return endDate - startDate;
     }
 }
