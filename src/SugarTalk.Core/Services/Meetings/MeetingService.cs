@@ -225,39 +225,39 @@ namespace SugarTalk.Core.Services.Meetings
             if (meeting.MeetingMasterUserId != _currentUser.Id) throw new CannotEndMeetingWhenUnauthorizedException();
 
             // TODO: 更新会议结束时间, 会议时长，更新会议中的用户状态
-            //获取当前时间为结束时间
             meeting.EndDate = _clock.Now.ToUnixTimeSeconds();
-            
-            //会议时长==结束时间-开始时间,目前在数据库没找到对应字段,非必须、不清楚类型
-            var endLocalTime = DateTimeOffset.FromUnixTimeSeconds(meeting.EndDate);
-            var duration = endLocalTime - DateTimeOffset.FromUnixTimeSeconds(meeting.StartDate);//TimeSpan类型 表示会议的时长
-            var totalSeconds = Convert.ToInt64(duration.TotalSeconds);//long类型 表示多少秒
-            
+
             var updateMeeting = _mapper.Map<Meeting>(meeting);
-            //更新会议的状态
+            
             updateMeeting.Status = MeetingStatus.Completed;
+            
             await _meetingDataProvider.UpdateMeetingAsync(updateMeeting, cancellationToken).ConfigureAwait(false);
             
-            //更新用户状态:获取用户id 计算CumulativeTime
-            var idList = meeting.UserSessions.Select(x => x.UserId).ToList();
-            var meetingUserSessionsAsync =
-                await _meetingDataProvider.GetMeetingUserSessionsAsync(idList, cancellationToken).ConfigureAwait(false);
-            var meetingUserSessions = meetingUserSessionsAsync
+            var userSessionIds = meeting.UserSessions.Select(x => x.UserId).ToList();
+            
+            var meetingUserSessions =
+                await _meetingDataProvider.GetMeetingUserSessionsAsync(userSessionIds, cancellationToken).ConfigureAwait(false);
+            
+            var updateMeetingUserSessions = meetingUserSessions
                 .Where(x =>
                     x.MeetingId == meeting.Id &&
-                    x.Status == MeetingAttendeeStatus.Present &&
+                    x.Status != MeetingAttendeeStatus.Absent &&
                     !x.IsDeleted)
                 .ToList();
-            meetingUserSessions.ForEach(x =>
+            
+            updateMeetingUserSessions.ForEach(x =>
             {
                 //todo 逻辑待商榷
                 if (x.LastQuitTime is not (null or 0)) return;
-                x.CumulativeTime +=
-                    Convert.ToInt64((endLocalTime - DateTimeOffset.FromUnixTimeSeconds(meeting.StartDate)).TotalSeconds);
+
+                x.CumulativeTime = (x.CumulativeTime ?? 0) + Convert.ToInt64(
+                    (DateTimeOffset.FromUnixTimeSeconds(meeting.EndDate) -
+                     DateTimeOffset.FromUnixTimeSeconds(meeting.StartDate)).TotalSeconds);
                 x.LastQuitTime = meeting.EndDate;
             });
-            //调用接口更改用户状态
-            await _meetingDataProvider.UpdateMeetingUserSessionListAsync(meetingUserSessions, cancellationToken).ConfigureAwait(false);
+            
+            await _meetingDataProvider.UpdateMeetingUserSessionAsync(updateMeetingUserSessions, cancellationToken).ConfigureAwait(false);
+            
             return new MeetingEndedEvent
             {
                 MeetingNumber = meeting.MeetingNumber,

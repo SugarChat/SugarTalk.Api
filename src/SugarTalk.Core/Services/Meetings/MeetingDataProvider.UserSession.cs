@@ -24,8 +24,7 @@ public partial interface IMeetingDataProvider
         
     Task UpdateMeetingUserSessionAsync(MeetingUserSession userSession, CancellationToken cancellationToken);
 
-    Task UpdateMeetingUserSessionListAsync(List<MeetingUserSession> userSessionList,
-        CancellationToken cancellationToken);
+    Task UpdateMeetingUserSessionAsync(List<MeetingUserSession> userSession, CancellationToken cancellationToken);
     
     Task<List<MeetingUserSessionDto>> GetUserSessionsByMeetingIdAsync(Guid meetingId, CancellationToken cancellationToken);
 
@@ -64,11 +63,12 @@ public partial class MeetingDataProvider
         
         await _unitOfWork.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
     }
-    public async Task UpdateMeetingUserSessionListAsync(List<MeetingUserSession> userSessionList, CancellationToken cancellationToken)
+    public async Task UpdateMeetingUserSessionAsync(List<MeetingUserSession> userSession, CancellationToken cancellationToken)
     {
-        if (userSessionList != null)
-            await _repository.UpdateAllAsync(userSessionList,cancellationToken).ConfigureAwait(false);
+        if (userSession == null) return;
         
+        await _repository.UpdateAllAsync(userSession, cancellationToken).ConfigureAwait(false);
+
         await _unitOfWork.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
     }
     

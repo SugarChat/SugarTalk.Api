@@ -185,10 +185,31 @@ public partial class MeetingServiceFixture : MeetingFixtureBase
     [Fact]
     public async Task ShouldChangeStatusAfterEndMeeting()
     {
-        var scheduleMeetingResponse = await _meetingUtil.ScheduleMeeting(securityCode: "123456");
+        var scheduleMeetingResponse = await _meetingUtil.ScheduleMeeting();
         
-        await Run<IMediator>(async (mediator) =>
+        var user1 = await _accountUtil.AddUserAccount("mars", "123");
+        var user2 = await _accountUtil.AddUserAccount("greg", "123");
+        
+        await Run<IMediator, IRepository, IUnitOfWork>(async (mediator, repository, unitOfWork) =>
         {
+            await repository.InsertAllAsync(new List<MeetingUserSession>
+            {
+                new()
+                {
+                    UserId = user1.Id,
+                    IsMuted = false,
+                    MeetingId = scheduleMeetingResponse.Data.Id
+                },
+                new()
+                {
+                    UserId = user2.Id,
+                    IsMuted = true,
+                    MeetingId = scheduleMeetingResponse.Data.Id
+                }
+            });
+            
+            await unitOfWork.SaveChangesAsync().ConfigureAwait(false);
+            
             var meetingInfo = await mediator.SendAsync<EndMeetingCommand, EndMeetingResponse>(
                 new EndMeetingCommand
                 {
@@ -196,9 +217,20 @@ public partial class MeetingServiceFixture : MeetingFixtureBase
                 });
 
             var meetingNumber = meetingInfo.Data.MeetingNumber;
+            
             var response = await _meetingUtil.GetMeeting(meetingNumber);
+            
+            var beforeUserSession = await repository.QueryNoTracking<MeetingUserSession>()
+                .Where(x => x.MeetingId == scheduleMeetingResponse.Data.Id).ToListAsync();
+            
+            beforeUserSession.Count.ShouldBe(2);
+            beforeUserSession.ForEach(x =>
+            {
+                x.LastQuitTime.ShouldBe(response.EndDate);
+                x.CumulativeTime.ShouldNotBeNull();
+            });
+            
             response.Status.ShouldBe(MeetingStatus.Completed);
-            response.EndDate.ShouldNotBe(0);
         });
     }
     [Fact]
