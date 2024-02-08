@@ -97,6 +97,14 @@ public class MeetingUtil : TestUtil
           });
     }
 
+    public async Task<VerifyMeetingUserPermissionResponse> VerifyMeetingUserPermissionAsync(VerifyMeetingUserPermissionCommand verifyMeetingUserPermissionCommand)
+    {
+      return  await Run<IMediator, VerifyMeetingUserPermissionResponse>(async mediator =>
+        {
+         return  await mediator.SendAsync<VerifyMeetingUserPermissionCommand, VerifyMeetingUserPermissionResponse>(verifyMeetingUserPermissionCommand);
+        });
+    }
+
     public async Task<GetMeetingByNumberResponse> GetMeetingAsync(string meetingNumber)
     {
         return await Run<IMediator, GetMeetingByNumberResponse>(async mediator =>

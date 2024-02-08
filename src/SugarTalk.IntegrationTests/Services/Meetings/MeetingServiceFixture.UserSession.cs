@@ -1,6 +1,8 @@
 ﻿using Shouldly;
 using StackExchange.Redis;
 using SugarTalk.Core.Domain.Meeting;
+using SugarTalk.Core.Services.Exceptions;
+using SugarTalk.Messages.Commands.Meetings;
 using SugarTalk.Messages.Enums.Meeting;
 using System;
 using System.Collections.Generic;
@@ -17,7 +19,7 @@ namespace SugarTalk.IntegrationTests.Services.Meetings
         [Theory]
         [InlineData(1)]
         [InlineData(2)]
-        public async Task CanGetUserSessionPermissionsWhenReconnectMeeting(int masterUserId)
+        public async Task CanGetMeetingUserSessionPermissionsWhenReconnectMeeting(int masterUserId)
         {
             var scheduleMeetingResponse = await _meetingUtil.ScheduleMeeting();
             scheduleMeetingResponse.Data.MeetingMasterUserId = masterUserId;
@@ -32,6 +34,44 @@ namespace SugarTalk.IntegrationTests.Services.Meetings
             else
             {
                 beforeInfo.UserSessions.FirstOrDefault(x => x.UserId == scheduleMeetingResponse.Data.MeetingMasterUserId).ShouldBeNull();
+            }
+        }
+
+        [Fact]
+        public async Task WhenVerifyMeetingUserPermissionShouldBeThrow()
+        {
+            
+            var testUser1 = await _accountUtil.AddUserAccount("Test", "123456");
+            var verifyMeetingUserPermissionCommand = new VerifyMeetingUserPermissionCommand
+            {
+                MeetingId = Guid.Parse("701A9BAB-B7CD-AD1B-CAC5-7A8963619B8D"),
+                UserId = testUser1.Id
+            };
+            _meetingUtil.VerifyMeetingUserPermissionAsync(verifyMeetingUserPermissionCommand).ShouldThrow<UnauthorizedAccessException>();
+        }
+
+        [Theory]
+        [InlineData(1)]
+        [InlineData(2)]
+        public async Task WhenKickOutMeetingUserSessionShouldBeThrow(int id)
+        {
+            var scheduleMeetingResponse = await _meetingUtil.ScheduleMeeting();
+            var testUser1 = await _accountUtil.AddUserAccount("Test", "123456");
+
+            var joinMeetingDto1 = await _meetingUtil.JoinMeetingByUserAsync(testUser1, scheduleMeetingResponse.Data.MeetingNumber);
+            joinMeetingDto1.UserSessionCount.ShouldBe(1);
+            (joinMeetingDto1.MeetingMasterUserId == testUser1.Id).ShouldBeFalse();
+
+            var masterUser = await _meetingUtil.JoinMeeting(scheduleMeetingResponse.Data.MeetingNumber);
+            masterUser.UserSessionCount.ShouldBe(2);
+
+            if (id == 1)
+                _meetingUtil.KickOutUserByUserIdAsync
+                     (scheduleMeetingResponse.Data.Id, 1, masterUser.MeetingMasterUserId, scheduleMeetingResponse.Data.MeetingNumber).ShouldThrow<CannotKickOutMeetingUserSessionException>();
+            else
+            {
+                _meetingUtil.KickOutUserByUserIdAsync
+                     (scheduleMeetingResponse.Data.Id, testUser1.Id, id, scheduleMeetingResponse.Data.MeetingNumber).ShouldThrow<MeetingUserSessionNotFoundException>();
             }
         }
 
@@ -59,7 +99,7 @@ namespace SugarTalk.IntegrationTests.Services.Meetings
         }
 
         [Fact]
-        public async Task KickOutUserStatusChange()
+        public async Task CanKickOutMeetingUserStatusChange()
         {
             var scheduleMeetingResponse = await _meetingUtil.ScheduleMeeting();
 

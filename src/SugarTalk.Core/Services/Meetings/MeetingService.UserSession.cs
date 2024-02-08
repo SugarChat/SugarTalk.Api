@@ -142,24 +142,38 @@ public partial class MeetingService
     public async Task<KickOutMeetingByUserIdResponse> KickOutMeetingAsync(KickOutMeetingByUserIdCommand command, CancellationToken cancellationToken)
     {
         //拿到会议
-        var meeting = await _meetingDataProvider.GetMeetingByIdAsync(command.MeetingId, cancellationToken).ConfigureAwait(false);
+        var meeting = await _meetingDataProvider
+            .GetMeetingByIdAsync(command.MeetingId, cancellationToken).ConfigureAwait(false);
         if (meeting == null) { throw new MeetingNotFoundException(); }
         if (meeting.MeetingMasterUserId != _currentUser.Id) throw new UnauthorizedAccessException();
+
         //拿到主持人用户会话
-        var MasterUserSession = await _meetingDataProvider.GetMeetingUserSessionByMeetingIdAsync(command.MeetingId, command.MasterUserId, cancellationToken).ConfigureAwait(false);
-        if (MasterUserSession is null) throw new MeetingUserSessionNotFoundException();
-        if (MasterUserSession.UserId != _currentUser.Id) throw new UnauthorizedAccessException();
+        var masterUserSession = await _meetingDataProvider
+            .GetMeetingUserSessionByMeetingIdAsync(command.MeetingId, command.MasterUserId, cancellationToken).ConfigureAwait(false);
+        if (masterUserSession is null) throw new MeetingUserSessionNotFoundException();
+        if (masterUserSession.UserId != _currentUser.Id) throw new UnauthorizedAccessException();
+
         //改变被踢出用户并更新退出状态
-        var kickOutUserSession = await _meetingDataProvider.GetMeetingUserSessionByMeetingIdAsync(command.MeetingId, command.KickOutUserId, cancellationToken).ConfigureAwait(false);
+        var kickOutUserSession = await _meetingDataProvider
+            .GetMeetingUserSessionByMeetingIdAsync(command.MeetingId, command.KickOutUserId, cancellationToken).ConfigureAwait(false);
         if (kickOutUserSession is null) throw new MeetingUserSessionNotFoundException();
+        if(kickOutUserSession.UserId==masterUserSession.UserId) throw new CannotKickOutMeetingUserSessionException();
+
         kickOutUserSession.OnlineType = MeetingUserSessionOnlineType.KickOutMeeting;
-        await _meetingDataProvider.UpdateMeetingUserSessionAsync(kickOutUserSession, cancellationToken).ConfigureAwait(false);
+        kickOutUserSession.Status = MeetingAttendeeStatus.Absent;
+        await _meetingDataProvider
+            .UpdateMeetingUserSessionAsync(kickOutUserSession, cancellationToken).ConfigureAwait(false);
+
         //拿到更新后的会议dto
-        var userSessionDtos = await _meetingDataProvider.GetUserSessionsByMeetingIdAsync(command.MeetingId, cancellationToken);
+        var userSessionDtos = await _meetingDataProvider
+            .GetUserSessionsByMeetingIdAsync(command.MeetingId, cancellationToken);
         var meetingDto = _mapper.Map<MeetingDto>(meeting);
         meetingDto.UserSessions = userSessionDtos;
-        var user = await _accountDataProvider.GetUserAccountAsync(_currentUser.Id, cancellationToken: cancellationToken).ConfigureAwait(false);
-        meetingDto.MeetingTokenFromLiveKit = _liveKitServerUtilService.GenerateTokenForJoinMeeting(user, meeting.MeetingNumber);
+
+        var user = await _accountDataProvider
+            .GetUserAccountAsync(_currentUser.Id, cancellationToken: cancellationToken).ConfigureAwait(false);
+        meetingDto.MeetingTokenFromLiveKit = _liveKitServerUtilService
+            .GenerateTokenForJoinMeeting(user, meeting.MeetingNumber);
         return new KickOutMeetingByUserIdResponse() { Data = meetingDto };
     }
 
