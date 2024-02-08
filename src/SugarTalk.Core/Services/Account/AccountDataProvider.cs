@@ -31,9 +31,7 @@ namespace SugarTalk.Core.Services.Account
             CancellationToken cancellationToken = default);
 
         Task<UserAccount> CreateUserAccountAsync(string userName, string password, string thirdPartyUserId = null,
-            UserAccountIssuer authType = UserAccountIssuer.Wiltechs, CancellationToken cancellationToken = default);
-
-        Task<UserAccount> CreateVisitorAync(CancellationToken cancellationToken);
+            UserAccountIssuer authType = UserAccountIssuer.Wiltechs, UserAccountType type = UserAccountType.RegisteredUser, CancellationToken cancellationToken = default);
 
         List<Claim> GenerateClaimsFromUserAccount(UserAccountDto account);
         
@@ -104,7 +102,7 @@ namespace SugarTalk.Core.Services.Account
         }
         
         public async Task<UserAccount> CreateUserAccountAsync(string requestUserName, string requestPassword, 
-            string thirdPartyUserId = null, UserAccountIssuer authType = UserAccountIssuer.Wiltechs, CancellationToken cancellationToken = default)
+            string thirdPartyUserId = null, UserAccountIssuer authType = UserAccountIssuer.Wiltechs, UserAccountType type = UserAccountType.RegisteredUser, CancellationToken cancellationToken = default)
         {
             var userAccount = new UserAccount
             {
@@ -115,27 +113,14 @@ namespace SugarTalk.Core.Services.Account
                 Password = requestPassword?.ToSha256(),
                 ThirdPartyUserId = thirdPartyUserId,
                 Issuer = authType,
-                IsActive = true
-            };
-
-            await _repository.InsertAsync(userAccount, cancellationToken).ConfigureAwait(false);
-            
-            await _unitOfWork.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
-            
-            return userAccount;
-        }
-
-        public async Task<UserAccount> CreateVisitorAync(CancellationToken cancellationToken)
-        {
-            var userAccount = new UserAccount
-            {
-                UserName = Guid.NewGuid().ToString(),
-                Password = string.Empty,
                 IsActive = true,
-                Type = UserAccountType.Visitor
+                Type = type,
             };
+
             await _repository.InsertAsync(userAccount, cancellationToken).ConfigureAwait(false);
+            
             await _unitOfWork.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+            
             return userAccount;
         }
 

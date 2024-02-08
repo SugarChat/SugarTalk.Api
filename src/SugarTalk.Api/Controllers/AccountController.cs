@@ -5,6 +5,7 @@ using SugarTalk.Messages.Requests.Account;
 
 namespace SugarTalk.Api.Controllers;
 
+[Authorize]
 [ApiController]
 [Route("[controller]")]
 public class AccountController : ControllerBase
@@ -16,6 +17,7 @@ public class AccountController : ControllerBase
         _mediator = mediator;
     }
 
+    [AllowAnonymous]
     [Route("login"), HttpPost]
     [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(LoginResponse))]
     public async Task<IActionResult> LoginAsync([FromBody] LoginRequest request)

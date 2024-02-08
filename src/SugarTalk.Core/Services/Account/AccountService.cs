@@ -1,3 +1,4 @@
+using System;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
@@ -46,20 +47,22 @@ namespace SugarTalk.Core.Services.Account
         
         public async Task<LoginResponse> LoginAsync(LoginRequest request, CancellationToken cancellationToken)
         {
-            bool canLogin;
-            UserAccountDto account;
-            switch (request.UserAccountType)
+            bool canLogin = false;
+            UserAccountDto account = null;
+
+            if (request.UserAccountType == UserAccountType.RegisteredUser)
             {
-                default:
-                case UserAccountType.RegisteredUser:
-                    (canLogin, account) = await _accountDataProvider
-                        .AuthenticateAsync(request.UserName, request.Password, cancellationToken).ConfigureAwait(false);
-                    break;
-                case UserAccountType.Visitor:
-                    var accountFromDb = await _accountDataProvider.CreateVisitorAync(cancellationToken).ConfigureAwait(false);
-                    account = _mapper.Map<UserAccountDto>(accountFromDb);
-                    canLogin = true;
-                    break;
+                (canLogin, account) = await _accountDataProvider
+                    .AuthenticateAsync(request.UserName, request.Password, cancellationToken).ConfigureAwait(false);
+            }
+            else if (request.UserAccountType == UserAccountType.Visitor)
+            {
+                var accountFromDb = await _accountDataProvider.CreateUserAccountAsync(Guid.NewGuid().ToString(),
+                    string.Empty,
+                    type: UserAccountType.Visitor,
+                    cancellationToken: cancellationToken).ConfigureAwait(false);
+                account = _mapper.Map<UserAccountDto>(accountFromDb);
+                canLogin = true;
             }
 
             Log.Information("canLogin:{canLogin}, account:{account}", canLogin, account);
@@ -88,7 +91,7 @@ namespace SugarTalk.Core.Services.Account
             if (userAccount != null) return userAccount;
 
             var account = await _accountDataProvider
-                .CreateUserAccountAsync(userName, "123abc", userId, issuer, cancellationToken).ConfigureAwait(false);
+                .CreateUserAccountAsync(userName, "123abc", userId, issuer, cancellationToken: cancellationToken).ConfigureAwait(false);
 
             return _mapper.Map<UserAccountDto>(account);
         }
