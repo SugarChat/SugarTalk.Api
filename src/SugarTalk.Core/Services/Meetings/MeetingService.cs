@@ -241,7 +241,7 @@ namespace SugarTalk.Core.Services.Meetings
             //更新用户状态:获取用户id 计算CumulativeTime
             var idList = meeting.UserSessions.Select(x => x.UserId).ToList();
             var meetingUserSessionsAsync =
-                await _meetingDataProvider.GetMeetingUserSessionsAsync(idList, cancellationToken);
+                await _meetingDataProvider.GetMeetingUserSessionsAsync(idList, cancellationToken).ConfigureAwait(false);
             var meetingUserSessions = meetingUserSessionsAsync
                 .Where(x =>
                     x.MeetingId == meeting.Id &&
@@ -255,10 +255,9 @@ namespace SugarTalk.Core.Services.Meetings
                 x.CumulativeTime +=
                     Convert.ToInt64((endLocalTime - DateTimeOffset.FromUnixTimeSeconds(meeting.StartDate)).TotalSeconds);
                 x.LastQuitTime = meeting.EndDate;
-                //调用接口更改用户状态
-                _meetingDataProvider.UpdateMeetingUserSessionAsync(x, cancellationToken).ConfigureAwait(false);
             });
-            
+            //调用接口更改用户状态
+            await _meetingDataProvider.UpdateMeetingUserSessionListAsync(meetingUserSessions, cancellationToken).ConfigureAwait(false);
             return new MeetingEndedEvent
             {
                 MeetingNumber = meeting.MeetingNumber,
