@@ -49,7 +49,7 @@ public partial class MeetingDataProvider
                     User = user
                 })
             .Where(x => x.Session.UserId.Equals(currentUserId))
-            .OrderBy(x => x.Record.CreatedDate)
+            .OrderByDescending(x => x.Record.CreatedDate)
             .Skip((request.PageSetting.Page - 1) * request.PageSetting.PageSize)
             .Take(request.PageSetting.PageSize)
             .ToListAsync(cancellationToken)
