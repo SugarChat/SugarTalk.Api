@@ -47,6 +47,7 @@ public partial class BaseFixture
         _mapper = CreateMapper();
         _unitOfWork = Substitute.For<IUnitOfWork>();
         _currentUser = Substitute.For<ICurrentUser>();
+        _currentUser.Id.Returns(1);
         _liveKitServerUtilService = Substitute.For<ILiveKitServerUtilService>();
         _accountDataProvider = MockAccountDataProvider(_mapper, _repository, _unitOfWork);
         _meetingDataProvider = MockMeetingDataProvider(_clock, _mapper, _repository, _unitOfWork, _currentUser, _accountDataProvider);

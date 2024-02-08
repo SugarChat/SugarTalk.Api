@@ -121,11 +121,11 @@ public class MeetingController : ControllerBase
     }
 
     [Route("record"), HttpGet]
-    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(GetMeetingByNumberResponse))]
+    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(GetCurrentUserMeetingRecordResponse))]
     public async Task<IActionResult> GetCurrentUserMeetingRecordAsync([FromQuery] GetCurrentUserMeetingRecordRequest request)
     {
-        var response = await _mediator.RequestAsync<GetCurrentUserMeetingRecordRequest, GetCurrentUserMeetingRecordResponse>(request)
-            .ConfigureAwait(false);
+        var response = await _mediator.RequestAsync<GetCurrentUserMeetingRecordRequest, GetCurrentUserMeetingRecordResponse>(request).ConfigureAwait(false);
+
         return Ok(response);
     }
 }

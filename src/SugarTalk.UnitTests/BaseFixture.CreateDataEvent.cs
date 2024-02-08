@@ -9,7 +9,7 @@ public partial class BaseFixture
 {
     protected Meeting CreateMeetingEvent(Guid meetingId, long? startDate = null, long? endDate = null,
         string meetingNumber = "5201314", string securityCode = "123456", string timeZone = "Asia/Shanghai",
-        MeetingStatus status = MeetingStatus.Pending, bool isMuted = false, bool isRecorded = false)
+        MeetingStatus status = MeetingStatus.Pending, bool isMuted = false, bool isRecorded = false, int meetingMasterUserId = 1)
     {
         return new Meeting
         {
@@ -17,7 +17,7 @@ public partial class BaseFixture
             Title = "Greg Meeting",
             StartDate = startDate?? _clock.Now.ToUnixTimeSeconds(),
             EndDate = endDate ?? _clock.Now.AddDays(7).ToUnixTimeSeconds(),
-            MeetingMasterUserId = 1,
+            MeetingMasterUserId = meetingMasterUserId,
             MeetingNumber = meetingNumber,
             OriginAddress = "https://localhost:6666",
             SecurityCode = securityCode,
