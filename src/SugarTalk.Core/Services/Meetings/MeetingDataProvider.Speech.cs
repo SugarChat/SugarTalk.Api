@@ -23,6 +23,7 @@ public partial interface IMeetingDataProvider
 
 public partial class MeetingDataProvider
 {
+    //持续会议发言
     public async Task PersistMeetingSpeechAsync(MeetingSpeech meetingSpeech, CancellationToken cancellationToken)
     {
         if (meetingSpeech is null) return;
@@ -32,6 +33,7 @@ public partial class MeetingDataProvider
         await _unitOfWork.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
     }
 
+    //获取会议发言
     public async Task<List<MeetingSpeech>> GetMeetingSpeechesAsync(
         Guid meetingId, CancellationToken cancellationToken, bool filterHasCanceledAudio = false)
     {
@@ -45,6 +47,7 @@ public partial class MeetingDataProvider
         return await query.ToListAsync(cancellationToken).ConfigureAwait(false);
     }
 
+    //根据ID获取会议发言
     public async Task<MeetingSpeech> GetMeetingSpeechByIdAsync(Guid meetingSpeechId, CancellationToken cancellationToken)
     {
         return await _repository.Query<MeetingSpeech>()
@@ -52,6 +55,7 @@ public partial class MeetingDataProvider
             .FirstOrDefaultAsync(cancellationToken).ConfigureAwait(false);
     }
 
+    //分配会议用户语言
     public async Task<MeetingUserSetting> DistributeLanguageForMeetingUserAsync(Guid meetingId, CancellationToken cancellationToken)
     {
         var meetingUserSetting = new MeetingUserSetting();

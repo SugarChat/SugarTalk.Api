@@ -74,7 +74,7 @@ public class MeetingUtil : TestUtil
     }
 
     public async Task<List<MeetingUserSession>> GetUserSessionByUserIdAsync(int userId, Guid meetingId)
-    {
+    {        
         return await Run<IRepository, List<MeetingUserSession>>(async repo =>
         {
             return await repo.QueryNoTracking<MeetingUserSession>()
@@ -170,7 +170,6 @@ public class MeetingUtil : TestUtil
         }, builder =>
         {
             var liveKitServerUtilService = Substitute.For<ILiveKitServerUtilService>();
-
             liveKitServerUtilService.GenerateTokenForJoinMeeting(Arg.Any<UserAccountDto>(), Arg.Any<string>())
                 .Returns("token123");
 

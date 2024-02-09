@@ -15,21 +15,27 @@ namespace SugarTalk.Core.Services.Meetings;
 
 public partial interface IMeetingService
 {
+    //更改音频
     Task<AudioChangedEvent> ChangeAudioAsync(
         ChangeAudioCommand command, CancellationToken cancellationToken);
 
+    //分享屏幕
     Task<ScreenSharedEvent> ShareScreenAsync(
         ShareScreenCommand command, CancellationToken cancellationToken);
 
+    //获取用户会话
     Task<GetMeetingUserSessionsResponse> GetMeetingUserSessionsAsync(
         GetMeetingUserSessionsRequest request, CancellationToken cancellationToken);
 
+    //通过UserId获取用户会话
     Task<GetMeetingUserSessionByUserIdResponse> GetMeetingUserSessionByUserIdAsync(
         GetMeetingUserSessionByUserIdRequest request, CancellationToken cancellationToken);
 
+    //验证是否有踢出会议用户权限
     Task<VerifyMeetingUserPermissionResponse> VerifyMeetingUserPermissionAsync(
                VerifyMeetingUserPermissionCommand request, CancellationToken cancellationToken);
 
+    //踢出会议用户
     Task<KickOutMeetingByUserIdResponse> KickOutMeetingAsync(
         KickOutMeetingByUserIdCommand command, CancellationToken cancellationToken);
 }

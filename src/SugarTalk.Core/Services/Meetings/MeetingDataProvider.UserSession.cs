@@ -16,20 +16,28 @@ namespace SugarTalk.Core.Services.Meetings;
 
 public partial interface IMeetingDataProvider
 {
+    //根据Id获取用户会话
     Task<MeetingUserSession> GetMeetingUserSessionByIdAsync(int id, CancellationToken cancellationToken);
     
+    //添加用户会话
     Task AddMeetingUserSessionAsync(MeetingUserSession userSession, CancellationToken cancellationToken);
-        
+    
+    //更新用户会话
     Task UpdateMeetingUserSessionAsync(MeetingUserSession userSession, CancellationToken cancellationToken);
     
+    //根据会议Id获取用户会话
     Task<List<MeetingUserSessionDto>> GetUserSessionsByMeetingIdAsync(Guid meetingId, CancellationToken cancellationToken);
 
+    //根据用户Id移除用户会话
     Task RemoveMeetingUserSessionsIfRequiredAsync(int userId, Guid meetingId, CancellationToken cancellationToken);
     
+    //判断是否有其他用户正在分享
     Task<bool> IsOtherSharingAsync(MeetingUserSession userSession, CancellationToken cancellationToken);
     
+    //根据用户会话Id获取用户会话
     Task<List<MeetingUserSession>> GetMeetingUserSessionsAsync(List<int> ids, CancellationToken cancellationToken);
     
+    //根据用户Id获取用户会话
     Task<MeetingUserSession> GetMeetingUserSessionByUserIdAsync(int userId, CancellationToken cancellationToken);
 }
 

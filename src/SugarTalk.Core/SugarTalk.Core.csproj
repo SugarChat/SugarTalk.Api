@@ -68,6 +68,8 @@
         <EmbeddedResource Include="DbUp\Scripts_2024\Script0002_add_meeting_period_rule_table.sql" />
         <EmbeddedResource Include="DbUp\Scripts_2024\Script0003_alter_meeting_repeat_rule_table.sql" />
         <EmbeddedResource Include="DbUp\Scripts_2024\Script0004_alter_meeting_table.sql" />
+        <EmbeddedResource Include="DbUp\Scripts_2024\Script0005_add_meeting_session_table.sql" />
+        <EmbeddedResource Include="DbUp\Scripts_2024\Script0006_add_meeting_session_table.sql" />
     </ItemGroup>
     
     <ItemGroup>
