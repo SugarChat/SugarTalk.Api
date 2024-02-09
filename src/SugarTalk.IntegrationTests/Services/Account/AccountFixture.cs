@@ -6,14 +6,17 @@ using System.Net;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Autofac;
 using Mediator.Net;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using NSubstitute;
 using Shouldly;
 using SugarTalk.Core.Data;
 using SugarTalk.Core.Domain.Account;
 using SugarTalk.Core.Domain.Account.Exceptions;
 using SugarTalk.Core.Extensions;
+using SugarTalk.Core.Services;
 using SugarTalk.Core.Services.Account;
 using SugarTalk.Core.Settings.Authentication;
 using SugarTalk.IntegrationTests.TestBaseClasses;
@@ -247,8 +250,10 @@ public class AccountFixture : AccountFixtureBase
             await repository.UpdateAsync(userAccount).ConfigureAwait(false));
     }
 
-    [Fact]
-    public async Task ShouldCreateUserAccountWhenVisitorLogin()
+    [Theory]
+    [InlineData(UserAccountType.RegisteredUser, HttpStatusCode.Unauthorized)]
+    [InlineData(UserAccountType.Visitor, HttpStatusCode.OK)]
+    public async Task ShouldCreateUserAccountWhenVisitorLogin(UserAccountType userAccountType, HttpStatusCode httpStatusCode)
     {
         await Run<IMediator, IRepository>(async (mediator, repository) =>
         {
@@ -257,17 +262,18 @@ public class AccountFixture : AccountFixtureBase
                 UserName = Guid.NewGuid().ToString(),
                 Password = Guid.NewGuid().ToString()
             });
-            response.Code.ShouldBe(HttpStatusCode.Unauthorized);
+            response.Code.ShouldBe(httpStatusCode);
 
-            response = await mediator.RequestAsync<LoginRequest, LoginResponse>(new LoginRequest
+            if (httpStatusCode == HttpStatusCode.OK)
             {
-                UserName = Guid.NewGuid().ToString(),
-                Password = Guid.NewGuid().ToString(),
-                UserAccountType = UserAccountType.Visitor
-            });
-            response.Code.ShouldBe(HttpStatusCode.OK);
-            response.Data.ShouldNotBeNull();
-            await repository.SingleOrDefaultAsync<UserAccount>(x => x.Type == UserAccountType.Visitor).ShouldNotBeNull();
+                response.Data.ShouldNotBeNull();
+                await repository.SingleOrDefaultAsync<UserAccount>(x => x.Type == UserAccountType.Visitor).ShouldNotBeNull();
+            }
+        }, builder =>
+        {
+            var httpHeaderInfoProvider = Substitute.For<IHttpHeaderInfoProvider>();
+            httpHeaderInfoProvider.GetHttpHeaderInfo().UserAccountType.Returns(userAccountType);
+            builder.RegisterInstance(httpHeaderInfoProvider);
         });
     }
 }

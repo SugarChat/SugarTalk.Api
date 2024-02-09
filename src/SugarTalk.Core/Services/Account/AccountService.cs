@@ -32,17 +32,17 @@ namespace SugarTalk.Core.Services.Account
         private readonly IMapper _mapper;
         private readonly ITokenProvider _tokenProvider;
         private readonly IIdentityService _identityService;
-        private readonly IHttpContextAccessor _httpContextAccessor;
+        private readonly IHttpHeaderInfoProvider _headerInfoProvider;
         
         private readonly IAccountDataProvider _accountDataProvider;
 
-        public AccountService(IMapper mapper, IIdentityService identityService, IHttpContextAccessor httpContextAccessor, IAccountDataProvider accountDataProvider, ITokenProvider tokenProvider)
+        public AccountService(IMapper mapper, IIdentityService identityService, IHttpHeaderInfoProvider headerInfoProvider, IAccountDataProvider accountDataProvider, ITokenProvider tokenProvider)
         {
             _mapper = mapper;
             _tokenProvider = tokenProvider;
             _identityService = identityService;
             _accountDataProvider = accountDataProvider;
-            _httpContextAccessor = httpContextAccessor;
+            _headerInfoProvider = headerInfoProvider;
         }
         
         public async Task<LoginResponse> LoginAsync(LoginRequest request, CancellationToken cancellationToken)
@@ -50,12 +50,12 @@ namespace SugarTalk.Core.Services.Account
             bool canLogin = false;
             UserAccountDto account = null;
 
-            if (request.UserAccountType == UserAccountType.RegisteredUser)
+            if ((_headerInfoProvider.GetHttpHeaderInfo().UserAccountType ?? UserAccountType.RegisteredUser) == UserAccountType.RegisteredUser)
             {
                 (canLogin, account) = await _accountDataProvider
                     .AuthenticateAsync(request.UserName, request.Password, cancellationToken).ConfigureAwait(false);
             }
-            else if (request.UserAccountType == UserAccountType.Visitor)
+            else if (_headerInfoProvider.GetHttpHeaderInfo().UserAccountType == UserAccountType.Visitor)
             {
                 var accountFromDb = await _accountDataProvider.CreateUserAccountAsync(Guid.NewGuid().ToString(),
                     string.Empty,
