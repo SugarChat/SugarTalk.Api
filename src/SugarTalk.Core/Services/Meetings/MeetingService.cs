@@ -225,38 +225,16 @@ namespace SugarTalk.Core.Services.Meetings
             if (meeting.MeetingMasterUserId != _currentUser.Id) throw new CannotEndMeetingWhenUnauthorizedException();
 
             // TODO: 更新会议结束时间, 会议时长，更新会议中的用户状态
-            meeting.EndDate = _clock.Now.ToUnixTimeSeconds();
-
             var updateMeeting = _mapper.Map<Meeting>(meeting);
             
-            updateMeeting.Status = MeetingStatus.Completed;
-            
-            await _meetingDataProvider.UpdateMeetingAsync(updateMeeting, cancellationToken).ConfigureAwait(false);
+            await _meetingDataProvider.UpdateMeetingEndStatusAsync(updateMeeting, cancellationToken);
             
             var userSessionIds = meeting.UserSessions.Select(x => x.UserId).ToList();
             
-            var meetingUserSessions =
-                await _meetingDataProvider.GetMeetingUserSessionsAsync(userSessionIds, cancellationToken).ConfigureAwait(false);
-            
-            var updateMeetingUserSessions = meetingUserSessions
-                .Where(x =>
-                    x.MeetingId == meeting.Id &&
-                    x.Status != MeetingAttendeeStatus.Absent &&
-                    !x.IsDeleted)
-                .ToList();
-            
-            updateMeetingUserSessions.ForEach(x =>
-            {
-                //todo 逻辑待商榷
-                if (x.LastQuitTime is not (null or 0)) return;
+            var updateMeetingUserSessions =
+                await _meetingDataProvider.GetMeetingUserSessionsByIdsAndMeetingIdAsync(userSessionIds, meeting.Id, cancellationToken).ConfigureAwait(false);
 
-                x.CumulativeTime = (x.CumulativeTime ?? 0) + Convert.ToInt64(
-                    (DateTimeOffset.FromUnixTimeSeconds(meeting.EndDate) -
-                     DateTimeOffset.FromUnixTimeSeconds(meeting.StartDate)).TotalSeconds);
-                x.LastQuitTime = meeting.EndDate;
-            });
-            
-            await _meetingDataProvider.UpdateMeetingUserSessionAsync(updateMeetingUserSessions, cancellationToken).ConfigureAwait(false);
+            await _meetingDataProvider.UpdateMeetingEndUserSessionAsync(updateMeeting, updateMeetingUserSessions, cancellationToken).ConfigureAwait(false);
             
             return new MeetingEndedEvent
             {

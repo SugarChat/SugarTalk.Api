@@ -62,6 +62,10 @@ namespace SugarTalk.Core.Services.Meetings
         Task UpdateMeetingRepeatRuleAsync(Guid meetingId, MeetingRepeatType repeatType, CancellationToken cancellationToken);
         
         Task<(int Count, List<AppointmentMeetingDto> Records)> GetAppointmentMeetingsByUserIdAsync(GetAppointmentMeetingsRequest request, CancellationToken cancellationToken);
+
+        Task UpdateMeetingEndStatusAsync(Meeting meeting, CancellationToken cancellationToken);
+
+        Task UpdateMeetingEndUserSessionAsync(Meeting meeting, List<MeetingUserSession> userSessions, CancellationToken cancellationToken);
     }
     
     public partial class MeetingDataProvider : IMeetingDataProvider
@@ -298,5 +302,34 @@ namespace SugarTalk.Core.Services.Meetings
     
             return (count, records);
         }
+        
+        public async Task UpdateMeetingEndStatusAsync(Meeting meeting, CancellationToken cancellationToken)
+        {
+            meeting.EndDate = _clock.Now.ToUnixTimeSeconds();
+            meeting.Status = MeetingStatus.Completed;
+            
+            await _repository.UpdateAsync(meeting, cancellationToken).ConfigureAwait(false);
+            
+            await _unitOfWork.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        }
+        
+        
+        public async Task UpdateMeetingEndUserSessionAsync(Meeting meeting, List<MeetingUserSession> userSessions, CancellationToken cancellationToken)
+        {
+            userSessions.ForEach(x =>
+            {
+                if (x.LastQuitTime is not (null or 0)) return;
+
+                x.CumulativeTime = (x.CumulativeTime ?? 0) + Convert.ToInt64(
+                    (DateTimeOffset.FromUnixTimeSeconds(meeting.EndDate) -
+                     DateTimeOffset.FromUnixTimeSeconds(meeting.StartDate)).TotalSeconds);
+                x.LastQuitTime = meeting.EndDate;
+            });
+
+            await _repository.UpdateAllAsync(userSessions, cancellationToken).ConfigureAwait(false);
+
+            await _unitOfWork.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        }
+
     }
 }
