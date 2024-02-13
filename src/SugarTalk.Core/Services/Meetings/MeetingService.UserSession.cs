@@ -107,7 +107,7 @@ public partial class MeetingService
     {
         var userSession = await _meetingDataProvider.GetMeetingUserSessionByUserIdAsync(request.UserId, cancellationToken).ConfigureAwait(false);
 
-        var user = await _accountDataProvider.GetUserAccountAsync(uuid: _currentUser.UserId, cancellationToken: cancellationToken).ConfigureAwait(false);
+        var user = await _accountDataProvider.GetUserAccountAsync(uuid: _currentUser?.UserId, cancellationToken: cancellationToken).ConfigureAwait(false);
 
         if (user is null) throw new UnauthorizedAccessException();
         

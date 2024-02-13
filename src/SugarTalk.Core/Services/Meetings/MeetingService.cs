@@ -173,7 +173,7 @@ namespace SugarTalk.Core.Services.Meetings
 
         public async Task<MeetingJoinedEvent> JoinMeetingAsync(JoinMeetingCommand command, CancellationToken cancellationToken)
         {
-            var user = await _accountDataProvider.GetUserAccountAsync(uuid: _currentUser.UserId, cancellationToken: cancellationToken).ConfigureAwait(false);
+            var user = await _accountDataProvider.GetUserAccountAsync(uuid: _currentUser?.UserId, cancellationToken: cancellationToken).ConfigureAwait(false);
             
             var meeting = await _meetingDataProvider.GetMeetingAsync(command.MeetingNumber, cancellationToken).ConfigureAwait(false);
 
@@ -218,7 +218,7 @@ namespace SugarTalk.Core.Services.Meetings
         {
             var meeting = await _meetingDataProvider.GetMeetingAsync(command.MeetingNumber, cancellationToken).ConfigureAwait(false);
 
-            if (meeting.CreatorUserId != _currentUser.UserId) throw new CannotEndMeetingWhenUnauthorizedException();
+            if (meeting.CreatorUserId != _currentUser?.UserId) throw new CannotEndMeetingWhenUnauthorizedException();
 
             // TODO: 更新会议结束时间, 会议时长，更新会议中的用户状态
 
@@ -272,7 +272,7 @@ namespace SugarTalk.Core.Services.Meetings
         public async Task<UpdateMeetingResponse> UpdateMeetingAsync(UpdateMeetingCommand command, CancellationToken cancellationToken)
         {
             var currentUser = await _accountDataProvider
-                .GetUserAccountAsync(uuid: _currentUser.UserId.Value, cancellationToken: cancellationToken).ConfigureAwait(false);
+                .GetUserAccountAsync(uuid: _currentUser?.UserId.Value, cancellationToken: cancellationToken).ConfigureAwait(false);
 
             if (currentUser is null) throw new UnauthorizedAccessException();
             
@@ -281,7 +281,7 @@ namespace SugarTalk.Core.Services.Meetings
 
             if (meeting is null) throw new MeetingNotFoundException();
             
-            if (meeting.CreatorUserId != _currentUser.UserId.Value)
+            if (meeting.CreatorUserId != _currentUser?.UserId.Value)
                 throw new CannotUpdateMeetingWhenMasterUserIdMismatchException();
 
             var updateMeeting = _mapper.Map(command, meeting);
@@ -360,7 +360,7 @@ namespace SugarTalk.Core.Services.Meetings
         {
             var meeting = new Meeting();
             
-            var user = await _accountDataProvider.GetUserAccountAsync(uuid: _currentUser.UserId, cancellationToken: cancellationToken).ConfigureAwait(false);
+            var user = await _accountDataProvider.GetUserAccountAsync(uuid: _currentUser?.UserId, cancellationToken: cancellationToken).ConfigureAwait(false);
             
             var token = _liveKitServerUtilService.GenerateTokenForCreateMeeting(user, meetingNumber);
 
