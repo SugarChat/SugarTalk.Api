@@ -12,6 +12,12 @@ public class MeetingSpeakDetail : IEntity
     [Column("id", TypeName = "char(36)")]
     public Guid Id { get; set; }
     
+    [Column("meeting_id", TypeName = "char(36)")]
+    public Guid MeetingId { get; set; }
+    
+    [Column("meeting_sub_id", TypeName = "char(36)")]
+    public Guid? MeetingSubId { get; set; }
+    
     [Column("meeting_record_id", TypeName = "char(36)")]
     public Guid? MeetingRecordId { get; set; }
     
