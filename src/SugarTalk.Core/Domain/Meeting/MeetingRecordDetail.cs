@@ -16,7 +16,7 @@ public class MeetingRecordDetail : IEntity
     public Guid MeetingId { get; set; }
     
     [Column("meeting_sub_id", TypeName = "char(36)")]
-    public Guid MeetingSubId { get; set; }
+    public Guid? MeetingSubId { get; set; }
     
     [Column("meeting_record_id", TypeName = "char(36)")]
     public Guid MeetingRecordId { get; set; }
