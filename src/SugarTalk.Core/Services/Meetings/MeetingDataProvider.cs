@@ -368,7 +368,6 @@ namespace SugarTalk.Core.Services.Meetings
 
             var meetingHistories = userAccounts.Select(user => new MeetingHistory
             {
-                Id = Guid.NewGuid(),
                 MeetingId = meeting.Id,
                 MeetingSubId = meeting.MeetingSubId,
                 CreatorJoinTime = meeting.CreatorJoinTime,
