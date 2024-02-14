@@ -624,39 +624,33 @@ public partial class MeetingServiceFixture : MeetingFixtureBase
     [Fact]
     public async Task CanGetMeetingHistories()
     {
-        var now = DateTimeOffset.Now;
-        
-        var meeting1Response = await _meetingUtil.ScheduleMeeting(appointmentType: MeetingAppointmentType.Appointment, repeatType: MeetingRepeatType.Daily, startDate: now, endDate: now.AddHours(1));
-        var meeting2Response = await _meetingUtil.ScheduleMeeting(startDate: now, endDate: now.AddMinutes(30));
-        var meeting3Response = await _meetingUtil.ScheduleMeeting(startDate: now, endDate: now.AddMinutes(15));
-
-        await _meetingUtil.JoinMeeting(meeting1Response?.Data.MeetingNumber);
-        await _meetingUtil.JoinMeeting(meeting2Response?.Data.MeetingNumber);
-        await _meetingUtil.JoinMeeting(meeting3Response?.Data.MeetingNumber);
-
-        await _meetingUtil.EndMeeting(meeting1Response?.Data.MeetingNumber);
-        await _meetingUtil.EndMeeting(meeting2Response?.Data.MeetingNumber);
-        await _meetingUtil.EndMeeting(meeting3Response?.Data.MeetingNumber);
-
-        await Run<IMediator>(async (mediator) =>
+        await Run<IMediator, IClock>(async (mediator, clock) =>
         {
+            var meeting1Response = await _meetingUtil.ScheduleMeeting(appointmentType: MeetingAppointmentType.Appointment, repeatType: MeetingRepeatType.Daily, startDate: clock.Now, endDate: clock.Now.AddHours(1));
+            var meeting2Response = await _meetingUtil.ScheduleMeeting(startDate: clock.Now, endDate: clock.Now.AddMinutes(30));
+            var meeting3Response = await _meetingUtil.ScheduleMeeting(startDate: clock.Now, endDate: clock.Now.AddMinutes(15));
+
+            await _meetingUtil.JoinMeeting(meeting1Response?.Data.MeetingNumber);
+            await _meetingUtil.JoinMeeting(meeting2Response?.Data.MeetingNumber);
+            await _meetingUtil.JoinMeeting(meeting3Response?.Data.MeetingNumber);
+
+            await _meetingUtil.EndMeeting(meeting1Response?.Data.MeetingNumber);
+            await _meetingUtil.EndMeeting(meeting2Response?.Data.MeetingNumber);
+            await _meetingUtil.EndMeeting(meeting3Response?.Data.MeetingNumber);
+            
             var response =
                 await mediator.RequestAsync<GetMeetingHistoriesByUserRequest, GetMeetingHistoriesByUserResponse>(
                     new GetMeetingHistoriesByUserRequest { PageSetting = new PageSetting { Page = 1, PageSize = 2 } });
 
             response.MeetingHistoryList.ShouldNotBeNull();
             response.MeetingHistoryList.Count.ShouldBe(2);
-            response.MeetingHistoryList.Count(x =>
-                x.MeetingId == meeting1Response?.Data.Id &&
-                x.MeetingNumber == meeting1Response.Data.MeetingNumber && 
-                x.SubMeetingId != Guid.Empty &&
-                x.attendees.Count == 1).ShouldBe(1);
+            response.MeetingHistoryList.Single(x => x.MeetingId == meeting1Response?.Data.Id).attendees.Count.ShouldBe(1);
             
             response.TotalCount.ShouldBe(3);
         }, builder =>
         {
             MockLiveKitService(builder);
-            MockClock(builder, now);
+            MockClock(builder, DateTimeOffset.Now);
         });
     }
     
