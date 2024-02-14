@@ -24,12 +24,8 @@ namespace SugarTalk.Api.Authentication.Visitor
                 {
                     if ((UserAccountType)userAccountTypeInt == UserAccountType.Visitor)
                     {
-                        var identity = new ClaimsIdentity(new[]
-                        {
-                            new Claim("iss", "Visitor")
-                        }, "Visitor");
+                        var identity = new ClaimsIdentity("Visitor");
                         var claimPrincipal = new ClaimsPrincipal(identity);
-                        Request.HttpContext.User = claimPrincipal;
                         var ticket = new AuthenticationTicket(claimPrincipal, new AuthenticationProperties { IsPersistent = false }, Scheme.Name);
                         return AuthenticateResult.Success(ticket);
                     }
