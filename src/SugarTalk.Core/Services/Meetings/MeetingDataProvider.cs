@@ -67,6 +67,8 @@ namespace SugarTalk.Core.Services.Meetings
         Task UpdateMeetingIfRequiredAsync(Guid meetingId, int userId, CancellationToken cancellationToken);
         
         Task PersistMeetingHistoryAsync(MeetingDto meeting, CancellationToken cancellationToken);
+        
+        Task<List<MeetingSubMeeting>> GetMeetingSubMeetingsAsync(Guid meetingId, CancellationToken cancellationToken);
     }
     
     public partial class MeetingDataProvider : IMeetingDataProvider
@@ -122,6 +124,20 @@ namespace SugarTalk.Core.Services.Meetings
             if (meeting == null) throw new MeetingNotFoundException();
 
             var updateMeeting = _mapper.Map<MeetingDto>(meeting);
+            
+            if (meeting.AppointmentType == MeetingAppointmentType.Appointment)
+            {
+                var subMeetings = await GetMeetingSubMeetingsAsync(meeting.Id, cancellationToken).ConfigureAwait(false);
+
+                var subMeeting = subMeetings.FirstOrDefault(x => x.EndTime > _clock.Now.ToUnixTimeSeconds());
+                
+                if (subMeeting != null)
+                {
+                    updateMeeting.SubMeetingId = subMeeting.Id;
+                    updateMeeting.StartDate = subMeeting.StartTime;
+                    updateMeeting.EndDate = subMeeting.EndTime;
+                }
+            }
 
             if (!string.IsNullOrEmpty(meeting.SecurityCode))
             {
@@ -266,14 +282,15 @@ namespace SugarTalk.Core.Services.Meetings
             Guid userId, PageSetting pageSetting, CancellationToken cancellationToken)
         {
             var query = _repository.QueryNoTracking<MeetingHistory>()
-                .Where(x => x.UserEntityId == userId && x.IsDeleted);
+                .Where(x => x.UserEntityId == userId && !x.IsDeleted);
 
             var totalCount = await query.CountAsync(cancellationToken).ConfigureAwait(false);
             
             query = pageSetting != null
                 ? query.Skip((pageSetting.Page - 1) * pageSetting.PageSize).Take(pageSetting.PageSize) : query;
-            
-            var meetingHistories = await query.ToListAsync(cancellationToken).ConfigureAwait(false);
+
+            var meetingHistories = await query
+                .OrderByDescending(x => x.CreatedDate).ToListAsync(cancellationToken).ConfigureAwait(false);
 
             var meetingHistoryList = _mapper.Map<List<MeetingHistoryDto>>(meetingHistories);
             
@@ -350,12 +367,20 @@ namespace SugarTalk.Core.Services.Meetings
             {
                 Id = Guid.NewGuid(),
                 MeetingId = meeting.Id,
+                SubMeetingId = meeting.SubMeetingId,
                 CreatorJoinTime = meeting.CreatorJoinTime,
                 UserEntityId = user.Uuid,
                 Duration = CalculateMeetingDuration(meeting.CreatorJoinTime, _clock.Now.ToUnixTimeSeconds())
             });
 
             await _repository.InsertAllAsync(meetingHistories, cancellationToken).ConfigureAwait(false);
+        }
+
+        public async Task<List<MeetingSubMeeting>> GetMeetingSubMeetingsAsync(Guid meetingId, CancellationToken cancellationToken)
+        {
+            return await _repository.QueryNoTracking<MeetingSubMeeting>()
+                .Where(x => x.MeetingId == meetingId && x.SubConferenceStatus == MeetingRecordSubConferenceStatus.Default)
+                .OrderBy(x => x.StartTime).ToListAsync(cancellationToken).ConfigureAwait(false);
         }
 
         private static long CalculateMeetingDuration(long startDate, long endDate)

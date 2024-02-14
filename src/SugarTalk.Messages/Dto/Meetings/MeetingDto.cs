@@ -36,6 +36,8 @@ public class MeetingBaseDto
 {
     public Guid Id { get; set; }
     
+    public Guid? SubMeetingId { get; set; }
+    
     public int MeetingMasterUserId { get; set; }
 
     public string MeetingNumber { get; set; }
@@ -55,6 +57,8 @@ public class MeetingBaseDto
     public MeetingRepeatType RepeatType { get; set; }
     
     public MeetingStreamMode MeetingStreamMode { get; set; }
+    
+    public MeetingAppointmentType AppointmentType { get; set; }
 
     public bool IsMuted { get; set; } = false;
     

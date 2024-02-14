@@ -7,6 +7,8 @@ public class MeetingHistoryDto
 {
     public Guid MeetingId { get; set; }
     
+    public Guid SubMeetingId { get; set; }
+    
     public string MeetingNumber { get; set; }
     
     public string Title { get; set; }

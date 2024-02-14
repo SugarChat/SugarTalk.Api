@@ -16,6 +16,9 @@ public class MeetingHistory : IEntity
     
     [Column("meeting_id", TypeName = "char(36)")]
     public Guid MeetingId { get; set; }
+
+    [Column("sub_meeting_id", TypeName = "char(36)")]
+    public Guid? SubMeetingId { get; set; }
     
     [Column("user_entity_id", TypeName = "char(36)")]
     public Guid UserEntityId { get; set; }
