@@ -63,7 +63,7 @@ namespace SugarTalk.Core.Services.Meetings
         Task UpdateMeetingRepeatRuleAsync(Guid meetingId, MeetingRepeatType repeatType, CancellationToken cancellationToken);
 
         Task<(List<MeetingHistoryDto> MeetingHistoryList, int TotalCount)> GetMeetingHistoriesByUserIdAsync(
-            Guid userId, PageSetting pageSetting, CancellationToken cancellationToken);
+            int userId, PageSetting pageSetting, CancellationToken cancellationToken);
 
         Task UpdateMeetingIfRequiredAsync(Guid meetingId, int userId, CancellationToken cancellationToken);
         
@@ -282,10 +282,10 @@ namespace SugarTalk.Core.Services.Meetings
         }
 
         public async Task<(List<MeetingHistoryDto> MeetingHistoryList, int TotalCount)> GetMeetingHistoriesByUserIdAsync(
-            Guid userId, PageSetting pageSetting, CancellationToken cancellationToken)
+            int userId, PageSetting pageSetting, CancellationToken cancellationToken)
         {
             var query = _repository.QueryNoTracking<MeetingHistory>()
-                .Where(x => x.UserEntityId == userId && !x.IsDeleted);
+                .Where(x => x.UserId == userId && !x.IsDeleted);
 
             var totalCount = await query.CountAsync(cancellationToken).ConfigureAwait(false);
             
@@ -372,7 +372,7 @@ namespace SugarTalk.Core.Services.Meetings
                 MeetingId = meeting.Id,
                 MeetingSubId = meeting.MeetingSubId,
                 CreatorJoinTime = meeting.CreatorJoinTime,
-                UserEntityId = user.Uuid,
+                UserId = user.Id,
                 Duration = CalculateMeetingDuration(meeting.CreatorJoinTime, _clock.Now.ToUnixTimeSeconds())
             });
 

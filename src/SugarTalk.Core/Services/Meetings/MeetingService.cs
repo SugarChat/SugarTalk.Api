@@ -159,7 +159,7 @@ namespace SugarTalk.Core.Services.Meetings
             if (user is null) throw new UnauthorizedAccessException();
 
             var (meetingHistoryList, totalCount) = await _meetingDataProvider
-                .GetMeetingHistoriesByUserIdAsync(user.Uuid, request.PageSetting, cancellationToken).ConfigureAwait(false);
+                .GetMeetingHistoriesByUserIdAsync(user.Id, request.PageSetting, cancellationToken).ConfigureAwait(false);
 
             return new GetMeetingHistoriesByUserResponse
             {

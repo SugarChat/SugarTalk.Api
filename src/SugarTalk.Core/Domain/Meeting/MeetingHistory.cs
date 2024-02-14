@@ -20,8 +20,8 @@ public class MeetingHistory : IEntity
     [Column("meeting_sub_id", TypeName = "char(36)")]
     public Guid? MeetingSubId { get; set; }
     
-    [Column("user_entity_id", TypeName = "char(36)")]
-    public Guid UserEntityId { get; set; }
+    [Column("user_id")]
+    public int UserId { get; set; }
     
     [Column("creator_join_time")]
     public long CreatorJoinTime { get; set; }
