@@ -1,12 +1,12 @@
 using System;
-using SugarTalk.Messages.Enums.Record;
+using SugarTalk.Messages.Enums.Speak;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace SugarTalk.Core.Domain.Meeting;
 
-[Table("meeting_record_detail")]
-public class MeetingRecordDetail : IEntity
+[Table("meeting_speak_detail")]
+public class MeetingSpeakDetail : IEntity
 {
     [Key]
     [Column("id", TypeName = "char(36)")]

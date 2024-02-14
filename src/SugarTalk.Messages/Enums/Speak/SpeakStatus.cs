@@ -1,4 +1,4 @@
-namespace SugarTalk.Messages.Enums.Record;
+namespace SugarTalk.Messages.Enums.Speak;
 
 public enum SpeakStatus
 {
