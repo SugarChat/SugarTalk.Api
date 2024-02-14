@@ -49,8 +49,10 @@ public partial class BaseFixture
         _currentUser = Substitute.For<ICurrentUser>();
         _liveKitServerUtilService = Substitute.For<ILiveKitServerUtilService>();
         _accountDataProvider = MockAccountDataProvider(_mapper, _repository, _unitOfWork);
-        _meetingDataProvider = MockMeetingDataProvider(_clock, _mapper, _repository, _unitOfWork, _accountDataProvider, _currentUser);
-        _meetingService = MockMeetingService(_clock, _mapper, _unitOfWork, _currentUser, _meetingDataProvider, _accountDataProvider, _antMediaServerUtilService, _liveKitServerUtilService, _liveKitServerSetting, _speechClient);
+        _meetingDataProvider = MockMeetingDataProvider(_clock, _mapper, _repository, _unitOfWork, _currentUser, _accountDataProvider);
+        _meetingService = MockMeetingService(_clock, _mapper, _unitOfWork, _currentUser, _speechClient,
+            _meetingDataProvider, _accountDataProvider, _liveKitServerSetting, _liveKitServerUtilService,
+            _antMediaServerUtilService);
         _meetingProcessJobService = MockMeetingProcessJobService(_clock, _unitOfWork, _meetingDataProvider);
     }
 
@@ -69,32 +71,27 @@ public partial class BaseFixture
         IMapper mapper, 
         IUnitOfWork unitOfWork,
         ICurrentUser currentUser,
+        ISpeechClient speechClient,
         IMeetingDataProvider meetingDataProvider,
         IAccountDataProvider accountDataProvider,
-        IAntMediaServerUtilService antMediaServerUtilService, 
-        ILiveKitServerUtilService liveKitServerUtilService,
         LiveKitServerSetting liveKitServerSetting, 
-        ISpeechClient speechClient)
+        ILiveKitServerUtilService liveKitServerUtilService,
+        IAntMediaServerUtilService antMediaServerUtilService)
     {
-        return new MeetingService(clock, mapper, unitOfWork,
-            currentUser,
-            speechClient,
-            meetingDataProvider,
-            accountDataProvider,
-            liveKitServerSetting,
-            liveKitServerUtilService,
-            antMediaServerUtilService);
+        return new MeetingService(
+            clock, mapper, unitOfWork, currentUser, speechClient, meetingDataProvider, accountDataProvider,
+            liveKitServerSetting, liveKitServerUtilService, antMediaServerUtilService);
     }
     
     protected IMeetingDataProvider MockMeetingDataProvider(
         IClock clock,
         IMapper mapper, 
         IRepository repository,
-        IUnitOfWork unitOfWork,
-        IAccountDataProvider accountDataProvider,
-        ICurrentUser currentUser)
+        IUnitOfWork unitOfWork,     
+        ICurrentUser currentUser,
+        IAccountDataProvider accountDataProvider)
     {
-        return new MeetingDataProvider(clock, mapper, repository, unitOfWork, accountDataProvider, currentUser);
+        return new MeetingDataProvider(clock, mapper, repository, unitOfWork, currentUser, accountDataProvider);
     }
     
     protected IMapper CreateMapper()

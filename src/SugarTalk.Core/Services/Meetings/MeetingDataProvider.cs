@@ -20,6 +20,7 @@ using SugarTalk.Core.Services.Utils;
 using SugarTalk.Messages.Dto;
 using SugarTalk.Messages.Dto.Meetings;
 using SugarTalk.Messages.Enums.Meeting;
+using SugarTalk.Messages.Requests.Meetings;
 
 namespace SugarTalk.Core.Services.Meetings
 {
@@ -69,6 +70,8 @@ namespace SugarTalk.Core.Services.Meetings
         Task PersistMeetingHistoryAsync(MeetingDto meeting, CancellationToken cancellationToken);
         
         Task<List<MeetingSubMeeting>> GetMeetingSubMeetingsAsync(Guid meetingId, CancellationToken cancellationToken);
+        
+        Task<(int Count, List<AppointmentMeetingDto> Records)> GetAppointmentMeetingsByUserIdAsync(GetAppointmentMeetingsRequest request, CancellationToken cancellationToken);
     }
     
     public partial class MeetingDataProvider : IMeetingDataProvider
@@ -80,8 +83,9 @@ namespace SugarTalk.Core.Services.Meetings
         private readonly ICurrentUser _currentUser;
         private readonly IAccountDataProvider _accountDataProvider;
 
-        public MeetingDataProvider(IClock clock,
-            IMapper mapper, IRepository repository, IUnitOfWork unitOfWork, IAccountDataProvider accountDataProvider, ICurrentUser currentUser)
+
+        public MeetingDataProvider(
+            IClock clock, IMapper mapper, IRepository repository, IUnitOfWork unitOfWork, ICurrentUser currentUser, IAccountDataProvider accountDataProvider)
         {
             _clock = clock;
             _mapper = mapper;
@@ -383,10 +387,43 @@ namespace SugarTalk.Core.Services.Meetings
                 .OrderBy(x => x.StartTime).ToListAsync(cancellationToken).ConfigureAwait(false);
         }
 
+        public async Task<(int Count, List<AppointmentMeetingDto> Records)> GetAppointmentMeetingsByUserIdAsync(GetAppointmentMeetingsRequest request, CancellationToken cancellationToken)
+        {
+            var query = 
+                from meeting in _repository.Query<Meeting>()
+                join rules in _repository.Query<MeetingRepeatRule>()
+                    on meeting.Id equals rules.MeetingId
+                join subMeetings in _repository.Query<MeetingSubMeeting>()
+                    on meeting.Id equals subMeetings.MeetingId into subMeetingGroup
+                from subMeeting in subMeetingGroup.DefaultIfEmpty()
+                where meeting.MeetingMasterUserId == _currentUser.Id
+                select new AppointmentMeetingDto
+                {
+                    MeetingId = meeting.Id,
+                    MeetingNumber = meeting.MeetingNumber,
+                    StartDate = rules.RepeatType == MeetingRepeatType.None ? meeting.StartDate : subMeeting.StartTime,
+                    EndDate = rules.RepeatType == MeetingRepeatType.None ? meeting.StartDate : subMeeting.EndTime,
+                    Status = meeting.Status,
+                    Title = meeting.Title,
+                    AppointmentType = meeting.AppointmentType
+                }; 
+    
+            var count = await query.CountAsync(cancellationToken).ConfigureAwait(false);
+
+            var records = await query
+                .OrderBy(m => (m.StartDate - _clock.Now.ToUnixTimeSeconds()))
+                .Skip((request.Page - 1) * request.PageSize) 
+                .Take(request.PageSize) 
+                .ToListAsync(cancellationToken)
+                .ConfigureAwait(false);
+    
+            return (count, records);
+        }
+        
         private static long CalculateMeetingDuration(long startDate, long endDate)
         {
             if (endDate <= 0 || startDate <= 0 || endDate <= startDate) return 0;
-            
+
             return endDate - startDate;
         }
     }
