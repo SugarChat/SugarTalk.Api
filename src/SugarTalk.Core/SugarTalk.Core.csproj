@@ -69,6 +69,7 @@
         <EmbeddedResource Include="DbUp\Scripts_2024\Script0003_alter_meeting_repeat_rule_table.sql" />
         <EmbeddedResource Include="DbUp\Scripts_2024\Script0004_modify_meeting_column.sql" />
         <EmbeddedResource Include="DbUp\Scripts_2024\Script0004_alter_meeting_table.sql" />
+        <EmbeddedResource Include="DbUp\Scripts_2024\Script0005_add_meeting_record_detail_table.sql" />
     </ItemGroup>
     
     <ItemGroup>
