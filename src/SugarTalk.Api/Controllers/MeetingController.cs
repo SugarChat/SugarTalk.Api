@@ -1,8 +1,9 @@
 using Mediator.Net;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using SugarTalk.Messages.Commands.Meetings;
 using SugarTalk.Messages.Requests.Meetings;
+using SugarTalk.Messages.Commands.Meetings.Speak;
 
 namespace SugarTalk.Api.Controllers;
 
@@ -23,7 +24,7 @@ public class MeetingController : ControllerBase
     public async Task<IActionResult> ScheduleMeetingAsync([FromBody] ScheduleMeetingCommand scheduleMeetingCommand)
     {
         var response =
-            await _mediator.SendAsync<ScheduleMeetingCommand, ScheduleMeetingResponse>(scheduleMeetingCommand);
+            await _mediator.SendAsync<ScheduleMeetingCommand, ScheduleMeetingResponse>(scheduleMeetingCommand).ConfigureAwait(false);
 
         return Ok(response);
     }
@@ -32,7 +33,7 @@ public class MeetingController : ControllerBase
     [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(JoinMeetingResponse))]
     public async Task<IActionResult> JoinMeetingAsync([FromBody] JoinMeetingCommand command)
     {
-        var response = await _mediator.SendAsync<JoinMeetingCommand, JoinMeetingResponse>(command);
+        var response = await _mediator.SendAsync<JoinMeetingCommand, JoinMeetingResponse>(command).ConfigureAwait(false);
 
         return Ok(response);
     }
@@ -41,7 +42,7 @@ public class MeetingController : ControllerBase
     [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(OutMeetingResponse))]
     public async Task<IActionResult> OutMeetingAsync([FromBody] OutMeetingCommand command)
     {
-        var response = await _mediator.SendAsync<OutMeetingCommand, OutMeetingResponse>(command);
+        var response = await _mediator.SendAsync<OutMeetingCommand, OutMeetingResponse>(command).ConfigureAwait(false);
 
         return Ok(response);
     }
@@ -50,7 +51,7 @@ public class MeetingController : ControllerBase
     [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(UpdateMeetingResponse))]
     public async Task<IActionResult> UpdateMeetingAsync([FromBody] UpdateMeetingCommand command)
     {
-        var response = await _mediator.SendAsync<UpdateMeetingCommand, UpdateMeetingResponse>(command);
+        var response = await _mediator.SendAsync<UpdateMeetingCommand, UpdateMeetingResponse>(command).ConfigureAwait(false);
 
         return Ok(response);
     }
@@ -59,7 +60,7 @@ public class MeetingController : ControllerBase
     [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(EndMeetingResponse))]
     public async Task<IActionResult> EndMeetingAsync([FromBody] EndMeetingCommand command)
     {
-        var response = await _mediator.SendAsync<EndMeetingCommand, EndMeetingResponse>(command);
+        var response = await _mediator.SendAsync<EndMeetingCommand, EndMeetingResponse>(command).ConfigureAwait(false);
 
         return Ok(response);
     }
@@ -68,7 +69,7 @@ public class MeetingController : ControllerBase
     [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(GetMeetingByNumberResponse))]
     public async Task<IActionResult> GetMeetingByNumberAsync([FromQuery] GetMeetingByNumberRequest request)
     {
-        var response = await _mediator.RequestAsync<GetMeetingByNumberRequest, GetMeetingByNumberResponse>(request);
+        var response = await _mediator.RequestAsync<GetMeetingByNumberRequest, GetMeetingByNumberResponse>(request).ConfigureAwait(false);
 
         return Ok(response);
     }
@@ -77,7 +78,7 @@ public class MeetingController : ControllerBase
     [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(GetMeetingUserSessionsResponse))]
     public async Task<IActionResult> GetMeetingUserSessionsAsync([FromQuery] GetMeetingUserSessionsRequest request)
     {
-        var response = await _mediator.RequestAsync<GetMeetingUserSessionsRequest, GetMeetingUserSessionsResponse>(request);
+        var response = await _mediator.RequestAsync<GetMeetingUserSessionsRequest, GetMeetingUserSessionsResponse>(request).ConfigureAwait(false);
 
         return Ok(response);
     }
@@ -88,7 +89,7 @@ public class MeetingController : ControllerBase
     {
         var response =
             await _mediator.RequestAsync<GetMeetingUserSessionByUserIdRequest, GetMeetingUserSessionByUserIdResponse>(
-                new GetMeetingUserSessionByUserIdRequest { UserId = userId });
+                new GetMeetingUserSessionByUserIdRequest { UserId = userId }).ConfigureAwait(false);
 
         return Ok(response);
     }
@@ -97,7 +98,7 @@ public class MeetingController : ControllerBase
     [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ShareScreenResponse))]
     public async Task<IActionResult> ShareScreenAsync(ShareScreenCommand command)
     {
-        var response = await _mediator.SendAsync<ShareScreenCommand, ShareScreenResponse>(command);
+        var response = await _mediator.SendAsync<ShareScreenCommand, ShareScreenResponse>(command).ConfigureAwait(false);
 
         return Ok(response);
     }
@@ -106,7 +107,7 @@ public class MeetingController : ControllerBase
     [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ChangeAudioResponse))]
     public async Task<IActionResult> ChangeAudioAsync(ChangeAudioCommand command)
     {
-        var response = await _mediator.SendAsync<ChangeAudioCommand, ChangeAudioResponse>(command);
+        var response = await _mediator.SendAsync<ChangeAudioCommand, ChangeAudioResponse>(command).ConfigureAwait(false);
 
         return Ok(response);
     }
@@ -115,8 +116,21 @@ public class MeetingController : ControllerBase
     [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(GetAppointmentMeetingsResponse))]
     public async Task<IActionResult> GetAppointmentMeetingsAsync([FromQuery] GetAppointmentMeetingsRequest request)
     {
-        var response = await _mediator.RequestAsync<GetAppointmentMeetingsRequest, GetAppointmentMeetingsResponse>(request);
+        var response = await _mediator.RequestAsync<GetAppointmentMeetingsRequest, GetAppointmentMeetingsResponse>(request).ConfigureAwait(false);
 
         return Ok(response);
     }
+
+    #region Speak Detail
+
+    [Route("record/speak"), HttpPost]
+    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(RecordMeetingSpeakResponse))]
+    public async Task<IActionResult> RecordMeetingSpeakAsync([FromBody] RecordMeetingSpeakCommand command)
+    {
+        var response = await _mediator.SendAsync<RecordMeetingSpeakCommand, RecordMeetingSpeakResponse>(command).ConfigureAwait(false);
+
+        return Ok(response);
+    }
+
+    #endregion
 }
