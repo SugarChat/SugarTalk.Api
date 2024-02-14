@@ -19,41 +19,48 @@ public partial class MeetingService
 {
     public async Task<MeetingSpeakRecordedEvent> RecordMeetingSpeakAsync(RecordMeetingSpeakCommand command, CancellationToken cancellationToken)
     {
-        MeetingSpeakDetail speakDetail = null;
-        
-        if (command is { Id: null, SpeakStartTime: not null })
+        var speakDetail = command.Id.HasValue switch
         {
-            speakDetail = new MeetingSpeakDetail
-            {
-                MeetingId = command.MeetingId,
-                UserId = _currentUser.Id.Value,
-                MeetingSubId = command.MeetingSubId,
-                SpeakStartTime = command.SpeakStartTime.Value
-            };
-            
-            await _meetingDataProvider.AddMeetingSpeakDetailAsync(speakDetail, cancellationToken: cancellationToken).ConfigureAwait(false);
-        }
-        
-        if (command is { Id: not null, SpeakEndTime: not null })
-        {
-            speakDetail = (await _meetingDataProvider.GetMeetingSpeakDetailsAsync(
-                command.Id.Value, userId: _currentUser.Id.Value, speakStatus: SpeakStatus.Speaking, cancellationToken: cancellationToken).ConfigureAwait(false)).FirstOrDefault();
+            true => await UpdateSpeakDetailAsync(command, cancellationToken).ConfigureAwait(false),
+            false => await AddSpeakDetailAsync(command, cancellationToken).ConfigureAwait(false)
+        };
 
-            if (speakDetail == null) throw new SpeakNotFoundException();
-
-            speakDetail.SpeakStatus = SpeakStatus.End;
-            speakDetail.SpeakEndTime = command.SpeakEndTime.Value;
-            
-            await _meetingDataProvider.UpdateMeetingSpeakDetailAsync(speakDetail, cancellationToken: cancellationToken).ConfigureAwait(false);
-        }
-
-        if (speakDetail != null)
-            speakDetail = (await _meetingDataProvider.GetMeetingSpeakDetailsAsync(
-                speakDetail.Id, cancellationToken: cancellationToken).ConfigureAwait(false)).FirstOrDefault();
+        var result = (await _meetingDataProvider.GetMeetingSpeakDetailsAsync(
+            speakDetail.Id, cancellationToken: cancellationToken).ConfigureAwait(false)).FirstOrDefault();
         
         return new MeetingSpeakRecordedEvent
         {
-            MeetingSpeakDetail = _mapper.Map<MeetingSpeakDetailDto>(speakDetail)
+            MeetingSpeakDetail = _mapper.Map<MeetingSpeakDetailDto>(result)
         };
+    }
+    
+    private async Task<MeetingSpeakDetail> AddSpeakDetailAsync(RecordMeetingSpeakCommand command, CancellationToken cancellationToken)
+    {
+        var speakDetail = new MeetingSpeakDetail
+        {
+            MeetingId = command.MeetingId,
+            UserId = _currentUser.Id.Value,
+            MeetingSubId = command.MeetingSubId,
+            SpeakStartTime = command.SpeakStartTime.Value
+        };
+        
+        await _meetingDataProvider.AddMeetingSpeakDetailAsync(speakDetail, cancellationToken: cancellationToken).ConfigureAwait(false);
+        
+        return speakDetail;
+    }
+    
+    private async Task<MeetingSpeakDetail> UpdateSpeakDetailAsync(RecordMeetingSpeakCommand command, CancellationToken cancellationToken)
+    {
+        var speakDetail = (await _meetingDataProvider.GetMeetingSpeakDetailsAsync(
+            command.Id.Value, userId: _currentUser.Id.Value, speakStatus: SpeakStatus.Speaking, cancellationToken: cancellationToken).ConfigureAwait(false)).FirstOrDefault();
+
+        if (speakDetail == null) throw new SpeakNotFoundException();
+
+        speakDetail.SpeakStatus = SpeakStatus.End;
+        speakDetail.SpeakEndTime = command.SpeakEndTime.Value;
+        
+        await _meetingDataProvider.UpdateMeetingSpeakDetailAsync(speakDetail, cancellationToken: cancellationToken).ConfigureAwait(false);
+        
+        return speakDetail;
     }
 }

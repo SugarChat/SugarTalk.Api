@@ -1,4 +1,3 @@
-using System;
 using FluentValidation;
 using SugarTalk.Messages.Commands.Meetings.Speak;
 using SugarTalk.Core.Middlewares.FluentMessageValidator;
