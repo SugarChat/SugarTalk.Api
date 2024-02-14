@@ -22,7 +22,7 @@ public class MeetingSpeakDetail : IEntity
     public long SpeakStartTime { get; set; }
     
     [Column("speak_end_time")]
-    public long SpeakEndTime { get; set; }
+    public long? SpeakEndTime { get; set; }
 
     [Column("speak_status")] 
     public SpeakStatus SpeakStatus { get; set; } = SpeakStatus.Speaking;
