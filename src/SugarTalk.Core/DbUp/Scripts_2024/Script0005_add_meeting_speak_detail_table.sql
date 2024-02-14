@@ -1,10 +1,7 @@
 create table if not exists `meeting_speak_detail`
 (
     `id` varchar(36) not null primary key,
-    `meeting_id` varchar(36) not null,
-    `meeting_sub_id` varchar(36) null,
     `meeting_record_id` varchar(36) not null,
-    `meeting_number` varchar(128) not null,
     `user_id` int not null,
     `speak_start_time` BIGINT not null,
     `speak_end_time` BIGINT null,
