@@ -28,7 +28,7 @@ public class MeetingUtil : TestUtil
 
     public async Task<ScheduleMeetingResponse> ScheduleMeeting(
         string title = null, string timezone = null, string securityCode = null, 
-        DateTimeOffset? startDate = null, DateTimeOffset? endDate = null, 
+        DateTimeOffset? startDate = null, DateTimeOffset? endDate = null, MeetingAppointmentType appointmentType = MeetingAppointmentType.Quick,
         MeetingRepeatType repeatType = MeetingRepeatType.None, bool isMuted = false, bool isRecorded = false)
     {
         return await Run<IMediator, ScheduleMeetingResponse>(async (mediator) =>
@@ -41,6 +41,7 @@ public class MeetingUtil : TestUtil
                     SecurityCode = securityCode,
                     StartDate = startDate ?? DateTimeOffset.Now,
                     EndDate = endDate ?? DateTimeOffset.Now.AddDays(2),
+                    AppointmentType = appointmentType,
                     RepeatType = repeatType,
                     IsMuted = isMuted,
                     IsRecorded = isRecorded
@@ -52,13 +53,7 @@ public class MeetingUtil : TestUtil
             var liveKitServerUtilService = Substitute.For<ILiveKitServerUtilService>();
 
             liveKitServerUtilService.CreateMeetingAsync(Arg.Any<string>(), Arg.Any<string>())
-                .Returns(new CreateMeetingFromLiveKitResponseDto
-                {
-                    RoomInfo = new LiveKitRoom
-                    {
-                        MeetingNumber = "123_livekit"
-                    }
-                });
+                .Returns(new CreateMeetingFromLiveKitResponseDto { RoomInfo = new LiveKitRoom() });
 
             liveKitServerUtilService.GenerateTokenForCreateMeeting(Arg.Any<UserAccountDto>(), Arg.Any<string>())
                 .Returns("token123");
@@ -136,6 +131,17 @@ public class MeetingUtil : TestUtil
                 CantoneseToneType = cantoneseToneType ?? CantoneseToneType.HiuGaaiNeural,
                 LastModifiedDate = lastModifiedDate ?? DateTimeOffset.Now
             }, CancellationToken.None);
+        });
+    }
+
+    public async Task EndMeeting(string meetingNumber)
+    {
+        await Run<IMediator>(async mediator =>
+        {
+            await mediator.SendAsync<EndMeetingCommand, EndMeetingResponse>(new EndMeetingCommand
+            {
+                MeetingNumber = meetingNumber
+            });
         });
     }
 }

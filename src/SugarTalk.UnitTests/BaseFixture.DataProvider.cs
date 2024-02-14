@@ -13,8 +13,13 @@ public partial class BaseFixture
         repository.Query<Meeting>().Returns(x => meetingList.AsQueryable().BuildMockDbSet());
     }
     
-    protected void MockUserAccountDb(IRepository repository, List<UserAccount> userAccountList)
+    protected void MockUserAccountsDb(IRepository repository, List<UserAccount> userAccountList)
     {
         repository.Query<UserAccount>().Returns(x => userAccountList.AsQueryable().BuildMockDbSet());
+    }
+
+    protected void MockUserSessionDb(IRepository repository, List<MeetingUserSession> userSessionList)
+    {
+        repository.Query<MeetingUserSession>().Returns(x => userSessionList.AsQueryable().BuildMockDbSet());
     }
 }

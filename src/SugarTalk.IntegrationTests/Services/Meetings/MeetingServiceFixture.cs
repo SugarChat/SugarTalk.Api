@@ -19,6 +19,7 @@ using SugarTalk.IntegrationTests.TestBaseClasses;
 using SugarTalk.IntegrationTests.Utils.Account;
 using SugarTalk.IntegrationTests.Utils.Meetings;
 using SugarTalk.Messages.Commands.Meetings;
+using SugarTalk.Messages.Dto;
 using SugarTalk.Messages.Dto.LiveKit;
 using SugarTalk.Messages.Dto.Meetings;
 using SugarTalk.Messages.Dto.Users;
@@ -620,6 +621,43 @@ public partial class MeetingServiceFixture : MeetingFixtureBase
         });
     }
 
+    [Fact]
+    public async Task CanGetMeetingHistories()
+    {
+        await Run<IMediator, IClock>(async (mediator, clock) =>
+        {
+            var meeting1Response = await _meetingUtil.ScheduleMeeting(appointmentType: MeetingAppointmentType.Appointment, repeatType: MeetingRepeatType.Daily, startDate: clock.Now, endDate: clock.Now.AddHours(1));
+            var meeting2Response = await _meetingUtil.ScheduleMeeting(startDate: clock.Now, endDate: clock.Now.AddMinutes(30));
+            var meeting3Response = await _meetingUtil.ScheduleMeeting(startDate: clock.Now, endDate: clock.Now.AddMinutes(15));
+
+            await _meetingUtil.JoinMeeting(meeting1Response?.Data.MeetingNumber);
+            await _meetingUtil.JoinMeeting(meeting2Response?.Data.MeetingNumber);
+            await _meetingUtil.JoinMeeting(meeting3Response?.Data.MeetingNumber);
+
+            await _meetingUtil.EndMeeting(meeting1Response?.Data.MeetingNumber);
+            await _meetingUtil.EndMeeting(meeting2Response?.Data.MeetingNumber);
+            await _meetingUtil.EndMeeting(meeting3Response?.Data.MeetingNumber);
+
+            var response1 = await mediator.RequestAsync<GetMeetingHistoriesByUserRequest, GetMeetingHistoriesByUserResponse>(new GetMeetingHistoriesByUserRequest());
+            response1.MeetingHistoryList.ShouldNotBeNull();
+            response1.MeetingHistoryList.Count.ShouldBe(3);
+            response1.TotalCount.ShouldBe(3);
+            response1.MeetingHistoryList.Single(x => x.MeetingId == meeting1Response?.Data.Id).attendees.Count.ShouldBe(1);
+            response1.MeetingHistoryList.Single(x => x.MeetingId == meeting1Response?.Data.Id).MeetingSubId.ShouldNotBeNull();
+
+            var response2 =
+                await mediator.RequestAsync<GetMeetingHistoriesByUserRequest, GetMeetingHistoriesByUserResponse>(
+                    new GetMeetingHistoriesByUserRequest { PageSetting = new PageSetting { Page = 1, PageSize = 2 } });
+            response2.MeetingHistoryList.ShouldNotBeNull();
+            response2.MeetingHistoryList.Count.ShouldBe(2);
+            response2.TotalCount.ShouldBe(3);
+        }, builder =>
+        {
+            MockLiveKitService(builder);
+            MockClock(builder, DateTimeOffset.Now);
+        });
+    }
+    
     private static void MockLiveKitService(ContainerBuilder builder)
     {
         var liveKitServerUtilService = Substitute.For<ILiveKitServerUtilService>();
@@ -628,10 +666,7 @@ public partial class MeetingServiceFixture : MeetingFixtureBase
             .Returns("token123");
 
         liveKitServerUtilService.CreateMeetingAsync(Arg.Any<string>(), Arg.Any<string>())
-            .Returns(new CreateMeetingFromLiveKitResponseDto
-            {
-                RoomInfo = new LiveKitRoom { MeetingNumber = "123_liveKit" }
-            });
+            .Returns(new CreateMeetingFromLiveKitResponseDto());
 
         builder.RegisterInstance(liveKitServerUtilService);
     }
