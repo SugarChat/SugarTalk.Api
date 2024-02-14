@@ -2,7 +2,7 @@ create table if not exists `meeting_history`
 (
     `id` varchar(36) not null primary key,
     `meeting_id` varchar(36) not null,
-    `sub_meeting_id` varchar(36) null,
+    `meeting_sub_id` varchar(36) null,
     `user_entity_id` varchar(36) not null,
     `creator_join_time` bigint not null,
     `duration` bigint not null,
@@ -12,6 +12,5 @@ create table if not exists `meeting_history`
 
 CREATE INDEX idx_user_entity_id ON meeting_history (user_entity_id);
 CREATE INDEX idx_meeting_id ON meeting_history (meeting_id);
-CREATE INDEX idx_sub_meeting_id ON meeting_history (sub_meeting_id);
 
 alter table `meeting` add column `creator_join_time` bigint null;

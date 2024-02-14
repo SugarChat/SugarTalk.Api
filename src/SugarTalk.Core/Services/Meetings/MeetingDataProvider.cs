@@ -83,7 +83,6 @@ namespace SugarTalk.Core.Services.Meetings
         private readonly ICurrentUser _currentUser;
         private readonly IAccountDataProvider _accountDataProvider;
 
-
         public MeetingDataProvider(
             IClock clock, IMapper mapper, IRepository repository, IUnitOfWork unitOfWork, ICurrentUser currentUser, IAccountDataProvider accountDataProvider)
         {
@@ -137,7 +136,7 @@ namespace SugarTalk.Core.Services.Meetings
                 
                 if (subMeeting != null)
                 {
-                    updateMeeting.SubMeetingId = subMeeting.Id;
+                    updateMeeting.MeetingSubId = subMeeting.Id;
                     updateMeeting.StartDate = subMeeting.StartTime;
                     updateMeeting.EndDate = subMeeting.EndTime;
                 }
@@ -371,7 +370,7 @@ namespace SugarTalk.Core.Services.Meetings
             {
                 Id = Guid.NewGuid(),
                 MeetingId = meeting.Id,
-                SubMeetingId = meeting.SubMeetingId,
+                MeetingSubId = meeting.MeetingSubId,
                 CreatorJoinTime = meeting.CreatorJoinTime,
                 UserEntityId = user.Uuid,
                 Duration = CalculateMeetingDuration(meeting.CreatorJoinTime, _clock.Now.ToUnixTimeSeconds())

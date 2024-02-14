@@ -36,7 +36,7 @@ public class MeetingBaseDto
 {
     public Guid Id { get; set; }
     
-    public Guid? SubMeetingId { get; set; }
+    public Guid? MeetingSubId { get; set; }
     
     public int MeetingMasterUserId { get; set; }
 
