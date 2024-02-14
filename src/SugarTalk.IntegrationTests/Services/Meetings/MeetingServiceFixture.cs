@@ -637,16 +637,20 @@ public partial class MeetingServiceFixture : MeetingFixtureBase
             await _meetingUtil.EndMeeting(meeting1Response?.Data.MeetingNumber);
             await _meetingUtil.EndMeeting(meeting2Response?.Data.MeetingNumber);
             await _meetingUtil.EndMeeting(meeting3Response?.Data.MeetingNumber);
-            
-            var response =
+
+            var response1 = await mediator.RequestAsync<GetMeetingHistoriesByUserRequest, GetMeetingHistoriesByUserResponse>(new GetMeetingHistoriesByUserRequest());
+            response1.MeetingHistoryList.ShouldNotBeNull();
+            response1.MeetingHistoryList.Count.ShouldBe(3);
+            response1.TotalCount.ShouldBe(3);
+            response1.MeetingHistoryList.Single(x => x.MeetingId == meeting1Response?.Data.Id).attendees.Count.ShouldBe(1);
+            response1.MeetingHistoryList.Single(x => x.MeetingId == meeting1Response?.Data.Id).MeetingSubId.ShouldNotBeNull();
+
+            var response2 =
                 await mediator.RequestAsync<GetMeetingHistoriesByUserRequest, GetMeetingHistoriesByUserResponse>(
                     new GetMeetingHistoriesByUserRequest { PageSetting = new PageSetting { Page = 1, PageSize = 2 } });
-
-            response.MeetingHistoryList.ShouldNotBeNull();
-            response.MeetingHistoryList.Count.ShouldBe(2);
-            response.MeetingHistoryList.Single(x => x.MeetingId == meeting1Response?.Data.Id).attendees.Count.ShouldBe(1);
-            
-            response.TotalCount.ShouldBe(3);
+            response2.MeetingHistoryList.ShouldNotBeNull();
+            response2.MeetingHistoryList.Count.ShouldBe(2);
+            response2.TotalCount.ShouldBe(3);
         }, builder =>
         {
             MockLiveKitService(builder);
