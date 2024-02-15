@@ -1,8 +1,10 @@
+using System;
 using System.Threading;
 using SugarTalk.Core.Ioc;
 using System.Threading.Tasks;
 using SugarTalk.Core.Extensions;
 using System.Collections.Generic;
+using Serilog;
 using SugarTalk.Messages.Dto.OpenAi;
 using SugarTalk.Messages.Enums.OpenAi;
 
@@ -10,6 +12,9 @@ namespace SugarTalk.Core.Services.Http.Clients;
 
 public interface IOpenAiClient : IScopedDependency
 {
+    Task<CompletionsResponseDto> CompletionsAsync(
+        OpenAiModel model, OpenAiProvider provider, ChatCompletionsRequestDto request, CancellationToken cancellationToken);
+    
     Task<string> CreateTranscriptionAsync(CreateTranscriptionRequestDto request, CancellationToken cancellationToken);
 }
 
@@ -22,6 +27,22 @@ public class OpenAiClient : IOpenAiClient
     {
         _httpClientFactory = httpClientFactory;
         _openAiClientBuilder = openAiClientBuilder;
+    }
+    
+    public async Task<CompletionsResponseDto> CompletionsAsync(
+        OpenAiModel model, OpenAiProvider provider, ChatCompletionsRequestDto request, CancellationToken cancellationToken)
+    {
+        var (url, modelName, headers) = 
+            _openAiClientBuilder.BuildRequestRequirement(model, provider);
+
+        request.Model = modelName;
+        
+        var response = await _httpClientFactory.PostAsJsonAsync<CompletionsResponseDto>(
+            url, request, cancellationToken, TimeSpan.FromMinutes(10), headers: headers, beginScope: true).ConfigureAwait(false);
+        
+        Log.Information("The open ai completions request and response, {@Request} {@Response}", request, response);
+        
+        return response;
     }
     
     public async Task<string> CreateTranscriptionAsync(CreateTranscriptionRequestDto request, CancellationToken cancellationToken)

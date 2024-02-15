@@ -3,6 +3,7 @@ using Serilog;
 using System.Linq;
 using SugarTalk.Core.Ioc;
 using System.Collections.Generic;
+using SugarTalk.Core.Services.Utils;
 using SugarTalk.Core.Settings.OpenAi;
 using SugarTalk.Messages.Enums.OpenAi;
 
@@ -11,6 +12,8 @@ namespace SugarTalk.Core.Services.Http.Clients;
 public interface IOpenAiClientBuilder : IScopedDependency
 {
     Dictionary<string, string> GetRequestHeaders(OpenAiProvider provider);
+    
+    (string Url, string ModelName, Dictionary<string, string> Headers) BuildRequestRequirement(OpenAiModel model, OpenAiProvider provider);
 }
 
 public class OpenAiClientBuilder : IOpenAiClientBuilder
@@ -43,5 +46,14 @@ public class OpenAiClientBuilder : IOpenAiClientBuilder
             { "Authorization", $"Bearer {apiKey}" },
             { "OpenAI-Organization", organization }
         };
+    }
+    
+    public (string Url, string ModelName, Dictionary<string, string> Headers) BuildRequestRequirement(OpenAiModel model, OpenAiProvider provider)
+    {
+        var headers = GetRequestHeaders(provider);
+        var modelName = OpenAiUtil.ConvertModelToStr(model, provider);
+        var fullUrl = OpenAiUtil.GetFullUrl(model, modelName, provider, _openAiSettings);
+        
+        return (fullUrl, modelName, headers);
     }
 }
