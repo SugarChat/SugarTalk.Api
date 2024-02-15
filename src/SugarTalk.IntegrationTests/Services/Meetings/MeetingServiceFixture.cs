@@ -229,7 +229,7 @@ public partial class MeetingServiceFixture : MeetingFixtureBase
                 x.LastQuitTime.ShouldBe(response.EndDate);
                 x.CumulativeTime.ShouldNotBeNull();
             });
-            
+
             response.Status.ShouldBe(MeetingStatus.Completed);
         });
     }

@@ -313,7 +313,6 @@ namespace SugarTalk.Core.Services.Meetings
             await _unitOfWork.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
         }
         
-        
         public async Task UpdateMeetingEndUserSessionAsync(Meeting meeting, List<MeetingUserSession> userSessions, CancellationToken cancellationToken)
         {
             userSessions.ForEach(x =>
@@ -330,6 +329,5 @@ namespace SugarTalk.Core.Services.Meetings
 
             await _unitOfWork.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
         }
-
     }
 }
