@@ -1,10 +1,10 @@
 using System;
+using Serilog;
 using System.Threading;
 using SugarTalk.Core.Ioc;
 using System.Threading.Tasks;
 using SugarTalk.Core.Extensions;
 using System.Collections.Generic;
-using Serilog;
 using SugarTalk.Messages.Dto.OpenAi;
 using SugarTalk.Messages.Enums.OpenAi;
 
