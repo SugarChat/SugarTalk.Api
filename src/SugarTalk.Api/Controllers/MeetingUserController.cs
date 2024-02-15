@@ -19,6 +19,25 @@ public class MeetingUserController : ControllerBase
         _mediator = mediator;
     }
 
+
+    [Route("setting/addOrUpdate"), HttpPost]
+    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(AddOrUpdateMeetingUserSettingResponse))]
+    public async Task<IActionResult> AddOrUpdateMeetingUserSettingAsync(AddOrUpdateMeetingUserSettingCommand command)
+    {
+        var response = await _mediator.SendAsync<AddOrUpdateMeetingUserSettingCommand, AddOrUpdateMeetingUserSettingResponse>(command);
+
+        return Ok(response);
+    }
+
+    [Route("setting"), HttpGet]
+    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(GetMeetingUserSettingResponse))]
+    public async Task<IActionResult> GetMeetingUserSettingAsync([FromQuery] GetMeetingUserSettingRequest request)
+    {
+        var response = await _mediator.RequestAsync<GetMeetingUserSettingRequest, GetMeetingUserSettingResponse>(request);
+
+        return Ok(response);
+    }
+
     /// <summary>
     /// 验证当前用户是否为会议创建人
     /// </summary>
