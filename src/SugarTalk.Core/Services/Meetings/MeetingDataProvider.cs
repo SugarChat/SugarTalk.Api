@@ -63,9 +63,9 @@ namespace SugarTalk.Core.Services.Meetings
         
         Task<(int Count, List<AppointmentMeetingDto> Records)> GetAppointmentMeetingsByUserIdAsync(GetAppointmentMeetingsRequest request, CancellationToken cancellationToken);
 
-        Task UpdateMeetingEndStatusAsync(Meeting meeting, CancellationToken cancellationToken);
+        Task MarkMeetingAsCompletedAsync(Meeting meeting, CancellationToken cancellationToken);
 
-        Task UpdateMeetingEndUserSessionAsync(Meeting meeting, List<MeetingUserSession> userSessions, CancellationToken cancellationToken);
+        Task UpdateUserSessionsAtMeetingEndAsync(Meeting meeting, List<MeetingUserSession> userSessions, CancellationToken cancellationToken);
     }
     
     public partial class MeetingDataProvider : IMeetingDataProvider
@@ -303,7 +303,7 @@ namespace SugarTalk.Core.Services.Meetings
             return (count, records);
         }
         
-        public async Task UpdateMeetingEndStatusAsync(Meeting meeting, CancellationToken cancellationToken)
+        public async Task MarkMeetingAsCompletedAsync(Meeting meeting, CancellationToken cancellationToken)
         {
             meeting.EndDate = _clock.Now.ToUnixTimeSeconds();
             meeting.Status = MeetingStatus.Completed;
@@ -313,7 +313,7 @@ namespace SugarTalk.Core.Services.Meetings
             await _unitOfWork.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
         }
         
-        public async Task UpdateMeetingEndUserSessionAsync(Meeting meeting, List<MeetingUserSession> userSessions, CancellationToken cancellationToken)
+        public async Task UpdateUserSessionsAtMeetingEndAsync(Meeting meeting, List<MeetingUserSession> userSessions, CancellationToken cancellationToken)
         {
             userSessions.ForEach(x =>
             {

@@ -227,14 +227,14 @@ namespace SugarTalk.Core.Services.Meetings
             // TODO: 更新会议结束时间, 会议时长，更新会议中的用户状态
             var updateMeeting = _mapper.Map<Meeting>(meeting);
             
-            await _meetingDataProvider.UpdateMeetingEndStatusAsync(updateMeeting, cancellationToken);
+            await _meetingDataProvider.MarkMeetingAsCompletedAsync(updateMeeting, cancellationToken);
             
             var attendingUserIds = meeting.UserSessions.Select(x => x.UserId).ToList();
             
             var updateMeetingUserSessions =
                 await _meetingDataProvider.GetMeetingUserSessionsByIdsAndMeetingIdAsync(attendingUserIds, meeting.Id, cancellationToken).ConfigureAwait(false);
 
-            await _meetingDataProvider.UpdateMeetingEndUserSessionAsync(updateMeeting, updateMeetingUserSessions, cancellationToken).ConfigureAwait(false);
+            await _meetingDataProvider.UpdateUserSessionsAtMeetingEndAsync(updateMeeting, updateMeetingUserSessions, cancellationToken).ConfigureAwait(false);
             
             return new MeetingEndedEvent
             {
