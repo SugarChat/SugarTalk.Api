@@ -78,7 +78,7 @@ public partial class MeetingService
     private async Task<MeetingSpeakDetail> EndRecordUserSpeakDetailAsync(RecordMeetingSpeakCommand command, CancellationToken cancellationToken)
     {
         var speakDetail = (await _meetingDataProvider.GetMeetingSpeakDetailsAsync(
-            command.Id.Value, roomNumber: command.RoomNumber, trackId: command.TrackId, recordId: command.MeetingRecordId, userId: _currentUser.Id.Value, speakStatus: SpeakStatus.Speaking, cancellationToken: cancellationToken).ConfigureAwait(false)).FirstOrDefault();
+            command.Id.Value, speakStatus: SpeakStatus.Speaking, cancellationToken: cancellationToken).ConfigureAwait(false)).FirstOrDefault();
 
         Log.Information("Ending record user Speak, speak detail: {@SpeakDetail}", speakDetail);
         
