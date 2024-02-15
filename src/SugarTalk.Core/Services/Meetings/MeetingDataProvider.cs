@@ -99,6 +99,7 @@ namespace SugarTalk.Core.Services.Meetings
             return await _repository.QueryNoTracking<MeetingUserSession>()
                 .Where(x => x.MeetingId == meetingId)
                 .Where(x => x.UserId == userId)
+                .Where(x => x.OnlineType == MeetingUserSessionOnlineType.Online)
                 .SingleOrDefaultAsync(cancellationToken)
                 .ConfigureAwait(false);
         }
@@ -423,6 +424,32 @@ namespace SugarTalk.Core.Services.Meetings
             if (endDate <= 0 || startDate <= 0 || endDate <= startDate) return 0;
 
             return endDate - startDate;
+        }
+
+        public async Task<MeetingDto> GetMeetingByIdAsync(Guid meetingId, CancellationToken cancellationToken = default, bool includeUserSessions = true)
+        {
+            var meeting = await _repository.Query<Meeting>().AsNoTracking()
+                 .SingleOrDefaultAsync(x => x.Id == meetingId, cancellationToken)
+                 .ConfigureAwait(false);
+
+            if (meeting == null) throw new MeetingNotFoundException();
+
+            var updateMeeting = _mapper.Map<MeetingDto>(meeting);
+
+            if (!string.IsNullOrEmpty(meeting.SecurityCode))
+            {
+                updateMeeting.IsPasswordEnabled = true;
+            }
+
+            if (includeUserSessions)
+            {
+                updateMeeting.UserSessions =
+                    await GetUserSessionsByMeetingIdAsync(meeting.Id, cancellationToken).ConfigureAwait(false);
+
+                await EnrichMeetingUserSessionsAsync(updateMeeting.UserSessions, cancellationToken).ConfigureAwait(false);
+            }
+
+            return updateMeeting;
         }
     }
 }
