@@ -235,7 +235,7 @@ namespace SugarTalk.Core.Services.Meetings
             if (userSession == null) return new MeetingOutedEvent();
 
             // TODO: 更新用户退出会议时间, 会议时长
-            userSession.OnlineType = MeetingUserSessionOnlineType.OutMeeting;
+
             return new MeetingOutedEvent();
         }
         
@@ -269,12 +269,6 @@ namespace SugarTalk.Core.Services.Meetings
             {
                 userSession = GenerateNewUserSessionFromUser(user, meeting.Id, isMuted ?? false);
 
-                //如果是会议创建人，设置为会议主持人
-                if (userSession.UserId == meeting.MeetingMasterUserId)
-                {
-                    userSession.IsMeetingMaster = true;
-                }
-
                 await _meetingDataProvider.AddMeetingUserSessionAsync(userSession, cancellationToken).ConfigureAwait(false);
 
                 var updateUserSession = _mapper.Map<MeetingUserSessionDto>(userSession);
@@ -290,13 +284,6 @@ namespace SugarTalk.Core.Services.Meetings
                 userSession.Status = MeetingAttendeeStatus.Present;
                 userSession.FirstJoinTime = _clock.Now.ToUnixTimeSeconds();
                 userSession.TotalJoinCount += 1;
-
-                userSession.OnlineType = MeetingUserSessionOnlineType.Online;
-                //如果是会议创建人，设置为会议主持人
-                if (userSession.UserId == meeting.MeetingMasterUserId)
-                {
-                    userSession.IsMeetingMaster = true;
-                }
 
                 await _meetingDataProvider.UpdateMeetingUserSessionAsync(userSession, cancellationToken).ConfigureAwait(false);
 
