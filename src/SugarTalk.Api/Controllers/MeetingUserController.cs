@@ -24,7 +24,6 @@ public class MeetingUserController : ControllerBase
     public async Task<IActionResult> AddOrUpdateMeetingUserSettingAsync(AddOrUpdateMeetingUserSettingCommand command)
     {
         var response = await _mediator.SendAsync<AddOrUpdateMeetingUserSettingCommand, AddOrUpdateMeetingUserSettingResponse>(command);
-
         return Ok(response);
     }
 
@@ -33,7 +32,6 @@ public class MeetingUserController : ControllerBase
     public async Task<IActionResult> GetMeetingUserSettingAsync([FromQuery] GetMeetingUserSettingRequest request)
     {
         var response = await _mediator.RequestAsync<GetMeetingUserSettingRequest, GetMeetingUserSettingResponse>(request);
-
         return Ok(response);
     }
 
