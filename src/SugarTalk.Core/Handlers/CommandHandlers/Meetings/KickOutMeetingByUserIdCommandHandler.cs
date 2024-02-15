@@ -20,10 +20,10 @@ namespace SugarTalk.Core.Handlers.CommandHandlers.Meetings
         {
             _meetingService = meetingService;
         }
+
         public async Task<KickOutMeetingByUserIdResponse> Handle(IReceiveContext<KickOutMeetingByUserIdCommand> context, CancellationToken cancellationToken)
         {
             return await _meetingService.KickOutMeetingAsync(context.Message, cancellationToken);
         }
     }
-
 }
