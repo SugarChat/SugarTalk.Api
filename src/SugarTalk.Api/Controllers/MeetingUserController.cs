@@ -1,6 +1,7 @@
 using Mediator.Net;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using SugarTalk.Messages.Commands.Meetings;
 using SugarTalk.Messages.Commands.Speech;
 using SugarTalk.Messages.Requests.Meetings.User;
 
@@ -17,22 +18,30 @@ public class MeetingUserController : ControllerBase
     {
         _mediator = mediator;
     }
-    
-    [Route("setting/addOrUpdate"), HttpPost]
-    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(AddOrUpdateMeetingUserSettingResponse))]
-    public async Task<IActionResult> AddOrUpdateMeetingUserSettingAsync(AddOrUpdateMeetingUserSettingCommand command)
+
+    /// <summary>
+    /// 验证当前用户是否为会议创建人
+    /// </summary>
+    /// <param name="command"></param>
+    /// <returns></returns>
+    [Route("session/master/verify"), HttpPost]
+    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(VerifyMeetingUserPermissionResponse))]
+    public async Task<IActionResult> VerifyMeetingUserPermissions(VerifyMeetingUserPermissionCommand command)
     {
-        var response = await _mediator.SendAsync<AddOrUpdateMeetingUserSettingCommand, AddOrUpdateMeetingUserSettingResponse>(command);
-            
+        var response = await _mediator.SendAsync<VerifyMeetingUserPermissionCommand, VerifyMeetingUserPermissionResponse>(command);
         return Ok(response);
     }
-    
-    [Route("setting"), HttpGet]
-    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(GetMeetingUserSettingResponse))]
-    public async Task<IActionResult> GetMeetingUserSettingAsync([FromQuery] GetMeetingUserSettingRequest request)
+
+    /// <summary>
+    /// 会议创建人踢出指定用户
+    /// </summary>
+    /// <param name="command"></param>
+    /// <returns></returns>
+    [Route("session/master/kickout"), HttpPost]
+    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(KickOutMeetingByUserIdResponse))]
+    public async Task<IActionResult> KickOutMeeting(KickOutMeetingByUserIdCommand command)
     {
-        var response = await _mediator.RequestAsync<GetMeetingUserSettingRequest, GetMeetingUserSettingResponse>(request);
-            
+        var response = await _mediator.SendAsync<KickOutMeetingByUserIdCommand, KickOutMeetingByUserIdResponse>(command);
         return Ok(response);
     }
 }
