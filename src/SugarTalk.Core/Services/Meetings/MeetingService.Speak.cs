@@ -1,7 +1,10 @@
+using System;
+using Serilog;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using SugarTalk.Core.Domain.Meeting;
+using SugarTalk.Messages.Dto.LiveKit;
 using SugarTalk.Messages.Dto.Meetings.Speak;
 using SugarTalk.Messages.Enums.Meeting.Speak;
 using SugarTalk.Messages.Events.Meeting.Speak;
@@ -21,8 +24,8 @@ public partial class MeetingService
     {
         var speakDetail = command.Id.HasValue switch
         {
-            true => await UpdateSpeakDetailAsync(command, cancellationToken).ConfigureAwait(false),
-            false => await AddSpeakDetailAsync(command, cancellationToken).ConfigureAwait(false)
+            true => await EndRecordUserSpeakDetailAsync(command, cancellationToken).ConfigureAwait(false),
+            false => await StartRecordUserSpeakDetailAsync(command, cancellationToken).ConfigureAwait(false)
         };
 
         var result = (await _meetingDataProvider.GetMeetingSpeakDetailsAsync(
@@ -34,13 +37,36 @@ public partial class MeetingService
         };
     }
     
-    private async Task<MeetingSpeakDetail> AddSpeakDetailAsync(RecordMeetingSpeakCommand command, CancellationToken cancellationToken)
+    private async Task<MeetingSpeakDetail> StartRecordUserSpeakDetailAsync(RecordMeetingSpeakCommand command, CancellationToken cancellationToken)
     {
+        //todo get record token
+        var token = string.Empty;
+        var filePath = string.Empty;
+        
+        var egressResponse = await _liveKitClient.StartTrackCompositeEgressAsync(new StartTrackCompositeEgressRequestDto
+        {
+            Token = token,
+            RoomName = command.RoomNumber,
+            AudioTrackId = command.TrackId,
+            Files = new EgressEncodedFileOutPutDto
+            {
+                Filepath = filePath,
+                AliOssUpload = new EgressAliOssUploadDto()
+            }
+        }, cancellationToken).ConfigureAwait(false);
+
+        Log.Information("Start track composite egress response: {@EgressResponse}", egressResponse);
+
+        if (egressResponse == null) throw new Exception();
+        
         var speakDetail = new MeetingSpeakDetail
         {
-            MeetingId = command.MeetingId,
+            FilePath = filePath,
+            TrackId = command.TrackId,
             UserId = _currentUser.Id.Value,
-            MeetingSubId = command.MeetingSubId,
+            RoomNumber = command.RoomNumber,
+            EgressId = egressResponse.EgressId,
+            MeetingRecordId = command.MeetingRecordId,
             SpeakStartTime = command.SpeakStartTime.Value
         };
         
@@ -49,13 +75,24 @@ public partial class MeetingService
         return speakDetail;
     }
     
-    private async Task<MeetingSpeakDetail> UpdateSpeakDetailAsync(RecordMeetingSpeakCommand command, CancellationToken cancellationToken)
+    private async Task<MeetingSpeakDetail> EndRecordUserSpeakDetailAsync(RecordMeetingSpeakCommand command, CancellationToken cancellationToken)
     {
         var speakDetail = (await _meetingDataProvider.GetMeetingSpeakDetailsAsync(
-            command.Id.Value, userId: _currentUser.Id.Value, speakStatus: SpeakStatus.Speaking, cancellationToken: cancellationToken).ConfigureAwait(false)).FirstOrDefault();
+            command.Id.Value, roomNumber: command.RoomNumber, trackId: command.TrackId, recordId: command.MeetingRecordId, userId: _currentUser.Id.Value, speakStatus: SpeakStatus.Speaking, cancellationToken: cancellationToken).ConfigureAwait(false)).FirstOrDefault();
 
+        Log.Information("Ending record user Speak, speak detail: {@SpeakDetail}", speakDetail);
+        
         if (speakDetail == null) throw new SpeakNotFoundException();
+        
+        var egressResponse = await _liveKitClient.StopEgressAsync(new StopEgressRequestDto
+        {
+            EgressId = speakDetail.EgressId
+        }, cancellationToken).ConfigureAwait(false);
+        
+        Log.Information("Stop egress response: {@EgressResponse}", egressResponse);
 
+        if (string.IsNullOrEmpty(egressResponse)) throw new Exception();
+        
         speakDetail.SpeakStatus = SpeakStatus.End;
         speakDetail.SpeakEndTime = command.SpeakEndTime.Value;
         

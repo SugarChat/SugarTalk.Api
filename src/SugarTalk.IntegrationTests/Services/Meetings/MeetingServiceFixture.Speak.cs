@@ -32,8 +32,6 @@ public partial class MeetingServiceFixture
                 {
                     Id = speakDetailId,
                     SpeakStartTime = starTime,
-                    MeetingId = Guid.NewGuid(),
-                    MeetingSubId = Guid.NewGuid(),
                     UserId = currentUser.Id.Value,
                     MeetingRecordId = Guid.NewGuid()
                 });
@@ -44,8 +42,6 @@ public partial class MeetingServiceFixture
             var response = await mediator.SendAsync<RecordMeetingSpeakCommand, RecordMeetingSpeakResponse>(new RecordMeetingSpeakCommand
             {
                 Id = isUpdate ? speakDetailId : null,
-                MeetingId = Guid.NewGuid(),
-                MeetingSubId = Guid.NewGuid(),
                 SpeakStartTime = isUpdate ? null : starTime,
                 SpeakEndTime = isUpdate ? endTime : null
             });
@@ -77,17 +73,17 @@ public partial class MeetingServiceFixture
     
     [Theory]
     [InlineData(null, null, null, null, false)]
-    [InlineData(null, "48771c4e-ce54-4a6e-a150-c9ba7c6229fd", 1707894406, null, true)]
-    [InlineData(null, "48771c4e-ce54-4a6e-a150-c9ba7c6229fd", null, 1707894406, false)]
-    [InlineData(null, "48771c4e-ce54-4a6e-a150-c9ba7c6229fd", 1707894406, 1707894406, true)]
-    [InlineData(null, "48771c4e-ce54-4a6e-a150-c9ba7c6229fd", null, null, false)]
-    [InlineData("4d992f24-346b-48ce-a855-1b10cfd4bd6e", "48771c4e-ce54-4a6e-a150-c9ba7c6229fd", null, 1707894406, true)]
-    public async Task CanValidateRecordMeetingSpeak(string id, string meetingId, int? startTime, int? endTime, bool isValid)
+    [InlineData(null, "123456", 1707894406, null, true)]
+    [InlineData(null, "123456", null, 1707894406, false)]
+    [InlineData(null, "123456", 1707894406, 1707894406, true)]
+    [InlineData(null, "123456", null, null, false)]
+    [InlineData("4d992f24-346b-48ce-a855-1b10cfd4bd6e", "123456", null, 1707894406, true)]
+    public async Task CanValidateRecordMeetingSpeak(string id, string roomNumber, int? startTime, int? endTime, bool isValid)
     {
         var command = new RecordMeetingSpeakCommand
         {
             Id = string.IsNullOrEmpty(id) ? null : Guid.Parse(id),
-            MeetingId = string.IsNullOrEmpty(meetingId) ? Guid.Empty : Guid.Parse(meetingId),
+            RoomNumber = roomNumber,
             SpeakStartTime = startTime,
             SpeakEndTime = endTime
         };
