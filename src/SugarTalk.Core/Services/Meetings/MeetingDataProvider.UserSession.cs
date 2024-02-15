@@ -103,8 +103,9 @@ public partial class MeetingDataProvider
 
         await _repository.DeleteAllAsync(meetingUserSessions, cancellationToken).ConfigureAwait(false);
     }
-    
-    public async Task<List<MeetingUserSession>> GetMeetingUserSessionsByIdsAndMeetingIdAsync(List<int> ids,Guid meetingId, CancellationToken cancellationToken)
+
+    public async Task<List<MeetingUserSession>> GetMeetingUserSessionsByIdsAndMeetingIdAsync(List<int> ids,
+        Guid meetingId, CancellationToken cancellationToken)
     {
         return await _repository.Query<MeetingUserSession>()
             .Where(x => ids.Contains(x.Id))
@@ -113,6 +114,5 @@ public partial class MeetingDataProvider
                 x.Status != MeetingAttendeeStatus.Absent &&
                 !x.IsDeleted)
             .ToListAsync(cancellationToken).ConfigureAwait(false);
-       
     }
 }
