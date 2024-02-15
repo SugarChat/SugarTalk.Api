@@ -19,7 +19,6 @@ public class MeetingUserController : ControllerBase
         _mediator = mediator;
     }
 
-
     [Route("setting/addOrUpdate"), HttpPost]
     [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(AddOrUpdateMeetingUserSettingResponse))]
     public async Task<IActionResult> AddOrUpdateMeetingUserSettingAsync(AddOrUpdateMeetingUserSettingCommand command)
@@ -39,7 +38,7 @@ public class MeetingUserController : ControllerBase
     }
 
     /// <summary>
-    /// 验证当前用户是否为会议创建人
+    /// 验证用户是否为会议创建人
     /// </summary>
     /// <param name="command"></param>
     /// <returns></returns>
