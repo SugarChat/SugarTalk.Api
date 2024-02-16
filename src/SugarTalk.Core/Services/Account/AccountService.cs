@@ -50,19 +50,19 @@ namespace SugarTalk.Core.Services.Account
             bool canLogin = false;
             UserAccountDto account = null;
 
-            if ((_headerInfoProvider.GetHttpHeaderInfo().UserAccountType ?? UserAccountType.RegisteredUser) == UserAccountType.RegisteredUser)
-            {
-                (canLogin, account) = await _accountDataProvider
-                    .AuthenticateAsync(request.UserName, request.Password, cancellationToken).ConfigureAwait(false);
-            }
-            else if (_headerInfoProvider.GetHttpHeaderInfo().UserAccountType == UserAccountType.Visitor)
+            if (_headerInfoProvider.GetHttpHeaderInfo().Issuer != null && _headerInfoProvider.GetHttpHeaderInfo().Issuer == UserAccountIssuer.Guest)
             {
                 var accountFromDb = await _accountDataProvider.CreateUserAccountAsync(Guid.NewGuid().ToString(),
                     string.Empty,
-                    type: UserAccountType.Visitor,
+                    authType: UserAccountIssuer.Guest,
                     cancellationToken: cancellationToken).ConfigureAwait(false);
                 account = _mapper.Map<UserAccountDto>(accountFromDb);
                 canLogin = true;
+            }
+            else
+            {
+                (canLogin, account) = await _accountDataProvider
+                    .AuthenticateAsync(request.UserName, request.Password, cancellationToken).ConfigureAwait(false);
             }
 
             Log.Information("canLogin:{canLogin}, account:{account}", canLogin, account);

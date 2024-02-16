@@ -16,7 +16,6 @@ public class AccountController : ControllerBase
         _mediator = mediator;
     }
 
-    [Authorize]
     [Route("login"), HttpPost]
     [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(LoginResponse))]
     public async Task<IActionResult> LoginAsync([FromBody] LoginRequest request)

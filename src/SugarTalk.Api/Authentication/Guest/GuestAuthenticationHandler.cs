@@ -1,28 +1,27 @@
 ﻿using Microsoft.AspNetCore.Authentication;
 using Microsoft.Extensions.Options;
-using Microsoft.IdentityModel.Clients.ActiveDirectory;
 using SugarTalk.Core.Data.Claims;
 using SugarTalk.Messages.Enums.Account;
 using System.Security.Claims;
 using System.Text.Encodings.Web;
 
-namespace SugarTalk.Api.Authentication.Visitor
+namespace SugarTalk.Api.Authentication.Guest
 {
-    public class VisitorAuthenticationHandler : AuthenticationHandler<VisitorAuthenticationOptions>
+    public class GuestAuthenticationHandler : AuthenticationHandler<GuestAuthenticationOptions>
     {
-        public VisitorAuthenticationHandler(IOptionsMonitor<VisitorAuthenticationOptions> options, ILoggerFactory logger, UrlEncoder encoder, ISystemClock clock)
+        public GuestAuthenticationHandler(IOptionsMonitor<GuestAuthenticationOptions> options, ILoggerFactory logger, UrlEncoder encoder, ISystemClock clock)
             : base(options, logger, encoder, clock)
         {
         }
 
         protected override async Task<AuthenticateResult> HandleAuthenticateAsync()
         {
-            var userAccountType = Request.Headers[RequestHeaderKeys.UserAccountType].ToString();
-            if (!string.IsNullOrWhiteSpace(userAccountType))
+            var issuser = Request.Headers[RequestHeaderKeys.Issuer].ToString();
+            if (!string.IsNullOrWhiteSpace(issuser))
             {
-                if (int.TryParse(userAccountType, out var userAccountTypeInt))
+                if (int.TryParse(issuser, out var issuserInt))
                 {
-                    if ((UserAccountType)userAccountTypeInt == UserAccountType.Visitor)
+                    if ((UserAccountIssuer)issuserInt == UserAccountIssuer.Guest)
                     {
                         var identity = new ClaimsIdentity("Visitor");
                         var claimPrincipal = new ClaimsPrincipal(identity);

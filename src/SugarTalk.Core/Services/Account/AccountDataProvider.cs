@@ -31,7 +31,7 @@ namespace SugarTalk.Core.Services.Account
             CancellationToken cancellationToken = default);
 
         Task<UserAccount> CreateUserAccountAsync(string userName, string password, string thirdPartyUserId = null,
-            UserAccountIssuer authType = UserAccountIssuer.Wiltechs, UserAccountType type = UserAccountType.RegisteredUser, CancellationToken cancellationToken = default);
+            UserAccountIssuer authType = UserAccountIssuer.Wiltechs, CancellationToken cancellationToken = default);
 
         List<Claim> GenerateClaimsFromUserAccount(UserAccountDto account);
         
@@ -102,7 +102,7 @@ namespace SugarTalk.Core.Services.Account
         }
         
         public async Task<UserAccount> CreateUserAccountAsync(string requestUserName, string requestPassword, 
-            string thirdPartyUserId = null, UserAccountIssuer authType = UserAccountIssuer.Wiltechs, UserAccountType type = UserAccountType.RegisteredUser, CancellationToken cancellationToken = default)
+            string thirdPartyUserId = null, UserAccountIssuer authType = UserAccountIssuer.Wiltechs, CancellationToken cancellationToken = default)
         {
             var userAccount = new UserAccount
             {
@@ -113,8 +113,7 @@ namespace SugarTalk.Core.Services.Account
                 Password = requestPassword?.ToSha256(),
                 ThirdPartyUserId = thirdPartyUserId,
                 Issuer = authType,
-                IsActive = true,
-                Type = type,
+                IsActive = true
             };
 
             await _repository.InsertAsync(userAccount, cancellationToken).ConfigureAwait(false);

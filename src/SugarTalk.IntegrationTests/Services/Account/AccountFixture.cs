@@ -251,9 +251,9 @@ public class AccountFixture : AccountFixtureBase
     }
 
     [Theory]
-    [InlineData(UserAccountType.RegisteredUser, HttpStatusCode.Unauthorized)]
-    [InlineData(UserAccountType.Visitor, HttpStatusCode.OK)]
-    public async Task ShouldCreateUserAccountWhenVisitorLogin(UserAccountType userAccountType, HttpStatusCode httpStatusCode)
+    [InlineData(UserAccountIssuer.Self, HttpStatusCode.Unauthorized)]
+    [InlineData(UserAccountIssuer.Guest, HttpStatusCode.OK)]
+    public async Task ShouldCreateUserAccountWhenVisitorLogin(UserAccountIssuer issuer, HttpStatusCode httpStatusCode)
     {
         await Run<IMediator, IRepository>(async (mediator, repository) =>
         {
@@ -267,12 +267,12 @@ public class AccountFixture : AccountFixtureBase
             if (httpStatusCode == HttpStatusCode.OK)
             {
                 response.Data.ShouldNotBeNull();
-                await repository.SingleOrDefaultAsync<UserAccount>(x => x.Type == UserAccountType.Visitor).ShouldNotBeNull();
+                await repository.SingleOrDefaultAsync<UserAccount>(x => x.Issuer == UserAccountIssuer.Guest).ShouldNotBeNull();
             }
         }, builder =>
         {
             var httpHeaderInfoProvider = Substitute.For<IHttpHeaderInfoProvider>();
-            httpHeaderInfoProvider.GetHttpHeaderInfo().UserAccountType.Returns(userAccountType);
+            httpHeaderInfoProvider.GetHttpHeaderInfo().Issuer.Returns(issuer);
             builder.RegisterInstance(httpHeaderInfoProvider);
         });
     }

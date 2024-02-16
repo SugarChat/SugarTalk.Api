@@ -29,7 +29,7 @@ namespace SugarTalk.Core.Services
 
     public interface IHttpHeaderInfo
     {
-        public UserAccountType? UserAccountType { get; set; }
+        public UserAccountIssuer? Issuer { get; set; }
     }
 
     public class HttpHeaderInfo : IHttpHeaderInfo
@@ -41,20 +41,20 @@ namespace SugarTalk.Core.Services
             _httpContextAccessor = httpContextAccessor;
         }
 
-        private UserAccountType? _userAccountType;
-        public UserAccountType? UserAccountType
+        private UserAccountIssuer? _issuer;
+        public UserAccountIssuer? Issuer
         {
             get
             {
-                if (_userAccountType == null)
+                if (_issuer == null)
                 {
-                    var userAccountType = _httpContextAccessor.HttpContext?.Request?.Headers.SingleOrDefault(x =>
-                        x.Key.Equals(RequestHeaderKeys.UserAccountType, StringComparison.InvariantCultureIgnoreCase)).Value;
-                    _userAccountType = string.IsNullOrWhiteSpace(userAccountType) ? null : int.TryParse(userAccountType.Value, out var userAccountTypeInt) ? (UserAccountType)userAccountTypeInt : null;
+                    var issuer = _httpContextAccessor.HttpContext?.Request?.Headers.SingleOrDefault(x =>
+                        x.Key.Equals(RequestHeaderKeys.Issuer, StringComparison.InvariantCultureIgnoreCase)).Value;
+                    _issuer = string.IsNullOrWhiteSpace(issuer) ? null : int.TryParse(issuer.Value, out var issuerInt) ? (UserAccountIssuer)issuerInt : null;
                 }
-                return _userAccountType;
+                return _issuer;
             }
-            set => _userAccountType = value;
+            set => _issuer = value;
         }
     }
 }

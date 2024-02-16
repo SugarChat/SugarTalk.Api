@@ -2,7 +2,7 @@ using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.IdentityModel.Tokens;
-using SugarTalk.Api.Authentication.Visitor;
+using SugarTalk.Api.Authentication.Guest;
 using SugarTalk.Api.Authentication.Wiltechs;
 using SugarTalk.Core.Constants;
 using SugarTalk.Core.Services.Identity;
@@ -32,7 +32,7 @@ public static class AuthenticationExtension
             .AddScheme<WiltechsAuthenticationOptions, WiltechsAuthenticationHandler>(
                 AuthenticationSchemeConstants.WiltechsAuthenticationScheme,
                 options => options.Authority = configuration["Authentication:Wiltechs:Authority"])
-            .AddScheme<VisitorAuthenticationOptions, VisitorAuthenticationHandler>(AuthenticationSchemeConstants.VisitorAuthenticationScheme, op => { });
+            .AddScheme<GuestAuthenticationOptions, GuestAuthenticationHandler>(AuthenticationSchemeConstants.VisitorAuthenticationScheme, op => { });
 
         services.AddAuthorization(options =>
         {
