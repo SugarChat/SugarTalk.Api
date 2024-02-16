@@ -129,8 +129,6 @@ public partial class MeetingServiceFixture
             MeetingMasterUserId = otherUser.Id
         };
 
-
-
         var meetingRecord1 = new MeetingRecord
         {
             Id = Guid.NewGuid(),

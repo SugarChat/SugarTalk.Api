@@ -72,9 +72,9 @@ public class MeetingDataProviderFixture : BaseFixture
                 Page = 1
             }
         };
-        var response = await _meetingDataProvider.GetMeetingRecordsByUserIdAsync(getCurrentUserMeetingRecordRequest, CancellationToken.None);
-        response.Count.ShouldBe(1);
-        response[0].MeetingId.ShouldBe(meetingId1);
+        var (count, items) = await _meetingDataProvider.GetMeetingRecordsByUserIdAsync(1, getCurrentUserMeetingRecordRequest, CancellationToken.None);
+        count.ShouldBe(1);
+        items[0].MeetingId.ShouldBe(meetingId1);
     }
 
     [Fact]
@@ -139,7 +139,7 @@ public class MeetingDataProviderFixture : BaseFixture
                 Page = 1
             }
         };
-        var response = await _meetingDataProvider.GetMeetingRecordsByUserIdAsync(getCurrentUserMeetingRecordRequest, CancellationToken.None);
-        response.Count.ShouldBe(0);
+        var (count, items) = await _meetingDataProvider.GetMeetingRecordsByUserIdAsync(1, getCurrentUserMeetingRecordRequest, CancellationToken.None);
+        count.ShouldBe(0);
     }
 }

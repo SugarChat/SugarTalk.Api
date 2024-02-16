@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -12,35 +13,34 @@ namespace SugarTalk.Core.Services.Meetings;
 
 public partial interface IMeetingDataProvider
 {
-    public Task<List<MeetingRecordDto>> GetMeetingRecordsByUserIdAsync(GetCurrentUserMeetingRecordRequest request, CancellationToken cancellationToken);
+    public Task<(int count, List<MeetingRecordDto> items)> GetMeetingRecordsByUserIdAsync(int? currentUserId, GetCurrentUserMeetingRecordRequest request, CancellationToken cancellationToken);
 }
 
 public partial class MeetingDataProvider
 {
-    public async Task<List<MeetingRecordDto>> GetMeetingRecordsByUserIdAsync(GetCurrentUserMeetingRecordRequest request, CancellationToken cancellationToken)
+    public async Task<(int count, List<MeetingRecordDto> items)> GetMeetingRecordsByUserIdAsync(int? currentUserId, GetCurrentUserMeetingRecordRequest request, CancellationToken cancellationToken)
     {
-        var currentUserId = _currentUser.Id;
         if (currentUserId == null)
         {
-            return new List<MeetingRecordDto>();
+            return (0, new List<MeetingRecordDto>());
         }
-
-
-        var joinResult = await _repository.QueryNoTracking<MeetingRecord>()
+        var query = _repository.QueryNoTracking<MeetingRecord>()
             .Join(_repository.QueryNoTracking<Meeting>(), record => record.MeetingId, meeting => meeting.Id,
                 (record, meeting) => new
                 {
                     Record = record,
                     Meeting = meeting
                 })
-            .Join(_repository.QueryNoTracking<MeetingUserSession>(), result => result.Meeting.Id, session => session.MeetingId,
+            .Join(_repository.QueryNoTracking<MeetingUserSession>(), result => result.Meeting.Id,
+                session => session.MeetingId,
                 (result, session) => new
                 {
                     result.Meeting,
                     result.Record,
                     Session = session
                 })
-            .Join(_repository.QueryNoTracking<UserAccount>(), result => result.Meeting.MeetingMasterUserId, user => user.Id,
+            .Join(_repository.QueryNoTracking<UserAccount>(), result => result.Meeting.MeetingMasterUserId,
+                user => user.Id,
                 (result, user) => new
                 {
                     result.Meeting,
@@ -48,14 +48,15 @@ public partial class MeetingDataProvider
                     result.Session,
                     User = user
                 })
-            .Where(x => x.Session.UserId.Equals(currentUserId))
-            .OrderByDescending(x => x.Record.CreatedDate)
+            .Where(x => x.Session.UserId == currentUserId);
+        var total = await query.CountAsync(cancellationToken).ConfigureAwait(false);
+        var joinResult = await query.OrderByDescending(x => x.Record.CreatedDate)
             .Skip((request.PageSetting.Page - 1) * request.PageSetting.PageSize)
             .Take(request.PageSetting.PageSize)
             .ToListAsync(cancellationToken)
             .ConfigureAwait(false);
 
-        return joinResult.Select(x => new MeetingRecordDto
+        var items = joinResult.Select(x => new MeetingRecordDto
             {
                 MeetingId = x.Meeting.Id,
                 MeetingNumber = x.Meeting.MeetingNumber,
@@ -67,5 +68,7 @@ public partial class MeetingDataProvider
                 Duration = CalculateMeetingDuration(x.Meeting.StartDate, x.Meeting.EndDate)
             })
             .ToList();
+
+        return (total, items);
     }
 }
