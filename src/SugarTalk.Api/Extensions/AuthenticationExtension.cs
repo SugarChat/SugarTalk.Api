@@ -37,9 +37,9 @@ public static class AuthenticationExtension
         services.AddAuthorization(options =>
         {
             options.DefaultPolicy = new AuthorizationPolicyBuilder(
-                AuthenticationSchemeConstants.VisitorAuthenticationScheme,
                 JwtBearerDefaults.AuthenticationScheme,
-                AuthenticationSchemeConstants.WiltechsAuthenticationScheme).RequireAuthenticatedUser().Build();
+                AuthenticationSchemeConstants.WiltechsAuthenticationScheme,
+                AuthenticationSchemeConstants.VisitorAuthenticationScheme).RequireAuthenticatedUser().Build();
         });
         
         services.AddScoped<ICurrentUser, CurrentUser>();

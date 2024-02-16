@@ -1,5 +1,4 @@
 using Mediator.Net.Contracts;
-using SugarTalk.Messages.Enums.Account;
 using SugarTalk.Messages.Responses;
 
 namespace SugarTalk.Messages.Requests.Account;
