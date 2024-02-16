@@ -15,6 +15,7 @@ namespace SugarTalk.Core.Handlers.RequestHandlers.Meetings
         {
             _meetingService = meetingService;
         }
+
         public async Task<GetCurrentUserMeetingRecordResponse> Handle(IReceiveContext<GetCurrentUserMeetingRecordRequest> context, CancellationToken cancellationToken)
         {
             return await _meetingService.GetCurrentUserMeetingRecordsAsync(context.Message, cancellationToken).ConfigureAwait(false);
