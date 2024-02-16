@@ -144,4 +144,25 @@ public class MeetingUtil : TestUtil
             });
         });
     }
+
+    public async Task<StorageMeetingRecordVideoResponse> AddMeetingRecordAsync(Guid meetingId, string url)
+    {
+        return await Run<IMediator, StorageMeetingRecordVideoResponse>(async mediator =>
+        {
+            return await mediator.SendAsync<StorageMeetingRecordVideoCommand, StorageMeetingRecordVideoResponse>(
+                new StorageMeetingRecordVideoCommand
+                {
+                    MeetingId = meetingId,
+                    Url = url
+                });
+        });
+    }
+
+    // public async Task<List<MeetingRecord>> GetMeetingRecordsCountAsync(Guid meetingId)
+    // {
+    //     return await Run<IRepository, List<MeetingRecord>>(async repository =>
+    //     {
+    //         return await repository.QueryNoTracking<MeetingRecord>().Where(x => x.MeetingId == meetingId).ToListAsync();
+    //     });
+    // }
 }
