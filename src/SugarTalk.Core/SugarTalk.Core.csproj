@@ -76,6 +76,7 @@
         <EmbeddedResource Include="DbUp\Scripts_2024\Script0006_modify_meeting_speak_detail_table.sql" />
         <EmbeddedResource Include="DbUp\Scripts_2024\Script0006_add_meeting_session_table.sql" />
         <EmbeddedResource Include="DbUp\Scripts_2024\Script0007_modify_columns_for_meeting_speak_detail_table.sql" />
+        <EmbeddedResource Include="DbUp\Scripts_2024\Script0008_add_meeting_summary_relate_tables.sql" />
     </ItemGroup>
     
     <ItemGroup>

@@ -17,6 +17,7 @@ using SugarTalk.Core.Services.AntMediaServer;
 using SugarTalk.Core.Services.Exceptions;
 using SugarTalk.Core.Services.Http.Clients;
 using SugarTalk.Core.Services.Identity;
+using SugarTalk.Core.Services.Jobs;
 using SugarTalk.Core.Services.LiveKit;
 using SugarTalk.Core.Services.Utils;
 using SugarTalk.Core.Settings.LiveKit;
@@ -84,6 +85,7 @@ namespace SugarTalk.Core.Services.Meetings
         private readonly ILiveKitClient _liveKitClient;
         private readonly IAccountDataProvider _accountDataProvider;
         private readonly IMeetingDataProvider _meetingDataProvider;
+        private readonly ISugarTalkBackgroundJobClient _backgroundJobClient;
         private readonly ILiveKitServerUtilService _liveKitServerUtilService;
         private readonly IAntMediaServerUtilService _antMediaServerUtilService;
 
@@ -99,6 +101,7 @@ namespace SugarTalk.Core.Services.Meetings
             IMeetingDataProvider meetingDataProvider,
             IAccountDataProvider accountDataProvider,
             LiveKitServerSetting liveKitServerSetting,
+            ISugarTalkBackgroundJobClient backgroundJobClient,
             ILiveKitServerUtilService liveKitServerUtilService,
             IAntMediaServerUtilService antMediaServerUtilService)
         {
@@ -110,6 +113,7 @@ namespace SugarTalk.Core.Services.Meetings
             _liveKitClient = liveKitClient;
             _accountDataProvider = accountDataProvider;
             _meetingDataProvider = meetingDataProvider;
+            _backgroundJobClient = backgroundJobClient;
             _liveKitServerSetting = liveKitServerSetting;
             _liveKitServerUtilService = liveKitServerUtilService;
             _antMediaServerUtilService = antMediaServerUtilService;
