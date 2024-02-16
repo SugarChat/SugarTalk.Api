@@ -20,12 +20,12 @@ public class MeetingUserSessionDto
     public bool IsSharingScreen { get; set; }
 
     /// <summary>
-    /// ÊÇ·ñÎª»áÒé´´½¨ÈË
+    /// æ˜¯å¦ä¸ºä¼šè®®åˆ›å»ºäºº
     /// </summary>
     public bool IsMeetingMaster { get; set; }
 
     /// <summary>
-    /// ÔÚÏß×´Ì¬
+    /// åœ¨çº¿çŠ¶æ€
     /// </summary>
     public MeetingUserSessionOnlineType OnlineType { get; set; }
 }
