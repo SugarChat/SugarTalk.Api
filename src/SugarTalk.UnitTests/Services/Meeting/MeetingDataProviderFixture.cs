@@ -19,10 +19,10 @@ public class MeetingDataProviderFixture : BaseFixture
         var meetingId2 = Guid.NewGuid();
         var meetingId3 = Guid.NewGuid();
 
-        MockUserAccountDb(_repository, new List<UserAccount>
+        MockUserAccountsDb(_repository, new List<UserAccount>
         {
-            CreateUserAccountEvent(userId1),
-            CreateUserAccountEvent(userId2)
+            CreateUserAccountEvent(userId1, Guid.NewGuid()),
+            CreateUserAccountEvent(userId2, Guid.NewGuid())
         });
 
         MockMeetingDb(_repository, new List<Core.Domain.Meeting.Meeting>
@@ -50,11 +50,11 @@ public class MeetingDataProviderFixture : BaseFixture
             )
         });
 
-        MockMeetingUserSessionDb(_repository, new List<MeetingUserSession>
+        MockUserSessionDb(_repository, new List<MeetingUserSession>
         {
-            CreateMeetingUserSessionEvent(1, userId1, meetingId1),
-            CreateMeetingUserSessionEvent(2, userId2, meetingId2),
-            CreateMeetingUserSessionEvent(3, userId2, meetingId3)
+            CreateUserSessionEvent(1, userId1, meetingId1),
+            CreateUserSessionEvent(2, userId2, meetingId2),
+            CreateUserSessionEvent(3, userId2, meetingId3)
         });
 
         MockMeetingRecordDb(_repository, new List<MeetingRecord>
@@ -87,10 +87,10 @@ public class MeetingDataProviderFixture : BaseFixture
         var meetingId2 = Guid.NewGuid();
         var meetingId3 = Guid.NewGuid();
 
-        MockUserAccountDb(_repository, new List<UserAccount>
+        MockUserAccountsDb(_repository, new List<UserAccount>
         {
-            CreateUserAccountEvent(userId1),
-            CreateUserAccountEvent(userId2)
+            CreateUserAccountEvent(userId1, Guid.NewGuid()),
+            CreateUserAccountEvent(userId2, Guid.NewGuid())
         });
 
         MockMeetingDb(_repository, new List<Core.Domain.Meeting.Meeting>
@@ -118,11 +118,11 @@ public class MeetingDataProviderFixture : BaseFixture
             )
         });
 
-        MockMeetingUserSessionDb(_repository, new List<MeetingUserSession>
+        MockUserSessionDb(_repository, new List<MeetingUserSession>
         {
-            CreateMeetingUserSessionEvent(1, userId1, meetingId1),
-            CreateMeetingUserSessionEvent(2, userId2, meetingId2),
-            CreateMeetingUserSessionEvent(3, userId2, meetingId3)
+            CreateUserSessionEvent(1, userId1, meetingId1),
+            CreateUserSessionEvent(2, userId2, meetingId2),
+            CreateUserSessionEvent(3, userId2, meetingId3)
         });
 
         MockMeetingRecordDb(_repository, new List<MeetingRecord>

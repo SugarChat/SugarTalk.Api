@@ -68,11 +68,4 @@ public partial class MeetingDataProvider
             })
             .ToList();
     }
-
-    private static long CalculateMeetingDuration(long startDate, long endDate)
-    {
-        if (endDate <= 0 || startDate <= 0 || endDate <= startDate) return 0;
-
-        return endDate - startDate;
-    }
 }
