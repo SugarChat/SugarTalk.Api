@@ -8,9 +8,8 @@ namespace SugarTalk.Core.Services.Exceptions
 {
     public class MeetingUserSessionNotFoundException : Exception
     {
-        public MeetingUserSessionNotFoundException() : base("Meeting not found")
+        public MeetingUserSessionNotFoundException() : base("Meeting User Session not found")
         {
         }
     }
-
 }

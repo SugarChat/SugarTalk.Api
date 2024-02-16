@@ -151,12 +151,11 @@ public class MeetingUtil : TestUtil
     {
         return await Run<IMediator, KickOutMeetingByUserIdResponse>(async mediator =>
         {
-            return await mediator.SendAsync<KickOutMeetingByUserIdCommand, KickOutMeetingByUserIdResponse>(
-                                new KickOutMeetingByUserIdCommand
-                                {
-                                    KickOutUserId = kickOutUserId,
-                                    MeetingId = meetingId
-                                });
+            return await mediator.SendAsync<KickOutMeetingByUserIdCommand, KickOutMeetingByUserIdResponse>(new KickOutMeetingByUserIdCommand
+                   {
+                      KickOutUserId = kickOutUserId,
+                      MeetingId = meetingId
+                   });
         });
     }
 
@@ -186,8 +185,7 @@ public class MeetingUtil : TestUtil
             return await repo.FirstOrDefaultAsync<MeetingUserSession>(x => x.UserId == userId && x.MeetingId == meetingId);
         });
     }
-
-
+    
     public async Task<MeetingDto> JoinMeetingByUserAsync(UserAccount user, string meetingNumber, bool isMuted = false)
     {
         return await Run<IMediator, MeetingDto>(async (mediator) =>

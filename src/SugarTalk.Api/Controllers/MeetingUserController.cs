@@ -42,9 +42,9 @@ public class MeetingUserController : ControllerBase
     /// <returns></returns>
     [Route("session/master/verify"), HttpPost]
     [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(VerifyMeetingUserPermissionResponse))]
-    public async Task<IActionResult> VerifyMeetingUserPermissions(VerifyMeetingUserPermissionCommand command)
+    public async Task<IActionResult> VerifyMeetingUserPermissionsAsync(VerifyMeetingUserPermissionCommand command)
     {
-        var response = await _mediator.SendAsync<VerifyMeetingUserPermissionCommand, VerifyMeetingUserPermissionResponse>(command);
+        var response = await _mediator.SendAsync<VerifyMeetingUserPermissionCommand, VerifyMeetingUserPermissionResponse>(command).ConfigureAwait(false);
         return Ok(response);
     }
 
@@ -55,9 +55,9 @@ public class MeetingUserController : ControllerBase
     /// <returns></returns>
     [Route("session/master/kickout"), HttpPost]
     [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(KickOutMeetingByUserIdResponse))]
-    public async Task<IActionResult> KickOutMeeting(KickOutMeetingByUserIdCommand command)
+    public async Task<IActionResult> KickOutMeetingAsync(KickOutMeetingByUserIdCommand command)
     {
-        var response = await _mediator.SendAsync<KickOutMeetingByUserIdCommand, KickOutMeetingByUserIdResponse>(command);
+        var response = await _mediator.SendAsync<KickOutMeetingByUserIdCommand, KickOutMeetingByUserIdResponse>(command).ConfigureAwait(false);
         return Ok(response);
     }
 }

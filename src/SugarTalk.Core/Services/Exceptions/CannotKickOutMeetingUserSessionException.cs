@@ -10,7 +10,6 @@ namespace SugarTalk.Core.Services.Exceptions
     {
         public CannotKickOutMeetingUserSessionException() : base("The user cannot be kicked out of the meeting")
         {
-
         }
     }
 }
