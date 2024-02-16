@@ -23,7 +23,7 @@ namespace SugarTalk.Api.Authentication.Guest
                 {
                     if ((UserAccountIssuer)issuserInt == UserAccountIssuer.Guest)
                     {
-                        var identity = new ClaimsIdentity("Visitor");
+                        var identity = new ClaimsIdentity("Guest");
                         var claimPrincipal = new ClaimsPrincipal(identity);
                         var ticket = new AuthenticationTicket(claimPrincipal, new AuthenticationProperties { IsPersistent = false }, Scheme.Name);
                         return AuthenticateResult.Success(ticket);

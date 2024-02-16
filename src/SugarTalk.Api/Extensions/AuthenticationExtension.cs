@@ -32,14 +32,14 @@ public static class AuthenticationExtension
             .AddScheme<WiltechsAuthenticationOptions, WiltechsAuthenticationHandler>(
                 AuthenticationSchemeConstants.WiltechsAuthenticationScheme,
                 options => options.Authority = configuration["Authentication:Wiltechs:Authority"])
-            .AddScheme<GuestAuthenticationOptions, GuestAuthenticationHandler>(AuthenticationSchemeConstants.VisitorAuthenticationScheme, op => { });
+            .AddScheme<GuestAuthenticationOptions, GuestAuthenticationHandler>(AuthenticationSchemeConstants.GuestAuthenticationScheme, op => { });
 
         services.AddAuthorization(options =>
         {
             options.DefaultPolicy = new AuthorizationPolicyBuilder(
                 JwtBearerDefaults.AuthenticationScheme,
                 AuthenticationSchemeConstants.WiltechsAuthenticationScheme,
-                AuthenticationSchemeConstants.VisitorAuthenticationScheme).RequireAuthenticatedUser().Build();
+                AuthenticationSchemeConstants.GuestAuthenticationScheme).RequireAuthenticatedUser().Build();
         });
         
         services.AddScoped<ICurrentUser, CurrentUser>();

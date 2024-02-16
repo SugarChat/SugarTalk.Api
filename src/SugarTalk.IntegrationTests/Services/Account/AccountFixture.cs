@@ -253,7 +253,7 @@ public class AccountFixture : AccountFixtureBase
     [Theory]
     [InlineData(UserAccountIssuer.Self, HttpStatusCode.Unauthorized)]
     [InlineData(UserAccountIssuer.Guest, HttpStatusCode.OK)]
-    public async Task ShouldCreateUserAccountWhenVisitorLogin(UserAccountIssuer issuer, HttpStatusCode httpStatusCode)
+    public async Task ShouldCreateUserAccountWhenGuestLogin(UserAccountIssuer issuer, HttpStatusCode httpStatusCode)
     {
         await Run<IMediator, IRepository>(async (mediator, repository) =>
         {
