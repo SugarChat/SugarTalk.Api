@@ -15,7 +15,6 @@ public partial class MeetingService
 {
     public async Task<GetCurrentUserMeetingRecordResponse> GetCurrentUserMeetingRecordsAsync(GetCurrentUserMeetingRecordRequest request, CancellationToken cancellationToken)
     {
-
         var (total, items) = await _meetingDataProvider.GetMeetingRecordsByUserIdAsync(_currentUser.Id, request, cancellationToken).ConfigureAwait(false);
 
         var response = new GetCurrentUserMeetingRecordResponse

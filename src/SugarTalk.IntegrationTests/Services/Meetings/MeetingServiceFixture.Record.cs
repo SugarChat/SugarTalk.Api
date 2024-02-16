@@ -169,7 +169,7 @@ public partial class MeetingServiceFixture
         });
     }
 
-        [Fact]
+    [Fact]
     public async Task ShouldMeetingCreatorIsDifferent()
     {
         var otherUser = await _accountUtil.AddUserAccount("user1", "123456").ConfigureAwait(false);
@@ -202,7 +202,6 @@ public partial class MeetingServiceFixture
             CreatedDate = DateTimeOffset.Now.AddDays(-2),
             Url = "mock url1"
         };
-
 
         var meetingRecord2 = new MeetingRecord
         {
