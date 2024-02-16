@@ -72,6 +72,7 @@
         <EmbeddedResource Include="DbUp\Scripts_2024\Script0005_add_meeting_history_table.sql" />
         <EmbeddedResource Include="DbUp\Scripts_2024\Script0005_add_meeting_speak_detail_table.sql" />
         <EmbeddedResource Include="DbUp\Scripts_2024\Script0006_modify_meeting_speak_detail_table.sql" />
+        <EmbeddedResource Include="DbUp\Scripts_2024\Script0007_add_meeting_record_table.sql" />
     </ItemGroup>
     
     <ItemGroup>

@@ -24,4 +24,7 @@ public class MeetingRecord : IEntity
     
     [Column("created_date")]
     public DateTimeOffset CreatedDate { get; set; }
+
+    [Column("record_number"),StringLength(256)]
+    public string RecordNumber { get; set; }
 }

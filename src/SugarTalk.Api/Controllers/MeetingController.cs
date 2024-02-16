@@ -142,4 +142,12 @@ public class MeetingController : ControllerBase
     }
 
     #endregion
+    
+    [Route("record/video"), HttpPost]
+    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(StorageMeetingRecordVideoResponse))]
+    public async Task<IActionResult> StorageMeetingRecordVideoAsync(StorageMeetingRecordVideoCommand command)
+    {
+        var response = await _mediator.SendAsync<StorageMeetingRecordVideoCommand, StorageMeetingRecordVideoResponse>(command).ConfigureAwait(false);
+        return Ok(response);
+    }
 }

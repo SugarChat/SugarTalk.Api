@@ -1,3 +1,4 @@
+using System;
 using AutoMapper;
 using Newtonsoft.Json;
 using SugarTalk.Core.Domain.Meeting;
@@ -27,6 +28,11 @@ namespace SugarTalk.Core.Mapping
             CreateMap<MeetingUserSetting, MeetingUserSettingDto>().ReverseMap();
             CreateMap<MeetingHistory, MeetingHistoryDto>();
             CreateMap<MeetingSpeakDetail, MeetingSpeakDetailDto>().ReverseMap();
+            CreateMap<Meeting, MeetingRecord>()
+                .ForMember(dest=>dest.MeetingId,source=>source.MapFrom(x=>x.Id))
+                .ForMember(dest=>dest.Id,opt=>opt.Ignore())
+                .ForMember(dest=>dest.CreatedDate,opt=>opt.Ignore())
+                .ReverseMap();
         }
     }
 }

@@ -1,0 +1,1 @@
+﻿alter table `meeting_record` add column `record_number` varchar(252) NOT NULL
