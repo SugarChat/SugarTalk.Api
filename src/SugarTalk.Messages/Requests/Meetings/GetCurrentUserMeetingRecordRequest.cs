@@ -8,6 +8,14 @@ namespace SugarTalk.Messages.Requests.Meetings;
 
 public class GetCurrentUserMeetingRecordRequest : IRequest
 {
+    public string Keyword { get; set; }
+
+    public string MeetingTitle { get; set; }
+
+    public string MeetingNumber { get; set; }
+
+    public string Creator { get; set; }
+
     public PageSetting PageSetting { get; set; }
 }
 

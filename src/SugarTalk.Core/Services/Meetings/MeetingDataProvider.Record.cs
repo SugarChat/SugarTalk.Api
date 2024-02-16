@@ -49,8 +49,19 @@ public partial class MeetingDataProvider
                     User = user
                 })
             .Where(x => x.Session.UserId == currentUserId);
+
+        query = string.IsNullOrEmpty(request.Keyword) ? query : query.Where(x =>
+                x.Meeting.Title.Contains(request.Keyword) ||
+                x.Meeting.MeetingNumber.Contains(request.Keyword) ||
+                x.User.UserName.Contains(request.Keyword));
+
+        query = string.IsNullOrEmpty(request.MeetingTitle) ? query : query.Where(x => x.Meeting.Title.Contains(request.MeetingTitle));
+        query = string.IsNullOrEmpty(request.MeetingNumber) ? query : query.Where(x => x.Meeting.MeetingNumber.Contains(request.MeetingNumber));
+        query = string.IsNullOrEmpty(request.Creator) ? query : query.Where(x => x.User.UserName.Contains(request.Creator));
+
         var total = await query.CountAsync(cancellationToken).ConfigureAwait(false);
-        var joinResult = await query.OrderByDescending(x => x.Record.CreatedDate)
+        var joinResult = await query
+            .OrderByDescending(x => x.Record.CreatedDate)
             .Skip((request.PageSetting.Page - 1) * request.PageSetting.PageSize)
             .Take(request.PageSetting.PageSize)
             .ToListAsync(cancellationToken)
@@ -60,6 +71,7 @@ public partial class MeetingDataProvider
             {
                 MeetingId = x.Meeting.Id,
                 MeetingNumber = x.Meeting.MeetingNumber,
+                RecordNumber = x.Record.RecordNumber,
                 Title = x.Meeting.Title,
                 StartDate = x.Meeting.StartDate,
                 EndDate = x.Meeting.EndDate,

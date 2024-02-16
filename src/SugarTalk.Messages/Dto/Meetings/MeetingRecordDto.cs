@@ -8,6 +8,8 @@ public class MeetingRecordDto
 
     public string MeetingNumber { get; set; }
 
+    public string RecordNumber { get; set; }
+
     public string Title { get; set; }
 
     public long StartDate { get; set; }
