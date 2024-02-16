@@ -12,8 +12,8 @@ public class MeetingSpeakDetail : IEntity
     [Column("id", TypeName = "char(36)")]
     public Guid Id { get; set; }
     
-    [Column("room_number"), StringLength(48)]
-    public string RoomNumber { get; set; }
+    [Column("meeting_number"), StringLength(48)]
+    public string MeetingNumber { get; set; }
     
     [Column("meeting_record_id", TypeName = "char(36)")]
     public Guid MeetingRecordId { get; set; }

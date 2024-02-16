@@ -41,7 +41,7 @@ public partial class MeetingServiceFixture
                     FilePath = "test",
                     EgressId = "test",
                     Id = speakDetailId,
-                    RoomNumber = roomNumber,
+                    MeetingNumber = roomNumber,
                     SpeakStartTime = starTime,
                     UserId = currentUser.Id.Value,
                     MeetingRecordId = Guid.NewGuid()
@@ -55,7 +55,7 @@ public partial class MeetingServiceFixture
                 Id = isUpdate ? speakDetailId : null,
                 MeetingRecordId = Guid.NewGuid(),
                 TrackId = trackId,
-                RoomNumber = roomNumber,
+                MeetingNumber = roomNumber,
                 SpeakStartTime = isUpdate ? null : starTime,
                 SpeakEndTime = isUpdate ? endTime : null
             });
@@ -64,7 +64,7 @@ public partial class MeetingServiceFixture
             response.Data.UserId.ShouldBe(1);
             response.Data.TrackId.ShouldBe(trackId);
             response.Data.EgressId.ShouldNotBeNull();
-            response.Data.RoomNumber.ShouldBe(roomNumber);
+            response.Data.MeetingNumber.ShouldBe(roomNumber);
 
             var speakDetails = await repository.Query<MeetingSpeakDetail>().ToListAsync().ConfigureAwait(false);
             
@@ -72,7 +72,7 @@ public partial class MeetingServiceFixture
             speakDetails.First().UserId.ShouldBe(1);
             speakDetails.First().TrackId.ShouldBe(trackId);
             speakDetails.First().EgressId.ShouldNotBeNull();
-            speakDetails.First().RoomNumber.ShouldBe(roomNumber);
+            speakDetails.First().MeetingNumber.ShouldBe(roomNumber);
             
             if (isUpdate)
             {
@@ -120,7 +120,7 @@ public partial class MeetingServiceFixture
         var command = new RecordMeetingSpeakCommand
         {
             Id = string.IsNullOrEmpty(id) ? null : Guid.Parse(id),
-            RoomNumber = roomNumber,
+            MeetingNumber = roomNumber,
             SpeakStartTime = startTime,
             SpeakEndTime = endTime,
             TrackId = trackId,

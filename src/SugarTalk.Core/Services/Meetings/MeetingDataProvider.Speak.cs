@@ -12,7 +12,7 @@ namespace SugarTalk.Core.Services.Meetings;
 public partial interface IMeetingDataProvider
 {
     Task<List<MeetingSpeakDetail>> GetMeetingSpeakDetailsAsync(
-        Guid? id = null, string roomNumber = null, string trackId = null, Guid? recordId = null, string egressId = null,
+        Guid? id = null, string meetingNumber = null, string trackId = null, Guid? recordId = null, string egressId = null,
         int? userId = null, SpeakStatus? speakStatus = null, CancellationToken cancellationToken = default);
 
     Task AddMeetingSpeakDetailAsync(MeetingSpeakDetail speakDetail, bool forceSave = true, CancellationToken cancellationToken = default);
@@ -23,7 +23,7 @@ public partial interface IMeetingDataProvider
 public partial class MeetingDataProvider
 {
     public async Task<List<MeetingSpeakDetail>> GetMeetingSpeakDetailsAsync(
-        Guid? id = null, string roomNumber = null, string trackId = null, Guid? recordId = null, string egressId = null,
+        Guid? id = null, string meetingNumber = null, string trackId = null, Guid? recordId = null, string egressId = null,
         int? userId = null, SpeakStatus? speakStatus = null, CancellationToken cancellationToken = default)
     {
         var query = _repository.QueryNoTracking<MeetingSpeakDetail>();
@@ -31,8 +31,8 @@ public partial class MeetingDataProvider
         if (id.HasValue)
             query = query.Where(x => x.Id == id.Value);
         
-        if (!string.IsNullOrWhiteSpace(roomNumber))
-            query = query.Where(x => x.RoomNumber == roomNumber);
+        if (!string.IsNullOrWhiteSpace(meetingNumber))
+            query = query.Where(x => x.MeetingNumber == meetingNumber);
         
         if (!string.IsNullOrWhiteSpace(trackId))
             query = query.Where(x => x.TrackId == trackId);

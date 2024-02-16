@@ -46,8 +46,8 @@ public partial class MeetingService
         var egressResponse = await _liveKitClient.StartTrackCompositeEgressAsync(new StartTrackCompositeEgressRequestDto
         {
             Token = token,
-            RoomName = command.RoomNumber,
             AudioTrackId = command.TrackId,
+            RoomName = command.MeetingNumber,
             Files = new EgressEncodedFileOutPutDto
             {
                 Filepath = filePath,
@@ -64,8 +64,8 @@ public partial class MeetingService
             FilePath = filePath,
             TrackId = command.TrackId,
             UserId = _currentUser.Id.Value,
-            RoomNumber = command.RoomNumber,
             EgressId = egressResponse.EgressId,
+            MeetingNumber = command.MeetingNumber,
             MeetingRecordId = command.MeetingRecordId,
             SpeakStartTime = command.SpeakStartTime.Value
         };

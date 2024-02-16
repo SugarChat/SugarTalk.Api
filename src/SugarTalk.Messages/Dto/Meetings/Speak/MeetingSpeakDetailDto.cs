@@ -7,7 +7,7 @@ public class MeetingSpeakDetailDto
 {
     public Guid Id { get; set; }
     
-    public string RoomNumber { get; set; }
+    public string MeetingNumber { get; set; }
     
     public Guid MeetingRecordId { get; set; }
     

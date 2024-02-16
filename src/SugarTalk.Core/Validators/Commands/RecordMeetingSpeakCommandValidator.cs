@@ -9,7 +9,7 @@ public class RecordMeetingSpeakCommandValidator : FluentMessageValidator<RecordM
     public RecordMeetingSpeakCommandValidator()
     {
         RuleFor(x => x.TrackId).NotEmpty();
-        RuleFor(x => x.RoomNumber).NotEmpty();
+        RuleFor(x => x.MeetingNumber).NotEmpty();
         RuleFor(x => x.MeetingRecordId).NotEmpty();
 
         When(x => x.Id.HasValue, () =>
