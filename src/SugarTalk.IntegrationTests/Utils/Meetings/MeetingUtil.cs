@@ -18,6 +18,8 @@ using SugarTalk.Messages.Commands.Meetings;
 using SugarTalk.Core.Services.AntMediaServer;
 using SugarTalk.Messages.Dto.Users;
 using SugarTalk.Messages.Enums.Speech;
+using SugarTalk.Core.Services.Account;
+using SugarTalk.Messages.Requests.Meetings;
 
 namespace SugarTalk.IntegrationTests.Utils.Meetings;
 
@@ -29,7 +31,7 @@ public class MeetingUtil : TestUtil
 
     public async Task<ScheduleMeetingResponse> ScheduleMeeting(
         string title = null, string timezone = null, string securityCode = null, 
-        DateTimeOffset? startDate = null, DateTimeOffset? endDate = null, 
+        DateTimeOffset? startDate = null, DateTimeOffset? endDate = null, MeetingAppointmentType appointmentType = MeetingAppointmentType.Quick,
         MeetingRepeatType repeatType = MeetingRepeatType.None, bool isMuted = false, bool isRecorded = false)
     {
         return await Run<IMediator, ScheduleMeetingResponse>(async (mediator) =>
@@ -42,6 +44,7 @@ public class MeetingUtil : TestUtil
                     SecurityCode = securityCode,
                     StartDate = startDate ?? DateTimeOffset.Now,
                     EndDate = endDate ?? DateTimeOffset.Now.AddDays(2),
+                    AppointmentType = appointmentType,
                     RepeatType = repeatType,
                     IsMuted = isMuted,
                     IsRecorded = isRecorded
@@ -53,13 +56,7 @@ public class MeetingUtil : TestUtil
             var liveKitServerUtilService = Substitute.For<ILiveKitServerUtilService>();
 
             liveKitServerUtilService.CreateMeetingAsync(Arg.Any<string>(), Arg.Any<string>())
-                .Returns(new CreateMeetingFromLiveKitResponseDto
-                {
-                    RoomInfo = new LiveKitRoom
-                    {
-                        MeetingNumber = "123_livekit"
-                    }
-                });
+                .Returns(new CreateMeetingFromLiveKitResponseDto { RoomInfo = new LiveKitRoom() });
 
             liveKitServerUtilService.GenerateTokenForCreateMeeting(Arg.Any<UserAccountDto>(), Arg.Any<string>())
                 .Returns("token123");
@@ -137,6 +134,88 @@ public class MeetingUtil : TestUtil
                 CantoneseToneType = cantoneseToneType ?? CantoneseToneType.HiuGaaiNeural,
                 LastModifiedDate = lastModifiedDate ?? DateTimeOffset.Now
             }, CancellationToken.None);
+        });
+    }
+
+    public async Task EndMeeting(string meetingNumber)
+    {
+        await Run<IMediator>(async mediator =>
+        {
+            await mediator.SendAsync<EndMeetingCommand, EndMeetingResponse>(new EndMeetingCommand
+            {
+                MeetingNumber = meetingNumber
+            });
+        });
+    }
+
+    public async Task<KickOutMeetingByUserIdResponse> KickOutUserByUserIdAsync(Guid meetingId, int kickOutUserId, int MasterUserId, string meetingNumber)
+    {
+        return await Run<IMediator, KickOutMeetingByUserIdResponse>(async mediator =>
+        {
+            return await mediator.SendAsync<KickOutMeetingByUserIdCommand, KickOutMeetingByUserIdResponse>(
+                                new KickOutMeetingByUserIdCommand
+                                {
+                                    KickOutUserId = kickOutUserId,
+                                    MeetingId = meetingId
+                                });
+        });
+    }
+
+    public async Task<VerifyMeetingUserPermissionResponse> VerifyMeetingUserPermissionAsync(VerifyMeetingUserPermissionCommand verifyMeetingUserPermissionCommand)
+    {
+        return await Run<IMediator, VerifyMeetingUserPermissionResponse>(async mediator =>
+        {
+            return await mediator.SendAsync<VerifyMeetingUserPermissionCommand, VerifyMeetingUserPermissionResponse>(verifyMeetingUserPermissionCommand);
+        });
+    }
+
+    public async Task<GetMeetingByNumberResponse> GetMeetingAsync(string meetingNumber)
+    {
+        return await Run<IMediator, GetMeetingByNumberResponse>(async mediator =>
+        {
+            return await mediator.RequestAsync<GetMeetingByNumberRequest, GetMeetingByNumberResponse>(new GetMeetingByNumberRequest
+            {
+                MeetingNumber = meetingNumber
+            });
+        });
+    }
+
+    public async Task<MeetingUserSession> GetUserSessionAsync(int userId, Guid meetingId)
+    {
+        return await Run<IRepository, MeetingUserSession>(async repo =>
+        {
+            return await repo.FirstOrDefaultAsync<MeetingUserSession>(x => x.UserId == userId && x.MeetingId == meetingId);
+        });
+    }
+
+
+    public async Task<MeetingDto> JoinMeetingByUserAsync(UserAccount user, string meetingNumber, bool isMuted = false)
+    {
+        return await Run<IMediator, MeetingDto>(async (mediator) =>
+        {
+            var response = await mediator.SendAsync<JoinMeetingCommand, JoinMeetingResponse>(new JoinMeetingCommand
+            {
+                MeetingNumber = meetingNumber,
+                IsMuted = isMuted
+            });
+            return response.Data.Meeting;
+        }, async builder =>
+        {
+            var liveKitServerUtilService = Substitute.For<ILiveKitServerUtilService>();
+            var accountDataProvider = Substitute.For<IAccountDataProvider>();
+            accountDataProvider.GetUserAccountAsync(Arg.Any<int>()).Returns(new UserAccountDto()
+            {
+                Id = user.Id,
+                UserName = user.UserName,
+                Uuid = user.Uuid,
+                IsActive = user.IsActive,
+                Issuer = user.Issuer,
+                ThirdPartyUserId = user.ThirdPartyUserId,
+                CreatedOn = user.CreatedOn,
+                ModifiedOn = user.ModifiedOn,
+            });
+            builder.RegisterInstance(liveKitServerUtilService);
+            builder.RegisterInstance(accountDataProvider);
         });
     }
 
