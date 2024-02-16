@@ -34,8 +34,7 @@ public partial interface IMeetingDataProvider
     
     Task<MeetingUserSession> GetMeetingUserSessionByUserIdAsync(int userId, CancellationToken cancellationToken);
 
-    Task<List<MeetingUserSessionDto>> GetUserSessionsByMeetingIdAndOnlineTypeAsync(Guid meetingId,
-        CancellationToken cancellationToken);
+    Task<List<MeetingUserSessionDto>> GetUserSessionsByMeetingIdAndOnlineTypeAsync(Guid meetingId,CancellationToken cancellationToken);
 }
 
 public partial class MeetingDataProvider

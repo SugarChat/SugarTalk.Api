@@ -176,7 +176,7 @@ public partial class MeetingService
 
         
         var userSessionDtos = await _meetingDataProvider
-            .GetUserSessionsByMeetingIdAndOnlineTypeAsync(meeting.Id, cancellationToken);
+            .GetUserSessionsByMeetingIdAndOnlineTypeAsync(meeting.Id, cancellationToken).ConfigureAwait(false);
         var meetingDto = _mapper.Map<MeetingDto>(meeting);
         meetingDto.UserSessions = userSessionDtos;
 
