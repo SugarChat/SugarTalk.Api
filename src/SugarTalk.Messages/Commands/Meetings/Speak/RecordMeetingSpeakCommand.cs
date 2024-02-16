@@ -9,9 +9,11 @@ public class RecordMeetingSpeakCommand : ICommand
 {
     public Guid? Id { get; set; }
     
-    public Guid MeetingId { get; set; }
+    public string MeetingNumber { get; set; }
     
-    public Guid? MeetingSubId { get; set; }
+    public Guid MeetingRecordId { get; set; }
+    
+    public string TrackId { get; set; }
     
     public long? SpeakStartTime { get; set; }
     
