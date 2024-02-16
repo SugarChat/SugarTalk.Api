@@ -25,11 +25,9 @@ public partial interface IMeetingService
 
     Task<GetMeetingUserSessionByUserIdResponse> GetMeetingUserSessionByUserIdAsync(
         GetMeetingUserSessionByUserIdRequest request, CancellationToken cancellationToken);
-
     
     Task<VerifyMeetingUserPermissionResponse> VerifyMeetingUserPermissionAsync(
         VerifyMeetingUserPermissionCommand command, CancellationToken cancellationToken);
-
     
     Task<KickOutMeetingByUserIdResponse> KickOutMeetingAsync(
         KickOutMeetingByUserIdCommand command, CancellationToken cancellationToken);
@@ -128,8 +126,7 @@ public partial class MeetingService
             Data = userSessionDto
         };
     }
-
-
+    
     public async Task<VerifyMeetingUserPermissionResponse> VerifyMeetingUserPermissionAsync(
                VerifyMeetingUserPermissionCommand request, CancellationToken cancellationToken)
     {
@@ -150,22 +147,23 @@ public partial class MeetingService
         return new VerifyMeetingUserPermissionResponse() { Data = _mapper.Map<VerifyMeetingUserPermissionDto>(userSession) };
     }
 
-    public async Task<KickOutMeetingByUserIdResponse> KickOutMeetingAsync(KickOutMeetingByUserIdCommand command, CancellationToken cancellationToken)
+    public async Task<KickOutMeetingByUserIdResponse> KickOutMeetingAsync(KickOutMeetingByUserIdCommand command,
+        CancellationToken cancellationToken)
     {
         var meeting = await _meetingDataProvider
             .GetMeetingByIdAsync(command.MeetingId, cancellationToken).ConfigureAwait(false);
-        if (meeting == null)  throw new MeetingNotFoundException();
+        if (meeting == null) throw new MeetingNotFoundException();
         if (meeting.MeetingMasterUserId != _currentUser.Id) throw new UnauthorizedAccessException();
 
-        
         var masterUserSession = await _meetingDataProvider
-            .GetMeetingUserSessionByMeetingIdAndOnlineTypeAsync(meeting.Id, meeting.MeetingMasterUserId, cancellationToken).ConfigureAwait(false);
+            .GetMeetingUserSessionByMeetingIdAndOnlineTypeAsync(meeting.Id, meeting.MeetingMasterUserId,
+                cancellationToken).ConfigureAwait(false);
         if (masterUserSession is null) throw new MeetingUserSessionNotFoundException();
         if (masterUserSession.UserId != _currentUser.Id) throw new UnauthorizedAccessException();
 
-        
         var kickOutUserSession = await _meetingDataProvider
-            .GetMeetingUserSessionByMeetingIdAndOnlineTypeAsync(meeting.Id, command.KickOutUserId, cancellationToken).ConfigureAwait(false);
+            .GetMeetingUserSessionByMeetingIdAndOnlineTypeAsync(meeting.Id, command.KickOutUserId, cancellationToken)
+            .ConfigureAwait(false);
         if (kickOutUserSession is null) throw new MeetingUserSessionNotFoundException();
         if (kickOutUserSession.UserId == masterUserSession.UserId) throw new CannotKickOutMeetingUserSessionException();
 
@@ -173,7 +171,6 @@ public partial class MeetingService
         kickOutUserSession.Status = MeetingAttendeeStatus.Absent;
         await _meetingDataProvider
             .UpdateMeetingUserSessionAsync(kickOutUserSession, cancellationToken).ConfigureAwait(false);
-
         
         var userSessionDtos = await _meetingDataProvider
             .GetUserSessionsByMeetingIdAndOnlineTypeAsync(meeting.Id, cancellationToken).ConfigureAwait(false);
