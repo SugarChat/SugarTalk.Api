@@ -8,6 +8,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
+using Newtonsoft.Json;
 using SugarTalk.Core.Domain.Meeting;
 using SugarTalk.Core.Services.Exceptions;
 using SugarTalk.Messages.Dto.LiveKit;
@@ -27,11 +28,11 @@ namespace SugarTalk.Core.Services.Meetings
             var meetingRecord = await _meetingDataProvider.GetMeetingRecordByMeetingIdAsync(command.MeetingId, cancellationToken);
             if (meetingRecord == null) throw new MeetingRecordNotFoundException();
             if (meetingRecord.RecordType == MeetingRecordType.EndRecord) throw new MeetingRecordNotOpenException();
-
-            //TODO:response暂时不知道是不是Url
+            
             var response = await _liveKitClient.StopEgressAsync(new StopEgressRequestDto { EgressId = meetingRecord.EgressId },cancellationToken).ConfigureAwait(false);
+            dynamic data = JsonConvert.DeserializeObject(response);
             meetingRecord.RecordType = MeetingRecordType.EndRecord;
-            meetingRecord.Url = response;
+            meetingRecord.Url = data["file"]["location"];
             
             await _meetingDataProvider.UpdateMeetingRecordAsync(meetingRecord, cancellationToken).ConfigureAwait(false);
             return new StorageMeetingRecordVideoResponse();
