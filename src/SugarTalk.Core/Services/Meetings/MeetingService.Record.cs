@@ -1,4 +1,4 @@
-﻿using SugarTalk.Core.Ioc;
+using SugarTalk.Core.Ioc;
 using SugarTalk.Messages.Commands.Meetings;
 using SugarTalk.Messages.Dto.Meetings;
 using System;
@@ -18,11 +18,29 @@ namespace SugarTalk.Core.Services.Meetings
 {
     public partial interface IMeetingService : IScopedDependency
     {
+        Task<GetCurrentUserMeetingRecordResponse> GetCurrentUserMeetingRecordsAsync(GetCurrentUserMeetingRecordRequest request, CancellationToken cancellationToken);
+        
         Task<StorageMeetingRecordVideoResponse> StorageMeetingRecordVideoAsync(StorageMeetingRecordVideoCommand command, CancellationToken cancellationToken);
     }
 
     public partial class MeetingService
     {
+        public async Task<GetCurrentUserMeetingRecordResponse> GetCurrentUserMeetingRecordsAsync(GetCurrentUserMeetingRecordRequest request, CancellationToken cancellationToken)
+        {
+            var (total, items) = await _meetingDataProvider.GetMeetingRecordsByUserIdAsync(_currentUser.Id, request, cancellationToken).ConfigureAwait(false);
+
+            var response = new GetCurrentUserMeetingRecordResponse
+            {
+                Data = new GetCurrentUserMeetingRecordResponseDto
+                {
+                    Count = total,
+                    Records = items
+                }
+            };
+
+            return response;
+        }
+        
         public async Task<StorageMeetingRecordVideoResponse> StorageMeetingRecordVideoAsync(StorageMeetingRecordVideoCommand command, CancellationToken cancellationToken)
         {
             var meetingRecord = await _meetingDataProvider.GetMeetingRecordByMeetingIdAsync(command.MeetingId, cancellationToken);

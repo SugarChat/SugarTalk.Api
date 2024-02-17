@@ -221,7 +221,16 @@ public class MeetingUtil : TestUtil
         });
     }
 
-    public async Task<MeetingRecord> ScheduleMeetingRecordAsync(MeetingDto meetingDto,string egressId=null,string url=null)
+    public async Task AddMeetingRecord(MeetingRecord record)
+    {
+        await RunWithUnitOfWork<IRepository>(async repository =>
+        {
+            await repository.InsertAsync(record).ConfigureAwait(false);
+        });
+    }
+
+    public async Task<MeetingRecord> ScheduleMeetingRecordAsync(MeetingDto meetingDto, string egressId = null,
+        string url = null)
     {
         return new MeetingRecord()
         {
@@ -235,17 +244,18 @@ public class MeetingUtil : TestUtil
 
     public async Task AddMeetingRecordAsync(MeetingRecord meetingRecord)
     {
-         await RunWithUnitOfWork<IRepository>(async repository =>
-         {
-            await repository.InsertAsync(meetingRecord,CancellationToken.None);
-         });
+        await RunWithUnitOfWork<IRepository>(async repository =>
+        {
+            await repository.InsertAsync(meetingRecord, CancellationToken.None);
+        });
     }
 
     public async Task<List<MeetingRecord>> GetMeetingRecordsByMeetingIdAsync(Guid meetingId)
     {
         return await Run<IRepository, List<MeetingRecord>>(async repository =>
         {
-            return await repository.QueryNoTracking<MeetingRecord>().Where(x => x.MeetingId == meetingId).ToListAsync();
+            return await repository.QueryNoTracking<MeetingRecord>().Where(x => x.MeetingId == meetingId)
+                .ToListAsync();
         });
     }
 
