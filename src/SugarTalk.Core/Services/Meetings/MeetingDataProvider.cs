@@ -72,6 +72,8 @@ namespace SugarTalk.Core.Services.Meetings
         Task<List<MeetingSubMeeting>> GetMeetingSubMeetingsAsync(Guid meetingId, CancellationToken cancellationToken);
         
         Task<(int Count, List<AppointmentMeetingDto> Records)> GetAppointmentMeetingsByUserIdAsync(GetAppointmentMeetingsRequest request, CancellationToken cancellationToken);
+
+        Task CompleteMeetingByMeetingNumberAsync(string meetingNumber, CancellationToken cancellationToken);
     }
     
     public partial class MeetingDataProvider : IMeetingDataProvider
@@ -450,6 +452,13 @@ namespace SugarTalk.Core.Services.Meetings
             }
 
             return updateMeeting;
+        }
+
+        public async Task CompleteMeetingByMeetingNumberAsync(string meetingNumber, CancellationToken cancellationToken)
+        {
+            var meeting = await _repository.Query<Meeting>().SingleAsync(e =>
+                e.MeetingNumber == meetingNumber && e.Status == MeetingStatus.InProgress, cancellationToken);
+            meeting.Status = MeetingStatus.Completed;
         }
     }
 }

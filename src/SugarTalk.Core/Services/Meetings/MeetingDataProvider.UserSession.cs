@@ -33,6 +33,12 @@ public partial interface IMeetingDataProvider
     Task<List<MeetingUserSession>> GetMeetingUserSessionsAsync(List<int> ids, CancellationToken cancellationToken);
     
     Task<MeetingUserSession> GetMeetingUserSessionByUserIdAsync(int userId, CancellationToken cancellationToken);
+    
+    Task UpdateMeetingUserSessionsOnlineStatusAsync(List<MeetingUserSession> meetingUserSessions,
+        MeetingUserSessionOnlineType onlineType, CancellationToken cancellationToken);
+
+    Task<List<MeetingUserSession>> GetOnlineMeetingUserSessionsAsync(List<int> ids,
+        CancellationToken cancellationToken);
 }
 
 public partial class MeetingDataProvider
@@ -100,5 +106,28 @@ public partial class MeetingDataProvider
         if (meetingUserSessions is not { Count: > 0 }) return;
 
         await _repository.DeleteAllAsync(meetingUserSessions, cancellationToken).ConfigureAwait(false);
+    }
+
+    public async Task UpdateMeetingUserSessionsOnlineStatusAsync(List<MeetingUserSession> meetingUserSessions,
+        MeetingUserSessionOnlineType onlineType, CancellationToken cancellationToken)
+    {
+        if (meetingUserSessions is { Count: > 0 })
+        {
+            meetingUserSessions.ForEach(e => e.OnlineType = onlineType);
+            await _repository.UpdateAllAsync(meetingUserSessions, cancellationToken);
+        }
+    }
+
+    public async Task<List<MeetingUserSession>> GetOnlineMeetingUserSessionsAsync(List<int> ids,
+        CancellationToken cancellationToken)
+    {
+        if (ids is { Count: > 0 })
+        {
+            return await _repository.Query<MeetingUserSession>()
+                .Where(e => ids.Contains(e.Id) && e.OnlineType == MeetingUserSessionOnlineType.Online)
+                .ToListAsync(cancellationToken);
+        }
+
+        return default;
     }
 }

@@ -143,6 +143,12 @@ namespace SugarTalk.Core.Services.Meetings
                     RepeatType = command.RepeatType,
                     RepeatUntilDate = command.UtilDate
                 }, cancellationToken).ConfigureAwait(false);
+
+                meeting.Status = MeetingStatus.Pending;
+            }
+            else if(command.AppointmentType == MeetingAppointmentType.Quick)
+            {
+                meeting.Status = MeetingStatus.InProgress;
             }
 
             await _meetingDataProvider.PersistMeetingAsync(meeting, cancellationToken).ConfigureAwait(false);
@@ -534,7 +540,8 @@ namespace SugarTalk.Core.Services.Meetings
                 MeetingId = meetingId,
                 Status = MeetingAttendeeStatus.Present,
                 FirstJoinTime = _clock.Now.ToUnixTimeSeconds(),
-                TotalJoinCount = 1
+                TotalJoinCount = 1,
+                OnlineType = MeetingUserSessionOnlineType.Online
             };
         }
         

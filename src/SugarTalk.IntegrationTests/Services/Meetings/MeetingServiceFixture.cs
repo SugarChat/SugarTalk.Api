@@ -170,16 +170,23 @@ public partial class MeetingServiceFixture : MeetingFixtureBase
 
         var meeting = await _meetingUtil.GetMeeting(scheduleMeetingResponse.Data.MeetingNumber);
 
-        await _meetingUtil.JoinMeeting(meeting.MeetingNumber);
+        var meetingDto = await _meetingUtil.JoinMeeting(meeting.MeetingNumber);
         
         await Run<IMediator, IRepository>(async (mediator, repository) =>
         {
             var beforeUserSession = await repository.QueryNoTracking<MeetingUserSession>()
                 .Where(x => x.MeetingId == meeting.Id).ToListAsync();
 
-            beforeUserSession.Count.ShouldBe(1);
-
-            //Todo: 需要补充会议中的用户状态   
+            beforeUserSession.Count.ShouldBe(meetingDto.UserSessionCount);
+            meeting.Status.ShouldBe(MeetingStatus.InProgress);
+            meetingDto.UserSessions.ForEach(e => e.OnlineType.ShouldBe(MeetingUserSessionOnlineType.Online));
+            beforeUserSession.ForEach(e => e.OnlineType.ShouldBe(MeetingUserSessionOnlineType.Online));
+            await _meetingUtil.EndMeeting(meeting.MeetingNumber);
+            var afterUserSession = await repository.QueryNoTracking<MeetingUserSession>()
+                .Where(x => x.MeetingId == meeting.Id).ToListAsync();
+            afterUserSession.ForEach(e => e.OnlineType.ShouldBe(MeetingUserSessionOnlineType.OutMeeting));
+            var afterMeeting = await _meetingUtil.GetMeeting(scheduleMeetingResponse.Data.MeetingNumber);
+            afterMeeting.Status.ShouldBe(MeetingStatus.Completed);
         });
     }
     
