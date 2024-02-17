@@ -49,6 +49,7 @@ namespace SugarTalk.Core.Services.Meetings
             if (meetingRecord.RecordType == MeetingRecordType.EndRecord) throw new MeetingRecordNotOpenException();
             
             var response = await _liveKitClient.StopEgressAsync(new StopEgressRequestDto { EgressId = meetingRecord.EgressId },cancellationToken).ConfigureAwait(false);
+            if (response == null) throw new MeetingRecordUrlNotFoundException();
             dynamic data = JsonConvert.DeserializeObject(response);
             meetingRecord.RecordType = MeetingRecordType.EndRecord;
             meetingRecord.Url = data["file"]["location"];
