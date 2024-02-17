@@ -457,7 +457,9 @@ namespace SugarTalk.Core.Services.Meetings
         public async Task CompleteMeetingByMeetingNumberAsync(string meetingNumber, CancellationToken cancellationToken)
         {
             var meeting = await _repository.Query<Meeting>().SingleAsync(e =>
-                e.MeetingNumber == meetingNumber && e.Status == MeetingStatus.InProgress, cancellationToken);
+                    e.MeetingNumber == meetingNumber && e.Status == MeetingStatus.InProgress, cancellationToken)
+                .ConfigureAwait(false);
+            
             meeting.Status = MeetingStatus.Completed;
         }
     }

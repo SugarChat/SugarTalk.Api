@@ -114,7 +114,7 @@ public partial class MeetingDataProvider
         if (meetingUserSessions is { Count: > 0 })
         {
             meetingUserSessions.ForEach(e => e.OnlineType = onlineType);
-            await _repository.UpdateAllAsync(meetingUserSessions, cancellationToken);
+            await _repository.UpdateAllAsync(meetingUserSessions, cancellationToken).ConfigureAwait(false);
         }
     }
 
@@ -125,7 +125,7 @@ public partial class MeetingDataProvider
         {
             return await _repository.Query<MeetingUserSession>()
                 .Where(e => ids.Contains(e.Id) && e.OnlineType == MeetingUserSessionOnlineType.Online)
-                .ToListAsync(cancellationToken);
+                .ToListAsync(cancellationToken).ConfigureAwait(false);
         }
 
         return default;

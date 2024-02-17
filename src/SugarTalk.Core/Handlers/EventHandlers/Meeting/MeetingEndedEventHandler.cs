@@ -20,11 +20,11 @@ public class MeetingEndedEventHandler : IEventHandler<MeetingEndedEvent>
     public async Task Handle(IReceiveContext<MeetingEndedEvent> context, CancellationToken cancellationToken)
     {
         await _meetingDataProvider.CompleteMeetingByMeetingNumberAsync(context.Message.MeetingNumber,
-            cancellationToken);
+            cancellationToken).ConfigureAwait(false);
         var sessions =
             await _meetingDataProvider.GetOnlineMeetingUserSessionsAsync(context.Message.MeetingUserSessionIds,
-                cancellationToken);
+                cancellationToken).ConfigureAwait(false);
         await _meetingDataProvider.UpdateMeetingUserSessionsOnlineStatusAsync(sessions,
-            MeetingUserSessionOnlineType.OutMeeting, cancellationToken);
+            MeetingUserSessionOnlineType.OutMeeting, cancellationToken).ConfigureAwait(false);
     }
 }
