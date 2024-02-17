@@ -146,7 +146,7 @@ namespace SugarTalk.Core.Services.Meetings
 
                 meeting.Status = MeetingStatus.Pending;
             }
-            else if(command.AppointmentType == MeetingAppointmentType.Quick)
+            else if (command.AppointmentType == MeetingAppointmentType.Quick)
             {
                 meeting.Status = MeetingStatus.InProgress;
             }
