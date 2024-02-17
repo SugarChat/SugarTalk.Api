@@ -20,6 +20,5 @@ public class MeetingUserSessionDto
     public bool IsSharingScreen { get; set; }
     
     public bool IsMeetingMaster { get; set; }
-    
     public MeetingUserSessionOnlineType OnlineType { get; set; }
 }
