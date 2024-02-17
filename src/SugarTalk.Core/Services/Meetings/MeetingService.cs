@@ -81,6 +81,7 @@ namespace SugarTalk.Core.Services.Meetings
         private readonly IUnitOfWork _unitOfWork;
         private readonly ICurrentUser _currentUser;
         private readonly ISpeechClient _speechClient;
+        private readonly ILiveKitClient _liveKitClient;
         private readonly IAccountDataProvider _accountDataProvider;
         private readonly IMeetingDataProvider _meetingDataProvider;
         private readonly ILiveKitServerUtilService _liveKitServerUtilService;
@@ -94,6 +95,7 @@ namespace SugarTalk.Core.Services.Meetings
             IUnitOfWork unitOfWork,
             ICurrentUser currentUser,
             ISpeechClient speechClient,
+            ILiveKitClient liveKitClient,
             IMeetingDataProvider meetingDataProvider,
             IAccountDataProvider accountDataProvider,
             LiveKitServerSetting liveKitServerSetting,
@@ -105,6 +107,7 @@ namespace SugarTalk.Core.Services.Meetings
             _unitOfWork = unitOfWork;
             _currentUser = currentUser;
             _speechClient = speechClient;
+            _liveKitClient = liveKitClient;
             _accountDataProvider = accountDataProvider;
             _meetingDataProvider = meetingDataProvider;
             _liveKitServerSetting = liveKitServerSetting;
@@ -235,7 +238,7 @@ namespace SugarTalk.Core.Services.Meetings
             if (userSession == null) return new MeetingOutedEvent();
 
             // TODO: 更新用户退出会议时间, 会议时长
-
+            userSession.OnlineType = MeetingUserSessionOnlineType.OutMeeting;
             return new MeetingOutedEvent();
         }
         
@@ -269,6 +272,12 @@ namespace SugarTalk.Core.Services.Meetings
             {
                 userSession = GenerateNewUserSessionFromUser(user, meeting.Id, isMuted ?? false);
 
+                //如果是会议创建人，设置为会议主持人
+                if (userSession.UserId == meeting.MeetingMasterUserId)
+                {
+                    userSession.IsMeetingMaster = true;
+                }
+
                 await _meetingDataProvider.AddMeetingUserSessionAsync(userSession, cancellationToken).ConfigureAwait(false);
 
                 var updateUserSession = _mapper.Map<MeetingUserSessionDto>(userSession);
@@ -284,6 +293,13 @@ namespace SugarTalk.Core.Services.Meetings
                 userSession.Status = MeetingAttendeeStatus.Present;
                 userSession.FirstJoinTime = _clock.Now.ToUnixTimeSeconds();
                 userSession.TotalJoinCount += 1;
+
+                userSession.OnlineType = MeetingUserSessionOnlineType.Online;
+                //如果是会议创建人，设置为会议主持人
+                if (userSession.UserId == meeting.MeetingMasterUserId)
+                {
+                    userSession.IsMeetingMaster = true;
+                }
 
                 await _meetingDataProvider.UpdateMeetingUserSessionAsync(userSession, cancellationToken).ConfigureAwait(false);
 

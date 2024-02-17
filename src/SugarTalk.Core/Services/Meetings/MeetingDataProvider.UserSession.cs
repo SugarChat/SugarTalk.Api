@@ -64,7 +64,7 @@ public partial class MeetingDataProvider
     
     public async Task<List<MeetingUserSessionDto>> GetUserSessionsByMeetingIdAsync(Guid meetingId, CancellationToken cancellationToken)
     {
-        var userSessions = await _repository.QueryNoTracking<MeetingUserSession>(x => x.MeetingId == meetingId)
+        var userSessions = await _repository.QueryNoTracking<MeetingUserSession>(x => x.MeetingId == meetingId && x.OnlineType == MeetingUserSessionOnlineType.Online)
             .ToListAsync(cancellationToken).ConfigureAwait(false);
         
         return _mapper.Map<List<MeetingUserSessionDto>>(userSessions);
