@@ -151,15 +151,17 @@ public class MeetingUtil : TestUtil
         });
     }
 
-    public async Task<KickOutMeetingByUserIdResponse> KickOutUserByUserIdAsync(Guid meetingId, int kickOutUserId, int MasterUserId, string meetingNumber)
+    public async Task<KickOutMeetingByUserIdResponse> KickOutUserByUserIdAsync(Guid meetingId, int kickOutUserId,
+        int MasterUserId, string meetingNumber)
     {
         return await Run<IMediator, KickOutMeetingByUserIdResponse>(async mediator =>
         {
-            return await mediator.SendAsync<KickOutMeetingByUserIdCommand, KickOutMeetingByUserIdResponse>(new KickOutMeetingByUserIdCommand
-                   {
-                      KickOutUserId = kickOutUserId,
-                      MeetingId = meetingId
-                   });
+            return await mediator.SendAsync<KickOutMeetingByUserIdCommand, KickOutMeetingByUserIdResponse>(
+                new KickOutMeetingByUserIdCommand
+                {
+                    KickOutUserId = kickOutUserId,
+                    MeetingId = meetingId
+                });
         }, builder =>
         {
             var services = Substitute.For<ILiveKitServerUtilService>();
