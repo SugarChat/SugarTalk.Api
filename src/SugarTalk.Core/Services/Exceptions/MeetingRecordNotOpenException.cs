@@ -6,6 +6,5 @@ public class MeetingRecordNotOpenException:Exception
 {
     public MeetingRecordNotOpenException():base("The meeting record not opened")
     {
-        
     }
 }

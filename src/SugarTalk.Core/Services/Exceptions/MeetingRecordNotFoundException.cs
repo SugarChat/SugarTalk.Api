@@ -6,6 +6,5 @@ public class MeetingRecordNotFoundException:Exception
 {
     public MeetingRecordNotFoundException() : base("Meeting Record not found")
     {
-            
     }
 }

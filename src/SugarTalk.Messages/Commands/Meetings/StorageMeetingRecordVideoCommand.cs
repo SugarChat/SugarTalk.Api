@@ -15,7 +15,5 @@ namespace SugarTalk.Messages.Commands.Meetings
     }
     public class StorageMeetingRecordVideoResponse : SugarTalkResponse
     {
-
     }
-
 }
