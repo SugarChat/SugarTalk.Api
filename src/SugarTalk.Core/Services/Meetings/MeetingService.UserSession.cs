@@ -144,6 +144,7 @@ public partial class MeetingService
             userSessionDto.IsMeetingMaster = true;
             return new VerifyMeetingUserPermissionResponse() { Data = userSessionDto};
         }
+        
         return new VerifyMeetingUserPermissionResponse() { Data = _mapper.Map<VerifyMeetingUserPermissionDto>(userSession) };
     }
 
@@ -158,8 +159,7 @@ public partial class MeetingService
         var masterUserSession = await _meetingDataProvider
             .GetMeetingUserSessionByMeetingIdAndOnlineTypeAsync(meeting.Id, meeting.MeetingMasterUserId,
                 cancellationToken).ConfigureAwait(false);
-        if (masterUserSession is null) throw new MeetingUserSessionNotFoundException();
-        if (masterUserSession.UserId != _currentUser.Id) throw new UnauthorizedAccessException();
+        if (masterUserSession?.UserId != _currentUser.Id) throw new UnauthorizedAccessException();
 
         var kickOutUserSession = await _meetingDataProvider
             .GetMeetingUserSessionByMeetingIdAndOnlineTypeAsync(meeting.Id, command.KickOutUserId, cancellationToken)

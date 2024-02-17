@@ -13,7 +13,6 @@ namespace SugarTalk.Messages.Enums.Meeting
         KickOutMeeting = 2,
 
         [Description("超时退出")]
-        TimeOutMeeting = 3,
-
+        TimeOutMeeting = 3
     }
 }

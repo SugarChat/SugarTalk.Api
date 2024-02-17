@@ -6,7 +6,9 @@ using Mediator.Net;
 using System.Threading;
 using SugarTalk.Core.Data;
 using System.Threading.Tasks;
+using LiveKit_CSharp.Services.Meeting;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using SugarTalk.Core.Domain.Account;
 using SugarTalk.Core.Domain.Meeting;
 using SugarTalk.Messages.Dto.LiveKit;
@@ -18,6 +20,7 @@ using SugarTalk.Core.Services.AntMediaServer;
 using SugarTalk.Messages.Dto.Users;
 using SugarTalk.Messages.Enums.Speech;
 using SugarTalk.Core.Services.Account;
+using SugarTalk.Core.Settings.LiveKit;
 using SugarTalk.Messages.Requests.Meetings;
 
 namespace SugarTalk.IntegrationTests.Utils.Meetings;

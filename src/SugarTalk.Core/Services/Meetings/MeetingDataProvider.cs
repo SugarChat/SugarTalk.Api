@@ -72,8 +72,9 @@ namespace SugarTalk.Core.Services.Meetings
         Task<List<MeetingSubMeeting>> GetMeetingSubMeetingsAsync(Guid meetingId, CancellationToken cancellationToken);
         
         Task<(int Count, List<AppointmentMeetingDto> Records)> GetAppointmentMeetingsByUserIdAsync(GetAppointmentMeetingsRequest request, CancellationToken cancellationToken);
-        
-        Task<MeetingUserSession> GetMeetingUserSessionByMeetingIdAndOnlineTypeAsync(Guid meetingId, int userId, CancellationToken cancellationToken);
+
+        Task<MeetingUserSession> GetMeetingUserSessionByMeetingIdAndOnlineTypeAsync(Guid meetingId, int userId,
+            CancellationToken cancellationToken);
     }
     
     public partial class MeetingDataProvider : IMeetingDataProvider

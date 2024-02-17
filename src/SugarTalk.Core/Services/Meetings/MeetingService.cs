@@ -280,10 +280,6 @@ namespace SugarTalk.Core.Services.Meetings
                 var updateUserSession = _mapper.Map<MeetingUserSessionDto>(userSession);
                 updateUserSession.UserName = user.UserName;
 
-                if (userSession.UserId == meeting.MeetingMasterUserId)
-                {
-                    updateUserSession.IsMeetingMaster = true;
-                }
                 meeting.AddUserSession(updateUserSession);
 
             }
