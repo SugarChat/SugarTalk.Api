@@ -1,4 +1,3 @@
-using System;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
@@ -32,39 +31,24 @@ namespace SugarTalk.Core.Services.Account
         private readonly IMapper _mapper;
         private readonly ITokenProvider _tokenProvider;
         private readonly IIdentityService _identityService;
-        private readonly IHttpHeaderInfoProvider _headerInfoProvider;
+        private readonly IHttpContextAccessor _httpContextAccessor;
         
         private readonly IAccountDataProvider _accountDataProvider;
 
-        public AccountService(IMapper mapper, IIdentityService identityService, IHttpHeaderInfoProvider headerInfoProvider, IAccountDataProvider accountDataProvider, ITokenProvider tokenProvider)
+        public AccountService(IMapper mapper, IIdentityService identityService, IHttpContextAccessor httpContextAccessor, IAccountDataProvider accountDataProvider, ITokenProvider tokenProvider)
         {
             _mapper = mapper;
             _tokenProvider = tokenProvider;
             _identityService = identityService;
             _accountDataProvider = accountDataProvider;
-            _headerInfoProvider = headerInfoProvider;
+            _httpContextAccessor = httpContextAccessor;
         }
         
         public async Task<LoginResponse> LoginAsync(LoginRequest request, CancellationToken cancellationToken)
         {
-            bool canLogin = false;
-            UserAccountDto account = null;
-
-            if (_headerInfoProvider.GetHttpHeaderInfo().Issuer != null && _headerInfoProvider.GetHttpHeaderInfo().Issuer == UserAccountIssuer.Guest)
-            {
-                var accountFromDb = await _accountDataProvider.CreateUserAccountAsync(Guid.NewGuid().ToString(),
-                    string.Empty,
-                    authType: UserAccountIssuer.Guest,
-                    cancellationToken: cancellationToken).ConfigureAwait(false);
-                account = _mapper.Map<UserAccountDto>(accountFromDb);
-                canLogin = true;
-            }
-            else
-            {
-                (canLogin, account) = await _accountDataProvider
-                    .AuthenticateAsync(request.UserName, request.Password, cancellationToken).ConfigureAwait(false);
-            }
-
+            var (canLogin, account) = await _accountDataProvider
+                .AuthenticateAsync(request.UserName, request.Password, cancellationToken).ConfigureAwait(false);
+            
             Log.Information("canLogin:{canLogin}, account:{account}", canLogin, account);
 
             if (!canLogin)
@@ -91,7 +75,7 @@ namespace SugarTalk.Core.Services.Account
             if (userAccount != null) return userAccount;
 
             var account = await _accountDataProvider
-                .CreateUserAccountAsync(userName, "123abc", userId, issuer, cancellationToken: cancellationToken).ConfigureAwait(false);
+                .CreateUserAccountAsync(userName, "123abc", userId, issuer, cancellationToken).ConfigureAwait(false);
 
             return _mapper.Map<UserAccountDto>(account);
         }

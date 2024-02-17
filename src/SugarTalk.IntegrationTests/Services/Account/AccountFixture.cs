@@ -2,21 +2,17 @@ using System;
 using System.Collections.Generic;
 using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
-using System.Net;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using Autofac;
 using Mediator.Net;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
-using NSubstitute;
 using Shouldly;
 using SugarTalk.Core.Data;
 using SugarTalk.Core.Domain.Account;
 using SugarTalk.Core.Domain.Account.Exceptions;
 using SugarTalk.Core.Extensions;
-using SugarTalk.Core.Services;
 using SugarTalk.Core.Services.Account;
 using SugarTalk.Core.Settings.Authentication;
 using SugarTalk.IntegrationTests.TestBaseClasses;
@@ -248,32 +244,5 @@ public class AccountFixture : AccountFixtureBase
         
         await RunWithUnitOfWork<IRepository>(async repository => 
             await repository.UpdateAsync(userAccount).ConfigureAwait(false));
-    }
-
-    [Theory]
-    [InlineData(UserAccountIssuer.Self, HttpStatusCode.Unauthorized)]
-    [InlineData(UserAccountIssuer.Guest, HttpStatusCode.OK)]
-    public async Task ShouldCreateUserAccountWhenGuestLogin(UserAccountIssuer issuer, HttpStatusCode httpStatusCode)
-    {
-        await Run<IMediator, IRepository>(async (mediator, repository) =>
-        {
-            var response = await mediator.RequestAsync<LoginRequest, LoginResponse>(new LoginRequest
-            {
-                UserName = Guid.NewGuid().ToString(),
-                Password = Guid.NewGuid().ToString()
-            });
-            response.Code.ShouldBe(httpStatusCode);
-
-            if (httpStatusCode == HttpStatusCode.OK)
-            {
-                response.Data.ShouldNotBeNull();
-                await repository.SingleOrDefaultAsync<UserAccount>(x => x.Issuer == UserAccountIssuer.Guest).ShouldNotBeNull();
-            }
-        }, builder =>
-        {
-            var httpHeaderInfoProvider = Substitute.For<IHttpHeaderInfoProvider>();
-            httpHeaderInfoProvider.GetHttpHeaderInfo().Issuer.Returns(issuer);
-            builder.RegisterInstance(httpHeaderInfoProvider);
-        });
     }
 }
