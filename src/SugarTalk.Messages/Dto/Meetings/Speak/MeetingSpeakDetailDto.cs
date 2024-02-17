@@ -7,11 +7,11 @@ public class MeetingSpeakDetailDto
 {
     public Guid Id { get; set; }
     
-    public Guid MeetingId { get; set; }
+    public string MeetingNumber { get; set; }
     
-    public Guid? MeetingSubId { get; set; }
+    public Guid MeetingRecordId { get; set; }
     
-    public Guid? MeetingRecordId { get; set; }
+    public string TrackId { get; set; }
     
     public int UserId { get; set; }
     
@@ -20,6 +20,10 @@ public class MeetingSpeakDetailDto
     public long? SpeakEndTime { get; set; }
     
     public SpeakStatus SpeakStatus { get; set; }
+    
+    public string EgressId { get; set; }
+    
+    public string FilePath { get; set; }
     
     public string SpeakContent { get; set; }
     

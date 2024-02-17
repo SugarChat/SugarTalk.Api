@@ -81,6 +81,7 @@ namespace SugarTalk.Core.Services.Meetings
         private readonly IUnitOfWork _unitOfWork;
         private readonly ICurrentUser _currentUser;
         private readonly ISpeechClient _speechClient;
+        private readonly ILiveKitClient _liveKitClient;
         private readonly IAccountDataProvider _accountDataProvider;
         private readonly IMeetingDataProvider _meetingDataProvider;
         private readonly ILiveKitServerUtilService _liveKitServerUtilService;
@@ -94,6 +95,7 @@ namespace SugarTalk.Core.Services.Meetings
             IUnitOfWork unitOfWork,
             ICurrentUser currentUser,
             ISpeechClient speechClient,
+            ILiveKitClient liveKitClient,
             IMeetingDataProvider meetingDataProvider,
             IAccountDataProvider accountDataProvider,
             LiveKitServerSetting liveKitServerSetting,
@@ -105,6 +107,7 @@ namespace SugarTalk.Core.Services.Meetings
             _unitOfWork = unitOfWork;
             _currentUser = currentUser;
             _speechClient = speechClient;
+            _liveKitClient = liveKitClient;
             _accountDataProvider = accountDataProvider;
             _meetingDataProvider = meetingDataProvider;
             _liveKitServerSetting = liveKitServerSetting;

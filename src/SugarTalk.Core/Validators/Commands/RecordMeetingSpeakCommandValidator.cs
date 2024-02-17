@@ -8,8 +8,10 @@ public class RecordMeetingSpeakCommandValidator : FluentMessageValidator<RecordM
 {
     public RecordMeetingSpeakCommandValidator()
     {
-        RuleFor(x => x.MeetingId).NotEmpty();
-        
+        RuleFor(x => x.TrackId).NotEmpty();
+        RuleFor(x => x.MeetingNumber).NotEmpty();
+        RuleFor(x => x.MeetingRecordId).NotEmpty();
+
         When(x => x.Id.HasValue, () =>
         {
             RuleFor(x => x.SpeakEndTime).NotNull();
