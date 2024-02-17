@@ -44,17 +44,17 @@ namespace SugarTalk.Core.Services.Meetings
         
         public async Task<StorageMeetingRecordVideoResponse> StorageMeetingRecordVideoAsync(StorageMeetingRecordVideoCommand command, CancellationToken cancellationToken)
         {
-            var meetingRecord = await _meetingDataProvider.GetMeetingRecordByMeetingIdAsync(command.MeetingId, cancellationToken);
-            if (meetingRecord == null) throw new MeetingRecordNotFoundException();
-            if (meetingRecord.RecordType == MeetingRecordType.EndRecord) throw new MeetingRecordNotOpenException();
+            var newestMeetingRecord = await _meetingDataProvider.GetNewestMeetingRecordByMeetingIdAsync(command.MeetingId, cancellationToken);
+            if (newestMeetingRecord == null) throw new MeetingRecordNotFoundException();
+            if (newestMeetingRecord.RecordType == MeetingRecordType.EndRecord) throw new MeetingRecordNotOpenException();
             
-            var response = await _liveKitClient.StopEgressAsync(new StopEgressRequestDto { EgressId = meetingRecord.EgressId },cancellationToken).ConfigureAwait(false);
+            var response = await _liveKitClient.StopEgressAsync(new StopEgressRequestDto { EgressId = newestMeetingRecord.EgressId },cancellationToken).ConfigureAwait(false);
             if (response == null) throw new MeetingRecordUrlNotFoundException();
             dynamic data = JsonConvert.DeserializeObject(response);
-            meetingRecord.RecordType = MeetingRecordType.EndRecord;
-            meetingRecord.Url = data["file"]["location"];
+            newestMeetingRecord.RecordType = MeetingRecordType.EndRecord;
+            newestMeetingRecord.Url = data["file"]["location"];
             
-            await _meetingDataProvider.UpdateMeetingRecordAsync(meetingRecord, cancellationToken).ConfigureAwait(false);
+            await _meetingDataProvider.UpdateMeetingRecordAsync(newestMeetingRecord, cancellationToken).ConfigureAwait(false);
             return new StorageMeetingRecordVideoResponse();
         }
     }

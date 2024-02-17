@@ -15,7 +15,7 @@ public partial interface IMeetingDataProvider
 {
     Task UpdateMeetingRecordAsync(MeetingRecord record, CancellationToken cancellationToken);
     
-    Task<MeetingRecord> GetMeetingRecordByMeetingIdAsync(Guid meetingId, CancellationToken cancellationToken);
+    Task<MeetingRecord> GetNewestMeetingRecordByMeetingIdAsync(Guid meetingId, CancellationToken cancellationToken);
    
     public Task<(int count, List<MeetingRecordDto> items)> GetMeetingRecordsByUserIdAsync(int? currentUserId, GetCurrentUserMeetingRecordRequest request, CancellationToken cancellationToken);
 }
@@ -95,7 +95,7 @@ public partial class MeetingDataProvider
         await _repository.UpdateAsync(record, cancellationToken).ConfigureAwait(false);
     }
 
-    public async Task<MeetingRecord> GetMeetingRecordByMeetingIdAsync(Guid meetingId,CancellationToken cancellationToken)
+    public async Task<MeetingRecord> GetNewestMeetingRecordByMeetingIdAsync(Guid meetingId,CancellationToken cancellationToken)
     {
         var meetingRecord = await _repository.QueryNoTracking<MeetingRecord>(x => x.MeetingId == meetingId)
             .OrderByDescending(x => x.CreatedDate).FirstOrDefaultAsync(cancellationToken).ConfigureAwait(false);
