@@ -18,14 +18,8 @@ public class MeetingUserSessionDto
     public bool IsMuted { get; set; }
 
     public bool IsSharingScreen { get; set; }
-
-    /// <summary>
-    /// 是否为会议创建人
-    /// </summary>
+    
     public bool IsMeetingMaster { get; set; }
-
-    /// <summary>
-    /// 在线状态
-    /// </summary>
+    
     public MeetingUserSessionOnlineType OnlineType { get; set; }
 }

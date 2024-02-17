@@ -6,6 +6,7 @@ namespace SugarTalk.Messages.Enums.Meeting
     {
         [Description("在线")]
         Online = 0,
+        
         [Description("正常退出")]
         OutMeeting = 1,
 

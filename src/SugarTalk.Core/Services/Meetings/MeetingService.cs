@@ -280,7 +280,6 @@ namespace SugarTalk.Core.Services.Meetings
                 updateUserSession.UserName = user.UserName;
 
                 meeting.AddUserSession(updateUserSession);
-
             }
             else
             {

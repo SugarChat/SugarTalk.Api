@@ -172,10 +172,10 @@ public partial class MeetingService
         await _meetingDataProvider
             .UpdateMeetingUserSessionAsync(kickOutUserSession, cancellationToken).ConfigureAwait(false);
         
-        var userSessionDtos = await _meetingDataProvider
+        var userSessionOnlineDtos = await _meetingDataProvider
             .GetUserSessionsByMeetingIdAndOnlineTypeAsync(meeting.Id, cancellationToken).ConfigureAwait(false);
         var meetingDto = _mapper.Map<MeetingDto>(meeting);
-        meetingDto.UserSessions = userSessionDtos;
+        meetingDto.UserSessions = userSessionOnlineDtos;
 
         var user = await _accountDataProvider
             .GetUserAccountAsync(_currentUser.Id, cancellationToken: cancellationToken).ConfigureAwait(false);
