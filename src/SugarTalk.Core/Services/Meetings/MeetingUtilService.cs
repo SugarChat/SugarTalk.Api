@@ -8,13 +8,14 @@ using System.Collections.Generic;
 using SugarTalk.Messages.Dto.OpenAi;
 using SugarTalk.Core.Services.OpenAi;
 using SugarTalk.Messages.Enums.OpenAi;
+using SugarTalk.Messages.Dto.Meetings.Summary;
 
 namespace SugarTalk.Core.Services.Meetings;
 
 public interface IMeetingUtilService : IScopedDependency
 {
     Task<string> SummarizeAsync(
-        string meetingNumber, string meetingTitle, string meetingRecord, string meetingAdmin, string attendees, DateTimeOffset meetingDate, CancellationToken cancellationToken);
+        MeetingSummaryBaseInfoDto summaryBaseInfo, CancellationToken cancellationToken);
 }
 
 public class MeetingUtilService : IMeetingUtilService
@@ -27,7 +28,7 @@ public class MeetingUtilService : IMeetingUtilService
     }
 
     public async Task<string> SummarizeAsync(
-        string meetingNumber, string meetingTitle, string meetingRecord, string meetingAdmin, string attendees, DateTimeOffset meetingDate, CancellationToken cancellationToken)
+        MeetingSummaryBaseInfoDto summaryBaseInfo, CancellationToken cancellationToken)
     {
         const int maxRecordLength = 10000;
         const int maxSummarySegmentsCount = 6;
@@ -35,16 +36,16 @@ public class MeetingUtilService : IMeetingUtilService
         var summaries = new List<string>();
         var splitSummaries = new List<string>();
         
-        var (dividedRecords, integrationCount) = SplitOriginalRecord(meetingRecord, maxRecordLength, maxSummarySegmentsCount);
+        var (dividedRecords, integrationCount) = SplitOriginalRecord(summaryBaseInfo.MeetingRecord, maxRecordLength, maxSummarySegmentsCount);
         
         switch (integrationCount)
         {
             case 0:
-                return await SummarizeSingleMeetingAsync(meetingNumber, meetingTitle, dividedRecords.Single(), meetingAdmin, attendees, meetingDate, cancellationToken).ConfigureAwait(false);
+                return await SummarizeSingleMeetingAsync(summaryBaseInfo, dividedRecords.Single(), cancellationToken).ConfigureAwait(false);
             case 1:
                 foreach (var dividedRecord in dividedRecords)
                 {
-                    var splitSummary = await SummarizeSingleMeetingAsync(meetingNumber, meetingTitle, dividedRecord, meetingAdmin, attendees, meetingDate, cancellationToken).ConfigureAwait(false);
+                    var splitSummary = await SummarizeSingleMeetingAsync(summaryBaseInfo, dividedRecord, cancellationToken).ConfigureAwait(false);
                     
                     splitSummaries.Add(splitSummary);
                 }
@@ -52,7 +53,7 @@ public class MeetingUtilService : IMeetingUtilService
             case > 1:
                 foreach (var dividedRecord in dividedRecords)
                 {
-                    var splitSummary = await SummarizeSingleMeetingAsync(meetingNumber, meetingTitle, dividedRecord, meetingAdmin, attendees, meetingDate, cancellationToken).ConfigureAwait(false);
+                    var splitSummary = await SummarizeSingleMeetingAsync(summaryBaseInfo, dividedRecord, cancellationToken).ConfigureAwait(false);
                     
                     splitSummaries.Add(splitSummary);
 
@@ -73,17 +74,15 @@ public class MeetingUtilService : IMeetingUtilService
     }
     
     private async Task<string> SummarizeSingleMeetingAsync(
-        string meetingNumber, string meetingTitle, string originalRecord, string meetingAdmin, string attendees, DateTimeOffset meetingDate, CancellationToken cancellationToken)
+        MeetingSummaryBaseInfoDto summaryBaseInfo, string originalRecord, CancellationToken cancellationToken)
     {
-        var summaryContent = await SummarizeMeetingContentAsync(meetingNumber, originalRecord, cancellationToken).ConfigureAwait(false);
+        var summaryContent = await SummarizeMeetingContentAsync(summaryBaseInfo.MeetingNumber, originalRecord, cancellationToken).ConfigureAwait(false);
 
-        var todo = await SummarizeMeetingTodoAsync(meetingNumber, originalRecord, cancellationToken).ConfigureAwait(false);
+        var todo = await SummarizeMeetingTodoAsync(summaryBaseInfo.MeetingNumber, originalRecord, cancellationToken).ConfigureAwait(false);
 
-        var summary = await SummarizeMeetingSummaryAsync(meetingNumber, originalRecord, cancellationToken).ConfigureAwait(false);
+        var summary = await SummarizeMeetingSummaryAsync(summaryBaseInfo.MeetingNumber, originalRecord, cancellationToken).ConfigureAwait(false);
         
-        var result = $"會議總結：\n\n會議主題：{meetingTitle}\n日期：{meetingDate}\n主持人：{meetingAdmin}\n參會人員：{attendees}\n\n{summaryContent}\n\n{todo}\n\n{summary}";
-        
-        return result;
+        return $"會議總結：\n\n會議主題：{summaryBaseInfo.MeetingTitle}\n日期：{summaryBaseInfo.MeetingDate}\n主持人：{summaryBaseInfo.MeetingAdmin}\n參會人員：{summaryBaseInfo.Attendees}\n\n{summaryContent}\n\n{todo}\n\n{summary}";
     }
     
     private async Task<string> SummarizeMeetingContentAsync(string meetingCode, string originalRecord, CancellationToken cancellationToken)

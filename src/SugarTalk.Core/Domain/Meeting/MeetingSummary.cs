@@ -1,4 +1,5 @@
 using System;
+using SugarTalk.Messages.Dto.Translation;
 using System.ComponentModel.DataAnnotations;
 using SugarTalk.Messages.Enums.Meeting.Summary;
 using System.ComponentModel.DataAnnotations.Schema;
@@ -26,6 +27,9 @@ public class MeetingSummary : IEntity
     
     [Column("summary")]
     public string Summary { get; set; }
+
+    [Column("target_language")]
+    public TranslationLanguage TargetLanguage { get; set; } = TranslationLanguage.ZhCn;
     
     [Column("status")]
     public SummaryStatus Status { get; set; } = SummaryStatus.Pending;

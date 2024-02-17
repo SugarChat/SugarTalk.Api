@@ -38,9 +38,11 @@ public partial class BaseFixture
     protected readonly IHttpContextAccessor _contextAccessor;
     protected readonly IMeetingProcessJobService _meetingProcessJobService;
     protected readonly ISugarTalkBackgroundJobClient _backgroundJobClient;
+    protected readonly IMeetingUtilService _meetingUtilService;
 
-    public BaseFixture()
+    public BaseFixture(IMeetingUtilService meetingUtilService)
     {
+        _meetingUtilService = meetingUtilService;
         _configuration = Substitute.For<IConfiguration>();
         _dbContext = MockDbContext.GetSugarTalkDbContext();
         _repository = MockDbContext.GetRepository(_dbContext);
@@ -54,7 +56,7 @@ public partial class BaseFixture
         _accountDataProvider = MockAccountDataProvider(_mapper, _repository, _unitOfWork);
         _meetingDataProvider = MockMeetingDataProvider(_clock, _mapper, _repository, _unitOfWork, _currentUser, _accountDataProvider);
         _meetingService = MockMeetingService(_clock, _mapper, _unitOfWork, _currentUser, _speechClient,
-            _liveKitClient,  _meetingDataProvider, _accountDataProvider, _backgroundJobClient, _liveKitServerSetting, _liveKitServerUtilService,
+            _liveKitClient, _meetingUtilService, _meetingDataProvider, _accountDataProvider, _backgroundJobClient, _liveKitServerSetting, _liveKitServerUtilService,
             _antMediaServerUtilService);
         _meetingProcessJobService = MockMeetingProcessJobService(_clock, _unitOfWork, _meetingDataProvider);
     }
@@ -76,6 +78,7 @@ public partial class BaseFixture
         ICurrentUser currentUser,
         ISpeechClient speechClient,
         ILiveKitClient liveKitClient,
+        IMeetingUtilService meetingUtilService,
         IMeetingDataProvider meetingDataProvider,
         IAccountDataProvider accountDataProvider,
         ISugarTalkBackgroundJobClient backgroundJobClient,
@@ -84,7 +87,7 @@ public partial class BaseFixture
         IAntMediaServerUtilService antMediaServerUtilService)
     {
         return new MeetingService(
-            clock, mapper, unitOfWork, currentUser, speechClient, liveKitClient, meetingDataProvider, accountDataProvider,
+            clock, mapper, unitOfWork, currentUser, speechClient, liveKitClient, meetingUtilService, meetingDataProvider, accountDataProvider,
             liveKitServerSetting, backgroundJobClient, liveKitServerUtilService, antMediaServerUtilService);
     }
     
