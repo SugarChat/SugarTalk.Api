@@ -156,6 +156,12 @@ public class MeetingUtil : TestUtil
                       KickOutUserId = kickOutUserId,
                       MeetingId = meetingId
                    });
+        }, builder =>
+        {
+            var services = Substitute.For<ILiveKitServerUtilService>();
+            services.GenerateTokenForJoinMeeting(Arg.Any<UserAccountDto>(), Arg.Any<string>())
+                .Returns("11231312312312312313223");
+            builder.RegisterInstance(services);
         });
     }
 
