@@ -236,9 +236,10 @@ public class MeetingUtil : TestUtil
         {
             MeetingId = meetingDto.Id,
             CreatedDate = DateTimeOffset.Now,
-            EgressId = egressId ?? "≤‚ ‘",
+            EgressId = egressId ?? "TestId",
             RecordType = MeetingRecordType.OnRecord,
-            Url = url ?? "≤‚ ‘Url"
+            Url = url ??
+                  "{ \"file\": { \"filename\": \"1y9133060d89259t-mp4\", \"started_at\": 1708133893085210173, \"ended_at\": 226938338636, \"duration\": 0, \"location\": \"https://smartiestest.oss-cn-hongkong.aliyuncs.com/livekit-recordings/test.mp4\" } }"
         };
     }
 
@@ -281,7 +282,8 @@ public class MeetingUtil : TestUtil
         {
             var liveKitClient = Substitute.For<ILiveKitClient>();
             liveKitClient.StopEgressAsync(Arg.Any<StopEgressRequestDto>(), Arg.Any<CancellationToken>())
-                .Returns("≤‚ ‘∏¸–¬Url");
+                .Returns(
+                    "{ \"file\": { \"filename\": \"1y9133060d89259t-mp4\", \"started_at\": 1708133893085210173, \"ended_at\": 226938338636, \"duration\": 0, \"location\": \"https://smartiestest.oss-cn-hongkong.aliyuncs.com/livekit-recordings/test.mp4\" } }");
             builder.RegisterInstance(liveKitClient);
         });
     }

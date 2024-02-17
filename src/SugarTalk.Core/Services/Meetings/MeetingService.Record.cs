@@ -13,6 +13,7 @@ using SugarTalk.Core.Domain.Meeting;
 using SugarTalk.Core.Services.Exceptions;
 using SugarTalk.Messages.Dto.LiveKit;
 using SugarTalk.Messages.Enums.Meeting;
+using SugarTalk.Messages.Requests.Meetings;
 
 namespace SugarTalk.Core.Services.Meetings
 {
