@@ -32,7 +32,7 @@ namespace SugarTalk.Core.Services.Account
 
         Task<UserAccount> CreateUserAccountAsync(string userName, string password, string thirdPartyUserId = null,
             UserAccountIssuer authType = UserAccountIssuer.Wiltechs, CancellationToken cancellationToken = default);
-
+        
         List<Claim> GenerateClaimsFromUserAccount(UserAccountDto account);
         
         Task AllocateUserToRoleAsync(int userId, int roleId, CancellationToken cancellationToken);
