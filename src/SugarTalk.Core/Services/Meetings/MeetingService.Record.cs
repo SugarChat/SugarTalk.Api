@@ -17,7 +17,7 @@ using SugarTalk.Messages.Requests.Meetings;
 
 namespace SugarTalk.Core.Services.Meetings
 {
-    public partial interface IMeetingService : IScopedDependency
+    public partial interface IMeetingService
     {
         Task<GetCurrentUserMeetingRecordResponse> GetCurrentUserMeetingRecordsAsync(GetCurrentUserMeetingRecordRequest request, CancellationToken cancellationToken);
         
