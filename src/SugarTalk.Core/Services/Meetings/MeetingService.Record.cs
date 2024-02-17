@@ -10,6 +10,8 @@ using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using SugarTalk.Core.Domain.Meeting;
 using SugarTalk.Core.Services.Exceptions;
+using SugarTalk.Messages.Dto.LiveKit;
+using SugarTalk.Messages.Enums.Meeting;
 
 namespace SugarTalk.Core.Services.Meetings
 {
@@ -22,16 +24,16 @@ namespace SugarTalk.Core.Services.Meetings
     {
         public async Task<StorageMeetingRecordVideoResponse> StorageMeetingRecordVideoAsync(StorageMeetingRecordVideoCommand command, CancellationToken cancellationToken)
         {
-            var meeting=  await _meetingDataProvider.GetMeetingByIdAsync(command.MeetingId,cancellationToken).ConfigureAwait(false);
-            if (meeting == null) throw new MeetingNotFoundException();
-            var count = await (await _meetingDataProvider.GetMeetingRecordsByMeetingIdAsync(command.MeetingId, cancellationToken).ConfigureAwait(false))
-                .CountAsync(cancellationToken);
-            var meetingRecord = _mapper.Map<MeetingRecord>(meeting);
-            meetingRecord.Url = command.Url;
-            var recordNumber = 1 + count;
-            string stringNumber =  recordNumber.ToString().PadLeft(6, '0');
-            meetingRecord.RecordNumber = "ZNZX" + meeting.CreatedDate.ToString("yyyMMdd") + stringNumber;
-            await _meetingDataProvider.StorageMeetingRecord(meetingRecord, cancellationToken).ConfigureAwait(false);
+            var meetingRecord = await _meetingDataProvider.GetMeetingRecordByMeetingIdAsync(command.MeetingId, cancellationToken);
+            if (meetingRecord == null) throw new MeetingRecordNotFoundException();
+            if (meetingRecord.RecordType == MeetingRecordType.EndRecord) throw new MeetingRecordNotOpenException();
+
+            //TODO:response暂时不知道是不是Url
+            var response = await _liveKitClient.StopEgressAsync(new StopEgressRequestDto { EgressId = meetingRecord.EgressId },cancellationToken).ConfigureAwait(false);
+            meetingRecord.RecordType = MeetingRecordType.EndRecord;
+            meetingRecord.Url = response;
+            
+            await _meetingDataProvider.UpdateMeetingRecordAsync(meetingRecord, cancellationToken).ConfigureAwait(false);
             return new StorageMeetingRecordVideoResponse();
         }
     }

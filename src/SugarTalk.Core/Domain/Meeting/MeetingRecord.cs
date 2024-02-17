@@ -1,6 +1,7 @@
 using System;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using SugarTalk.Messages.Enums.Meeting;
 
 namespace SugarTalk.Core.Domain.Meeting;
 
@@ -25,6 +26,9 @@ public class MeetingRecord : IEntity
     [Column("created_date")]
     public DateTimeOffset CreatedDate { get; set; }
 
-    [Column("record_number"),StringLength(256)]
-    public string RecordNumber { get; set; }
+    [Column("meeting_record_type")]
+    public MeetingRecordType RecordType { get; set; }
+    
+    [Column("egress_id"), StringLength(128)]
+    public string EgressId { get; set; }
 }
