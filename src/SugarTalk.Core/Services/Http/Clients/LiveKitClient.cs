@@ -18,6 +18,8 @@ public interface ILiveKitClient : IScopedDependency
     Task<StartEgressResponseDto> StartTrackCompositeEgressAsync(StartTrackCompositeEgressRequestDto request, CancellationToken cancellationToken);
     
     Task<string> StopEgressAsync(StopEgressRequestDto request, CancellationToken cancellationToken);
+    
+    Task<GetEgressInfoListResponseDto> GetEgressInfoAsync(GetEgressRequestDto request, CancellationToken cancellationToken);
 }
 
 public class LiveKitClient : ILiveKitClient
@@ -88,5 +90,16 @@ public class LiveKitClient : ILiveKitClient
         
         return await _httpClientFactory
             .PostAsJsonAsync<string>($"{_liveKitServerSetting.BaseUrl}/twirp/livekit.Egress/StopEgress", request, cancellationToken, headers: headers).ConfigureAwait(false);
+    }
+
+    public async Task<GetEgressInfoListResponseDto> GetEgressInfoAsync(GetEgressRequestDto request, CancellationToken cancellationToken)
+    {
+        var headers = new Dictionary<string, string>
+        {
+            { "Authorization", $"Bearer {request.Token}" }
+        };
+        
+        return await _httpClientFactory
+            .PostAsJsonAsync<GetEgressInfoListResponseDto>($"{_liveKitServerSetting.BaseUrl}/twirp/livekit.Egress/ListEgress", request, cancellationToken, headers: headers).ConfigureAwait(false);
     }
 }

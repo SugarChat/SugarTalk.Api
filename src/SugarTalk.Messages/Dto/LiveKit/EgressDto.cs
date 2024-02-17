@@ -1,71 +1,10 @@
 using Newtonsoft.Json;
 using System.Collections.Generic;
-using SugarTalk.Messages.Enums.LiveKit;
 
 namespace SugarTalk.Messages.Dto.LiveKit;
 
-public class StartEgressBaseRequestDto
+public class StopEgressRequestDto : BaseEgressRequestDto
 {
-    public string Token{ get; set; }
-    
-    [JsonProperty("room_name")]
-    public string RoomName { get; set; }
-    
-    [JsonProperty("files")]
-    public EgressEncodedFileOutPutDto Files { get; set; }
-
-    [JsonProperty("preset")]
-    public EgressEncodingOptionsPreset? Preset { get; set; }
-    
-    [JsonProperty("options")]
-    public EgressEncodingOptionsDto Options { get; set; }
-}
-
-public class StartRoomCompositeEgressRequestDto : StartEgressBaseRequestDto
-{
-    [JsonProperty("layout")]
-    public string Layout { get; set; }
-    
-    [JsonProperty("audio_only")]
-    public bool AudioOnly { get; set; }
-    
-    [JsonProperty("video_only")]
-    public bool VideoOnly { get; set; }
-    
-    [JsonProperty("custom_base_url")]
-    public string CustomBaseUrl { get; set; }
-}
-
-public class StartTrackCompositeEgressRequestDto : StartEgressBaseRequestDto
-{
-    [JsonProperty("audio_track_id")]
-    public string AudioTrackId { get; set; }
-    
-    [JsonProperty("video_track_id")]
-    public string VideoTrackId { get; set; }
-}
-
-public class StartEgressResponseDto
-{
-    [JsonProperty("egress_id")]
-    public string EgressId { get; set; }
-    
-    [JsonProperty("room_name")]
-    public string RoomName { get; set; }
-    
-    [JsonProperty("room_id")]
-    public string RoomId { get; set; }
-    
-    [JsonProperty("status")]
-    public string Status { get; set; }
-}
-
-public class StopEgressRequestDto
-{
-    public string Token { get; set; }
-    
-    [JsonProperty("egress_id")]
-    public string EgressId { get; set; }
 }
 
 public class EgressEncodedFileOutPutDto
@@ -183,4 +122,12 @@ public class EgressAliOssUploadDto
     
     [JsonProperty("endpoint")]
     public string Endpoint { get; set; }
+}
+
+public class BaseEgressRequestDto
+{
+    public string Token { get; set; }
+    
+    [JsonProperty("egress_id", NullValueHandling = NullValueHandling.Ignore)]
+    public string EgressId { get; set; }
 }
