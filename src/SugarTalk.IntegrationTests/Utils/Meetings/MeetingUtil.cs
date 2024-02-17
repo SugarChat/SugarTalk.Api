@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Autofac;
 using System.Linq;
 using NSubstitute;
@@ -222,6 +223,14 @@ public class MeetingUtil : TestUtil
             });
             builder.RegisterInstance(liveKitServerUtilService);
             builder.RegisterInstance(accountDataProvider);
+        });
+    }
+
+    public async Task AddMeetingRecord(MeetingRecord record)
+    {
+        await RunWithUnitOfWork<IRepository>(async repository =>
+        {
+            await repository.InsertAsync(record).ConfigureAwait(false);
         });
     }
 }

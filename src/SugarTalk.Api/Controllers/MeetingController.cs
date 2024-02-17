@@ -111,7 +111,7 @@ public class MeetingController : ControllerBase
 
         return Ok(response);
     }
-    
+
     [Route("history"), HttpGet]
     [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(GetMeetingHistoriesByUserResponse))]
     public async Task<IActionResult> GetMeetingHistoriesByUserAsync([FromQuery] GetMeetingHistoriesByUserRequest request)
@@ -126,6 +126,15 @@ public class MeetingController : ControllerBase
     public async Task<IActionResult> GetAppointmentMeetingsAsync([FromQuery] GetAppointmentMeetingsRequest request)
     {
         var response = await _mediator.RequestAsync<GetAppointmentMeetingsRequest, GetAppointmentMeetingsResponse>(request).ConfigureAwait(false);
+
+        return Ok(response);
+    }
+
+    [Route("record"), HttpGet]
+    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(GetCurrentUserMeetingRecordResponse))]
+    public async Task<IActionResult> GetCurrentUserMeetingRecordAsync([FromQuery] GetCurrentUserMeetingRecordRequest request)
+    {
+        var response = await _mediator.RequestAsync<GetCurrentUserMeetingRecordRequest, GetCurrentUserMeetingRecordResponse>(request).ConfigureAwait(false);
 
         return Ok(response);
     }
