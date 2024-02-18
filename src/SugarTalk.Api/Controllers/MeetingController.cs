@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Authorization;
 using SugarTalk.Messages.Commands.Meetings;
 using SugarTalk.Messages.Requests.Meetings;
 using SugarTalk.Messages.Commands.Meetings.Speak;
+using SugarTalk.Messages.Commands.Meetings.Summary;
 
 namespace SugarTalk.Api.Controllers;
 
@@ -141,5 +142,18 @@ public class MeetingController : ControllerBase
         return Ok(response);
     }
 
+    #endregion
+
+    #region Summary
+
+    [Route("summary"), HttpPost]
+    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(SummaryMeetingRecordResponse))]
+    public async Task<IActionResult> SummaryMeetingRecordAsync([FromBody] SummaryMeetingRecordCommand command)
+    {
+        var response = await _mediator.SendAsync<SummaryMeetingRecordCommand, SummaryMeetingRecordResponse>(command).ConfigureAwait(false);
+
+        return Ok(response);
+    }
+    
     #endregion
 }

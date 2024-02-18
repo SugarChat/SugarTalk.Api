@@ -76,16 +76,16 @@ public class MeetingUtilService : IMeetingUtilService
     private async Task<string> SummarizeSingleMeetingAsync(
         MeetingSummaryBaseInfoDto summaryBaseInfo, string originalRecord, CancellationToken cancellationToken)
     {
-        var summaryContent = await SummarizeMeetingContentAsync(summaryBaseInfo.MeetingNumber, originalRecord, cancellationToken).ConfigureAwait(false);
+        var summaryContent = await SummarizeMeetingContentAsync(originalRecord, cancellationToken).ConfigureAwait(false);
 
-        var todo = await SummarizeMeetingTodoAsync(summaryBaseInfo.MeetingNumber, originalRecord, cancellationToken).ConfigureAwait(false);
+        var todo = await SummarizeMeetingTodoAsync(originalRecord, cancellationToken).ConfigureAwait(false);
 
-        var summary = await SummarizeMeetingSummaryAsync(summaryBaseInfo.MeetingNumber, originalRecord, cancellationToken).ConfigureAwait(false);
+        var summary = await SummarizeMeetingSummaryAsync(originalRecord, cancellationToken).ConfigureAwait(false);
         
-        return $"會議總結：\n\n會議主題：{summaryBaseInfo.MeetingTitle}\n日期：{summaryBaseInfo.MeetingDate}\n主持人：{summaryBaseInfo.MeetingAdmin}\n參會人員：{summaryBaseInfo.Attendees}\n\n{summaryContent}\n\n{todo}\n\n{summary}";
+        return $"會議總結：\n\n會議主題：{summaryBaseInfo.MeetingTitle}\n日期：{summaryBaseInfo.MeetingDate}\n主持人：{summaryBaseInfo.MeetingAdmin}\n\n{summaryContent}\n\n{todo}\n\n{summary}";
     }
     
-    private async Task<string> SummarizeMeetingContentAsync(string meetingCode, string originalRecord, CancellationToken cancellationToken)
+    private async Task<string> SummarizeMeetingContentAsync(string originalRecord, CancellationToken cancellationToken)
     {
         var messages = new List<CompletionsRequestMessageDto>
         {
@@ -104,12 +104,12 @@ public class MeetingUtilService : IMeetingUtilService
         var summary = 
             await _openAiService.ChatCompletionsAsync(messages, model: OpenAiModel.Gpt40Turbo, cancellationToken: cancellationToken).ConfigureAwait(false);
         
-        Log.Information("MeetingCode: {MeetingCode},\nOriginRecord: {OriginRecord},\n SummaryContent: {Summary}", meetingCode, originalRecord, summary);
+        Log.Information("OriginRecord: {OriginRecord},\n SummaryContent: {Summary}", originalRecord, summary);
 
         return summary.Response ?? string.Empty;
     }
     
-    private async Task<string> SummarizeMeetingTodoAsync(string meetingCode, string originalRecord, CancellationToken cancellationToken)
+    private async Task<string> SummarizeMeetingTodoAsync(string originalRecord, CancellationToken cancellationToken)
     {
         var messages = new List<CompletionsRequestMessageDto>
         {
@@ -128,12 +128,12 @@ public class MeetingUtilService : IMeetingUtilService
         var todo = 
             await _openAiService.ChatCompletionsAsync(messages, model: OpenAiModel.Gpt40Turbo, cancellationToken: cancellationToken).ConfigureAwait(false);
         
-        Log.Information("MeetingCode: {MeetingCode},\nOriginRecord: {OriginRecord},\n Todo: {Todo}", meetingCode, originalRecord, todo);
+        Log.Information("OriginRecord: {OriginRecord},\n Todo: {Todo}", originalRecord, todo);
 
         return todo.Response ?? string.Empty;
     }
     
-    private async Task<string> SummarizeMeetingSummaryAsync(string meetingCode, string originalRecord, CancellationToken cancellationToken)
+    private async Task<string> SummarizeMeetingSummaryAsync(string originalRecord, CancellationToken cancellationToken)
     {
         var messages = new List<CompletionsRequestMessageDto>
         {
@@ -152,7 +152,7 @@ public class MeetingUtilService : IMeetingUtilService
         var summary = 
             await _openAiService.ChatCompletionsAsync(messages, model: OpenAiModel.Gpt40Turbo, cancellationToken: cancellationToken).ConfigureAwait(false);
         
-        Log.Information("MeetingCode: {MeetingCode},\nOriginRecord: {OriginRecord},\n Summary: {Summary}", meetingCode, originalRecord, summary);
+        Log.Information("OriginRecord: {OriginRecord},\n Summary: {Summary}", originalRecord, summary);
 
         return summary.Response ?? string.Empty;
     }
@@ -168,7 +168,7 @@ public class MeetingUtilService : IMeetingUtilService
                 Role = "system",
                 Content =  "You are a meeting summary content integration assistant, please help me make multiple meeting summaries into a logical content integration, " +
                            "and return a complete meeting summary in the following format:\n" +
-                           "\"會議總結：\n\n會議主題：xxx\n日期：xxx\n主持人:xxx\n參會人員: xxx,xxx\n會議內容：1.xxx\n2.xxx\n3.xxx\nTodo:1.xxx\n2.xxx\n3.xxx\n總結：xxx\""
+                           "\"會議總結：\n\n會議主題：xxx\n日期：xxx\n主持人:xxx\n會議內容：1.xxx\n2.xxx\n3.xxx\nTodo:1.xxx\n2.xxx\n3.xxx\n總結：xxx\""
             },
             new ()
             {

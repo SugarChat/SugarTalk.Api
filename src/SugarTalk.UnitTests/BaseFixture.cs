@@ -3,6 +3,7 @@ using NSubstitute;
 using SugarTalk.Core.Data;
 using SugarTalk.Core.Mapping;
 using Castle.Core.Configuration;
+using Google.Cloud.Translation.V2;
 using Microsoft.AspNetCore.Http;
 using SugarTalk.Core.Services.Http;
 using SugarTalk.Core.Services.Utils;
@@ -39,6 +40,7 @@ public partial class BaseFixture
     protected readonly IMeetingProcessJobService _meetingProcessJobService;
     protected readonly ISugarTalkBackgroundJobClient _backgroundJobClient;
     protected readonly IMeetingUtilService _meetingUtilService;
+    protected readonly TranslationClient _translationClient;
 
     public BaseFixture(IMeetingUtilService meetingUtilService)
     {
@@ -55,8 +57,8 @@ public partial class BaseFixture
         _liveKitServerUtilService = Substitute.For<ILiveKitServerUtilService>();
         _accountDataProvider = MockAccountDataProvider(_mapper, _repository, _unitOfWork);
         _meetingDataProvider = MockMeetingDataProvider(_clock, _mapper, _repository, _unitOfWork, _currentUser, _accountDataProvider);
-        _meetingService = MockMeetingService(_clock, _mapper, _unitOfWork, _currentUser, _speechClient,
-            _liveKitClient, _meetingUtilService, _meetingDataProvider, _accountDataProvider, _backgroundJobClient, _liveKitServerSetting, _liveKitServerUtilService,
+        _meetingService = MockMeetingService(_clock, _mapper, _unitOfWork, _currentUser, _speechClient, _liveKitClient, _translationClient,
+             _meetingUtilService, _meetingDataProvider, _accountDataProvider, _backgroundJobClient, _liveKitServerSetting, _liveKitServerUtilService,
             _antMediaServerUtilService);
         _meetingProcessJobService = MockMeetingProcessJobService(_clock, _unitOfWork, _meetingDataProvider);
     }
@@ -78,6 +80,7 @@ public partial class BaseFixture
         ICurrentUser currentUser,
         ISpeechClient speechClient,
         ILiveKitClient liveKitClient,
+        TranslationClient translationClient,
         IMeetingUtilService meetingUtilService,
         IMeetingDataProvider meetingDataProvider,
         IAccountDataProvider accountDataProvider,
@@ -87,8 +90,8 @@ public partial class BaseFixture
         IAntMediaServerUtilService antMediaServerUtilService)
     {
         return new MeetingService(
-            clock, mapper, unitOfWork, currentUser, speechClient, liveKitClient, meetingUtilService, meetingDataProvider, accountDataProvider,
-            liveKitServerSetting, backgroundJobClient, liveKitServerUtilService, antMediaServerUtilService);
+            clock, mapper, unitOfWork, currentUser, speechClient, liveKitClient, translationClient ,meetingUtilService, meetingDataProvider,
+            accountDataProvider, liveKitServerSetting, backgroundJobClient, liveKitServerUtilService, antMediaServerUtilService);
     }
     
     protected IMeetingDataProvider MockMeetingDataProvider(

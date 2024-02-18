@@ -1,9 +1,11 @@
 using Mediator.Net.Contracts;
-using SugarTalk.Messages.Dto.Meetings.Summary;
+using SugarTalk.Messages.Dto.Translation;
 
 namespace SugarTalk.Messages.Commands.Meetings.Summary;
 
 public class ProcessSummaryMeetingCommand : ICommand
 {
-    public MeetingSummaryBaseInfoDto SummaryInfo { get; set; }
+    public int MeetingSummaryId { get; set; }
+    
+    public TranslationLanguage Language { get; set; }
 }
