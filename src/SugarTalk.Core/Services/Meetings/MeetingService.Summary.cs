@@ -1,13 +1,13 @@
 using System;
 using Serilog;
 using System.Linq;
+using Mediator.Net;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Collections.Generic;
-using Mediator.Net;
 using SugarTalk.Core.Constants;
-using SugarTalk.Core.Domain.Meeting;
 using SugarTalk.Core.Extensions;
+using System.Collections.Generic;
+using SugarTalk.Core.Domain.Meeting;
 using SugarTalk.Messages.Dto.Meetings.Speak;
 using SugarTalk.Messages.Dto.Meetings.Summary;
 using SugarTalk.Messages.Enums.Meeting.Summary;
