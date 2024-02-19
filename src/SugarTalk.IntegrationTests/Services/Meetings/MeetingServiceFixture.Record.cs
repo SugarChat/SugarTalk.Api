@@ -404,11 +404,11 @@ public partial class MeetingServiceFixture
         var scheduleMeetingResponse = await _meetingUtil.ScheduleMeeting();
         var meetingDto = await _meetingUtil.JoinMeeting(scheduleMeetingResponse.Data.MeetingNumber);
 
-        var testRecord1 = await _meetingUtil.ScheduleMeetingRecordAsync(meetingDto, "mock egressId1");
+        var testRecord1 = await _meetingUtil.GenerateMeetingRecordAsync(meetingDto, "mock egressId1");
         await _meetingUtil.AddMeetingRecordAsync(testRecord1);
-        var testRecord2 = await _meetingUtil.ScheduleMeetingRecordAsync(meetingDto, "mock egressId2");
+        var testRecord2 = await _meetingUtil.GenerateMeetingRecordAsync(meetingDto, "mock egressId2");
         await _meetingUtil.AddMeetingRecordAsync(testRecord2);
-        var testRecord3 = await _meetingUtil.ScheduleMeetingRecordAsync(meetingDto, "mock egressId3");
+        var testRecord3 = await _meetingUtil.GenerateMeetingRecordAsync(meetingDto, "mock egressId3");
         await _meetingUtil.AddMeetingRecordAsync(testRecord3);
 
         var meetingRecords = await _meetingUtil.GetMeetingRecordsByMeetingIdAsync(meetingDto.Id);
@@ -424,7 +424,7 @@ public partial class MeetingServiceFixture
     {
         var scheduleMeetingResponse = await _meetingUtil.ScheduleMeeting();
         var meetingDto = await _meetingUtil.JoinMeeting(scheduleMeetingResponse.Data.MeetingNumber);
-        var meetingRecord = await _meetingUtil.ScheduleMeetingRecordAsync(meetingDto, egressId, url);
+        var meetingRecord = await _meetingUtil.GenerateMeetingRecordAsync(meetingDto, egressId, url);
         await _meetingUtil.AddMeetingRecordAsync(meetingRecord);
         var response = await _meetingUtil.GetMeetingRecordByMeetingIdAsync(meetingDto.Id);
         response.ShouldNotBeNull();
@@ -437,7 +437,7 @@ public partial class MeetingServiceFixture
     {
         var scheduleMeetingResponse = await _meetingUtil.ScheduleMeeting();
         var meetingDto = await _meetingUtil.JoinMeeting(scheduleMeetingResponse.Data.MeetingNumber);
-        var meetingRecord = await _meetingUtil.ScheduleMeetingRecordAsync(meetingDto);
+        var meetingRecord = await _meetingUtil.GenerateMeetingRecordAsync(meetingDto);
         await _meetingUtil.AddMeetingRecordAsync(meetingRecord);
         var dbMeetingRecord = await _meetingUtil.GetMeetingRecordByMeetingIdAsync(meetingDto.Id);
         dbMeetingRecord.RecordType.ShouldBe(MeetingRecordType.OnRecord);

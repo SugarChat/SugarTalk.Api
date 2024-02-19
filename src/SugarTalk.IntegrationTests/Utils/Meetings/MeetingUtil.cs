@@ -239,7 +239,7 @@ public class MeetingUtil : TestUtil
         });
     }
 
-    public async Task<MeetingRecord> ScheduleMeetingRecordAsync(MeetingDto meetingDto, string egressId = null,
+    public async Task<MeetingRecord> GenerateMeetingRecordAsync(MeetingDto meetingDto, string egressId = null,
         string url = null)
     {
         return new MeetingRecord()
