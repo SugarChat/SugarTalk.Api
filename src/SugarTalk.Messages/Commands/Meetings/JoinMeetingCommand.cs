@@ -1,10 +1,12 @@
 using Mediator.Net.Contracts;
+using SugarTalk.Messages.Attributes;
 using SugarTalk.Messages.Dto.Meetings;
 using SugarTalk.Messages.Dto.Meetings.User;
 using SugarTalk.Messages.Responses;
 
 namespace SugarTalk.Messages.Commands.Meetings;
 
+[GuestValidator]
 public class JoinMeetingCommand : ICommand
 {
     public string MeetingNumber { get; set; }
