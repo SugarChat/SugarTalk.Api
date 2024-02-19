@@ -73,6 +73,10 @@ namespace SugarTalk.Core.Services.Meetings
         
         Task<(int Count, List<AppointmentMeetingDto> Records)> GetAppointmentMeetingsByUserIdAsync(GetAppointmentMeetingsRequest request, CancellationToken cancellationToken);
 
+        Task MarkMeetingAsCompletedAsync(Meeting meeting, CancellationToken cancellationToken);
+
+        Task UpdateUserSessionsAtMeetingEndAsync(Meeting meeting, List<MeetingUserSession> userSessions, CancellationToken cancellationToken);
+
         Task<MeetingUserSession> GetMeetingUserSessionByMeetingIdAndOnlineTypeAsync(Guid meetingId, int userId,
             CancellationToken cancellationToken);
     }
@@ -419,6 +423,33 @@ namespace SugarTalk.Core.Services.Meetings
                 .ConfigureAwait(false);
     
             return (count, records);
+        }
+        
+        public async Task MarkMeetingAsCompletedAsync(Meeting meeting, CancellationToken cancellationToken)
+        {
+            meeting.EndDate = _clock.Now.ToUnixTimeSeconds();
+            meeting.Status = MeetingStatus.Completed;
+            
+            await _repository.UpdateAsync(meeting, cancellationToken).ConfigureAwait(false);
+            
+            await _unitOfWork.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        }
+        
+        public async Task UpdateUserSessionsAtMeetingEndAsync(Meeting meeting, List<MeetingUserSession> userSessions, CancellationToken cancellationToken)
+        {
+            userSessions.ForEach(x =>
+            {
+                if (x.LastQuitTime is not (null or 0)) return;
+
+                x.CumulativeTime = (x.CumulativeTime ?? 0) + Convert.ToInt64(
+                    (DateTimeOffset.FromUnixTimeSeconds(meeting.EndDate) -
+                     DateTimeOffset.FromUnixTimeSeconds(meeting.StartDate)).TotalSeconds);
+                x.LastQuitTime = meeting.EndDate;
+            });
+
+            await _repository.UpdateAllAsync(userSessions, cancellationToken).ConfigureAwait(false);
+
+            await _unitOfWork.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
         }
         
         private static long CalculateMeetingDuration(long startDate, long endDate)
