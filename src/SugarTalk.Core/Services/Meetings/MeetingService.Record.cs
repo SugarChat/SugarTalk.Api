@@ -53,10 +53,10 @@ namespace SugarTalk.Core.Services.Meetings
             var authHeader = context.Request.Headers["Authorization"].FirstOrDefault();
             var token = authHeader.Substring("Bearer ".Length).Trim();
             
-            var jsonResponse = await _liveKitClient.StopEgressAsync(new StopEgressRequestDto {Token = token,EgressId = newestMeetingRecord.EgressId },cancellationToken).ConfigureAwait(false);
-            if (jsonResponse == null) throw new MeetingRecordUrlNotFoundException();
+            var response = await _liveKitClient.StopEgressAsync(new StopEgressRequestDto {Token = token,EgressId = newestMeetingRecord.EgressId },cancellationToken).ConfigureAwait(false);
+            if (response == null) throw new MeetingRecordUrlNotFoundException();
             newestMeetingRecord.RecordType = MeetingRecordType.EndRecord;
-            newestMeetingRecord.Url = jsonResponse.File.Location;
+            newestMeetingRecord.Url = response.File.Location;
             await _meetingDataProvider.UpdateMeetingRecordAsync(newestMeetingRecord, cancellationToken).ConfigureAwait(false);
             
             return new StorageMeetingRecordVideoResponse();
