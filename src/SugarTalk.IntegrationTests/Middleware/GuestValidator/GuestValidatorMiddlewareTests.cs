@@ -16,45 +16,12 @@ using Xunit;
 
 namespace SugarTalk.IntegrationTests.Middleware.GuestValidator;
 
-public class GuestValidatorMiddlewareTests : GenericFixtureBase
+public class GuestValidatorMiddlewareTests : GuestFixtureBase
 {
-    [Fact]
-    public async Task ShouldGuestJoinMeetingWhenAllow()
-    {
-        await RunWithUnitOfWork<IRepository>(async repository =>
-        {
-            var currentUser = await repository.GetByIdAsync<UserAccount>(1);
-            
-            currentUser.Issuer = UserAccountIssuer.Guest;
-            
-            await repository.UpdateAsync(currentUser);
-            
-            await repository.InsertAsync(new Meeting
-            {
-                MeetingNumber = "123"
-            });
-        });
-        
-        await RunWithUnitOfWork<IMediator>(async mediator =>
-        {   
-            await mediator.SendAsync(new JoinMeetingCommand
-            {
-                MeetingNumber = "123",
-                SecurityCode = "1",
-                IsMuted = false
-            });
-        }, builder =>
-        {
-            var liveKitServerUtilService = Substitute.For<ILiveKitServerUtilService>();
-            
-            liveKitServerUtilService.GenerateTokenForJoinMeeting(Arg.Any<UserAccountDto>(), Arg.Any<string>()).Returns("");
-            
-            builder.RegisterInstance(liveKitServerUtilService);
-        });
-    }
-
-    [Fact]
-    public async Task ShouldThrowExceptionWhenGuestNotAllow()
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task ShouldGuestRequestAllowOrNot(bool isAllow)
     {
         await RunWithUnitOfWork<IRepository>(async repository =>
         {
@@ -68,19 +35,30 @@ public class GuestValidatorMiddlewareTests : GenericFixtureBase
             {
                 MeetingMasterUserId = 1,
                 MeetingNumber = "123"
-
             });
         });
         
         await RunWithUnitOfWork<IMediator>(async mediator =>
         {
-            await Assert.ThrowsAsync<GuestIsNotAllowException>(async () =>
+            if (isAllow)
             {
-                await mediator.SendAsync(new EndMeetingCommand
+                await mediator.SendAsync(new JoinMeetingCommand
                 {
-                    MeetingNumber = "123"
+                    MeetingNumber = "123",
+                    SecurityCode = "1",
+                    IsMuted = false
                 });
-            });
+            }
+            else
+            {
+                await Assert.ThrowsAsync<GuestIsNotAllowException>(async () =>
+                {
+                    await mediator.SendAsync(new EndMeetingCommand
+                    {
+                        MeetingNumber = "123"
+                    });
+                });
+            }
         }, builder =>
         {
             var liveKitServerUtilService = Substitute.For<ILiveKitServerUtilService>();
