@@ -21,4 +21,6 @@ public class MeetingRecordDto
     public string Timezone { get; set; }
 
     public string MeetingCreator { get; set; }
+
+    public string Url { get; set; }
 }
