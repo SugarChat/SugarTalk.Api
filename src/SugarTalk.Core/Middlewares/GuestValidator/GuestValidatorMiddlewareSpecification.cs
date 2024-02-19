@@ -34,7 +34,7 @@ public class GuestValidatorMiddlewareSpecification<TContext> : IPipeSpecificatio
         
         var currentUser = await _identityService.GetCurrentUserAsync(cancellationToken: cancellationToken);
         
-        if (currentUser.Issuer == UserAccountIssuer.Guest && !context.Message.GetType().GetAttribute<GuestValidatorAttribute>().Any()) 
+        if (currentUser.Issuer == UserAccountIssuer.Guest && !context.Message.GetType().GetAttribute<AllowGuestAccessAttribute>().Any()) 
             throw new GuestIsNotAllowException();
     }
 

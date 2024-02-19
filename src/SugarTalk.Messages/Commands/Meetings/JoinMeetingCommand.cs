@@ -6,7 +6,7 @@ using SugarTalk.Messages.Responses;
 
 namespace SugarTalk.Messages.Commands.Meetings;
 
-[GuestValidator]
+[AllowGuestAccess]
 public class JoinMeetingCommand : ICommand
 {
     public string MeetingNumber { get; set; }
