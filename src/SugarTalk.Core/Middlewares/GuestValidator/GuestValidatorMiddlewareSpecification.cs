@@ -17,20 +17,24 @@ public class GuestValidatorMiddlewareSpecification<TContext> : IPipeSpecificatio
     where TContext : IContext<IMessage>
 {
     private readonly ICurrentUser _currentUser;
+    private readonly IIdentityService _identityService;
 
-    public GuestValidatorMiddlewareSpecification(ICurrentUser currentUser)
+    public GuestValidatorMiddlewareSpecification(ICurrentUser currentUser, IIdentityService identityService)
     {
         _currentUser = currentUser;
+        _identityService = identityService;
     }
 
     public bool ShouldExecute(TContext context, CancellationToken cancellationToken)
     {
-        return _currentUser.AuthType == UserAccountIssuer.Guest && context.Message.GetType().GetAttribute<GuestValidatorAttribute>().Any();
+        return context.Message.GetType().GetAttribute<GuestValidatorAttribute>().Any();
     }
 
     public async Task BeforeExecute(TContext context, CancellationToken cancellationToken)
     {
-        if (!ShouldExecute(context, cancellationToken)) throw new GuestIsNotAllowException();
+        var currentUser = await _identityService.GetCurrentUserAsync(cancellationToken: cancellationToken);
+        
+        if (currentUser.Issuer == UserAccountIssuer.Guest && !ShouldExecute(context, cancellationToken)) throw new GuestIsNotAllowException();
     }
 
     public Task Execute(TContext context, CancellationToken cancellationToken)

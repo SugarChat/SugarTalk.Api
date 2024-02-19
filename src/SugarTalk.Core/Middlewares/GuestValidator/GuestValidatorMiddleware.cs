@@ -8,18 +8,21 @@ namespace SugarTalk.Core.Middlewares.GuestValidator;
 
 public static class GuestValidatorMiddleware
 {
-    public static void UseGuestValidator<TContext>(
-        this IPipeConfigurator<TContext> configurator, ICurrentUser currentUser = null) where TContext : IContext<IMessage>
+    public static void UseGuestValidator<TContext>(this IPipeConfigurator<TContext> configurator,
+        ICurrentUser currentUser = null, IIdentityService identityService = null)
+        where TContext : IContext<IMessage>
     {
-        if (currentUser == null && configurator.DependencyScope == null)
+        if ((currentUser == null || identityService == null) && configurator.DependencyScope == null)
         {
             throw new DependencyScopeNotConfiguredException(
-                $"{nameof(currentUser)} is not provided or IDependencyScope is not configured");
+                $"{nameof(identityService)} or {nameof(currentUser)} is not provided and IDependencyScope is not configured, Please ensure {nameof(identityService)} or {nameof(currentUser)} is registered properly if you are using IoC container, otherwise please pass {nameof(identityService)} as parameter");
         }
 
         currentUser ??= configurator.DependencyScope.Resolve<ICurrentUser>();
+        
+        identityService ??= configurator.DependencyScope.Resolve<IIdentityService>();
 
         configurator.AddPipeSpecification(
-            new GuestValidatorMiddlewareSpecification<TContext>(currentUser));
+            new GuestValidatorMiddlewareSpecification<TContext>(currentUser, identityService));
     }
 }
