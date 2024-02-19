@@ -367,7 +367,9 @@ namespace SugarTalk.Core.Services.Meetings
             if (meeting is null) return;
 
             var userSessions = await _repository.QueryNoTracking<MeetingUserSession>()
-                .Where(x => x.MeetingId == meeting.Id).ToListAsync(cancellationToken).ConfigureAwait(false);
+                .Where(x => x.MeetingId == meeting.Id)
+                .Where(x => x.OnlineType != MeetingUserSessionOnlineType.KickOutMeeting)
+                .ToListAsync(cancellationToken).ConfigureAwait(false);
 
             var userIds = userSessions.Select(x => x.UserId).Distinct().ToList();
             
