@@ -11,7 +11,6 @@ using System.Threading.Tasks;
 
 namespace SugarTalk.Core.Handlers.CommandHandlers.Meetings
 {
-
     public class KickOutMeetingByUserIdCommandHandler : ICommandHandler<KickOutMeetingByUserIdCommand, KickOutMeetingByUserIdResponse>
     {
         private readonly IMeetingService _meetingService;
@@ -23,7 +22,7 @@ namespace SugarTalk.Core.Handlers.CommandHandlers.Meetings
 
         public async Task<KickOutMeetingByUserIdResponse> Handle(IReceiveContext<KickOutMeetingByUserIdCommand> context, CancellationToken cancellationToken)
         {
-            return await _meetingService.KickOutMeetingAsync(context.Message, cancellationToken);
+            return await _meetingService.KickOutMeetingAsync(context.Message, cancellationToken).ConfigureAwait(false);
         }
     }
 }

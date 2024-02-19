@@ -7,7 +7,9 @@ using Mediator.Net;
 using System.Threading;
 using SugarTalk.Core.Data;
 using System.Threading.Tasks;
+using LiveKit_CSharp.Services.Meeting;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using SugarTalk.Core.Domain.Account;
 using SugarTalk.Core.Domain.Meeting;
 using SugarTalk.Messages.Dto.LiveKit;
@@ -19,6 +21,7 @@ using SugarTalk.Core.Services.AntMediaServer;
 using SugarTalk.Messages.Dto.Users;
 using SugarTalk.Messages.Enums.Speech;
 using SugarTalk.Core.Services.Account;
+using SugarTalk.Core.Settings.LiveKit;
 using SugarTalk.Messages.Requests.Meetings;
 
 namespace SugarTalk.IntegrationTests.Utils.Meetings;
@@ -148,16 +151,23 @@ public class MeetingUtil : TestUtil
         });
     }
 
-    public async Task<KickOutMeetingByUserIdResponse> KickOutUserByUserIdAsync(Guid meetingId, int kickOutUserId, int MasterUserId, string meetingNumber)
+    public async Task<KickOutMeetingByUserIdResponse> KickOutUserByUserIdAsync(Guid meetingId, int kickOutUserId,
+        int MasterUserId, string meetingNumber)
     {
         return await Run<IMediator, KickOutMeetingByUserIdResponse>(async mediator =>
         {
             return await mediator.SendAsync<KickOutMeetingByUserIdCommand, KickOutMeetingByUserIdResponse>(
-                                new KickOutMeetingByUserIdCommand
-                                {
-                                    KickOutUserId = kickOutUserId,
-                                    MeetingId = meetingId
-                                });
+                new KickOutMeetingByUserIdCommand
+                {
+                    KickOutUserId = kickOutUserId,
+                    MeetingId = meetingId
+                });
+        }, builder =>
+        {
+            var services = Substitute.For<ILiveKitServerUtilService>();
+            services.GenerateTokenForJoinMeeting(Arg.Any<UserAccountDto>(), Arg.Any<string>())
+                .Returns("11231312312312312313223");
+            builder.RegisterInstance(services);
         });
     }
 
@@ -187,8 +197,7 @@ public class MeetingUtil : TestUtil
             return await repo.FirstOrDefaultAsync<MeetingUserSession>(x => x.UserId == userId && x.MeetingId == meetingId);
         });
     }
-
-
+    
     public async Task<MeetingDto> JoinMeetingByUserAsync(UserAccount user, string meetingNumber, bool isMuted = false)
     {
         return await Run<IMediator, MeetingDto>(async (mediator) =>
