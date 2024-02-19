@@ -51,7 +51,7 @@ public partial class MeetingService
             RoomName = command.MeetingNumber,
             File = new EgressEncodedFileOutPutDto
             {
-                Filepath = filePath,
+                FilePath = filePath,
                 AliOssUpload = new EgressAliOssUploadDto()
             }
         }, cancellationToken).ConfigureAwait(false);

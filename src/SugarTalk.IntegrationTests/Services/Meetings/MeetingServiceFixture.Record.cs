@@ -1,13 +1,21 @@
-using System;
-using System.Linq;
-using System.Threading.Tasks;
-using Mediator.Net;
-using Shouldly;
-using SugarTalk.Core.Data;
-using SugarTalk.Core.Domain.Meeting;
-using SugarTalk.Messages.Dto;
-using SugarTalk.Messages.Requests.Meetings;
 using Xunit;
+using System;
+using Autofac;
+using Shouldly;
+using NSubstitute;
+using System.Linq;
+using Mediator.Net;
+using System.Threading;
+using SugarTalk.Core.Data;
+using SugarTalk.Messages.Dto;
+using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore;
+using SugarTalk.Core.Domain.Meeting;
+using SugarTalk.Core.Services.Utils;
+using SugarTalk.Core.Services.Http.Clients;
+using SugarTalk.Messages.Commands.Meetings;
+using SugarTalk.Messages.Requests.Meetings;
+using SugarTalk.Messages.Dto.LiveKit.Egress;
 
 namespace SugarTalk.IntegrationTests.Services.Meetings;
 
@@ -379,6 +387,67 @@ public partial class MeetingServiceFixture
             var creatorList = response.Data.Records.Select(x => x.MeetingCreator).ToList();
             creatorList.ShouldContain(otherUser.UserName);
             creatorList.ShouldContain(testCurrentUser.UserName);
+        });
+    }
+
+    [Fact]
+    public async Task CanGetEgressIdWhenStartMeetingRecording()
+    {
+        const string egressId = "123456";
+        
+        var meeting1Id = Guid.NewGuid();
+        var meeting2Id = Guid.NewGuid();
+        
+        var meeting = await _meetingUtil.ScheduleMeeting();
+        
+        var meetingRecord1 = new MeetingRecord
+        {
+            Id = Guid.NewGuid(),
+            MeetingId = meeting1Id,
+            CreatedDate = DateTimeOffset.Now.AddDays(-2),
+            Url = "mock url1"
+        };
+
+        var meetingRecord2 = new MeetingRecord
+        {
+            Id = Guid.NewGuid(),
+            MeetingId = meeting2Id,
+            Url = "mock url3"
+        };
+
+        var meetingRecord3 = new MeetingRecord
+        {
+            Id = Guid.NewGuid(),
+            MeetingId = meeting.Data.Id,
+            Url = "mock url4"
+        };
+
+        await _meetingUtil.AddMeetingRecord(meetingRecord1);
+        await _meetingUtil.AddMeetingRecord(meetingRecord2);
+        await _meetingUtil.AddMeetingRecord(meetingRecord3);
+        
+        await Run<IMediator, IRepository, IClock>(async (mediator, repository, clock) =>
+        {
+            var response = await mediator.SendAsync<StartMeetingRecordingCommand, StartMeetingRecordingResponse>(
+                new StartMeetingRecordingCommand
+                {
+                    MeetingId = meeting.Data.Id
+                });
+            
+            response.EgressId.ShouldBe(egressId);
+            
+            var meetingRecords = await repository.Query<MeetingRecord>(x => x.MeetingId == meeting.Data.Id).ToListAsync();
+            meetingRecords.Count(x => x.RecordNumber == $"ZNZX-{clock.Now.Year}{clock.Now.Month}{clock.Now.Day}{2.ToString().PadLeft(6, '0')}").ShouldBe(1);
+        }, builder =>
+        {
+            var liveKitClient = Substitute.For<ILiveKitClient>();
+
+            liveKitClient.StartTrackCompositeEgressAsync(Arg.Any<StartTrackCompositeEgressRequestDto>(), Arg.Any<CancellationToken>())
+                .Returns(new StartEgressResponseDto { EgressId = egressId });
+            
+            builder.RegisterInstance(liveKitClient);
+
+            MockClock(builder, DateTimeOffset.Now);
         });
     }
 }

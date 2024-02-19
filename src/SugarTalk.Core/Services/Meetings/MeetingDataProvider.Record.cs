@@ -13,7 +13,11 @@ namespace SugarTalk.Core.Services.Meetings;
 
 public partial interface IMeetingDataProvider
 {
-    public Task<(int count, List<MeetingRecordDto> items)> GetMeetingRecordsByUserIdAsync(int? currentUserId, GetCurrentUserMeetingRecordRequest request, CancellationToken cancellationToken);
+    Task<(int count, List<MeetingRecordDto> items)> GetMeetingRecordsByUserIdAsync(int? currentUserId, GetCurrentUserMeetingRecordRequest request, CancellationToken cancellationToken);
+    
+    Task DeleteMeetingRecordAsync(List<Guid> meetingRecordIds, CancellationToken cancellationToken);
+    
+    Task PersistMeetingRecordAsync(Guid meetingId, Guid meetingRecordId, CancellationToken cancellationToken);
 }
 
 public partial class MeetingDataProvider
@@ -48,7 +52,7 @@ public partial class MeetingDataProvider
                     result.Session,
                     User = user
                 })
-            .Where(x => x.Session.UserId == currentUserId);
+            .Where(x => x.Session.UserId == currentUserId && !x.Record.IsDeleted);
 
         query = string.IsNullOrEmpty(request.Keyword) ? query : query.Where(x =>
                 x.Meeting.Title.Contains(request.Keyword) ||
@@ -83,5 +87,36 @@ public partial class MeetingDataProvider
             .ToList();
 
         return (total, items);
+    }
+
+    public async Task DeleteMeetingRecordAsync(List<Guid> meetingRecordIds, CancellationToken cancellationToken)
+    {
+        var meetingRecords = await _repository.Query<MeetingRecord>()
+            .Where(x => meetingRecordIds.Contains(x.Id))
+            .Where(x => !x.IsDeleted).ToListAsync(cancellationToken).ConfigureAwait(false);
+
+        if (meetingRecords is not { Count: > 0 }) return;
+        
+        meetingRecords.ForEach(x => x.IsDeleted = true);
+    }
+
+    public async Task PersistMeetingRecordAsync(Guid meetingId, Guid meetingRecordId, CancellationToken cancellationToken)
+    {
+        var meetingRecordTotal = await _repository.Query<MeetingRecord>()
+            .CountAsync(x => x.MeetingId == meetingId, cancellationToken).ConfigureAwait(false);
+
+        await _repository.InsertAsync(new MeetingRecord
+        {
+            Id = meetingRecordId,
+            MeetingId = meetingId,
+            RecordNumber = GenerateRecordNumber(meetingRecordTotal + 1)
+        }, cancellationToken).ConfigureAwait(false);
+    }
+    
+    private string GenerateRecordNumber(int total)
+    {
+        var sequenceToString = total.ToString().PadLeft(6, '0');
+
+        return $"ZNZX-{_clock.Now.Year}{_clock.Now.Month}{_clock.Now.Day}{sequenceToString}";
     }
 }

@@ -6,7 +6,7 @@ namespace SugarTalk.Messages.Dto.LiveKit.Egress;
 public class EgressEncodedFileOutPutDto
 {
     [JsonProperty("filepath")]
-    public string Filepath { get; set; }
+    public string FilePath { get; set; }
     
     [JsonProperty("file_type")] 
     public string FileType { get; set; } = "MP4";

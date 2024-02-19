@@ -79,6 +79,7 @@
         <None Remove="DbUp\Scripts_2024\Script0009_alter_meeting_record_table.sql" />
         <None Remove="DbUp\Scripts_2024\Script0008_modify_meeting_record_column.sql" />
         <EmbeddedResource Include="DbUp\Scripts_2024\Script0008_modify_meeting_record_column.sql" />
+        <EmbeddedResource Include="DbUp\Scripts_2024\Script0009_add_delete_for_meeting_record_table.sql" />
     </ItemGroup>
     
     <ItemGroup>

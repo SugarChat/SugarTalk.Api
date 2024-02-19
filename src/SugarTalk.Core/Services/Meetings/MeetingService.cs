@@ -70,6 +70,8 @@ namespace SugarTalk.Core.Services.Meetings
             MeetingRepeatType repeatType, CancellationToken cancellationToken);
         
         Task<GetAppointmentMeetingsResponse> GetAppointmentMeetingsAsync(GetAppointmentMeetingsRequest request, CancellationToken cancellationToken);
+        
+        Task DeleteMeetingHistoryAsync(DeleteMeetingHistoryCommand command, CancellationToken cancellationToken);
     }
     
     public partial class MeetingService : IMeetingService
@@ -562,6 +564,24 @@ namespace SugarTalk.Core.Services.Meetings
                     Records = records
                 }
             };
+        }
+
+        public async Task DeleteMeetingHistoryAsync(DeleteMeetingHistoryCommand command, CancellationToken cancellationToken)
+        {
+            var user = await _accountDataProvider.GetUserAccountAsync(_currentUser.Id, cancellationToken: cancellationToken).ConfigureAwait(false);
+
+            if (user is null) throw new UnauthorizedAccessException();
+            
+            await _meetingDataProvider.DeleteMeetingHistoryAsync(command.MeetingHistoryIds, user.Id, cancellationToken).ConfigureAwait(false);
+        }
+
+        public async Task DeleteMeetingRecordAsync(DeleteMeetingRecordCommand command, CancellationToken cancellationToken)
+        {
+            var user = await _accountDataProvider.GetUserAccountAsync(_currentUser.Id, cancellationToken: cancellationToken).ConfigureAwait(false);
+
+            if (user is null) throw new UnauthorizedAccessException();
+            
+            await _meetingDataProvider.DeleteMeetingRecordAsync(command.MeetingRecordIds, cancellationToken).ConfigureAwait(false);
         }
     }
 }
