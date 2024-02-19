@@ -48,7 +48,11 @@ namespace SugarTalk.Core.Services.Meetings
             if (newestMeetingRecord == null) throw new MeetingRecordNotFoundException();
             if (newestMeetingRecord.RecordType == MeetingRecordType.EndRecord) throw new MeetingRecordNotOpenException();
             
-            var jsonResponse = await _liveKitClient.StopEgressAsync(new StopEgressRequestDto { EgressId = newestMeetingRecord.EgressId },cancellationToken).ConfigureAwait(false);
+            var context = _httpContextAccessor.HttpContext;
+            var authHeader = context.Request.Headers["Authorization"].FirstOrDefault();
+            var token = authHeader.Substring("Bearer ".Length).Trim();
+            
+            var jsonResponse = await _liveKitClient.StopEgressAsync(new StopEgressRequestDto {Token = token,EgressId = newestMeetingRecord.EgressId },cancellationToken).ConfigureAwait(false);
             if (jsonResponse == null) throw new MeetingRecordUrlNotFoundException();
             dynamic data = JsonConvert.DeserializeObject(jsonResponse);
             newestMeetingRecord.RecordType = MeetingRecordType.EndRecord;

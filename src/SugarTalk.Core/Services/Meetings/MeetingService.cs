@@ -6,6 +6,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using AutoMapper;
+using Microsoft.AspNetCore.Http;
 using Newtonsoft.Json;
 using Serilog;
 using SugarTalk.Core.Data;
@@ -89,6 +90,8 @@ namespace SugarTalk.Core.Services.Meetings
 
         private readonly LiveKitServerSetting _liveKitServerSetting;
         
+        private readonly IHttpContextAccessor _httpContextAccessor;
+        
         public MeetingService(
             IClock clock,
             IMapper mapper,
@@ -100,7 +103,8 @@ namespace SugarTalk.Core.Services.Meetings
             IAccountDataProvider accountDataProvider,
             LiveKitServerSetting liveKitServerSetting,
             ILiveKitServerUtilService liveKitServerUtilService,
-            IAntMediaServerUtilService antMediaServerUtilService)
+            IAntMediaServerUtilService antMediaServerUtilService,
+            IHttpContextAccessor httpContextAccessor)
         {
             _clock = clock;
             _mapper = mapper;
@@ -113,6 +117,7 @@ namespace SugarTalk.Core.Services.Meetings
             _liveKitServerSetting = liveKitServerSetting;
             _liveKitServerUtilService = liveKitServerUtilService;
             _antMediaServerUtilService = antMediaServerUtilService;
+            _httpContextAccessor = httpContextAccessor;
         }
         
         public async Task<MeetingScheduledEvent> ScheduleMeetingAsync(ScheduleMeetingCommand command, CancellationToken cancellationToken)
