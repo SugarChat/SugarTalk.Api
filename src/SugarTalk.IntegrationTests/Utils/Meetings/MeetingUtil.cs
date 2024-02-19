@@ -19,12 +19,11 @@ using SugarTalk.Messages.Dto.Meetings;
 using SugarTalk.Core.Services.LiveKit;
 using SugarTalk.Messages.Enums.Meeting;
 using SugarTalk.Messages.Commands.Meetings;
-using SugarTalk.Core.Services.AntMediaServer;
 using SugarTalk.Messages.Dto.Users;
 using SugarTalk.Messages.Enums.Speech;
 using SugarTalk.Core.Services.Account;
-using SugarTalk.Core.Settings.LiveKit;
 using SugarTalk.Core.Services.Http.Clients;
+using SugarTalk.Messages.Dto.LiveKit.Egress;
 using SugarTalk.Messages.Requests.Meetings;
 using Xunit;
 
@@ -155,7 +154,8 @@ public class MeetingUtil : TestUtil
         });
     }
 
-    public async Task<KickOutMeetingByUserIdResponse> KickOutUserByUserIdAsync(Guid meetingId, int kickOutUserId, int MasterUserId, string meetingNumber)
+    public async Task<KickOutMeetingByUserIdResponse> KickOutUserByUserIdAsync(Guid meetingId, int kickOutUserId,
+        int MasterUserId, string meetingNumber)
     {
         return await Run<IMediator, KickOutMeetingByUserIdResponse>(async mediator =>
         {
@@ -297,8 +297,14 @@ public class MeetingUtil : TestUtil
             httpContextAccessor.HttpContext.Returns(context);
             var liveKitClient = Substitute.For<ILiveKitClient>();
             liveKitClient.StopEgressAsync(Arg.Any<StopEgressRequestDto>(), Arg.Any<CancellationToken>())
-                .Returns(
-                    "{ \"file\": { \"filename\": \"1y9133060d89259t-mp4\", \"started_at\": 1708133893085210173, \"ended_at\": 226938338636, \"duration\": 0, \"location\": \"https://smartiestest.oss-cn-hongkong.aliyuncs.com/livekit-recordings/test.mp4\" } }");
+                .Returns(new StopEgressResponseDto()
+                {
+                    EgressId = "mock egressId",
+                    EndedAt = "mock endedat",
+                    File = new FileDetails{Location = "mock url"},
+                    Status = "mock status",
+                    Error =  "mock error",
+                });
             builder.RegisterInstance(httpContextAccessor);
             builder.RegisterInstance(liveKitClient);
         });

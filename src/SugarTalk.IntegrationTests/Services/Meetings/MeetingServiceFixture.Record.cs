@@ -446,7 +446,7 @@ public partial class MeetingServiceFixture
         response.Code.ShouldBe(HttpStatusCode.OK);
 
         var newMeetingRecord = await _meetingUtil.GetMeetingRecordByMeetingIdAsync(meetingDto.Id);
-        newMeetingRecord.Url.ShouldBe("https://smartiestest.oss-cn-hongkong.aliyuncs.com/livekit-recordings/test.mp4");
+        newMeetingRecord.Url.ShouldBe("mock url");
         newMeetingRecord.RecordType.ShouldBe(MeetingRecordType.EndRecord);
         newMeetingRecord.MeetingId.ShouldBe(meetingDto.Id);
     }

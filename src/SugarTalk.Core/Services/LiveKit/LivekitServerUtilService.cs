@@ -8,6 +8,7 @@ using SugarTalk.Messages.Dto.LiveKit;
 using SugarTalk.Core.Services.Http.Clients;
 using SugarTalk.Core.Services.Identity;
 using SugarTalk.Core.Settings.LiveKit;
+using SugarTalk.Messages.Dto.LiveKit.Egress;
 using SugarTalk.Messages.Dto.Users;
 
 namespace SugarTalk.Core.Services.LiveKit;
@@ -52,7 +53,8 @@ public class LiveKitServerUtilService : ILiveKitServerUtilService
         var generateAccessToken = new GenerateAccessToken();
         
         return generateAccessToken.CreateMeeting(
-            meetingNumber, _liveKitServerSetting.Apikey, _liveKitServerSetting.ApiSecret, user.Id.ToString(), user.UserName);
+            meetingNumber: meetingNumber, apiKey: _liveKitServerSetting.Apikey, apiSecret: _liveKitServerSetting.ApiSecret, 
+            userId: user.Id.ToString(), username: user.UserName);
     }
 
     public string GenerateTokenForJoinMeeting(UserAccountDto user, string meetingNumber)

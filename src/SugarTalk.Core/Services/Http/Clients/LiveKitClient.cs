@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using SugarTalk.Core.Ioc;
 using SugarTalk.Core.Settings.LiveKit;
 using SugarTalk.Messages.Dto.LiveKit;
+using SugarTalk.Messages.Dto.LiveKit.Egress;
 
 namespace SugarTalk.Core.Services.Http.Clients;
 
@@ -17,7 +18,9 @@ public interface ILiveKitClient : IScopedDependency
     
     Task<StartEgressResponseDto> StartTrackCompositeEgressAsync(StartTrackCompositeEgressRequestDto request, CancellationToken cancellationToken);
     
-    Task<string> StopEgressAsync(StopEgressRequestDto request, CancellationToken cancellationToken);
+    Task<StopEgressResponseDto> StopEgressAsync(StopEgressRequestDto request, CancellationToken cancellationToken);
+    
+    Task<GetEgressInfoListResponseDto> GetEgressInfoListAsync(GetEgressRequestDto request, CancellationToken cancellationToken);
 }
 
 public class LiveKitClient : ILiveKitClient
@@ -79,7 +82,7 @@ public class LiveKitClient : ILiveKitClient
                 $"{_liveKitServerSetting.BaseUrl}/twirp/livekit.Egress/StartTrackCompositeEgress", request, cancellationToken, headers: headers).ConfigureAwait(false);
     }
 
-    public async Task<string> StopEgressAsync(StopEgressRequestDto request, CancellationToken cancellationToken)
+    public async Task<StopEgressResponseDto> StopEgressAsync(StopEgressRequestDto request, CancellationToken cancellationToken)
     {
         var headers = new Dictionary<string, string>
         {
@@ -87,6 +90,17 @@ public class LiveKitClient : ILiveKitClient
         };
         
         return await _httpClientFactory
-            .PostAsJsonAsync<string>($"{_liveKitServerSetting.BaseUrl}/twirp/livekit.Egress/StopEgress", request, cancellationToken, headers: headers).ConfigureAwait(false);
+            .PostAsJsonAsync<StopEgressResponseDto>($"{_liveKitServerSetting.BaseUrl}/twirp/livekit.Egress/StopEgress", request, cancellationToken, headers: headers).ConfigureAwait(false);
+    }
+
+    public async Task<GetEgressInfoListResponseDto> GetEgressInfoListAsync(GetEgressRequestDto request, CancellationToken cancellationToken)
+    {
+        var headers = new Dictionary<string, string>
+        {
+            { "Authorization", $"Bearer {request.Token}" }
+        };
+        
+        return await _httpClientFactory
+            .PostAsJsonAsync<GetEgressInfoListResponseDto>($"{_liveKitServerSetting.BaseUrl}/twirp/livekit.Egress/ListEgress", request, cancellationToken, headers: headers).ConfigureAwait(false);
     }
 }

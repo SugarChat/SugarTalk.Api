@@ -12,6 +12,7 @@ using Newtonsoft.Json;
 using SugarTalk.Core.Domain.Meeting;
 using SugarTalk.Core.Services.Exceptions;
 using SugarTalk.Messages.Dto.LiveKit;
+using SugarTalk.Messages.Dto.LiveKit.Egress;
 using SugarTalk.Messages.Enums.Meeting;
 using SugarTalk.Messages.Requests.Meetings;
 
@@ -54,9 +55,8 @@ namespace SugarTalk.Core.Services.Meetings
             
             var jsonResponse = await _liveKitClient.StopEgressAsync(new StopEgressRequestDto {Token = token,EgressId = newestMeetingRecord.EgressId },cancellationToken).ConfigureAwait(false);
             if (jsonResponse == null) throw new MeetingRecordUrlNotFoundException();
-            dynamic data = JsonConvert.DeserializeObject(jsonResponse);
             newestMeetingRecord.RecordType = MeetingRecordType.EndRecord;
-            newestMeetingRecord.Url = data["file"]["location"];
+            newestMeetingRecord.Url = jsonResponse.File.Location;
             await _meetingDataProvider.UpdateMeetingRecordAsync(newestMeetingRecord, cancellationToken).ConfigureAwait(false);
             
             return new StorageMeetingRecordVideoResponse();
