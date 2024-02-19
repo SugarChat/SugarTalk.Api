@@ -11,7 +11,13 @@ public interface ILiveKitClient : IScopedDependency
 {
     Task<LiveKitRoom> CreateRoomAsync(string token, CreateLiveKitRoomDto room, CancellationToken cancellationToken);
 
-    Task<List<LiveKitRoom>> GetRoomListAsync(string token, List<string> MeetingNumbers, CancellationToken cancellationToken);
+    Task<List<LiveKitRoom>> GetRoomListAsync(string token, List<string> meetingNumbers, CancellationToken cancellationToken);
+    
+    Task<StartEgressResponseDto> StartRoomCompositeEgressAsync(StartRoomCompositeEgressRequestDto request, CancellationToken cancellationToken);
+    
+    Task<StartEgressResponseDto> StartTrackCompositeEgressAsync(StartTrackCompositeEgressRequestDto request, CancellationToken cancellationToken);
+    
+    Task<string> StopEgressAsync(StopEgressRequestDto request, CancellationToken cancellationToken);
 }
 
 public class LiveKitClient : ILiveKitClient
@@ -37,7 +43,7 @@ public class LiveKitClient : ILiveKitClient
                 $"{_liveKitServerSetting.BaseUrl}/twirp/livekit.RoomService/CreateRoom", room, cancellationToken, headers: headers).ConfigureAwait(false);
     }
 
-    public async Task<List<LiveKitRoom>> GetRoomListAsync(string token, List<string> MeetingNumbers, CancellationToken cancellationToken)
+    public async Task<List<LiveKitRoom>> GetRoomListAsync(string token, List<string> meetingNumbers, CancellationToken cancellationToken)
     {
         var headers = new Dictionary<string, string>
         {
@@ -46,6 +52,41 @@ public class LiveKitClient : ILiveKitClient
         
         return await _httpClientFactory
             .PostAsJsonAsync<List<LiveKitRoom>>(
-                $"{_liveKitServerSetting.BaseUrl}/twirp/livekit.RoomService/ListRooms", MeetingNumbers, cancellationToken, headers: headers).ConfigureAwait(false);
+                $"{_liveKitServerSetting.BaseUrl}/twirp/livekit.RoomService/ListRooms", meetingNumbers, cancellationToken, headers: headers).ConfigureAwait(false);
+    }
+
+    public async Task<StartEgressResponseDto> StartRoomCompositeEgressAsync(StartRoomCompositeEgressRequestDto request, CancellationToken cancellationToken)
+    {
+        var headers = new Dictionary<string, string>
+        {
+            { "Authorization", $"Bearer {request.Token}" }
+        };
+        
+        return await _httpClientFactory
+            .PostAsJsonAsync<StartEgressResponseDto>(
+                $"{_liveKitServerSetting.BaseUrl}/twirp/livekit.Egress/StartRoomCompositeEgress", request, cancellationToken, headers: headers).ConfigureAwait(false);
+    }
+
+    public async Task<StartEgressResponseDto> StartTrackCompositeEgressAsync(StartTrackCompositeEgressRequestDto request, CancellationToken cancellationToken)
+    {
+        var headers = new Dictionary<string, string>
+        {
+            { "Authorization", $"Bearer {request.Token}" }
+        };
+        
+        return await _httpClientFactory
+            .PostAsJsonAsync<StartEgressResponseDto>(
+                $"{_liveKitServerSetting.BaseUrl}/twirp/livekit.Egress/StartTrackCompositeEgress", request, cancellationToken, headers: headers).ConfigureAwait(false);
+    }
+
+    public async Task<string> StopEgressAsync(StopEgressRequestDto request, CancellationToken cancellationToken)
+    {
+        var headers = new Dictionary<string, string>
+        {
+            { "Authorization", $"Bearer {request.Token}" }
+        };
+        
+        return await _httpClientFactory
+            .PostAsJsonAsync<string>($"{_liveKitServerSetting.BaseUrl}/twirp/livekit.Egress/StopEgress", request, cancellationToken, headers: headers).ConfigureAwait(false);
     }
 }

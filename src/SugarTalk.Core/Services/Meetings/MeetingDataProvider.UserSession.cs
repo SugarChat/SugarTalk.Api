@@ -35,6 +35,8 @@ public partial interface IMeetingDataProvider
     Task<MeetingUserSession> GetMeetingUserSessionByUserIdAsync(int userId, CancellationToken cancellationToken);
 
     Task<List<MeetingUserSession>> GetMeetingUserSessionsByIdsAndMeetingIdAsync(List<int> ids, Guid meetingId, CancellationToken cancellationToken);
+
+    Task<List<MeetingUserSessionDto>> GetUserSessionsByMeetingIdAndOnlineTypeAsync(Guid meetingId,CancellationToken cancellationToken);
 }
 
 public partial class MeetingDataProvider
@@ -114,5 +116,13 @@ public partial class MeetingDataProvider
                 x.Status != MeetingAttendeeStatus.Absent &&
                 !x.IsDeleted)
             .ToListAsync(cancellationToken).ConfigureAwait(false);
+    }
+    
+    public async Task<List<MeetingUserSessionDto>> GetUserSessionsByMeetingIdAndOnlineTypeAsync(Guid meetingId, CancellationToken cancellationToken)
+    {
+        var userSessions = await _repository.QueryNoTracking<MeetingUserSession>(x => x.MeetingId == meetingId && x.OnlineType == MeetingUserSessionOnlineType.Online)
+            .ToListAsync(cancellationToken).ConfigureAwait(false);
+        
+        return _mapper.Map<List<MeetingUserSessionDto>>(userSessions);
     }
 }

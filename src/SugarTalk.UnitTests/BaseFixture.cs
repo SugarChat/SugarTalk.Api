@@ -32,6 +32,7 @@ public partial class BaseFixture
     protected readonly ILiveKitServerUtilService _liveKitServerUtilService;
     protected readonly LiveKitServerSetting _liveKitServerSetting;
     protected readonly ISpeechClient _speechClient;
+    protected readonly ILiveKitClient _liveKitClient;
     protected readonly ISugarTalkHttpClientFactory _httpClientFactory;
     protected readonly IHttpContextAccessor _contextAccessor;
     protected readonly IMeetingProcessJobService _meetingProcessJobService;
@@ -47,11 +48,12 @@ public partial class BaseFixture
         _mapper = CreateMapper();
         _unitOfWork = Substitute.For<IUnitOfWork>();
         _currentUser = Substitute.For<ICurrentUser>();
+        _currentUser.Id.Returns(1);
         _liveKitServerUtilService = Substitute.For<ILiveKitServerUtilService>();
         _accountDataProvider = MockAccountDataProvider(_mapper, _repository, _unitOfWork);
         _meetingDataProvider = MockMeetingDataProvider(_clock, _mapper, _repository, _unitOfWork, _currentUser, _accountDataProvider);
         _meetingService = MockMeetingService(_clock, _mapper, _unitOfWork, _currentUser, _speechClient,
-            _meetingDataProvider, _accountDataProvider, _liveKitServerSetting, _liveKitServerUtilService,
+            _liveKitClient,  _meetingDataProvider, _accountDataProvider, _liveKitServerSetting, _liveKitServerUtilService,
             _antMediaServerUtilService);
         _meetingProcessJobService = MockMeetingProcessJobService(_clock, _unitOfWork, _meetingDataProvider);
     }
@@ -72,6 +74,7 @@ public partial class BaseFixture
         IUnitOfWork unitOfWork,
         ICurrentUser currentUser,
         ISpeechClient speechClient,
+        ILiveKitClient liveKitClient,
         IMeetingDataProvider meetingDataProvider,
         IAccountDataProvider accountDataProvider,
         LiveKitServerSetting liveKitServerSetting, 
@@ -79,7 +82,7 @@ public partial class BaseFixture
         IAntMediaServerUtilService antMediaServerUtilService)
     {
         return new MeetingService(
-            clock, mapper, unitOfWork, currentUser, speechClient, meetingDataProvider, accountDataProvider,
+            clock, mapper, unitOfWork, currentUser, speechClient, liveKitClient, meetingDataProvider, accountDataProvider,
             liveKitServerSetting, liveKitServerUtilService, antMediaServerUtilService);
     }
     

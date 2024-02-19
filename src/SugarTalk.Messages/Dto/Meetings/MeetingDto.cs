@@ -7,14 +7,28 @@ namespace SugarTalk.Messages.Dto.Meetings;
 
 public class MeetingDto : MeetingBaseDto
 {
+    private List<MeetingUserSessionDto> _userSessions;
+
     //用于Ant media server
     public string AppName { get; set; }
 
     //用于Live Kit server
     [JsonProperty("token")]
     public string MeetingTokenFromLiveKit { get; set; }
-    
-    public List<MeetingUserSessionDto> UserSessions { get; set; }
+
+    public List<MeetingUserSessionDto> UserSessions
+    {
+        get => _userSessions;
+        set
+        {
+            if (value is { Count: > 0 })
+            {
+                value.ForEach(e => { e.IsMeetingMaster = e.UserId == MeetingMasterUserId; });
+            }
+
+            _userSessions = value;
+        }
+    }
 
     public int UserSessionCount => UserSessions is { Count: > 0 } ? UserSessions.Count : 0;
 
@@ -36,6 +50,8 @@ public class MeetingBaseDto
 {
     public Guid Id { get; set; }
     
+    public Guid? MeetingSubId { get; set; }
+    
     public int MeetingMasterUserId { get; set; }
 
     public string MeetingNumber { get; set; }
@@ -43,6 +59,8 @@ public class MeetingBaseDto
     public long StartDate { get; set; }
 
     public long EndDate { get; set; }
+    
+    public long CreatorJoinTime { get; set; }
     
     public string TimeZone { get; set; }
 
@@ -53,6 +71,8 @@ public class MeetingBaseDto
     public MeetingRepeatType RepeatType { get; set; }
     
     public MeetingStreamMode MeetingStreamMode { get; set; }
+    
+    public MeetingAppointmentType AppointmentType { get; set; }
 
     public bool IsMuted { get; set; } = false;
     

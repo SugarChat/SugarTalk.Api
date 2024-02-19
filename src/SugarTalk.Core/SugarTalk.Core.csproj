@@ -40,7 +40,9 @@
       <PackageReference Include="Serilog.Sinks.Seq" Version="5.2.2" />
       <PackageReference Include="Smarties.Messages" Version="3.5.1" />
       <PackageReference Include="StackExchange.Redis" Version="2.6.104" />
+      <PackageReference Include="System.ComponentModel.Annotations" Version="5.0.0" />
       <PackageReference Include="System.Net.Http" Version="4.3.4" />
+      <PackageReference Include="TiktokenSharp" Version="1.0.9" />
     </ItemGroup>
 
     <ItemGroup>
@@ -69,6 +71,14 @@
         <EmbeddedResource Include="DbUp\Scripts_2024\Script0003_alter_meeting_repeat_rule_table.sql" />
         <EmbeddedResource Include="DbUp\Scripts_2024\Script0004_modify_meeting_column.sql" />
         <EmbeddedResource Include="DbUp\Scripts_2024\Script0004_alter_meeting_table.sql" />
+        <EmbeddedResource Include="DbUp\Scripts_2024\Script0005_add_meeting_history_table.sql" />
+        <EmbeddedResource Include="DbUp\Scripts_2024\Script0005_add_meeting_speak_detail_table.sql" />
+        <EmbeddedResource Include="DbUp\Scripts_2024\Script0006_modify_meeting_speak_detail_table.sql" />
+        <EmbeddedResource Include="DbUp\Scripts_2024\Script0006_add_meeting_session_table.sql" />
+        <EmbeddedResource Include="DbUp\Scripts_2024\Script0007_modify_columns_for_meeting_speak_detail_table.sql" />
+        <None Remove="DbUp\Scripts_2024\Script0009_alter_meeting_record_table.sql" />
+        <None Remove="DbUp\Scripts_2024\Script0008_modify_meeting_record_column.sql" />
+        <EmbeddedResource Include="DbUp\Scripts_2024\Script0008_modify_meeting_record_column.sql" />
     </ItemGroup>
     
     <ItemGroup>
