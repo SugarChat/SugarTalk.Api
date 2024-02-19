@@ -50,10 +50,7 @@ public class MeetingUserSession : IEntity
 
     [Column("created_date")]
     public DateTimeOffset CreatedDate { get; set; }
-
-    [Column("is_meeting_master")]
-    public bool IsMeetingMaster { get; set; }
-
+    
     [Column("online_type")]
     public MeetingUserSessionOnlineType OnlineType { get; set; }
 }
