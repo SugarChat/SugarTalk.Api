@@ -81,7 +81,8 @@ public partial class MeetingDataProvider
                 EndDate = x.Meeting.EndDate,
                 Timezone = x.Meeting.TimeZone,
                 MeetingCreator = x.User.UserName,
-                Duration = CalculateMeetingDuration(x.Meeting.StartDate, x.Meeting.EndDate)
+                Duration = CalculateMeetingDuration(x.Meeting.StartDate, x.Meeting.EndDate),
+                Url = x.Record.Url
             })
             .ToList();
 
