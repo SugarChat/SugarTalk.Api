@@ -404,22 +404,22 @@ public partial class MeetingServiceFixture
         var scheduleMeetingResponse = await _meetingUtil.ScheduleMeeting();
         var meetingDto = await _meetingUtil.JoinMeeting(scheduleMeetingResponse.Data.MeetingNumber);
 
-        var testRecord1 = await _meetingUtil.ScheduleMeetingRecordAsync(meetingDto, "TestId1");
+        var testRecord1 = await _meetingUtil.ScheduleMeetingRecordAsync(meetingDto, "mock egressId1");
         await _meetingUtil.AddMeetingRecordAsync(testRecord1);
-        var testRecord2 = await _meetingUtil.ScheduleMeetingRecordAsync(meetingDto, "TestId2");
+        var testRecord2 = await _meetingUtil.ScheduleMeetingRecordAsync(meetingDto, "mock egressId2");
         await _meetingUtil.AddMeetingRecordAsync(testRecord2);
-        var testRecord3 = await _meetingUtil.ScheduleMeetingRecordAsync(meetingDto, "TestId3");
+        var testRecord3 = await _meetingUtil.ScheduleMeetingRecordAsync(meetingDto, "mock egressId3");
         await _meetingUtil.AddMeetingRecordAsync(testRecord3);
 
         var meetingRecords = await _meetingUtil.GetMeetingRecordsByMeetingIdAsync(meetingDto.Id);
-        var test3 = meetingRecords.FirstOrDefault(x => x.EgressId == "TestId3");
+        var test3 = meetingRecords.FirstOrDefault(x => x.EgressId == "mock egressId3");
         var newMeetingRecord = await _meetingUtil.GetMeetingRecordByMeetingIdAsync(meetingDto.Id);
         newMeetingRecord.CreatedDate.ShouldBe(test3.CreatedDate);
     }
 
     [Theory]
-    [InlineData("测试Id1", "测试Url1")]
-    [InlineData("测试Id2", "测试Url2")]
+    [InlineData("mock egressId1", "mock url1")]
+    [InlineData("mock egressId2", "mock url2")]
     public async Task CanMeetingRecordShouldBeValue(string egressId, string url)
     {
         var scheduleMeetingResponse = await _meetingUtil.ScheduleMeeting();
@@ -459,8 +459,8 @@ public partial class MeetingServiceFixture
         var testMeetingRecord = new MeetingRecord
         {
             CreatedDate = DateTimeOffset.Now,
-            EgressId = "TestId",
-            Url = "TestUrl",
+            EgressId = "mock egressId",
+            Url = "mock url",
             MeetingId = meetingDto.Id,
             RecordType = MeetingRecordType.EndRecord
         };

@@ -44,17 +44,17 @@ namespace SugarTalk.Core.Services.Meetings
         
         public async Task<StorageMeetingRecordVideoResponse> StorageMeetingRecordVideoAsync(StorageMeetingRecordVideoCommand command, CancellationToken cancellationToken)
         {
-            var newestMeetingRecord = await _meetingDataProvider.GetNewestMeetingRecordByMeetingIdAsync(command.MeetingId, cancellationToken);
+            var newestMeetingRecord = await _meetingDataProvider.GetNewestMeetingRecordByMeetingIdAsync(command.MeetingId, cancellationToken).ConfigureAwait(false);
             if (newestMeetingRecord == null) throw new MeetingRecordNotFoundException();
             if (newestMeetingRecord.RecordType == MeetingRecordType.EndRecord) throw new MeetingRecordNotOpenException();
             
-            var response = await _liveKitClient.StopEgressAsync(new StopEgressRequestDto { EgressId = newestMeetingRecord.EgressId },cancellationToken).ConfigureAwait(false);
-            if (response == null) throw new MeetingRecordUrlNotFoundException();
-            dynamic data = JsonConvert.DeserializeObject(response);
+            var jsonResponse = await _liveKitClient.StopEgressAsync(new StopEgressRequestDto { EgressId = newestMeetingRecord.EgressId },cancellationToken).ConfigureAwait(false);
+            if (jsonResponse == null) throw new MeetingRecordUrlNotFoundException();
+            dynamic data = JsonConvert.DeserializeObject(jsonResponse);
             newestMeetingRecord.RecordType = MeetingRecordType.EndRecord;
             newestMeetingRecord.Url = data["file"]["location"];
-            
             await _meetingDataProvider.UpdateMeetingRecordAsync(newestMeetingRecord, cancellationToken).ConfigureAwait(false);
+            
             return new StorageMeetingRecordVideoResponse();
         }
     }
