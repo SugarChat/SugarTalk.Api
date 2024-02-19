@@ -8,8 +8,10 @@ using System.Threading;
 using SugarTalk.Core.Data;
 using System.Threading.Tasks;
 using LiveKit_CSharp.Services.Meeting;
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Primitives;
 using SugarTalk.Core.Domain.Account;
 using SugarTalk.Core.Domain.Meeting;
 using SugarTalk.Messages.Dto.LiveKit;
@@ -288,10 +290,16 @@ public class MeetingUtil : TestUtil
                 });
         }, builder =>
         {
+            var context = Substitute.For<HttpContext>();
+            context.Request.Headers[Arg.Any<string>()].Returns(new StringValues(
+                "Bearer mockToken"));
+            var httpContextAccessor = Substitute.For<IHttpContextAccessor>();
+            httpContextAccessor.HttpContext.Returns(context);
             var liveKitClient = Substitute.For<ILiveKitClient>();
             liveKitClient.StopEgressAsync(Arg.Any<StopEgressRequestDto>(), Arg.Any<CancellationToken>())
                 .Returns(
                     "{ \"file\": { \"filename\": \"1y9133060d89259t-mp4\", \"started_at\": 1708133893085210173, \"ended_at\": 226938338636, \"duration\": 0, \"location\": \"https://smartiestest.oss-cn-hongkong.aliyuncs.com/livekit-recordings/test.mp4\" } }");
+            builder.RegisterInstance(httpContextAccessor);
             builder.RegisterInstance(liveKitClient);
         });
     }
