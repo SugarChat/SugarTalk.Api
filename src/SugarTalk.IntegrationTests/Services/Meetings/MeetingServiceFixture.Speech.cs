@@ -16,7 +16,6 @@ using SugarTalk.Core.Services.LiveKit;
 using SugarTalk.Core.Services.Utils;
 using SugarTalk.Messages.Commands.Meetings;
 using SugarTalk.Messages.Commands.Speech;
-using SugarTalk.Messages.Dto;
 using SugarTalk.Messages.Dto.Meetings.Speech;
 using SugarTalk.Messages.Dto.Users;
 using SugarTalk.Messages.Enums.Meeting;

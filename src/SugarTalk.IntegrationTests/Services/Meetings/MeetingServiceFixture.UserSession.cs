@@ -3,9 +3,7 @@ using SugarTalk.Core.Services.Exceptions;
 using SugarTalk.Messages.Commands.Meetings;
 using SugarTalk.Messages.Enums.Meeting;
 using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using Xunit;
 
