@@ -260,7 +260,7 @@ namespace SugarTalk.Core.Services.Meetings
             
             await _meetingDataProvider.MarkMeetingAsCompletedAsync(updateMeeting, cancellationToken).ConfigureAwait(false);
             
-            var attendingUserIds = meeting.UserSessions.Select(x => x.UserId).ToList();
+            var attendingUserIds = meeting.UserSessions.Select(x => x.Id).ToList();
             
             var updateMeetingUserSessions =
                 await _meetingDataProvider.GetMeetingUserSessionsByIdsAndMeetingIdAsync(attendingUserIds, meeting.Id, cancellationToken).ConfigureAwait(false);
