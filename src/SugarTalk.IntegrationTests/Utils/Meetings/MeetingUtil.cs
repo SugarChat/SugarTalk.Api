@@ -19,6 +19,7 @@ using SugarTalk.Core.Services.AntMediaServer;
 using SugarTalk.Messages.Dto.Users;
 using SugarTalk.Messages.Enums.Speech;
 using SugarTalk.Core.Services.Account;
+using SugarTalk.Messages.Dto.LiveKit.Egress;
 using SugarTalk.Messages.Requests.Meetings;
 
 namespace SugarTalk.IntegrationTests.Utils.Meetings;

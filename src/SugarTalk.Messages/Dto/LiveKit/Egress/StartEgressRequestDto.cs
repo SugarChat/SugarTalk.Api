@@ -1,7 +1,7 @@
 using Newtonsoft.Json;
 using SugarTalk.Messages.Enums.LiveKit;
 
-namespace SugarTalk.Messages.Dto.LiveKit;
+namespace SugarTalk.Messages.Dto.LiveKit.Egress;
 
 public class StartEgressBaseRequestDto
 {
@@ -10,13 +10,13 @@ public class StartEgressBaseRequestDto
     [JsonProperty("room_name")]
     public string RoomName { get; set; }
     
-    [JsonProperty("files")]
-    public EgressEncodedFileOutPutDto Files { get; set; }
+    [JsonProperty("file")]
+    public EgressEncodedFileOutPutDto File { get; set; }
 
-    [JsonProperty("preset")]
+    [JsonProperty("preset", NullValueHandling = NullValueHandling.Ignore)]
     public EgressEncodingOptionsPreset? Preset { get; set; }
     
-    [JsonProperty("options")]
+    [JsonProperty("options", NullValueHandling = NullValueHandling.Ignore)]
     public EgressEncodingOptionsDto Options { get; set; }
 }
 

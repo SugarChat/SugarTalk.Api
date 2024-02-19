@@ -16,6 +16,7 @@ using SugarTalk.Core.Validators.Commands;
 using SugarTalk.Core.Services.Http.Clients;
 using SugarTalk.Messages.Enums.Meeting.Speak;
 using SugarTalk.Messages.Commands.Meetings.Speak;
+using SugarTalk.Messages.Dto.LiveKit.Egress;
 
 namespace SugarTalk.IntegrationTests.Services.Meetings;
 
@@ -99,7 +100,7 @@ public partial class MeetingServiceFixture
                 });
 
             liveKitClient.StopEgressAsync(Arg.Any<StopEgressRequestDto>(), Arg.Any<CancellationToken>())
-                .Returns("Success");
+                .Returns(new EgressItemDto());
             
             builder.RegisterInstance(liveKitClient);
         });

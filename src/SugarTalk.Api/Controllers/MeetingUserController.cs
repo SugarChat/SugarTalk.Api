@@ -36,7 +36,7 @@ public class MeetingUserController : ControllerBase
     }
 
     /// <summary>
-    /// 验证用户是否为会议创建人
+    /// verify user permission in meeting
     /// </summary>
     /// <param name="command"></param>
     /// <returns></returns>
@@ -49,7 +49,7 @@ public class MeetingUserController : ControllerBase
     }
 
     /// <summary>
-    /// 会议创建人踢出指定用户
+    /// kick out user from meeting
     /// </summary>
     /// <param name="command"></param>
     /// <returns></returns>

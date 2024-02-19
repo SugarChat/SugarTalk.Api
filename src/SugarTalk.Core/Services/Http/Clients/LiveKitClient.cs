@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using SugarTalk.Core.Ioc;
 using SugarTalk.Core.Settings.LiveKit;
 using SugarTalk.Messages.Dto.LiveKit;
+using SugarTalk.Messages.Dto.LiveKit.Egress;
 
 namespace SugarTalk.Core.Services.Http.Clients;
 
@@ -13,13 +14,13 @@ public interface ILiveKitClient : IScopedDependency
 
     Task<List<LiveKitRoom>> GetRoomListAsync(string token, List<string> meetingNumbers, CancellationToken cancellationToken);
     
-    Task<StartEgressResponseDto> StartRoomCompositeEgressAsync(StartRoomCompositeEgressRequestDto request, CancellationToken cancellationToken);
+    Task<EgressItemDto> StartRoomCompositeEgressAsync(StartRoomCompositeEgressRequestDto request, CancellationToken cancellationToken);
     
     Task<StartEgressResponseDto> StartTrackCompositeEgressAsync(StartTrackCompositeEgressRequestDto request, CancellationToken cancellationToken);
     
-    Task<string> StopEgressAsync(StopEgressRequestDto request, CancellationToken cancellationToken);
+    Task<EgressItemDto> StopEgressAsync(StopEgressRequestDto request, CancellationToken cancellationToken);
     
-    Task<GetEgressInfoListResponseDto> GetEgressInfoAsync(GetEgressRequestDto request, CancellationToken cancellationToken);
+    Task<GetEgressInfoListResponseDto> GetEgressInfoListAsync(GetEgressRequestDto request, CancellationToken cancellationToken);
 }
 
 public class LiveKitClient : ILiveKitClient
@@ -57,7 +58,7 @@ public class LiveKitClient : ILiveKitClient
                 $"{_liveKitServerSetting.BaseUrl}/twirp/livekit.RoomService/ListRooms", meetingNumbers, cancellationToken, headers: headers).ConfigureAwait(false);
     }
 
-    public async Task<StartEgressResponseDto> StartRoomCompositeEgressAsync(StartRoomCompositeEgressRequestDto request, CancellationToken cancellationToken)
+    public async Task<EgressItemDto> StartRoomCompositeEgressAsync(StartRoomCompositeEgressRequestDto request, CancellationToken cancellationToken)
     {
         var headers = new Dictionary<string, string>
         {
@@ -65,7 +66,7 @@ public class LiveKitClient : ILiveKitClient
         };
         
         return await _httpClientFactory
-            .PostAsJsonAsync<StartEgressResponseDto>(
+            .PostAsJsonAsync<EgressItemDto>(
                 $"{_liveKitServerSetting.BaseUrl}/twirp/livekit.Egress/StartRoomCompositeEgress", request, cancellationToken, headers: headers).ConfigureAwait(false);
     }
 
@@ -81,7 +82,7 @@ public class LiveKitClient : ILiveKitClient
                 $"{_liveKitServerSetting.BaseUrl}/twirp/livekit.Egress/StartTrackCompositeEgress", request, cancellationToken, headers: headers).ConfigureAwait(false);
     }
 
-    public async Task<string> StopEgressAsync(StopEgressRequestDto request, CancellationToken cancellationToken)
+    public async Task<EgressItemDto> StopEgressAsync(StopEgressRequestDto request, CancellationToken cancellationToken)
     {
         var headers = new Dictionary<string, string>
         {
@@ -89,10 +90,10 @@ public class LiveKitClient : ILiveKitClient
         };
         
         return await _httpClientFactory
-            .PostAsJsonAsync<string>($"{_liveKitServerSetting.BaseUrl}/twirp/livekit.Egress/StopEgress", request, cancellationToken, headers: headers).ConfigureAwait(false);
+            .PostAsJsonAsync<EgressItemDto>($"{_liveKitServerSetting.BaseUrl}/twirp/livekit.Egress/StopEgress", request, cancellationToken, headers: headers).ConfigureAwait(false);
     }
 
-    public async Task<GetEgressInfoListResponseDto> GetEgressInfoAsync(GetEgressRequestDto request, CancellationToken cancellationToken)
+    public async Task<GetEgressInfoListResponseDto> GetEgressInfoListAsync(GetEgressRequestDto request, CancellationToken cancellationToken)
     {
         var headers = new Dictionary<string, string>
         {

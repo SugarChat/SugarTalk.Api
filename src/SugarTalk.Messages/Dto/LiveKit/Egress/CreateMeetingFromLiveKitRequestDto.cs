@@ -1,4 +1,4 @@
-namespace SugarTalk.Messages.Dto.LiveKit;
+namespace SugarTalk.Messages.Dto.LiveKit.Egress;
 
 public class CreateMeetingFromLiveKitResponseDto
 {

@@ -10,6 +10,7 @@ using SugarTalk.Messages.Enums.Meeting.Speak;
 using SugarTalk.Messages.Events.Meeting.Speak;
 using SugarTalk.Messages.Commands.Meetings.Speak;
 using SugarTalk.Core.Services.Meetings.Exceptions;
+using SugarTalk.Messages.Dto.LiveKit.Egress;
 
 namespace SugarTalk.Core.Services.Meetings;
 
@@ -48,7 +49,7 @@ public partial class MeetingService
             Token = token,
             AudioTrackId = command.TrackId,
             RoomName = command.MeetingNumber,
-            Files = new EgressEncodedFileOutPutDto
+            File = new EgressEncodedFileOutPutDto
             {
                 Filepath = filePath,
                 AliOssUpload = new EgressAliOssUploadDto()
@@ -91,7 +92,7 @@ public partial class MeetingService
         
         Log.Information("Stop egress response: {@EgressResponse}", egressResponse);
 
-        if (string.IsNullOrEmpty(egressResponse)) throw new Exception();
+        if (egressResponse == null) throw new Exception();
         
         speakDetail.SpeakStatus = SpeakStatus.End;
         speakDetail.SpeakEndTime = command.SpeakEndTime.Value;
