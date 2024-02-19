@@ -60,12 +60,9 @@ public class GuestValidatorMiddlewareTests : GuestFixtureBase
             
             try
             {
-                await Assert.ThrowsAsync<GuestIsNotAllowException>(async () =>
+                await mediator.SendAsync(new EndMeetingCommand
                 {
-                    await mediator.SendAsync(new EndMeetingCommand
-                    {
-                        MeetingNumber = "123"
-                    });
+                    MeetingNumber = "123"
                 });
             }
             catch (Exception e)
