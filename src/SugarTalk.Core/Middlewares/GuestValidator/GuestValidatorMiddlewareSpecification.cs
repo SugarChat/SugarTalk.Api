@@ -16,25 +16,26 @@ namespace SugarTalk.Core.Middlewares.GuestValidator;
 public class GuestValidatorMiddlewareSpecification<TContext> : IPipeSpecification<TContext>
     where TContext : IContext<IMessage>
 {
-    private readonly ICurrentUser _currentUser;
     private readonly IIdentityService _identityService;
 
-    public GuestValidatorMiddlewareSpecification(ICurrentUser currentUser, IIdentityService identityService)
+    public GuestValidatorMiddlewareSpecification(IIdentityService identityService)
     {
-        _currentUser = currentUser;
         _identityService = identityService;
     }
 
     public bool ShouldExecute(TContext context, CancellationToken cancellationToken)
     {
-        return context.Message.GetType().GetAttribute<GuestValidatorAttribute>().Any();
+        return context.Message is ICommand or IRequest;
     }
 
     public async Task BeforeExecute(TContext context, CancellationToken cancellationToken)
     {
+        if (!ShouldExecute(context, cancellationToken)) return;
+        
         var currentUser = await _identityService.GetCurrentUserAsync(cancellationToken: cancellationToken);
         
-        if (currentUser.Issuer == UserAccountIssuer.Guest && !ShouldExecute(context, cancellationToken)) throw new GuestIsNotAllowException();
+        if (currentUser.Issuer == UserAccountIssuer.Guest && !context.Message.GetType().GetAttribute<GuestValidatorAttribute>().Any()) 
+            throw new GuestIsNotAllowException();
     }
 
     public Task Execute(TContext context, CancellationToken cancellationToken)
