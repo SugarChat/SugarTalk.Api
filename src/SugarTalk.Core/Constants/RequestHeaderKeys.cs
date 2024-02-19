@@ -1,4 +1,4 @@
-﻿namespace SugarTalk.Core.Data.Claims
+﻿namespace SugarTalk.Core.Constants
 {
     public static class RequestHeaderKeys
     {
