@@ -100,7 +100,7 @@ public partial class MeetingServiceFixture
                 });
 
             liveKitClient.StopEgressAsync(Arg.Any<StopEgressRequestDto>(), Arg.Any<CancellationToken>())
-                .Returns(new EgressItemDto());
+                .Returns(new StopEgressResponseDto());
             
             builder.RegisterInstance(liveKitClient);
         });
