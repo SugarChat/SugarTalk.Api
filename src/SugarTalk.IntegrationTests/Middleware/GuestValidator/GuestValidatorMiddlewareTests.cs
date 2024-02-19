@@ -68,7 +68,7 @@ public class GuestValidatorMiddlewareTests : GuestFixtureBase
                 shouldThrowException = true;
             }
             
-            shouldThrowException.ShouldBe(!isAllow);
+            shouldThrowException.ShouldNotBe(isAllow);
         }, builder =>
         {
             var liveKitServerUtilService = Substitute.For<ILiveKitServerUtilService>();
