@@ -19,9 +19,10 @@ namespace SugarTalk.Core.Handlers.CommandHandlers.Meetings
         {
             _meetingService = meetingService;
         }
+        
         public async Task<VerifyMeetingUserPermissionResponse> Handle(IReceiveContext<VerifyMeetingUserPermissionCommand> context, CancellationToken cancellationToken)
         {
-            return await _meetingService.VerifyMeetingUserPermissionAsync(context.Message, cancellationToken);
+            return await _meetingService.VerifyMeetingUserPermissionAsync(context.Message, cancellationToken).ConfigureAwait(false);
         }
     }
 }

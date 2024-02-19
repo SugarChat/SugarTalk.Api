@@ -24,6 +24,5 @@ namespace SugarTalk.Messages.Commands.Meetings
 
     public class VerifyMeetingUserPermissionResponse : SugarTalkResponse<VerifyMeetingUserPermissionDto>
     {
-
     }
 }

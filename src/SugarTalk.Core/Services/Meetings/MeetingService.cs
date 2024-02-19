@@ -190,12 +190,18 @@ namespace SugarTalk.Core.Services.Meetings
                 .GetMeetingAsync(request.MeetingNumber, cancellationToken, request.IncludeUserSession).ConfigureAwait(false);
 
             meeting.AppName = appName;
-            
-            if (request.IncludeUserSession &&
-                meeting != null && meeting.UserSessions.Any() &&
-                meeting.UserSessions.All(x => x.UserId != _currentUser.Id.Value))
-                throw new UnauthorizedAccessException();
 
+            if (request.IncludeUserSession && meeting.UserSessions.Any())
+            {
+                if (meeting.UserSessions.All(x => x.UserId != _currentUser.Id))
+                {
+                    throw new UnauthorizedAccessException();
+                }
+
+                meeting.UserSessions = meeting.UserSessions
+                    .Where(x => x.OnlineType == MeetingUserSessionOnlineType.Online).ToList();
+            }
+            
             return new GetMeetingByNumberResponse { Data = meeting };
         }
 
@@ -238,7 +244,6 @@ namespace SugarTalk.Core.Services.Meetings
             if (userSession == null) return new MeetingOutedEvent();
 
             // TODO: 更新用户退出会议时间, 会议时长
-            userSession.OnlineType = MeetingUserSessionOnlineType.OutMeeting;
             return new MeetingOutedEvent();
         }
         
@@ -251,7 +256,17 @@ namespace SugarTalk.Core.Services.Meetings
             await _meetingDataProvider.PersistMeetingHistoryAsync(meeting, cancellationToken).ConfigureAwait(false);
             
             // TODO: 更新会议结束时间, 会议时长，更新会议中的用户状态
+            var updateMeeting = _mapper.Map<Meeting>(meeting);
+            
+            await _meetingDataProvider.MarkMeetingAsCompletedAsync(updateMeeting, cancellationToken).ConfigureAwait(false);
+            
+            var attendingUserIds = meeting.UserSessions.Select(x => x.Id).ToList();
+            
+            var updateMeetingUserSessions =
+                await _meetingDataProvider.GetMeetingUserSessionsByIdsAndMeetingIdAsync(attendingUserIds, meeting.Id, cancellationToken).ConfigureAwait(false);
 
+            await _meetingDataProvider.UpdateUserSessionsAtMeetingEndAsync(updateMeeting, updateMeetingUserSessions, cancellationToken).ConfigureAwait(false);
+            
             return new MeetingEndedEvent
             {
                 MeetingNumber = meeting.MeetingNumber,
@@ -271,13 +286,7 @@ namespace SugarTalk.Core.Services.Meetings
             if (userSession == null)
             {
                 userSession = GenerateNewUserSessionFromUser(user, meeting.Id, isMuted ?? false);
-
-                //如果是会议创建人，设置为会议主持人
-                if (userSession.UserId == meeting.MeetingMasterUserId)
-                {
-                    userSession.IsMeetingMaster = true;
-                }
-
+                
                 await _meetingDataProvider.AddMeetingUserSessionAsync(userSession, cancellationToken).ConfigureAwait(false);
 
                 var updateUserSession = _mapper.Map<MeetingUserSessionDto>(userSession);
@@ -295,11 +304,6 @@ namespace SugarTalk.Core.Services.Meetings
                 userSession.TotalJoinCount += 1;
 
                 userSession.OnlineType = MeetingUserSessionOnlineType.Online;
-                //如果是会议创建人，设置为会议主持人
-                if (userSession.UserId == meeting.MeetingMasterUserId)
-                {
-                    userSession.IsMeetingMaster = true;
-                }
 
                 await _meetingDataProvider.UpdateMeetingUserSessionAsync(userSession, cancellationToken).ConfigureAwait(false);
 
@@ -307,6 +311,10 @@ namespace SugarTalk.Core.Services.Meetings
 
                 updateUserSession.UserName = user.UserName;
 
+                if (userSession.UserId == meeting.MeetingMasterUserId)
+                {
+                    updateUserSession.IsMeetingMaster = true;
+                }
                 meeting.UpdateUserSession(updateUserSession);
             }
         }
