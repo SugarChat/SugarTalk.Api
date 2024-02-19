@@ -19,11 +19,13 @@ namespace SugarTalk.IntegrationTests.Middleware.GuestValidator;
 
 public class GuestValidatorMiddlewareTests : GuestFixtureBase
 {
-    [Fact]
-    public async Task ShouldGuestRequestAllowOrNot()
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task ShouldGuestRequestAllowOrNot(bool isAllow)
     {
         var shouldThrowException = false;
-
+        
         await RunWithUnitOfWork<IRepository>(async repository =>
         {
             var currentUser = await repository.GetByIdAsync<UserAccount>(1);
@@ -43,12 +45,22 @@ public class GuestValidatorMiddlewareTests : GuestFixtureBase
         {
             try
             {
-                await mediator.SendAsync(new JoinMeetingCommand
+                if (isAllow)
                 {
-                    MeetingNumber = "123",
-                    SecurityCode = "1",
-                    IsMuted = false
-                });
+                    await mediator.SendAsync(new JoinMeetingCommand
+                    {
+                        MeetingNumber = "123",
+                        SecurityCode = "1",
+                        IsMuted = false
+                    });
+                }
+                else
+                {
+                    await mediator.SendAsync(new EndMeetingCommand
+                    {
+                        MeetingNumber = "123"
+                    });
+                }
             }
             catch (Exception e)
             {
@@ -56,22 +68,7 @@ public class GuestValidatorMiddlewareTests : GuestFixtureBase
                 shouldThrowException = true;
             }
             
-            shouldThrowException.ShouldBeFalse();
-            
-            try
-            {
-                await mediator.SendAsync(new EndMeetingCommand
-                {
-                    MeetingNumber = "123"
-                });
-            }
-            catch (Exception e)
-            {
-                e.GetType().ShouldBe(typeof(GuestIsNotAllowException));
-                shouldThrowException = true;
-            }
-            
-            shouldThrowException.ShouldBeTrue();
+            shouldThrowException.ShouldBe(!isAllow);
         }, builder =>
         {
             var liveKitServerUtilService = Substitute.For<ILiveKitServerUtilService>();
