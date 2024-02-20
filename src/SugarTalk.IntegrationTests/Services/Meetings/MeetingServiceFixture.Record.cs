@@ -403,7 +403,27 @@ public partial class MeetingServiceFixture
         var newMeetingRecord = await _meetingUtil.GetMeetingRecordByMeetingIdAsync(meetingDto.Id);
         newMeetingRecord.CreatedDate.ShouldBe(test3.CreatedDate);
     }
+    
+    [Fact]
+    public async Task CanGetNewMeetingRecordByMeetingRecordId()
+    {
+        var scheduleMeetingResponse = await _meetingUtil.ScheduleMeeting();
+        var meetingDto = await _meetingUtil.JoinMeeting(scheduleMeetingResponse.Data.MeetingNumber);
 
+        var testRecord1 = await _meetingUtil.GenerateMeetingRecordAsync(meetingDto, "mock url1");
+        await _meetingUtil.AddMeetingRecordAsync(testRecord1);
+        var testRecord2 = await _meetingUtil.GenerateMeetingRecordAsync(meetingDto, "mock url12");
+        await _meetingUtil.AddMeetingRecordAsync(testRecord2);
+        var testRecord3 = await _meetingUtil.GenerateMeetingRecordAsync(meetingDto, "mock url3");
+        await _meetingUtil.AddMeetingRecordAsync(testRecord3);
+
+        var meetingRecords = await _meetingUtil.GetMeetingRecordsByMeetingIdAsync(meetingDto.Id);
+        var test3 = meetingRecords.FirstOrDefault(x => x.Url == "mock url3");
+        
+        var newMeetingRecord = await _meetingUtil.GetMeetingRecordByMeetingRecordIdAsync(testRecord3.Id);
+        newMeetingRecord.CreatedDate.ShouldBe(test3.CreatedDate);
+    }
+    
     [Theory]
     [InlineData("mock url1")]
     [InlineData("mock url2")]
@@ -416,6 +436,7 @@ public partial class MeetingServiceFixture
         var response = await _meetingUtil.GetMeetingRecordByMeetingIdAsync(meetingDto.Id);
         response.ShouldNotBeNull();
         response.Url.ShouldBe(url);
+        response.Id.ShouldBe(meetingRecord.Id);
     }
 
     [Fact]
@@ -428,19 +449,20 @@ public partial class MeetingServiceFixture
         var dbMeetingRecord = await _meetingUtil.GetMeetingRecordByMeetingIdAsync(meetingDto.Id);
         dbMeetingRecord.RecordType.ShouldBe(MeetingRecordType.OnRecord);
 
-        var response = await _meetingUtil.StorageMeetingRecordVideoByMeetingIdAsync(meetingDto.Id);
+        var response = await _meetingUtil.StorageMeetingRecordVideoByMeetingIdAsync(meetingDto.Id,meetingRecord.Id);
         response.Code.ShouldBe(HttpStatusCode.OK);
 
         var newMeetingRecord = await _meetingUtil.GetMeetingRecordByMeetingIdAsync(meetingDto.Id);
         newMeetingRecord.Url.ShouldBe("mock url");
         newMeetingRecord.RecordType.ShouldBe(MeetingRecordType.EndRecord);
         newMeetingRecord.MeetingId.ShouldBe(meetingDto.Id);
+        newMeetingRecord.Id.ShouldBe(meetingRecord.Id);
     }
 
     [Fact]
     public async Task WhenMeetingRecordIsNullShouldBeThrow()
     {
-        await _meetingUtil.StorageMeetingRecordVideoByMeetingIdAsync(Guid.NewGuid())
+        await _meetingUtil.StorageMeetingRecordVideoByMeetingIdAsync(Guid.NewGuid(),new Guid())
             .ShouldThrowAsync<MeetingRecordNotFoundException>();
     }
 }

@@ -267,6 +267,14 @@ public class MeetingUtil : TestUtil
             return await repository.QueryNoTracking<MeetingRecord>().Where(x => x.MeetingId == meetingId)
                 .ToListAsync();
         });
+    }  
+    
+    public async Task<MeetingRecord> GetMeetingRecordByMeetingRecordIdAsync(Guid meetingRecordId)
+    {
+        return await Run<IRepository, MeetingRecord>(async repository =>
+        {
+            return await repository.QueryNoTracking<MeetingRecord>().FirstOrDefaultAsync(x => x.Id == meetingRecordId);
+        });
     }
 
     public async Task<MeetingRecord> GetMeetingRecordByMeetingIdAsync(Guid meetingId)
@@ -278,14 +286,16 @@ public class MeetingUtil : TestUtil
         });
     }
 
-    public async Task<StorageMeetingRecordVideoResponse> StorageMeetingRecordVideoByMeetingIdAsync(Guid meetingId)
+    public async Task<StorageMeetingRecordVideoResponse> StorageMeetingRecordVideoByMeetingIdAsync(Guid meetingId,Guid meetingRecordId,string egressId = null)
     {
         return await Run<IMediator, StorageMeetingRecordVideoResponse>(async mediator =>
         {
             return await mediator.SendAsync<StorageMeetingRecordVideoCommand, StorageMeetingRecordVideoResponse>(
                 new StorageMeetingRecordVideoCommand
                 {
-                    MeetingId = meetingId
+                    MeetingId = meetingId,
+                    MeetingRecordId = meetingRecordId,
+                    EgressId = egressId ?? "mock egressId"
                 });
         }, builder =>
         {
