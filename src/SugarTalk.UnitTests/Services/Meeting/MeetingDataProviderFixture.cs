@@ -2,6 +2,7 @@ using Shouldly;
 using SugarTalk.Core.Domain.Account;
 using SugarTalk.Core.Domain.Meeting;
 using SugarTalk.Messages.Dto;
+using SugarTalk.Messages.Enums.Meeting;
 using SugarTalk.Messages.Requests.Meetings;
 using Xunit;
 
@@ -159,6 +160,8 @@ public class MeetingDataProviderFixture : BaseFixture
         var meetingRecord1 =
             await _meetingDataProvider.GetMeetingRecordByMeetingRecordIdAsync(meetingRecordId1, CancellationToken.None);
         meetingRecord.Id.ShouldBe(meetingRecordId);
+        meetingRecord.RecordType.ShouldBe(MeetingRecordType.OnRecord);
         meetingRecord1.Id.ShouldBe(meetingRecordId1);
+        meetingRecord1.RecordType.ShouldBe(MeetingRecordType.OnRecord);
     }
 }

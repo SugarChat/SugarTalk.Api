@@ -7,6 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Hangfire;
 using LiveKit_CSharp.Services.Meeting;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
@@ -46,29 +47,37 @@ namespace SugarTalk.Core.Services.Meetings
         
         public async Task<StorageMeetingRecordVideoResponse> StorageMeetingRecordVideoAsync(StorageMeetingRecordVideoCommand command, CancellationToken cancellationToken)
         {
-            var meetingRecord = await _meetingDataProvider.GetMeetingRecordByMeetingRecordIdAsync(command.MeetingRecordId, cancellationToken).ConfigureAwait(false);
-            if (meetingRecord == null) throw new MeetingRecordNotFoundException();
             var meeting = await _meetingDataProvider.GetMeetingByIdAsync(command.MeetingId).ConfigureAwait(false);
-            
             var user = await _accountDataProvider.GetUserAccountAsync(_currentUser.Id, cancellationToken: cancellationToken).ConfigureAwait(false);
+            
             var recordMeetingToken = _liveKitServerUtilService.GenerateTokenForRecordMeeting(user,meeting.MeetingNumber);
-
             await _liveKitClient
                 .StopEgressAsync(new StopEgressRequestDto { Token = recordMeetingToken, EgressId = command.EgressId },
                     cancellationToken).ConfigureAwait(false);
+            
+            var delay = TimeSpan.FromMinutes(1);
+            BackgroundJob.Schedule(
+                () => ExecuteStorageMeetingRecordVideoDelayedJob(command, recordMeetingToken, cancellationToken),delay);
+            return new StorageMeetingRecordVideoResponse();
+        }
+
+        public async Task ExecuteStorageMeetingRecordVideoDelayedJob(StorageMeetingRecordVideoCommand command,
+            string token, CancellationToken cancellationToken)
+        {
+            var meetingRecord = await _meetingDataProvider
+                .GetMeetingRecordByMeetingRecordIdAsync(command.MeetingRecordId, cancellationToken)
+                .ConfigureAwait(false);
+            if (meetingRecord == null) throw new MeetingRecordNotFoundException();
 
             var response = await _liveKitClient
-                .GetEgressInfoListAsync(new GetEgressRequestDto { Token = recordMeetingToken, EgressId = command.EgressId },
+                .GetEgressInfoListAsync(new GetEgressRequestDto { Token = token, EgressId = command.EgressId },
                     cancellationToken).ConfigureAwait(false);
-            if (response == null) throw new GetEgressInfoListResponseNotFoundException();
-            
-            var egressItemDto =  response.EgressItems.First(x => x.EgressId == command.EgressId && x.Status == "EGRESS_COMPLETE");
-            
+            var egressItemDto =
+                response.EgressItems.First(x => x.EgressId == command.EgressId && x.Status == "EGRESS_COMPLETE");
+
             meetingRecord.RecordType = MeetingRecordType.EndRecord;
             meetingRecord.Url = egressItemDto.File.Location;
             await _meetingDataProvider.UpdateMeetingRecordAsync(meetingRecord, cancellationToken).ConfigureAwait(false);
-            
-            return new StorageMeetingRecordVideoResponse();
         }
     }
 }

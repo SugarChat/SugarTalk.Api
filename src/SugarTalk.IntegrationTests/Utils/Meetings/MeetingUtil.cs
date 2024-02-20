@@ -301,8 +301,8 @@ public class MeetingUtil : TestUtil
                 });
         }, builder =>
         {
-            var services = Substitute.For<ILiveKitServerUtilService>();
-            services.GenerateTokenForJoinMeeting(Arg.Any<UserAccountDto>(), Arg.Any<string>())
+            var liveKitservices = Substitute.For<ILiveKitServerUtilService>();
+            liveKitservices.GenerateTokenForJoinMeeting(Arg.Any<UserAccountDto>(), Arg.Any<string>())
                 .Returns("11231312312312312313223");
             var liveKitClient = Substitute.For<ILiveKitClient>();
             liveKitClient.StopEgressAsync(Arg.Any<StopEgressRequestDto>(), Arg.Any<CancellationToken>())
@@ -329,7 +329,7 @@ public class MeetingUtil : TestUtil
                         }
                     }
                 });
-            builder.RegisterInstance(services);
+            builder.RegisterInstance(liveKitservices);
             builder.RegisterInstance(liveKitClient);
         });
     }
