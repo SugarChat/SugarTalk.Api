@@ -405,7 +405,7 @@ public partial class MeetingServiceFixture
     }
     
     [Fact]
-    public async Task CanGetNewMeetingRecordByMeetingRecordId()
+    public async Task CanGetMeetingRecordByMeetingRecordId()
     {
         var scheduleMeetingResponse = await _meetingUtil.ScheduleMeeting();
         var meetingDto = await _meetingUtil.JoinMeeting(scheduleMeetingResponse.Data.MeetingNumber);
@@ -420,8 +420,11 @@ public partial class MeetingServiceFixture
         var meetingRecords = await _meetingUtil.GetMeetingRecordsByMeetingIdAsync(meetingDto.Id);
         var test3 = meetingRecords.FirstOrDefault(x => x.Url == "mock url3");
         
-        var newMeetingRecord = await _meetingUtil.GetMeetingRecordByMeetingRecordIdAsync(testRecord3.Id);
-        newMeetingRecord.CreatedDate.ShouldBe(test3.CreatedDate);
+        var meetingRecord = await _meetingUtil.GetMeetingRecordByMeetingRecordIdAsync(testRecord3.Id);
+        meetingRecord.CreatedDate.ShouldBe(test3.CreatedDate);
+        meetingRecord.RecordType.ShouldBe(test3.RecordType);
+        meetingRecord.Url.ShouldBe(test3.Url);
+        meetingRecord.MeetingId.ShouldBe(meetingDto.Id);
     }
     
     [Theory]
