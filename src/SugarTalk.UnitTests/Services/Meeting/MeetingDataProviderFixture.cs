@@ -149,7 +149,6 @@ public class MeetingDataProviderFixture : BaseFixture
         var meetingRecordId = new Guid();
         var meetingRecordId1 = new Guid();
 
-
         MockMeetingRecordDb(_repository, new List<MeetingRecord>
         {
             CreateMeetingRecordEvent(meetingRecordId, new Guid(), "mock url", DateTimeOffset.Now),
