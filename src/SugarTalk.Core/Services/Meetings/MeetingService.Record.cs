@@ -53,15 +53,16 @@ namespace SugarTalk.Core.Services.Meetings
             var user = await _accountDataProvider.GetUserAccountAsync(_currentUser.Id, cancellationToken: cancellationToken).ConfigureAwait(false);
             var recordMeetingToken = _liveKitServerUtilService.GenerateTokenForRecordMeeting(user,meeting.MeetingNumber);
 
-            var stopResponse = await _liveKitClient
+            await _liveKitClient
                 .StopEgressAsync(new StopEgressRequestDto { Token = recordMeetingToken, EgressId = command.EgressId },
                     cancellationToken).ConfigureAwait(false);
-            if (stopResponse == null) throw new StopEgressResponseNotFoundException();
 
-            var getResponse = await _liveKitClient
+            var response = await _liveKitClient
                 .GetEgressInfoListAsync(new GetEgressRequestDto { Token = recordMeetingToken, EgressId = command.EgressId },
                     cancellationToken).ConfigureAwait(false);
-            var egressItemDto =  getResponse.EgressItems.First(x => x.EgressId == command.EgressId);
+            if (response == null) throw new GetEgressInfoListResponseNotFoundException();
+            
+            var egressItemDto =  response.EgressItems.First(x => x.EgressId == command.EgressId && x.Status == "EGRESS_COMPLETE");
             
             meetingRecord.RecordType = MeetingRecordType.EndRecord;
             meetingRecord.Url = egressItemDto.File.Location;

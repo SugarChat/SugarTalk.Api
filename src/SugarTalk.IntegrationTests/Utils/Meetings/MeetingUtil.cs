@@ -324,6 +324,7 @@ public class MeetingUtil : TestUtil
                         {
                             EgressId = "mock egressId",
                             EndedAt = "mock endedAt",
+                            Status = "EGRESS_COMPLETE",
                             File = new FileDetails{ Location = "mock url" }
                         }
                     }
