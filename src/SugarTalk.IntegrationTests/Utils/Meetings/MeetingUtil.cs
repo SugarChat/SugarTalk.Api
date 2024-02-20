@@ -2,11 +2,13 @@ using System;
 using System.Collections.Generic;
 using Autofac;
 using System.Linq;
+using System.Net;
 using NSubstitute;
 using Mediator.Net;
 using System.Threading;
 using SugarTalk.Core.Data;
 using System.Threading.Tasks;
+using Google.Protobuf.WellKnownTypes;
 using LiveKit_CSharp.Services.Meeting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
@@ -23,6 +25,8 @@ using SugarTalk.Messages.Dto.Users;
 using SugarTalk.Messages.Enums.Speech;
 using SugarTalk.Core.Services.Account;
 using SugarTalk.Core.Services.Http.Clients;
+using SugarTalk.Core.Services.Meetings;
+using SugarTalk.Core.Settings.Caching;
 using SugarTalk.Messages.Dto.LiveKit.Egress;
 using SugarTalk.Messages.Requests.Meetings;
 using Xunit;
@@ -301,6 +305,14 @@ public class MeetingUtil : TestUtil
                 });
         }, builder =>
         {
+            var meetingService = Substitute.For<IMeetingService>();
+            meetingService
+                .StorageMeetingRecordVideoAsync(Arg.Any<StorageMeetingRecordVideoCommand>(),
+                    Arg.Any<CancellationToken>()).Returns(new StorageMeetingRecordVideoResponse
+                {
+                    Code = HttpStatusCode.OK,
+                    Msg = "Ok"
+                });
             var liveKitservices = Substitute.For<ILiveKitServerUtilService>();
             liveKitservices.GenerateTokenForJoinMeeting(Arg.Any<UserAccountDto>(), Arg.Any<string>())
                 .Returns("11231312312312312313223");
@@ -331,6 +343,7 @@ public class MeetingUtil : TestUtil
                 });
             builder.RegisterInstance(liveKitservices);
             builder.RegisterInstance(liveKitClient);
+            builder.RegisterInstance(meetingService);
         });
     }
 }

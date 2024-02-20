@@ -441,4 +441,18 @@ public partial class MeetingServiceFixture
         response.Url.ShouldBe(url);
         response.Id.ShouldBe(meetingRecord.Id);
     }
+
+    [Fact]
+    public async Task CanMeetingRecordResponseShouldBeValue()
+    {
+        var scheduleMeetingResponse = await _meetingUtil.ScheduleMeeting();
+        var meetingDto = await _meetingUtil.JoinMeeting(scheduleMeetingResponse.Data.MeetingNumber);
+        var meetingRecord = await _meetingUtil.GenerateMeetingRecordAsync(meetingDto);
+        await _meetingUtil.AddMeetingRecordAsync(meetingRecord);
+        var dbMeetingRecord = await _meetingUtil.GetMeetingRecordByMeetingIdAsync(meetingDto.Id);
+        dbMeetingRecord.RecordType.ShouldBe(MeetingRecordType.OnRecord);
+
+        var response = await _meetingUtil.StorageMeetingRecordVideoByMeetingIdAsync(meetingDto.Id,meetingRecord.Id);
+        response.Code.ShouldBe(HttpStatusCode.OK);
+    }
 }
