@@ -46,7 +46,7 @@ namespace SugarTalk.Core.Services.Meetings
         
         public async Task<StorageMeetingRecordVideoResponse> StorageMeetingRecordVideoAsync(StorageMeetingRecordVideoCommand command, CancellationToken cancellationToken)
         {
-            var meetingRecord = await _meetingDataProvider.GetMeetingRecordMeetingRecordIdAsync(command.MeetingRecordId, cancellationToken).ConfigureAwait(false);
+            var meetingRecord = await _meetingDataProvider.GetMeetingRecordByMeetingRecordIdAsync(command.MeetingRecordId, cancellationToken).ConfigureAwait(false);
             if (meetingRecord == null) throw new MeetingRecordNotFoundException();
             var meeting = await _meetingDataProvider.GetMeetingByIdAsync(command.MeetingId).ConfigureAwait(false);
             

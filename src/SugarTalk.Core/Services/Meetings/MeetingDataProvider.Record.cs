@@ -20,7 +20,7 @@ public partial interface IMeetingDataProvider
    
     public Task<(int count, List<MeetingRecordDto> items)> GetMeetingRecordsByUserIdAsync(int? currentUserId, GetCurrentUserMeetingRecordRequest request, CancellationToken cancellationToken);
 
-    Task<MeetingRecord> GetMeetingRecordMeetingRecordIdAsync(Guid meetingRecordId, CancellationToken cancellationToken);
+    Task<MeetingRecord> GetMeetingRecordByMeetingRecordIdAsync(Guid meetingRecordId, CancellationToken cancellationToken);
 }
 
 public partial class MeetingDataProvider
@@ -107,7 +107,7 @@ public partial class MeetingDataProvider
         return meetingRecord;
     }
     
-    public async Task<MeetingRecord> GetMeetingRecordMeetingRecordIdAsync(Guid meetingRecordId, CancellationToken cancellationToken)
+    public async Task<MeetingRecord> GetMeetingRecordByMeetingRecordIdAsync(Guid meetingRecordId, CancellationToken cancellationToken)
     {
         var meetingRecord = await _repository
             .QueryNoTracking<MeetingRecord>(x => x.Id == meetingRecordId && x.RecordType == MeetingRecordType.OnRecord)

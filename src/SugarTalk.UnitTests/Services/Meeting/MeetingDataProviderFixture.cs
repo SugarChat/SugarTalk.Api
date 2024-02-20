@@ -142,4 +142,24 @@ public class MeetingDataProviderFixture : BaseFixture
         var (count, items) = await _meetingDataProvider.GetMeetingRecordsByUserIdAsync(1, getCurrentUserMeetingRecordRequest, CancellationToken.None);
         count.ShouldBe(0);
     }
+
+    [Fact]
+    public async Task CanGetMeetingRecordByMeetingRecordId()
+    {
+        var meetingRecordId = new Guid();
+        var meetingRecordId1 = new Guid();
+
+
+        MockMeetingRecordDb(_repository, new List<MeetingRecord>
+        {
+            CreateMeetingRecordEvent(meetingRecordId, new Guid(), "mock url", DateTimeOffset.Now),
+            CreateMeetingRecordEvent(meetingRecordId1, new Guid(), "mock url1", DateTimeOffset.Now)
+        });
+        var meetingRecord =
+            await _meetingDataProvider.GetMeetingRecordByMeetingRecordIdAsync(meetingRecordId, CancellationToken.None);
+        var meetingRecord1 =
+            await _meetingDataProvider.GetMeetingRecordByMeetingRecordIdAsync(meetingRecordId1, CancellationToken.None);
+        meetingRecord.Id.ShouldBe(meetingRecordId);
+        meetingRecord1.Id.ShouldBe(meetingRecordId1);
+    }
 }
