@@ -38,8 +38,6 @@ public partial class MeetingService
 
     public async Task<MeetingRecordingStartedEvent> StartMeetingRecordingAsync(StartMeetingRecordingCommand command, CancellationToken cancellationToken)
     {
-        // todo: 配置appSetting相关oss参数
-
         var meetingRecordId = Guid.NewGuid();
         
         var meeting = await _meetingDataProvider
