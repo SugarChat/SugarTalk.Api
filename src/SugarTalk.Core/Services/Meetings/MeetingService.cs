@@ -178,6 +178,9 @@ namespace SugarTalk.Core.Services.Meetings
             DateTimeOffset? utilDate,
             MeetingRepeatType repeatType, CancellationToken cancellationToken)
         {
+            if (utilDate.HasValue && utilDate.Value < _clock.Now)
+                throw new CannotCreateRepeatMeetingWhenUtilDateIsBeforeNowException(); 
+            
             var subMeetingList = GenerateSubMeetings(meetingId, startDate, endDate, utilDate, repeatType);
             
             await _meetingDataProvider.PersistMeetingSubMeetingsAsync(subMeetingList, cancellationToken).ConfigureAwait(false);

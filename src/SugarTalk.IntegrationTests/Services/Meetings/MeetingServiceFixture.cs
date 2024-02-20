@@ -709,6 +709,24 @@ public partial class MeetingServiceFixture : MeetingFixtureBase
             MockClock(builder, DateTimeOffset.Now);
         });
     }
+
+    [Fact]
+    public async Task ShouldThrowWhenAppointmentMeetingUtilDateIncorrect()
+    {
+        await Assert.ThrowsAsync<CannotCreateRepeatMeetingWhenUtilDateIsBeforeNowException>(async () =>
+        {
+            await Run<IClock>(async (clock) =>
+            {
+                await _meetingUtil.ScheduleMeeting(
+                    appointmentType: MeetingAppointmentType.Appointment, repeatType: MeetingRepeatType.Daily,
+                    startDate: clock.Now, endDate: clock.Now.AddHours(1), utilDate: clock.Now.AddDays(-1));
+            }, builder =>
+            {
+                MockLiveKitService(builder);
+                MockClock(builder, DateTimeOffset.Now);
+            });
+        });
+    }
     
     private static void MockLiveKitService(ContainerBuilder builder)
     {
