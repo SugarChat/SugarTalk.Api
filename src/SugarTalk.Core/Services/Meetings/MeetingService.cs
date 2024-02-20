@@ -19,6 +19,7 @@ using SugarTalk.Core.Services.Http.Clients;
 using SugarTalk.Core.Services.Identity;
 using SugarTalk.Core.Services.LiveKit;
 using SugarTalk.Core.Services.Utils;
+using SugarTalk.Core.Settings.Aliyun;
 using SugarTalk.Core.Settings.LiveKit;
 using SugarTalk.Messages.Commands.Meetings;
 using SugarTalk.Messages.Commands.Speech;
@@ -89,6 +90,7 @@ namespace SugarTalk.Core.Services.Meetings
         private readonly ILiveKitServerUtilService _liveKitServerUtilService;
         private readonly IAntMediaServerUtilService _antMediaServerUtilService;
 
+        private readonly AliYunOssSettings _aliYunOssSetting;
         private readonly LiveKitServerSetting _liveKitServerSetting;
         
         public MeetingService(
@@ -100,6 +102,7 @@ namespace SugarTalk.Core.Services.Meetings
             ILiveKitClient liveKitClient,
             IMeetingDataProvider meetingDataProvider,
             IAccountDataProvider accountDataProvider,
+            AliYunOssSettings aliYunOssSetting,
             LiveKitServerSetting liveKitServerSetting,
             ILiveKitServerUtilService liveKitServerUtilService,
             IAntMediaServerUtilService antMediaServerUtilService)
@@ -112,6 +115,7 @@ namespace SugarTalk.Core.Services.Meetings
             _liveKitClient = liveKitClient;
             _accountDataProvider = accountDataProvider;
             _meetingDataProvider = meetingDataProvider;
+            _aliYunOssSetting = aliYunOssSetting;
             _liveKitServerSetting = liveKitServerSetting;
             _liveKitServerUtilService = liveKitServerUtilService;
             _antMediaServerUtilService = antMediaServerUtilService;

@@ -58,13 +58,13 @@ public partial class MeetingService
             RoomName = meeting.MeetingNumber,
             File = new EgressEncodedFileOutPutDto
             {
-                FilePath = $"SugarTalk/{meetingRecordId}",
+                FilePath = $"SugarTalk/{meetingRecordId}.mp4",
                 AliOssUpload = new EgressAliOssUploadDto
                 {
-                    AccessKey = string.Empty,
-                    Secret = string.Empty,
-                    Bucket = string.Empty,
-                    Endpoint = string.Empty
+                    AccessKey = _aliYunOssSetting.AccessKeyId,
+                    Secret = _aliYunOssSetting.AccessKeySecret,
+                    Bucket = _aliYunOssSetting.BucketName,
+                    Endpoint = _aliYunOssSetting.Endpoint
                 }
             }
         }, cancellationToken).ConfigureAwait(false);
