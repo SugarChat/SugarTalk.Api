@@ -7,6 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using LiveKit_CSharp.Services.Meeting;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
 using SugarTalk.Core.Domain.Meeting;
@@ -47,14 +48,13 @@ namespace SugarTalk.Core.Services.Meetings
         {
             var newestMeetingRecord = await _meetingDataProvider.GetNewestMeetingRecordByMeetingIdAsync(command.MeetingId, cancellationToken).ConfigureAwait(false);
             if (newestMeetingRecord == null) throw new MeetingRecordNotFoundException();
-            if (newestMeetingRecord.RecordType == MeetingRecordType.EndRecord) throw new MeetingRecordNotOpenException();
+            var meeting = await _meetingDataProvider.GetMeetingByIdAsync(command.MeetingId).ConfigureAwait(false);
             
-            var context = _httpContextAccessor.HttpContext;
-            var authHeader = context.Request.Headers["Authorization"].FirstOrDefault();
-            var token = authHeader.Substring("Bearer ".Length).Trim();
+            var user = await _accountDataProvider.GetUserAccountAsync(_currentUser.Id, cancellationToken: cancellationToken).ConfigureAwait(false);
+            var recordMeetingToken= _liveKitServerUtilService.GenerateTokenForRecordMeeting(user,meeting.MeetingNumber);
             
-            var response = await _liveKitClient.StopEgressAsync(new StopEgressRequestDto {Token = token,EgressId = newestMeetingRecord.EgressId },cancellationToken).ConfigureAwait(false);
-            if (response == null) throw new MeetingRecordUrlNotFoundException();
+            var response = await _liveKitClient.StopEgressAsync(new StopEgressRequestDto {Token = recordMeetingToken,EgressId = command.EgressId },cancellationToken).ConfigureAwait(false);
+            if (response == null) throw new StopEgressResponseNotFoundException();
             newestMeetingRecord.RecordType = MeetingRecordType.EndRecord;
             newestMeetingRecord.Url = response.File.Location;
             await _meetingDataProvider.UpdateMeetingRecordAsync(newestMeetingRecord, cancellationToken).ConfigureAwait(false);

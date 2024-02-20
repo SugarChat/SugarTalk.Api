@@ -31,7 +31,4 @@ public class MeetingRecord : IEntity
 
     [Column("meeting_record_type")]
     public MeetingRecordType RecordType { get; set; }
-    
-    [Column("egress_id"), StringLength(128)]
-    public string EgressId { get; set; }
 }

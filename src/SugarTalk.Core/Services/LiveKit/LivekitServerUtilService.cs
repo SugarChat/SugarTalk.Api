@@ -21,6 +21,8 @@ public interface ILiveKitServerUtilService : IScopedDependency
     string GenerateTokenForCreateMeeting(UserAccountDto user, string meetingNumber);
     
     string GenerateTokenForJoinMeeting(UserAccountDto user, string meetingNumber);
+
+    string GenerateTokenForRecordMeeting(UserAccountDto user, string meetingNumber);
 }
 
 public class LiveKitServerUtilService : ILiveKitServerUtilService
@@ -63,5 +65,12 @@ public class LiveKitServerUtilService : ILiveKitServerUtilService
         
         return generateAccessToken.JoinMeeting(
             meetingNumber, _liveKitServerSetting.Apikey, _liveKitServerSetting.ApiSecret, user.Id.ToString(), user.UserName);
+    }
+
+    public string GenerateTokenForRecordMeeting(UserAccountDto user, string meetingNumber)
+    {
+        var generateAccessToken = new GenerateAccessToken();
+        return generateAccessToken.RecordMeeting(
+            meetingNumber,apiKey: _liveKitServerSetting.Apikey, apiSecret: _liveKitServerSetting.ApiSecret,userId: user.Id.ToString(), username: user.UserName);
     }
 }

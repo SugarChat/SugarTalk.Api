@@ -85,5 +85,9 @@
     <ItemGroup>
       <Folder Include="Jobs\RecurringJobs" />
     </ItemGroup>
+    
+    <ItemGroup>
+      <Compile Remove="Services\Exceptions\MeetingRecordNotOpenException.cs" />
+    </ItemGroup>
 
 </Project>

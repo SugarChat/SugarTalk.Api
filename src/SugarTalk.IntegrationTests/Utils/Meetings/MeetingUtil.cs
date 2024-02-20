@@ -239,17 +239,16 @@ public class MeetingUtil : TestUtil
         });
     }
 
-    public async Task<MeetingRecord> GenerateMeetingRecordAsync(MeetingDto meetingDto, string egressId = null,
+    public async Task<MeetingRecord> GenerateMeetingRecordAsync(MeetingDto meetingDto,
         string url = null)
     {
         return new MeetingRecord()
         {
             MeetingId = meetingDto.Id,
             CreatedDate = DateTimeOffset.Now,
-            EgressId = egressId ?? "TestId",
             RecordType = MeetingRecordType.OnRecord,
             Url = url ??
-                  "{ \"file\": { \"filename\": \"1y9133060d89259t-mp4\", \"started_at\": 1708133893085210173, \"ended_at\": 226938338636, \"duration\": 0, \"location\": \"https://smartiestest.oss-cn-hongkong.aliyuncs.com/livekit-recordings/test.mp4\" } }"
+                  "mock url"
         };
     }
 
@@ -290,11 +289,9 @@ public class MeetingUtil : TestUtil
                 });
         }, builder =>
         {
-            var context = Substitute.For<HttpContext>();
-            context.Request.Headers[Arg.Any<string>()].Returns(new StringValues(
-                "Bearer mockToken"));
-            var httpContextAccessor = Substitute.For<IHttpContextAccessor>();
-            httpContextAccessor.HttpContext.Returns(context);
+            var services = Substitute.For<ILiveKitServerUtilService>();
+            services.GenerateTokenForJoinMeeting(Arg.Any<UserAccountDto>(), Arg.Any<string>())
+                .Returns("11231312312312312313223");
             var liveKitClient = Substitute.For<ILiveKitClient>();
             liveKitClient.StopEgressAsync(Arg.Any<StopEgressRequestDto>(), Arg.Any<CancellationToken>())
                 .Returns(new StopEgressResponseDto()
@@ -305,7 +302,7 @@ public class MeetingUtil : TestUtil
                     Status = "mock status",
                     Error =  "mock error",
                 });
-            builder.RegisterInstance(httpContextAccessor);
+            builder.RegisterInstance(services);
             builder.RegisterInstance(liveKitClient);
         });
     }

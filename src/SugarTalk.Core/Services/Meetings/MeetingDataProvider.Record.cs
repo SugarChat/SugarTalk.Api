@@ -7,6 +7,7 @@ using Microsoft.EntityFrameworkCore;
 using SugarTalk.Core.Domain.Account;
 using SugarTalk.Core.Domain.Meeting;
 using SugarTalk.Messages.Dto.Meetings;
+using SugarTalk.Messages.Enums.Meeting;
 using SugarTalk.Messages.Requests.Meetings;
 
 namespace SugarTalk.Core.Services.Meetings;
@@ -88,17 +89,18 @@ public partial class MeetingDataProvider
 
         return (total, items);
     }
-    
-    public async Task UpdateMeetingRecordAsync(MeetingRecord record,CancellationToken cancellationToken)
+
+    public async Task UpdateMeetingRecordAsync(MeetingRecord record, CancellationToken cancellationToken)
     {
         if (record == null) return;
-        
+
         await _repository.UpdateAsync(record, cancellationToken).ConfigureAwait(false);
     }
 
-    public async Task<MeetingRecord> GetNewestMeetingRecordByMeetingIdAsync(Guid meetingId,CancellationToken cancellationToken)
+    public async Task<MeetingRecord> GetNewestMeetingRecordByMeetingIdAsync(Guid meetingId, CancellationToken cancellationToken)
     {
-        var meetingRecord = await _repository.QueryNoTracking<MeetingRecord>(x => x.MeetingId == meetingId)
+        var meetingRecord = await _repository
+            .QueryNoTracking<MeetingRecord>(x => x.MeetingId == meetingId && x.RecordType == MeetingRecordType.OnRecord)
             .OrderByDescending(x => x.CreatedDate).FirstOrDefaultAsync(cancellationToken).ConfigureAwait(false);
         return meetingRecord;
     }

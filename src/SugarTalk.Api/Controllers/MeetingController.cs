@@ -152,7 +152,7 @@ public class MeetingController : ControllerBase
 
     #endregion
     
-    [Route("record/video"), HttpPost]
+    [Route("record/stop"), HttpPost]
     [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(StorageMeetingRecordVideoResponse))]
     public async Task<IActionResult> StorageMeetingRecordVideoAsync(StorageMeetingRecordVideoCommand command)
     {

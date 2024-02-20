@@ -49,8 +49,7 @@ public partial class MeetingServiceFixture
             MeetingId = meeting1.Id,
             CreatedDate = DateTimeOffset.Now.AddDays(-2),
             RecordNumber = Guid.NewGuid().ToString(),
-            Url = "mock url1",
-            EgressId = "mock egressId"
+            Url = "mock url1"
         };
 
         var meetingRecord2 = new MeetingRecord
@@ -59,8 +58,7 @@ public partial class MeetingServiceFixture
             MeetingId = meeting1.Id,
             CreatedDate = DateTimeOffset.Now.AddDays(-1),
             RecordNumber = Guid.NewGuid().ToString(),
-            Url = "mock url2",
-            EgressId = "mock egressId"
+            Url = "mock url2"
         };
 
         var meetingRecord3 = new MeetingRecord
@@ -68,8 +66,7 @@ public partial class MeetingServiceFixture
             Id = Guid.NewGuid(),
             MeetingId = meeting2.Id,
             RecordNumber = Guid.NewGuid().ToString(),
-            Url = "mock url3",
-            EgressId = "mock egressId"
+            Url = "mock url3"
         };
 
         var meetingRecord4 = new MeetingRecord
@@ -77,8 +74,7 @@ public partial class MeetingServiceFixture
             Id = Guid.NewGuid(),
             MeetingId = meeting3.Id,
             RecordNumber = Guid.NewGuid().ToString(),
-            Url = "mock url4",
-            EgressId = "mock egressId"
+            Url = "mock url4"
         };
 
         await _meetingUtil.AddMeeting(meeting1).ConfigureAwait(false);
@@ -149,8 +145,7 @@ public partial class MeetingServiceFixture
             MeetingId = meeting1.Id,
             CreatedDate = DateTimeOffset.Now.AddDays(-2),
             RecordNumber = Guid.NewGuid().ToString(),
-            Url = "mock url1",
-            EgressId = "mock egressId"
+            Url = "mock url1"
         };
 
         var meetingRecord2 = new MeetingRecord
@@ -159,8 +154,7 @@ public partial class MeetingServiceFixture
             MeetingId = meeting1.Id,
             CreatedDate = DateTimeOffset.Now.AddDays(-1),
             RecordNumber = Guid.NewGuid().ToString(),
-            Url = "mock url2",
-            EgressId = "mock egressId"
+            Url = "mock url2"
         };
 
         var meetingRecord3 = new MeetingRecord
@@ -168,8 +162,7 @@ public partial class MeetingServiceFixture
             Id = Guid.NewGuid(),
             MeetingId = meeting2.Id,
             RecordNumber = Guid.NewGuid().ToString(),
-            Url = "mock url3",
-            EgressId = "mock egressId"
+            Url = "mock url3"
         };
 
         var meetingRecord4 = new MeetingRecord
@@ -177,8 +170,7 @@ public partial class MeetingServiceFixture
             Id = Guid.NewGuid(),
             MeetingId = meeting3.Id,
             RecordNumber = Guid.NewGuid().ToString(),
-            Url = "mock url4",
-            EgressId = "mock egressId"
+            Url = "mock url4"
         };
 
         await _meetingUtil.AddMeeting(meeting1).ConfigureAwait(false);
@@ -278,8 +270,7 @@ public partial class MeetingServiceFixture
             Id = Guid.NewGuid(),
             MeetingId = meeting2.Id,
             RecordNumber = Guid.NewGuid().ToString(),
-            Url = "mock url3",
-            EgressId = "mock egressId"
+            Url = "mock url3"
         };
 
         var meetingRecord2 = new MeetingRecord
@@ -287,8 +278,7 @@ public partial class MeetingServiceFixture
             Id = Guid.NewGuid(),
             MeetingId = meeting3.Id,
             RecordNumber = Guid.NewGuid().ToString(),
-            Url = "mock url4",
-            EgressId = "mock egressId"
+            Url = "mock url4"
         };
 
         await _meetingUtil.AddMeeting(meeting1).ConfigureAwait(false);
@@ -348,24 +338,21 @@ public partial class MeetingServiceFixture
             Id = Guid.NewGuid(),
             MeetingId = meeting1.Id,
             CreatedDate = DateTimeOffset.Now.AddDays(-2),
-            Url = "mock url1",
-            EgressId = "mock egressId"
+            Url = "mock url1"
         };
 
         var meetingRecord2 = new MeetingRecord
         {
             Id = Guid.NewGuid(),
             MeetingId = meeting2.Id,
-            Url = "mock url3",
-            EgressId = "mock egressId"
+            Url = "mock url3"
         };
 
         var meetingRecord3 = new MeetingRecord
         {
             Id = Guid.NewGuid(),
             MeetingId = meeting3.Id,
-            Url = "mock url4",
-            EgressId = "mock egressId"
+            Url = "mock url4"
         };
 
         await _meetingUtil.AddMeeting(meeting1).ConfigureAwait(false);
@@ -404,31 +391,30 @@ public partial class MeetingServiceFixture
         var scheduleMeetingResponse = await _meetingUtil.ScheduleMeeting();
         var meetingDto = await _meetingUtil.JoinMeeting(scheduleMeetingResponse.Data.MeetingNumber);
 
-        var testRecord1 = await _meetingUtil.GenerateMeetingRecordAsync(meetingDto, "mock egressId1");
+        var testRecord1 = await _meetingUtil.GenerateMeetingRecordAsync(meetingDto, "mock url1");
         await _meetingUtil.AddMeetingRecordAsync(testRecord1);
-        var testRecord2 = await _meetingUtil.GenerateMeetingRecordAsync(meetingDto, "mock egressId2");
+        var testRecord2 = await _meetingUtil.GenerateMeetingRecordAsync(meetingDto, "mock url12");
         await _meetingUtil.AddMeetingRecordAsync(testRecord2);
-        var testRecord3 = await _meetingUtil.GenerateMeetingRecordAsync(meetingDto, "mock egressId3");
+        var testRecord3 = await _meetingUtil.GenerateMeetingRecordAsync(meetingDto, "mock url3");
         await _meetingUtil.AddMeetingRecordAsync(testRecord3);
 
         var meetingRecords = await _meetingUtil.GetMeetingRecordsByMeetingIdAsync(meetingDto.Id);
-        var test3 = meetingRecords.FirstOrDefault(x => x.EgressId == "mock egressId3");
+        var test3 = meetingRecords.FirstOrDefault(x => x.Url == "mock url3");
         var newMeetingRecord = await _meetingUtil.GetMeetingRecordByMeetingIdAsync(meetingDto.Id);
         newMeetingRecord.CreatedDate.ShouldBe(test3.CreatedDate);
     }
 
     [Theory]
-    [InlineData("mock egressId1", "mock url1")]
-    [InlineData("mock egressId2", "mock url2")]
-    public async Task CanMeetingRecordShouldBeValue(string egressId, string url)
+    [InlineData("mock url1")]
+    [InlineData("mock url2")]
+    public async Task CanMeetingRecordShouldBeValue( string url)
     {
         var scheduleMeetingResponse = await _meetingUtil.ScheduleMeeting();
         var meetingDto = await _meetingUtil.JoinMeeting(scheduleMeetingResponse.Data.MeetingNumber);
-        var meetingRecord = await _meetingUtil.GenerateMeetingRecordAsync(meetingDto, egressId, url);
+        var meetingRecord = await _meetingUtil.GenerateMeetingRecordAsync(meetingDto,url);
         await _meetingUtil.AddMeetingRecordAsync(meetingRecord);
         var response = await _meetingUtil.GetMeetingRecordByMeetingIdAsync(meetingDto.Id);
         response.ShouldNotBeNull();
-        response.EgressId.ShouldBe(egressId);
         response.Url.ShouldBe(url);
     }
 
@@ -449,24 +435,6 @@ public partial class MeetingServiceFixture
         newMeetingRecord.Url.ShouldBe("mock url");
         newMeetingRecord.RecordType.ShouldBe(MeetingRecordType.EndRecord);
         newMeetingRecord.MeetingId.ShouldBe(meetingDto.Id);
-    }
-
-    [Fact]
-    public async Task WhenMeetingRecordTypeIsEndRecordShouldBeThrow()
-    {
-        var scheduleMeetingResponse = await _meetingUtil.ScheduleMeeting();
-        var meetingDto = await _meetingUtil.JoinMeeting(scheduleMeetingResponse.Data.MeetingNumber);
-        var testMeetingRecord = new MeetingRecord
-        {
-            CreatedDate = DateTimeOffset.Now,
-            EgressId = "mock egressId",
-            Url = "mock url",
-            MeetingId = meetingDto.Id,
-            RecordType = MeetingRecordType.EndRecord
-        };
-        await _meetingUtil.AddMeetingRecordAsync(testMeetingRecord);
-        await _meetingUtil.StorageMeetingRecordVideoByMeetingIdAsync(meetingDto.Id)
-            .ShouldThrowAsync<MeetingRecordNotOpenException>();
     }
 
     [Fact]
