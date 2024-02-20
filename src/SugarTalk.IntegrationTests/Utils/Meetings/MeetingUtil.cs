@@ -314,6 +314,20 @@ public class MeetingUtil : TestUtil
                     Status = "mock status",
                     Error =  "mock error",
                 });
+            
+            liveKitClient.GetEgressInfoListAsync(Arg.Any<GetEgressRequestDto>(), Arg.Any<CancellationToken>())
+                .Returns(new GetEgressInfoListResponseDto()
+                {
+                    EgressItems = new List<EgressItemDto>
+                    {
+                        new EgressItemDto
+                        {
+                            EgressId = "mock egressId",
+                            EndedAt = "mock endedAt",
+                            File = new FileDetails{ Location = "mock url" }
+                        }
+                    }
+                });
             builder.RegisterInstance(services);
             builder.RegisterInstance(liveKitClient);
         });

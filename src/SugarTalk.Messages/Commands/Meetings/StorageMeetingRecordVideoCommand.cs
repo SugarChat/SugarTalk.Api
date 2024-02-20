@@ -17,6 +17,7 @@ namespace SugarTalk.Messages.Commands.Meetings
         
         public Guid MeetingRecordId { get; set; }
     }
+    
     public class StorageMeetingRecordVideoResponse : SugarTalkResponse
     {
     }
