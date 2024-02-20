@@ -40,7 +40,7 @@ public class MeetingUtil : TestUtil
     }
 
     public async Task<ScheduleMeetingResponse> ScheduleMeeting(
-        string title = null, string timezone = null, string securityCode = null, 
+        string title = null, string timezone = null, string securityCode = null,
         DateTimeOffset? startDate = null, DateTimeOffset? endDate = null, DateTimeOffset? utilDate = null,
         MeetingAppointmentType appointmentType = MeetingAppointmentType.Quick,
         MeetingRepeatType repeatType = MeetingRepeatType.None, bool isMuted = false, bool isRecorded = false)
@@ -61,7 +61,7 @@ public class MeetingUtil : TestUtil
                     IsMuted = isMuted,
                     IsRecorded = isRecorded
                 });
-            
+
             return response;
         }, builder =>
         {
@@ -72,7 +72,7 @@ public class MeetingUtil : TestUtil
 
             liveKitServerUtilService.GenerateTokenForCreateMeeting(Arg.Any<UserAccountDto>(), Arg.Any<string>())
                 .Returns("token123");
-            
+
             builder.RegisterInstance(liveKitServerUtilService);
         });
     }
@@ -94,7 +94,7 @@ public class MeetingUtil : TestUtil
 
             liveKitServerUtilService.GenerateTokenForJoinMeeting(Arg.Any<UserAccountDto>(), Arg.Any<string>())
                 .Returns("token123");
-            
+
             builder.RegisterInstance(liveKitServerUtilService);
         });
     }
@@ -106,7 +106,7 @@ public class MeetingUtil : TestUtil
             await repository.InsertAsync(meeting, CancellationToken.None).ConfigureAwait(false);
         });
     }
-    
+
     public async Task<Meeting> GetMeeting(string meetingNumber)
     {
         return await Run<IRepository, Meeting>(async (repository) =>
@@ -117,7 +117,8 @@ public class MeetingUtil : TestUtil
         });
     }
 
-    public async Task AddMeetingUserSession(int id, Guid meetingId, int userId, bool isMuted = false, bool isSharingScreen = false)
+    public async Task AddMeetingUserSession(int id, Guid meetingId, int userId, bool isMuted = false,
+        bool isSharingScreen = false)
     {
         await RunWithUnitOfWork<IRepository>(async repository =>
         {
@@ -131,9 +132,10 @@ public class MeetingUtil : TestUtil
             }, CancellationToken.None);
         });
     }
-    
+
     public async Task AddMeetingUserSetting(Guid id, int userId, Guid meetingId,
-        SpeechTargetLanguageType targetLanguageType, CantoneseToneType? cantoneseToneType, DateTimeOffset? lastModifiedDate = null)
+        SpeechTargetLanguageType targetLanguageType, CantoneseToneType? cantoneseToneType,
+        DateTimeOffset? lastModifiedDate = null)
     {
         await RunWithUnitOfWork<IRepository>(async repository =>
         {
@@ -180,11 +182,14 @@ public class MeetingUtil : TestUtil
         });
     }
 
-    public async Task<VerifyMeetingUserPermissionResponse> VerifyMeetingUserPermissionAsync(VerifyMeetingUserPermissionCommand verifyMeetingUserPermissionCommand)
+    public async Task<VerifyMeetingUserPermissionResponse> VerifyMeetingUserPermissionAsync(
+        VerifyMeetingUserPermissionCommand verifyMeetingUserPermissionCommand)
     {
         return await Run<IMediator, VerifyMeetingUserPermissionResponse>(async mediator =>
         {
-            return await mediator.SendAsync<VerifyMeetingUserPermissionCommand, VerifyMeetingUserPermissionResponse>(verifyMeetingUserPermissionCommand);
+            return await
+                mediator.SendAsync<VerifyMeetingUserPermissionCommand, VerifyMeetingUserPermissionResponse>(
+                    verifyMeetingUserPermissionCommand);
         });
     }
 
@@ -192,10 +197,11 @@ public class MeetingUtil : TestUtil
     {
         return await Run<IMediator, GetMeetingByNumberResponse>(async mediator =>
         {
-            return await mediator.RequestAsync<GetMeetingByNumberRequest, GetMeetingByNumberResponse>(new GetMeetingByNumberRequest
-            {
-                MeetingNumber = meetingNumber
-            });
+            return await mediator.RequestAsync<GetMeetingByNumberRequest, GetMeetingByNumberResponse>(
+                new GetMeetingByNumberRequest
+                {
+                    MeetingNumber = meetingNumber
+                });
         });
     }
 
@@ -203,10 +209,11 @@ public class MeetingUtil : TestUtil
     {
         return await Run<IRepository, MeetingUserSession>(async repo =>
         {
-            return await repo.FirstOrDefaultAsync<MeetingUserSession>(x => x.UserId == userId && x.MeetingId == meetingId);
+            return await repo.FirstOrDefaultAsync<MeetingUserSession>(x =>
+                x.UserId == userId && x.MeetingId == meetingId);
         });
     }
-    
+
     public async Task<MeetingDto> JoinMeetingByUserAsync(UserAccount user, string meetingNumber, bool isMuted = false)
     {
         return await Run<IMediator, MeetingDto>(async (mediator) =>
@@ -273,13 +280,14 @@ public class MeetingUtil : TestUtil
             return await repository.QueryNoTracking<MeetingRecord>().Where(x => x.MeetingId == meetingId)
                 .ToListAsync();
         });
-    }  
-    
+    }
+
     public async Task<MeetingRecord> GetMeetingRecordByMeetingRecordIdAsync(Guid meetingRecordId)
     {
         return await Run<IRepository, MeetingRecord>(async repository =>
         {
-            return await repository.QueryNoTracking<MeetingRecord>().FirstOrDefaultAsync(x => x.Id == meetingRecordId);
+            return await repository.QueryNoTracking<MeetingRecord>()
+                .FirstOrDefaultAsync(x => x.Id == meetingRecordId);
         });
     }
 
@@ -292,7 +300,8 @@ public class MeetingUtil : TestUtil
         });
     }
 
-    public async Task<StorageMeetingRecordVideoResponse> StorageMeetingRecordVideoByMeetingIdAsync(Guid meetingId,Guid meetingRecordId,string egressId = null)
+    public async Task<StorageMeetingRecordVideoResponse> StorageMeetingRecordVideoByMeetingIdAsync(Guid meetingId,
+        Guid meetingRecordId, string egressId = null)
     {
         return await Run<IMediator, StorageMeetingRecordVideoResponse>(async mediator =>
         {
@@ -322,11 +331,11 @@ public class MeetingUtil : TestUtil
                 {
                     EgressId = "mock egressId",
                     EndedAt = "mock endedat",
-                    File = new FileDetails{Location = "mock url"},
+                    File = new FileDetails { Location = "mock url" },
                     Status = "mock status",
-                    Error =  "mock error",
+                    Error = "mock error",
                 });
-            
+
             liveKitClient.GetEgressInfoListAsync(Arg.Any<GetEgressRequestDto>(), Arg.Any<CancellationToken>())
                 .Returns(new GetEgressInfoListResponseDto()
                 {
@@ -337,13 +346,57 @@ public class MeetingUtil : TestUtil
                             EgressId = "mock egressId",
                             EndedAt = "mock endedAt",
                             Status = "EGRESS_COMPLETE",
-                            File = new FileDetails{ Location = "mock url" }
+                            File = new FileDetails { Location = "mock url" }
                         }
                     }
                 });
             builder.RegisterInstance(liveKitservices);
             builder.RegisterInstance(liveKitClient);
             builder.RegisterInstance(meetingService);
+        });
+    }
+
+    public async Task<bool> StorageMeetingRecordVideoAsync(StorageMeetingRecordVideoCommand command, string token = null)
+    {
+        token = token ?? "11231312312312312313223";
+        return await Run<IMeetingService,SugarTalkDbContext, Task<bool>>(async (meetingService,dbContenxt) =>
+        {
+            var res = await meetingService.StorageMeetingRecordVideoJobAsync(command, token, CancellationToken.None
+            );
+           await dbContenxt.SaveChangesAsync();
+           return res;
+        }, builder =>
+        {
+            var liveKitservices = Substitute.For<ILiveKitServerUtilService>();
+            liveKitservices.GenerateTokenForJoinMeeting(Arg.Any<UserAccountDto>(), Arg.Any<string>())
+                .Returns(token);
+            var liveKitClient = Substitute.For<ILiveKitClient>();
+            liveKitClient.StopEgressAsync(Arg.Any<StopEgressRequestDto>(), Arg.Any<CancellationToken>())
+                .Returns(new StopEgressResponseDto()
+                {
+                    EgressId = "mock egressId",
+                    EndedAt = "mock endedat",
+                    File = new FileDetails { Location = "mock url" },
+                    Status = "mock status",
+                    Error = "mock error",
+                });
+
+            liveKitClient.GetEgressInfoListAsync(Arg.Any<GetEgressRequestDto>(), Arg.Any<CancellationToken>())
+                .Returns(new GetEgressInfoListResponseDto()
+                {
+                    EgressItems = new List<EgressItemDto>
+                    {
+                        new EgressItemDto
+                        {
+                            EgressId = "mock egressId",
+                            EndedAt = "mock endedAt",
+                            Status = "EGRESS_COMPLETE",
+                            File = new FileDetails { Location = "mock url" }
+                        }
+                    }
+                });
+            builder.RegisterInstance(liveKitservices);
+            builder.RegisterInstance(liveKitClient);
         });
     }
 }

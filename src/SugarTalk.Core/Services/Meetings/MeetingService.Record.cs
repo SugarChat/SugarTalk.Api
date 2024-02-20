@@ -25,6 +25,8 @@ namespace SugarTalk.Core.Services.Meetings
         Task<GetCurrentUserMeetingRecordResponse> GetCurrentUserMeetingRecordsAsync(GetCurrentUserMeetingRecordRequest request, CancellationToken cancellationToken);
         
         Task<StorageMeetingRecordVideoResponse> StorageMeetingRecordVideoAsync(StorageMeetingRecordVideoCommand command, CancellationToken cancellationToken);
+
+        Task<bool> StorageMeetingRecordVideoJobAsync(StorageMeetingRecordVideoCommand command, string token, CancellationToken cancellationToken);
     }
 
     public partial class MeetingService
@@ -51,33 +53,48 @@ namespace SugarTalk.Core.Services.Meetings
             var user = await _accountDataProvider.GetUserAccountAsync(_currentUser.Id, cancellationToken: cancellationToken).ConfigureAwait(false);
             
             var recordMeetingToken = _liveKitServerUtilService.GenerateTokenForRecordMeeting(user,meeting.MeetingNumber);
-            await _liveKitClient
+            var stopResponse = await _liveKitClient
                 .StopEgressAsync(new StopEgressRequestDto { Token = recordMeetingToken, EgressId = command.EgressId },
                     cancellationToken).ConfigureAwait(false);
-            
-            var delay = TimeSpan.FromMinutes(1);
-            BackgroundJob.Schedule(
-                () => ExecuteStorageMeetingRecordVideoDelayedJob(command, recordMeetingToken, cancellationToken),delay);
+            if (stopResponse == null) throw new Exception();
+            var startDate = DateTimeOffset.Now;
+
+            RecurringJob.AddOrUpdate(nameof(ExecuteStorageMeetingRecordVideoDelayedJobAsync),
+                () => ExecuteStorageMeetingRecordVideoDelayedJobAsync(startDate, command, recordMeetingToken,
+                    cancellationToken), "*/5 * * * * ?");
             return new StorageMeetingRecordVideoResponse();
         }
 
-        public async Task ExecuteStorageMeetingRecordVideoDelayedJob(StorageMeetingRecordVideoCommand command,
+        public async Task ExecuteStorageMeetingRecordVideoDelayedJobAsync(DateTimeOffset startDate,StorageMeetingRecordVideoCommand command,
             string token, CancellationToken cancellationToken)
+        {  
+            var now = DateTimeOffset.Now;
+            if ((now - startDate).TotalMinutes > 5) RecurringJob.RemoveIfExists(nameof(ExecuteStorageMeetingRecordVideoDelayedJobAsync));
+
+            var res = await StorageMeetingRecordVideoJobAsync(command, token, cancellationToken);
+            if (res) RecurringJob.RemoveIfExists(nameof(ExecuteStorageMeetingRecordVideoDelayedJobAsync));
+        }
+
+        public async Task<bool> StorageMeetingRecordVideoJobAsync(StorageMeetingRecordVideoCommand command, string token, CancellationToken cancellationToken)
         {
             var meetingRecord = await _meetingDataProvider
                 .GetMeetingRecordByMeetingRecordIdAsync(command.MeetingRecordId, cancellationToken)
                 .ConfigureAwait(false);
-            if (meetingRecord == null) throw new MeetingRecordNotFoundException();
+            if (meetingRecord == null) return false;
 
-            var response = await _liveKitClient
+            var getResponse = await _liveKitClient
                 .GetEgressInfoListAsync(new GetEgressRequestDto { Token = token, EgressId = command.EgressId },
                     cancellationToken).ConfigureAwait(false);
+            if (getResponse == null) return false;
+            
             var egressItemDto =
-                response.EgressItems.First(x => x.EgressId == command.EgressId && x.Status == "EGRESS_COMPLETE");
+                getResponse.EgressItems.FirstOrDefault(x => x.EgressId == command.EgressId && x.Status == "EGRESS_COMPLETE");
+            if (egressItemDto == null) return false;
 
-            meetingRecord.RecordType = MeetingRecordType.EndRecord;
             meetingRecord.Url = egressItemDto.File.Location;
+            meetingRecord.RecordType = MeetingRecordType.EndRecord;
             await _meetingDataProvider.UpdateMeetingRecordAsync(meetingRecord, cancellationToken).ConfigureAwait(false);
+            return true;
         }
     }
 }
