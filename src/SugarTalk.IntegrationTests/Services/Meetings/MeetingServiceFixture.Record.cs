@@ -10,12 +10,16 @@ using SugarTalk.Core.Data;
 using SugarTalk.Messages.Dto;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
+using Smarties.Messages.DTO.Account;
+using SugarTalk.Core.Domain.Account;
 using SugarTalk.Core.Domain.Meeting;
 using SugarTalk.Core.Services.Utils;
 using SugarTalk.Core.Services.Http.Clients;
+using SugarTalk.Core.Services.LiveKit;
 using SugarTalk.Messages.Commands.Meetings;
 using SugarTalk.Messages.Requests.Meetings;
 using SugarTalk.Messages.Dto.LiveKit.Egress;
+using UserAccountDto = SugarTalk.Messages.Dto.Users.UserAccountDto;
 
 namespace SugarTalk.IntegrationTests.Services.Meetings;
 
@@ -441,11 +445,16 @@ public partial class MeetingServiceFixture
         }, builder =>
         {
             var liveKitClient = Substitute.For<ILiveKitClient>();
+            var liveKitServerUtilService = Substitute.For<ILiveKitServerUtilService>();
 
             liveKitClient.StartTrackCompositeEgressAsync(Arg.Any<StartTrackCompositeEgressRequestDto>(), Arg.Any<CancellationToken>())
                 .Returns(new StartEgressResponseDto { EgressId = egressId });
+
+            liveKitServerUtilService.GenerateTokenForRecordMeeting(Arg.Any<UserAccountDto>(), Arg.Any<string>())
+                .Returns("token123");
             
             builder.RegisterInstance(liveKitClient);
+            builder.RegisterInstance(liveKitServerUtilService);
 
             MockClock(builder, DateTimeOffset.Now);
         });

@@ -50,8 +50,11 @@ public partial class MeetingService
         if (meeting.MeetingMasterUserId != _currentUser?.Id) 
             throw new CannotStartMeetingRecordingException(_currentUser?.Id);
 
+        var user = await _accountDataProvider.GetUserAccountAsync(_currentUser.Id, cancellationToken: cancellationToken).ConfigureAwait(false);
+
         var postResponse = await _liveKitClient.StartTrackCompositeEgressAsync(new StartTrackCompositeEgressRequestDto
         {
+            Token = _liveKitServerUtilService.GenerateTokenForRecordMeeting(user, meeting.MeetingNumber),
             RoomName = meeting.MeetingNumber,
             File = new EgressEncodedFileOutPutDto
             {
