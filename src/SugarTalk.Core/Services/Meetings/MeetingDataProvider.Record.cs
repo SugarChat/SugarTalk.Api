@@ -21,7 +21,7 @@ public partial interface IMeetingDataProvider
     
     Task PersistMeetingRecordAsync(Guid meetingId, Guid meetingRecordId, CancellationToken cancellationToken);
     
-    Task<GetMeetingRecordDetailsDto> GetMeetingRecordDetailsAsync(Guid recordId, CancellationToken cancellationToken);
+    Task<GetMeetingRecordDetailsResponse> GetMeetingRecordDetailsAsync(Guid recordId, CancellationToken cancellationToken);
 }
 
 public partial class MeetingDataProvider
@@ -128,19 +128,17 @@ public partial class MeetingDataProvider
         }, cancellationToken).ConfigureAwait(false);
     }
     
-    private string GenerateRecordNumber(int total)
+    public async Task<GetMeetingRecordDetailsResponse> GetMeetingRecordDetailsAsync(Guid recordId, CancellationToken cancellationToken)
     {
-        var sequenceToString = total.ToString().PadLeft(6, '0');
+        var currentUser = await _accountDataProvider
+            .GetUserAccountAsync(_currentUser.Id.Value, cancellationToken: cancellationToken).ConfigureAwait(false);
 
-        return $"ZNZX-{_clock.Now.Year}{_clock.Now.Month}{_clock.Now.Day}{sequenceToString}";
-    }
-    
-    public async Task<GetMeetingRecordDetailsDto> GetMeetingRecordDetailsAsync(Guid recordId, CancellationToken cancellationToken)
-    {
+        if (currentUser is null) throw new UnauthorizedAccessException();
+        
         var meetingRecordDetails = await _repository.QueryNoTracking<MeetingSpeakDetail>()
             .Where(x => x.MeetingRecordId == recordId).ToListAsync(cancellationToken).ConfigureAwait(false);
 
-        var meetingInfos = await (
+        var meetingInfo = await (
             from meetingRecord in _repository.QueryNoTracking<MeetingRecord>()
             join meeting in _repository.QueryNoTracking<Meeting>() on meetingRecord.MeetingId equals meeting.Id
             join meetingSummary in _repository.QueryNoTracking<MeetingSummary>() on meetingRecord.Id equals meetingSummary.RecordId
@@ -158,6 +156,16 @@ public partial class MeetingDataProvider
             }
         ).FirstOrDefaultAsync(cancellationToken).ConfigureAwait(false);
 
-        return meetingInfos;
+        return new GetMeetingRecordDetailsResponse
+        {
+            Data = meetingInfo
+        };
+    }
+
+    private string GenerateRecordNumber(int total)
+    {
+        var sequenceToString = total.ToString().PadLeft(6, '0');
+
+        return $"ZNZX-{_clock.Now.Year}{_clock.Now.Month}{_clock.Now.Day}{sequenceToString}";
     }
 }

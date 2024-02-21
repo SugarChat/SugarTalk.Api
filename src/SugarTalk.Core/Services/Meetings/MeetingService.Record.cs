@@ -82,11 +82,6 @@ public partial class MeetingService
     
     public async Task<GetMeetingRecordDetailsResponse> GetMeetingRecordDetailsAsync(GetMeetingRecordDetailsRequest request, CancellationToken cancellationToken)
     {
-        var response =  await _meetingDataProvider.GetMeetingRecordDetailsAsync(request.Id, cancellationToken).ConfigureAwait(false);
-        
-        return new GetMeetingRecordDetailsResponse
-        {
-            Data = response
-        };
+        return await _meetingDataProvider.GetMeetingRecordDetailsAsync(request.Id, cancellationToken).ConfigureAwait(false);
     }
 }
