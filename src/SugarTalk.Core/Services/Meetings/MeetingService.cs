@@ -240,9 +240,12 @@ namespace SugarTalk.Core.Services.Meetings
 
             if (user is null) throw new UnauthorizedAccessException();
 
-            meeting.MeetingTokenFromLiveKit = user.Issuer is UserAccountIssuer.Guest
-                ? _liveKitServerUtilService.GenerateTokenForGuest(user, meeting.MeetingNumber)
-                : _liveKitServerUtilService.GenerateTokenForJoinMeeting(user, meeting.MeetingNumber);
+            meeting.MeetingTokenFromLiveKit = user.Issuer switch
+            {
+                UserAccountIssuer.Guest => _liveKitServerUtilService.GenerateTokenForGuest(user, meeting.MeetingNumber),
+                UserAccountIssuer.Self or UserAccountIssuer.Wiltechs => _liveKitServerUtilService.GenerateTokenForJoinMeeting(user, meeting.MeetingNumber),
+                _ => throw new ArgumentOutOfRangeException()
+            };
 
             await _meetingDataProvider.UpdateMeetingIfRequiredAsync(meeting.Id, user.Id, cancellationToken).ConfigureAwait(false);
             
