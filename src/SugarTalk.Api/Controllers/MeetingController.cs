@@ -175,7 +175,7 @@ public class MeetingController : ControllerBase
     
     #endregion
 
-    [Route("meeting/detail"), HttpGet]
+    [Route("record/detail"), HttpGet]
     [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(GetMeetingRecordDetailsResponse))]
     public async Task<IActionResult> GetMeetingRecordDetailsAsync([FromBody] GetMeetingRecordDetailsRequest request)
     {

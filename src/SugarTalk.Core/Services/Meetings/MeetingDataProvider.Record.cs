@@ -20,6 +20,8 @@ public partial interface IMeetingDataProvider
     Task DeleteMeetingRecordAsync(List<Guid> meetingRecordIds, CancellationToken cancellationToken);
     
     Task PersistMeetingRecordAsync(Guid meetingId, Guid meetingRecordId, CancellationToken cancellationToken);
+    
+    Task<GetMeetingRecordDetailsDto> GetMeetingRecordDetailsAsync(Guid recordId, CancellationToken cancellationToken);
 }
 
 public partial class MeetingDataProvider
@@ -131,5 +133,31 @@ public partial class MeetingDataProvider
         var sequenceToString = total.ToString().PadLeft(6, '0');
 
         return $"ZNZX-{_clock.Now.Year}{_clock.Now.Month}{_clock.Now.Day}{sequenceToString}";
+    }
+    
+    public async Task<GetMeetingRecordDetailsDto> GetMeetingRecordDetailsAsync(Guid recordId, CancellationToken cancellationToken)
+    {
+        var meetingRecordDetails = await _repository.QueryNoTracking<MeetingSpeakDetail>()
+            .Where(x => x.MeetingRecordId == recordId).ToListAsync(cancellationToken).ConfigureAwait(false);
+
+        var meetingInfos = await (
+            from meetingRecord in _repository.QueryNoTracking<MeetingRecord>()
+            join meeting in _repository.QueryNoTracking<Meeting>() on meetingRecord.MeetingId equals meeting.Id
+            join meetingSummary in _repository.QueryNoTracking<MeetingSummary>() on meetingRecord.Id equals meetingSummary.RecordId
+            where meetingRecord.Id == recordId
+            select new GetMeetingRecordDetailsDto
+            {
+                Id = recordId,
+                MeetingTitle = meeting.Title,
+                MeetingNumber = meeting.MeetingNumber,
+                MeetingStartDate = meeting.StartDate,
+                MeetingEndDate = meeting.EndDate,
+                Url = meetingRecord.Url,
+                Summary = meetingSummary.Summary,
+                MeetingRecordDetail = meetingRecordDetails.Select(x => _mapper.Map<MeetingRecordDetail>(x)).ToList()
+            }
+        ).FirstOrDefaultAsync(cancellationToken).ConfigureAwait(false);
+
+        return meetingInfos;
     }
 }

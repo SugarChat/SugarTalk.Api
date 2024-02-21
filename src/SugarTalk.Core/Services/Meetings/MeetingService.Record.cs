@@ -16,6 +16,8 @@ public partial interface IMeetingService
     Task DeleteMeetingRecordAsync(DeleteMeetingRecordCommand command, CancellationToken cancellationToken);
 
     Task<MeetingRecordingStartedEvent> StartMeetingRecordingAsync(StartMeetingRecordingCommand command, CancellationToken cancellationToken);
+    
+    Task<GetMeetingRecordDetailsResponse> GetMeetingRecordDetailsAsync(GetMeetingRecordDetailsRequest request, CancellationToken cancellationToken);
 }
 
 public partial class MeetingService
@@ -75,6 +77,16 @@ public partial class MeetingService
         {
             MeetingRecordId = meetingRecordId,
             EgressId = postResponse.EgressId
+        };
+    }
+    
+    public async Task<GetMeetingRecordDetailsResponse> GetMeetingRecordDetailsAsync(GetMeetingRecordDetailsRequest request, CancellationToken cancellationToken)
+    {
+        var response =  await _meetingDataProvider.GetMeetingRecordDetailsAsync(request.Id, cancellationToken).ConfigureAwait(false);
+        
+        return new GetMeetingRecordDetailsResponse
+        {
+            Data = response
         };
     }
 }
