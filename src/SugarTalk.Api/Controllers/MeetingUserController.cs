@@ -36,28 +36,28 @@ public class MeetingUserController : ControllerBase
     }
 
     /// <summary>
-    /// 验证用户是否为会议创建人
+    /// verify user permission in meeting
     /// </summary>
     /// <param name="command"></param>
     /// <returns></returns>
     [Route("session/master/verify"), HttpPost]
     [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(VerifyMeetingUserPermissionResponse))]
-    public async Task<IActionResult> VerifyMeetingUserPermissions(VerifyMeetingUserPermissionCommand command)
+    public async Task<IActionResult> VerifyMeetingUserPermissionsAsync(VerifyMeetingUserPermissionCommand command)
     {
-        var response = await _mediator.SendAsync<VerifyMeetingUserPermissionCommand, VerifyMeetingUserPermissionResponse>(command);
+        var response = await _mediator.SendAsync<VerifyMeetingUserPermissionCommand, VerifyMeetingUserPermissionResponse>(command).ConfigureAwait(false);
         return Ok(response);
     }
 
     /// <summary>
-    /// 会议创建人踢出指定用户
+    /// kick out user from meeting
     /// </summary>
     /// <param name="command"></param>
     /// <returns></returns>
     [Route("session/master/kickout"), HttpPost]
     [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(KickOutMeetingByUserIdResponse))]
-    public async Task<IActionResult> KickOutMeeting(KickOutMeetingByUserIdCommand command)
+    public async Task<IActionResult> KickOutMeetingAsync(KickOutMeetingByUserIdCommand command)
     {
-        var response = await _mediator.SendAsync<KickOutMeetingByUserIdCommand, KickOutMeetingByUserIdResponse>(command);
+        var response = await _mediator.SendAsync<KickOutMeetingByUserIdCommand, KickOutMeetingByUserIdResponse>(command).ConfigureAwait(false);
         return Ok(response);
     }
 }

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Linq;
 using System.Reflection;
+using Aliyun.OSS;
 using Autofac;
 using AutoMapper.Contrib.Autofac.DependencyInjection;
 using Google.Cloud.Translation.V2;
@@ -20,6 +21,7 @@ using SugarTalk.Core.Middlewares.UnitOfWork;
 using SugarTalk.Core.Services.Caching;
 using SugarTalk.Core.Settings;
 using SugarTalk.Core.Settings.Google;
+using SugarTalk.Core.Settings.Aliyun;
 using Module = Autofac.Module;
 
 namespace SugarTalk.Core
@@ -53,6 +55,7 @@ namespace SugarTalk.Core
             RegisterDependency(builder);
             RegisterAutoMapper(builder);
             RegisterTranslationClient(builder);
+            RegisterAliYunOssClient(builder);
             RegisterMultiBus(builder, _configuration);
         }
 
@@ -131,6 +134,15 @@ namespace SugarTalk.Core
             {
                 var googleTranslateApiKey = c.Resolve<GoogleTranslateApiKeySetting>().Value;
                 return TranslationClient.CreateFromApiKey(googleTranslateApiKey);
+            }).AsSelf().InstancePerLifetimeScope();
+        }
+
+        private void RegisterAliYunOssClient(ContainerBuilder builder)
+        {
+            builder.Register(c =>
+            {
+                var settings = c.Resolve<AliYunOssSettings>();
+                return new OssClient(settings.Endpoint, settings.AccessKeyId, settings.AccessKeySecret);
             }).AsSelf().InstancePerLifetimeScope();
         }
 

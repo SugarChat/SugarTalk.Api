@@ -15,6 +15,9 @@ public class MeetingRecord : IEntity
     [Key]
     [Column("id", TypeName = "char(36)")]
     public Guid Id { get; set; }
+
+    [Column("record_number"), StringLength(32)]
+    public string RecordNumber { get; set; }
     
     [Column("meeting_id", TypeName = "char(36)")]
     public Guid MeetingId { get; set; }
@@ -24,4 +27,7 @@ public class MeetingRecord : IEntity
     
     [Column("created_date")]
     public DateTimeOffset CreatedDate { get; set; }
+    
+    [Column("is_deleted", TypeName = "tinyint(1)")]
+    public bool IsDeleted { get; set; }
 }

@@ -9,7 +9,7 @@ public partial class BaseFixture
 {
     protected Meeting CreateMeetingEvent(Guid meetingId, long? startDate = null, long? endDate = null,
         string meetingNumber = "5201314", string securityCode = "123456", string timeZone = "Asia/Shanghai",
-        MeetingStatus status = MeetingStatus.Pending, bool isMuted = false, bool isRecorded = false)
+        MeetingStatus status = MeetingStatus.Pending, bool isMuted = false, bool isRecorded = false, int meetingMasterUserId = 1)
     {
         return new Meeting
         {
@@ -17,7 +17,7 @@ public partial class BaseFixture
             Title = "Greg Meeting",
             StartDate = startDate?? _clock.Now.ToUnixTimeSeconds(),
             EndDate = endDate ?? _clock.Now.AddDays(7).ToUnixTimeSeconds(),
-            MeetingMasterUserId = 1,
+            MeetingMasterUserId = meetingMasterUserId,
             MeetingNumber = meetingNumber,
             OriginAddress = "https://localhost:6666",
             SecurityCode = securityCode,
@@ -42,9 +42,9 @@ public partial class BaseFixture
             IsActive = true
         };
     }
-    
+
     protected MeetingUserSession CreateUserSessionEvent(int id, int userId, Guid meetingId, DateTimeOffset? createdDate = null,
-        MeetingAttendeeStatus status = MeetingAttendeeStatus.Absent, long firstJoinTime = 0, long lastQuitTime = 0, 
+        MeetingAttendeeStatus status = MeetingAttendeeStatus.Absent, long firstJoinTime = 0, long lastQuitTime = 0,
         int totalJoinCount = 0, long cumulativeTime = 0, bool isMuted = false, bool isSharingScreen = false)
     {
         return new MeetingUserSession
@@ -61,6 +61,31 @@ public partial class BaseFixture
             IsMuted = isMuted,
             IsSharingScreen = isSharingScreen,
             IsDeleted = false
+        };
+    }
+
+    protected MeetingRecord CreateMeetingRecordEvent(Guid id, Guid meetingId, string url, DateTimeOffset createDate)
+    {
+        return new MeetingRecord
+        {
+            Id = id,
+            MeetingId = meetingId,
+            Url = url,
+            CreatedDate = createDate
+        };
+    }
+    
+    protected MeetingHistory CreateMeetingHistoryEvent(Guid id, Guid meetingId, int userId, Guid? meetingSubId, 
+        long? joinTime = null, long duration = 1000)
+    {
+        return new MeetingHistory
+        {
+            Id = id,
+            MeetingId = meetingId,
+            MeetingSubId = meetingSubId,
+            UserId = userId,
+            CreatorJoinTime = joinTime ?? _clock.Now.ToUnixTimeSeconds(),
+            Duration = duration
         };
     }
 }

@@ -21,6 +21,7 @@ using SugarTalk.IntegrationTests.Utils.Meetings;
 using SugarTalk.Messages.Commands.Meetings;
 using SugarTalk.Messages.Dto;
 using SugarTalk.Messages.Dto.LiveKit;
+using SugarTalk.Messages.Dto.LiveKit.Egress;
 using SugarTalk.Messages.Dto.Meetings;
 using SugarTalk.Messages.Dto.Users;
 using SugarTalk.Messages.Enums.Meeting;
@@ -183,6 +184,57 @@ public partial class MeetingServiceFixture : MeetingFixtureBase
         });
     }
     
+    [Fact]
+    public async Task ShouldChangeStatusAfterEndMeeting()
+    {
+        var scheduleMeetingResponse = await _meetingUtil.ScheduleMeeting();
+        
+        var user1 = await _accountUtil.AddUserAccount("mars", "123");
+        var user2 = await _accountUtil.AddUserAccount("greg", "123");
+        
+        await Run<IMediator, IRepository, IUnitOfWork>(async (mediator, repository, unitOfWork) =>
+        {
+            await repository.InsertAllAsync(new List<MeetingUserSession>
+            {
+                new()
+                {
+                    UserId = user1.Id,
+                    IsMuted = false,
+                    MeetingId = scheduleMeetingResponse.Data.Id
+                },
+                new()
+                {
+                    UserId = user2.Id,
+                    IsMuted = true,
+                    MeetingId = scheduleMeetingResponse.Data.Id
+                }
+            });
+            
+            await unitOfWork.SaveChangesAsync().ConfigureAwait(false);
+            
+            var meetingInfo = await mediator.SendAsync<EndMeetingCommand, EndMeetingResponse>(
+                new EndMeetingCommand
+                {
+                    MeetingNumber = scheduleMeetingResponse.Data.MeetingNumber
+                });
+
+            var meetingNumber = meetingInfo.Data.MeetingNumber;
+            
+            var response = await _meetingUtil.GetMeeting(meetingNumber);
+            
+            var beforeUserSession = await repository.QueryNoTracking<MeetingUserSession>()
+                .Where(x => x.MeetingId == scheduleMeetingResponse.Data.Id).ToListAsync();
+            
+            beforeUserSession.Count.ShouldBe(2);
+            beforeUserSession.ForEach(x =>
+            {
+                x.LastQuitTime.ShouldBe(response.EndDate);
+                x.CumulativeTime.ShouldNotBeNull();
+            });
+
+            response.Status.ShouldBe(MeetingStatus.Completed);
+        });
+    }
     [Fact]
     public async Task CanGetMeetingByNumber()
     {
@@ -655,6 +707,24 @@ public partial class MeetingServiceFixture : MeetingFixtureBase
         {
             MockLiveKitService(builder);
             MockClock(builder, DateTimeOffset.Now);
+        });
+    }
+
+    [Fact]
+    public async Task ShouldThrowWhenAppointmentMeetingUtilDateIncorrect()
+    {
+        await Assert.ThrowsAsync<CannotCreateRepeatMeetingWhenUtilDateIsBeforeNowException>(async () =>
+        {
+            await Run<IClock>(async (clock) =>
+            {
+                await _meetingUtil.ScheduleMeeting(
+                    appointmentType: MeetingAppointmentType.Appointment, repeatType: MeetingRepeatType.Daily,
+                    startDate: clock.Now, endDate: clock.Now.AddHours(1), utilDate: clock.Now.AddDays(-1));
+            }, builder =>
+            {
+                MockLiveKitService(builder);
+                MockClock(builder, DateTimeOffset.Now);
+            });
         });
     }
     
