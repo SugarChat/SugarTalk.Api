@@ -3,7 +3,7 @@ using SugarTalk.Messages.Responses;
 
 namespace SugarTalk.Messages.Commands.Meetings;
 
-public class MeetingInviteCommand : ICommand
+public class MeetingInviteRequest : IRequest
 {
     public string SecurityCode { get; set; }
     

@@ -179,12 +179,11 @@ public class MeetingController : ControllerBase
         return Ok(response);
     }
     
-    [AllowAnonymous]
-    [Route("invite"), HttpPost]
+    [Route("invite"), HttpGet]
     [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(StartMeetingRecordingResponse))]
-    public async Task<IActionResult> MeetingInviteAsync([FromBody] MeetingInviteCommand command)
+    public async Task<IActionResult> MeetingInviteAsync([FromQuery] MeetingInviteRequest command)
     {
-        var response = await _mediator.SendAsync<MeetingInviteCommand, MeetingInviteResponse>(command).ConfigureAwait(false);
+        var response = await _mediator.RequestAsync<MeetingInviteRequest, MeetingInviteResponse>(command).ConfigureAwait(false);
 
         return Ok(response);
     }

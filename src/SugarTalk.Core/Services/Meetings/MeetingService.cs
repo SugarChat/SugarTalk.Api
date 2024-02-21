@@ -26,6 +26,7 @@ using SugarTalk.Messages.Commands.Speech;
 using SugarTalk.Messages.Dto.Meetings;
 using SugarTalk.Messages.Dto.Meetings.User;
 using SugarTalk.Messages.Dto.Users;
+using SugarTalk.Messages.Enums.Account;
 using SugarTalk.Messages.Enums.Meeting;
 using SugarTalk.Messages.Events.Meeting;
 using SugarTalk.Messages.Events.Meeting.User;
@@ -74,7 +75,7 @@ namespace SugarTalk.Core.Services.Meetings
         
         Task DeleteMeetingHistoryAsync(DeleteMeetingHistoryCommand command, CancellationToken cancellationToken);
         
-        Task<MeetingInvitedEvent> MeetingInviteAsync(MeetingInviteCommand command, CancellationToken cancellationToken);
+        Task<MeetingInviteResponse> MeetingInviteAsync(MeetingInviteRequest command, CancellationToken cancellationToken);
     }
     
     public partial class MeetingService : IMeetingService
@@ -218,8 +219,6 @@ namespace SugarTalk.Core.Services.Meetings
 
         public async Task<MeetingJoinedEvent> JoinMeetingAsync(JoinMeetingCommand command, CancellationToken cancellationToken)
         {
-            var user = await _accountDataProvider.GetUserAccountAsync(_currentUser.Id, cancellationToken: cancellationToken).ConfigureAwait(false);
-            
             var meeting = await _meetingDataProvider.GetMeetingAsync(command.MeetingNumber, cancellationToken).ConfigureAwait(false);
 
             if (meeting.IsPasswordEnabled)
@@ -228,12 +227,19 @@ namespace SugarTalk.Core.Services.Meetings
                     .CheckMeetingSecurityCodeAsync(meeting.Id, command.SecurityCode, cancellationToken).ConfigureAwait(false);
             }
 
-            meeting.MeetingTokenFromLiveKit = _liveKitServerUtilService.GenerateTokenForJoinMeeting(user, meeting.MeetingNumber);
+            var user = await _accountDataProvider.GetUserAccountAsync(_currentUser?.Id.Value, cancellationToken: cancellationToken).ConfigureAwait(false);
+
+            if (user is null) throw new UnauthorizedAccessException();
+
+            meeting.MeetingTokenFromLiveKit = user.Issuer is UserAccountIssuer.Guest
+                ? _liveKitServerUtilService.GenerateTokenForGuest(user, meeting.MeetingNumber)
+                : _liveKitServerUtilService.GenerateTokenForJoinMeeting(user, meeting.MeetingNumber);
 
             await _meetingDataProvider.UpdateMeetingIfRequiredAsync(meeting.Id, user.Id, cancellationToken).ConfigureAwait(false);
             
             await ConnectUserToMeetingAsync(user, meeting, command.IsMuted, cancellationToken).ConfigureAwait(false);
             
+            //接入音色接口后 弃用
             var userSetting = await _meetingDataProvider.DistributeLanguageForMeetingUserAsync(meeting.Id, cancellationToken).ConfigureAwait(false);
             
             Log.Information("SugarTalk get userSetting from JoinMeetingAsync :{userSetting}", JsonConvert.SerializeObject(userSetting));
@@ -582,36 +588,18 @@ namespace SugarTalk.Core.Services.Meetings
             await _meetingDataProvider.DeleteMeetingHistoryAsync(command.MeetingHistoryIds, user.Id, cancellationToken).ConfigureAwait(false);
         }
 
-        public async Task<MeetingInvitedEvent> MeetingInviteAsync(MeetingInviteCommand command, CancellationToken cancellationToken)
+        public async Task<MeetingInviteResponse> MeetingInviteAsync(MeetingInviteRequest request, CancellationToken cancellationToken)
         {
-            var meeting = await _meetingDataProvider.GetMeetingAsync(command.MeetingNumber, cancellationToken).ConfigureAwait(false);
-            
-            if (meeting is null) throw new MeetingNotFoundException();
-
-            if (meeting.IsPasswordEnabled)
+            var joinMeetingResponse = await JoinMeetingAsync(new JoinMeetingCommand
             {
-                if (string.IsNullOrEmpty(command.SecurityCode))
-                {
-                    return new MeetingInvitedEvent
-                    {
-                        Token = string.Empty,
-                        HasMeetingPassword = true
-                    }; 
-                }
-
-                await _meetingDataProvider
-                    .CheckMeetingSecurityCodeAsync(meeting.Id, command.SecurityCode, cancellationToken).ConfigureAwait(false);
-            }
+                MeetingNumber = request.MeetingNumber,
+                SecurityCode = request.SecurityCode
+            }, cancellationToken).ConfigureAwait(false);
             
-            var user = await _accountDataProvider
-                .GetUserAccountAsync(_currentUser?.Id, cancellationToken: cancellationToken).ConfigureAwait(false);
-            
-            var token = _liveKitServerUtilService.GenerateTokenForJoinMeeting(user, meeting.MeetingNumber);
-
-            return new MeetingInvitedEvent
+            return new MeetingInviteResponse
             {
-                Token = token,
-                HasMeetingPassword = meeting.IsPasswordEnabled
+                Token = joinMeetingResponse.Meeting.MeetingTokenFromLiveKit,
+                HasMeetingPassword = joinMeetingResponse.Meeting.IsPasswordEnabled
             };
         }
 

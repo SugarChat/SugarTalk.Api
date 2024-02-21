@@ -736,32 +736,23 @@ public partial class MeetingServiceFixture : MeetingFixtureBase
 
         await Run<IMediator>(async (mediator) =>
         {
-            var response1 = await mediator.SendAsync<MeetingInviteCommand, MeetingInviteResponse>(new MeetingInviteCommand
-            {
-                SecurityCode = "",
-                MeetingNumber = meeting.Data.MeetingNumber
-            });
-            
-            response1.Token.ShouldBeNullOrEmpty();
-            response1.HasMeetingPassword.ShouldBeTrue();
-
             await Assert.ThrowsAsync<MeetingSecurityCodeNotMatchException>(async () =>
             {
-                await mediator.SendAsync<MeetingInviteCommand, MeetingInviteResponse>(new MeetingInviteCommand
+                await mediator.RequestAsync<MeetingInviteRequest, MeetingInviteResponse>(new MeetingInviteRequest
                 {
                     SecurityCode = "123",
                     MeetingNumber = meeting.Data.MeetingNumber
                 });
             });
             
-            var response2 = await mediator.SendAsync<MeetingInviteCommand, MeetingInviteResponse>(new MeetingInviteCommand
+            var response = await mediator.RequestAsync<MeetingInviteRequest, MeetingInviteResponse>(new MeetingInviteRequest
             {
                 SecurityCode = "123456",
                 MeetingNumber = meeting.Data.MeetingNumber
             });
             
-            response2.Token.ShouldBe("token123");
-            response2.HasMeetingPassword.ShouldBeTrue();
+            response.Token.ShouldBe("token123");
+            response.HasMeetingPassword.ShouldBeTrue();
         }, builder =>
         {
             MockLiveKitService(builder);
