@@ -129,8 +129,10 @@ public partial class MeetingServiceFixture : MeetingFixtureBase
             {
                 MeetingId = meeting.Id
             });
-
-            // todo：更新会议和会议中的用户状态
+            var afterUserSession = await repository.QueryNoTracking<MeetingUserSession>()
+                .SingleAsync(x => x.MeetingId == meeting.Id);
+            afterUserSession.OnlineType.ShouldBe(MeetingUserSessionOnlineType.OutMeeting);
+            afterUserSession.LastQuitTime.ShouldNotBeNull();
         }, builder =>
         {
             var liveKitServerUtilService = Substitute.For<ILiveKitServerUtilService>();
