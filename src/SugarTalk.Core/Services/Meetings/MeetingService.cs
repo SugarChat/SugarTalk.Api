@@ -604,7 +604,7 @@ namespace SugarTalk.Core.Services.Meetings
             var joinMeetingResponse = await JoinMeetingAsync(new JoinMeetingCommand
             {
                 MeetingNumber = request.MeetingNumber,
-                SecurityCode = request.SecurityCode
+                SecurityCode = request.RequestData.SecurityCode
             }, cancellationToken).ConfigureAwait(false);
             
             return new MeetingInviteResponse

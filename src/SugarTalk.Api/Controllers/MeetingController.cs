@@ -206,11 +206,15 @@ public class MeetingController : ControllerBase
         return Ok(response);
     }
     
-    [Route("invite"), HttpGet]
-    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(StartMeetingRecordingResponse))]
-    public async Task<IActionResult> MeetingInviteAsync([FromQuery] MeetingInviteRequest command)
+    [Route("invite/{meetingNumber}"), HttpPost]
+    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(MeetingInviteResponse))]
+    public async Task<IActionResult> MeetingInviteAsync(string meetingNumber, [FromBody] MeetingInviteRequestDto requestData)
     {
-        var response = await _mediator.RequestAsync<MeetingInviteRequest, MeetingInviteResponse>(command).ConfigureAwait(false);
+        var response = await _mediator.RequestAsync<MeetingInviteRequest, MeetingInviteResponse>(new MeetingInviteRequest
+        {
+            MeetingNumber = meetingNumber,
+            RequestData = requestData
+        }).ConfigureAwait(false);
 
         return Ok(response);
     }

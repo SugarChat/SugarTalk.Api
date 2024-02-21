@@ -740,14 +740,14 @@ public partial class MeetingServiceFixture : MeetingFixtureBase
             {
                 await mediator.RequestAsync<MeetingInviteRequest, MeetingInviteResponse>(new MeetingInviteRequest
                 {
-                    SecurityCode = "123",
+                    RequestData = new MeetingInviteRequestDto { SecurityCode = "123" },
                     MeetingNumber = meeting.Data.MeetingNumber
                 });
             });
             
             var response = await mediator.RequestAsync<MeetingInviteRequest, MeetingInviteResponse>(new MeetingInviteRequest
             {
-                SecurityCode = "123456",
+                RequestData = new MeetingInviteRequestDto { SecurityCode = "123456" },
                 MeetingNumber = meeting.Data.MeetingNumber
             });
             
