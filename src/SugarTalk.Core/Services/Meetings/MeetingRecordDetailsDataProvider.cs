@@ -30,27 +30,30 @@ public class MeetingRecordDetailsDataProvider : IMeetingRecordDetailsDataProvide
 
     public async Task<GetMeetingRecordDetailsResponse> GetMeetingRecordDetailsAsync(Guid recordId, CancellationToken cancellationToken)
     {
-        var meetingRecord = await _repository.Query<MeetingRecord>().FirstOrDefaultAsync(x => x.Id == recordId);
+        var meetingRecordDetails = await _repository.Query<MeetingSpeakDetail>()
+            .Where(x => x.MeetingRecordId == recordId).ToListAsync(cancellationToken: cancellationToken);
 
-        var meetingInfo = await _repository.Query<Meeting>().FirstOrDefaultAsync(x => x.Id == meetingRecord.MeetingId);
-
-        var meetingRecordDetails = await _repository.Query<MeetingSpeakDetail>().Where(x => x.MeetingRecordId == recordId).ToListAsync();
-
-        var meetingSummary =  await _repository.Query<MeetingSummary>().FirstOrDefaultAsync(x => x.RecordId == recordId);
+        var meetingInfos = await (
+            from meetingRecord in _repository.Query<MeetingRecord>()
+            join meeting in _repository.Query<Meeting>() on meetingRecord.MeetingId equals meeting.Id
+            join meetingSummary in _repository.Query<MeetingSummary>() on meetingRecord.Id equals meetingSummary.RecordId
+            where meetingRecord.Id == recordId
+            select new GetMeetingRecordDetailsDto
+            {
+                Id = recordId,
+                MeetingTitle = meeting.Title,
+                MeetingNumber = meeting.MeetingNumber,
+                MeetingStartDate = meeting.StartDate,
+                MeetingEndDate = meeting.EndDate,
+                Url = meetingRecord.Url,
+                Summary = meetingSummary.Summary,
+                MeetingRecordDetail = meetingRecordDetails.Select(x => _mapper.Map<MeetingRecordDetail>(x)).ToList()
+            }
+        ).FirstOrDefaultAsync(cancellationToken: cancellationToken);
 
         return new GetMeetingRecordDetailsResponse
         {
-            Data = new GetMeetingRecordDetailsDto()
-            {
-                Id = recordId,
-                MeetingTitle = meetingInfo?.Title,
-                MeetingNumber = meetingInfo?.MeetingNumber,
-                MeetingStartDate = meetingInfo?.StartDate ?? DateTimeOffset.UtcNow.ToUnixTimeSeconds(),
-                MeetingEndDate =  meetingInfo?.EndDate ?? DateTimeOffset.UtcNow.ToUnixTimeSeconds(),
-                Url = meetingRecord?.Url,
-                Summary = meetingSummary?.Summary,
-                MeetingRecordDetail = meetingRecordDetails.Select(x => _mapper.Map<MeetingRecordDetail>(x)).ToList()
-            }
+            Data = meetingInfos
         };
     }
 }
