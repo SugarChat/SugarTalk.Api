@@ -3,6 +3,7 @@ using NSubstitute;
 using SugarTalk.Core.Data;
 using SugarTalk.Core.Mapping;
 using Castle.Core.Configuration;
+using Google.Cloud.Translation.V2;
 using Hangfire.Pro.Redis;
 using Microsoft.AspNetCore.Http;
 using SugarTalk.Core.Services.Http;
@@ -40,6 +41,9 @@ public partial class BaseFixture
     protected readonly ISugarTalkHttpClientFactory _httpClientFactory;
     protected readonly IHttpContextAccessor _contextAccessor;
     protected readonly IMeetingProcessJobService _meetingProcessJobService;
+    protected readonly ISugarTalkBackgroundJobClient _backgroundJobClient;
+    protected readonly IMeetingUtilService _meetingUtilService;
+    protected readonly TranslationClient _translationClient;
     protected readonly ISugarTalkBackgroundJobClient _sugarTalkBackgroundJobClient;
 
     public BaseFixture()
@@ -58,8 +62,8 @@ public partial class BaseFixture
         _sugarTalkBackgroundJobClient = Substitute.For<ISugarTalkBackgroundJobClient>();
         _accountDataProvider = MockAccountDataProvider(_mapper, _repository, _unitOfWork);
         _meetingDataProvider = MockMeetingDataProvider(_clock, _mapper, _repository, _unitOfWork, _currentUser, _accountDataProvider);
-        _meetingService = MockMeetingService(_clock, _mapper, _unitOfWork, _currentUser, _speechClient,
-            _liveKitClient,  _meetingDataProvider, _accountDataProvider, _aliYunOssSetting, _liveKitServerSetting, _liveKitServerUtilService,
+        _meetingService = MockMeetingService(_clock, _mapper, _unitOfWork, _currentUser, _speechClient, _liveKitClient, _translationClient,
+             _meetingUtilService, _meetingDataProvider, _accountDataProvider, _backgroundJobClient, _aliYunOssSetting, _liveKitServerSetting, _liveKitServerUtilService,
             _antMediaServerUtilService,_sugarTalkBackgroundJobClient);
         _meetingProcessJobService = MockMeetingProcessJobService(_clock, _unitOfWork, _meetingDataProvider);
     }
@@ -81,8 +85,11 @@ public partial class BaseFixture
         ICurrentUser currentUser,
         ISpeechClient speechClient,
         ILiveKitClient liveKitClient,
+        TranslationClient translationClient,
+        IMeetingUtilService meetingUtilService,
         IMeetingDataProvider meetingDataProvider,
         IAccountDataProvider accountDataProvider,
+        ISugarTalkBackgroundJobClient backgroundJobClient,
         AliYunOssSettings aliYunOssSetting,
         LiveKitServerSetting liveKitServerSetting, 
         ILiveKitServerUtilService liveKitServerUtilService,
@@ -90,8 +97,9 @@ public partial class BaseFixture
         ISugarTalkBackgroundJobClient sugarTalkBackgroundJobClient)
     {
         return new MeetingService(
-            clock, mapper, unitOfWork, currentUser, speechClient, liveKitClient, meetingDataProvider, accountDataProvider,
-            aliYunOssSetting, liveKitServerSetting, liveKitServerUtilService, antMediaServerUtilService,sugarTalkBackgroundJobClient);
+            clock, mapper, unitOfWork, currentUser, speechClient, liveKitClient, translationClient ,meetingUtilService, meetingDataProvider,
+            accountDataProvider, aliYunOssSetting, liveKitServerSetting, backgroundJobClient, liveKitServerUtilService, antMediaServerUtilService,
+            sugarTalkBackgroundJobClient);
     }
     
     protected IMeetingDataProvider MockMeetingDataProvider(

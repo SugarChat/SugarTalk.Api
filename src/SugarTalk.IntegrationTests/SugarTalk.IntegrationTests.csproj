@@ -30,6 +30,7 @@
 
     <ItemGroup>
       <ProjectReference Include="..\SugarTalk.Core\SugarTalk.Core.csproj" />
+      <ProjectReference Include="..\SugarTalk.Messages\SugarTalk.Messages.csproj" />
     </ItemGroup>
 
     <ItemGroup>

@@ -1,11 +1,11 @@
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
-using SugarTalk.Core.Domain.Account;
 using SugarTalk.Core.Domain.Meeting;
+using SugarTalk.Core.Domain.Account;
 using SugarTalk.Messages.Dto.Meetings;
 using SugarTalk.Messages.Enums.Meeting;
 using SugarTalk.Messages.Requests.Meetings;
@@ -14,6 +14,8 @@ namespace SugarTalk.Core.Services.Meetings;
 
 public partial interface IMeetingDataProvider
 {
+    Task<List<MeetingRecord>> GetMeetingRecordsAsync(Guid? id = null, CancellationToken cancellationToken = default);
+    
     Task<(int count, List<MeetingRecordDto> items)> GetMeetingRecordsByUserIdAsync(int? currentUserId, GetCurrentUserMeetingRecordRequest request, CancellationToken cancellationToken);
     
     Task DeleteMeetingRecordAsync(List<Guid> meetingRecordIds, CancellationToken cancellationToken);
@@ -29,6 +31,17 @@ public partial interface IMeetingDataProvider
 
 public partial class MeetingDataProvider
 {
+    public async Task<List<MeetingRecord>> GetMeetingRecordsAsync(
+        Guid? id = null, CancellationToken cancellationToken = default)
+    {
+        var query = _repository.Query<MeetingRecord>();
+
+        if (id.HasValue)
+            query = query.Where(x => x.Id == id.Value);
+
+        return await query.ToListAsync(cancellationToken).ConfigureAwait(false);
+    }
+
     public async Task<(int count, List<MeetingRecordDto> items)> GetMeetingRecordsByUserIdAsync(int? currentUserId, GetCurrentUserMeetingRecordRequest request, CancellationToken cancellationToken)
     {
         if (currentUserId == null)
