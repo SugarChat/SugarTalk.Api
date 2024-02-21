@@ -8,6 +8,7 @@ using SugarTalk.Core.Constants;
 using SugarTalk.Core.Extensions;
 using System.Collections.Generic;
 using SugarTalk.Core.Domain.Meeting;
+using SugarTalk.Core.Services.Meetings.Exceptions;
 using SugarTalk.Messages.Dto.Meetings.Speak;
 using SugarTalk.Messages.Dto.Meetings.Summary;
 using SugarTalk.Messages.Enums.Meeting.Summary;
@@ -77,7 +78,7 @@ public partial class MeetingService
         var summary = (await _meetingDataProvider
             .GetMeetingSummariesAsync(command.MeetingSummaryId, cancellationToken: cancellationToken).ConfigureAwait(false)).FirstOrDefault();
 
-        if (summary == null) throw new Exception();
+        if (summary == null) throw new MissingSummaryMeetingException();
         
         await SafelySummarizeAsync(summary, async () =>
         {
@@ -153,6 +154,6 @@ public partial class MeetingService
     
     private static void CheckMeetingSummarized(MeetingSummary summary)
     {
-        if (string.IsNullOrEmpty(summary?.Summary)) throw new Exception();
+        if (string.IsNullOrEmpty(summary?.Summary)) throw new FailedMeetingSummaryException();
     }
 }
