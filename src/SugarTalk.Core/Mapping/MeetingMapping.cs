@@ -31,6 +31,8 @@ namespace SugarTalk.Core.Mapping
             CreateMap<MeetingSpeakDetail, MeetingSpeakDetailDto>().ReverseMap();
 
             CreateMap<MeetingSummary, MeetingSummaryDto>().ReverseMap();
+            
+            CreateMap<MeetingSpeakDetail,MeetingRecordDetail>();
         }
     }
 }
