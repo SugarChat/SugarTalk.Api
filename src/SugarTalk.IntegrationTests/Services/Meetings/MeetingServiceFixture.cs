@@ -144,7 +144,7 @@ public partial class MeetingServiceFixture : MeetingFixtureBase
 
             liveKitServerUtilService.GenerateTokenForJoinMeeting(Arg.Any<UserAccountDto>(), Arg.Any<string>())
                 .Returns("token123");
-
+                        
             builder.RegisterInstance(liveKitServerUtilService);
         });
     }
