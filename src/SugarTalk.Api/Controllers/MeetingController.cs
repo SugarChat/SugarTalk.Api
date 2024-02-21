@@ -5,6 +5,7 @@ using SugarTalk.Messages.Commands.Meetings;
 using SugarTalk.Messages.Requests.Meetings;
 using SugarTalk.Messages.Commands.Meetings.Speak;
 using SugarTalk.Messages.Commands.Meetings.Summary;
+using SugarTalk.Messages.Dto.Meetings;
 
 namespace SugarTalk.Api.Controllers;
 
@@ -202,6 +203,19 @@ public class MeetingController : ControllerBase
     public async Task<IActionResult> StartMeetingRecordingAsync([FromBody] StartMeetingRecordingCommand command)
     {
         var response = await _mediator.SendAsync<StartMeetingRecordingCommand, StartMeetingRecordingResponse>(command).ConfigureAwait(false);
+
+        return Ok(response);
+    }
+    
+    [Route("invite/{meetingNumber}"), HttpPost]
+    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(JoinMeetingCommand))]
+    public async Task<IActionResult> MeetingInviteAsync(string meetingNumber, [FromBody] MeetingInviteRequestDto requestData)
+    {
+        var response = await _mediator.SendAsync<JoinMeetingCommand, JoinMeetingResponse>(new JoinMeetingCommand
+        {
+            MeetingNumber = meetingNumber,
+            SecurityCode = requestData.SecurityCode
+        }).ConfigureAwait(false);
 
         return Ok(response);
     }
