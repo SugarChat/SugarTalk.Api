@@ -2,7 +2,6 @@ using Microsoft.EntityFrameworkCore;
 using Shouldly;
 using SugarTalk.Core.Domain.Account;
 using SugarTalk.Core.Domain.Meeting;
-using SugarTalk.Core.Services.Meetings;
 using SugarTalk.Messages.Dto;
 using SugarTalk.Messages.Requests.Meetings;
 using Xunit;

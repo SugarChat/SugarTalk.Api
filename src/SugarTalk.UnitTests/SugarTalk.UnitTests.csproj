@@ -28,6 +28,5 @@
     <ItemGroup>
       <ProjectReference Include="..\SugarTalk.Core\SugarTalk.Core.csproj" />
     </ItemGroup>
-
-
+    
 </Project>
