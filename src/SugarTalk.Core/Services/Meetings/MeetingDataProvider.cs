@@ -79,6 +79,8 @@ namespace SugarTalk.Core.Services.Meetings
 
         Task<MeetingUserSession> GetMeetingUserSessionByMeetingIdAndOnlineTypeAsync(Guid meetingId, int userId,
             CancellationToken cancellationToken);
+
+        Task DeleteMeetingHistoryAsync(List<Guid> meetingHistoryIds, int userId, CancellationToken cancellationToken);
     }
     
     public partial class MeetingDataProvider : IMeetingDataProvider
@@ -469,6 +471,17 @@ namespace SugarTalk.Core.Services.Meetings
                 .Where(x => x.OnlineType == MeetingUserSessionOnlineType.Online)
                 .SingleOrDefaultAsync(cancellationToken)
                 .ConfigureAwait(false);
+        }
+
+        public async Task DeleteMeetingHistoryAsync(List<Guid> meetingHistoryIds, int userId, CancellationToken cancellationToken)
+        {
+            var meetingHistories = await _repository.Query<MeetingHistory>()
+                .Where(x => meetingHistoryIds.Contains(x.Id) && !x.IsDeleted)
+                .Where(x => x.UserId == userId).ToListAsync(cancellationToken).ConfigureAwait(false);
+
+            if (meetingHistories is not { Count: > 0 }) return;
+
+            meetingHistories.ForEach(x => x.IsDeleted = true);
         }
     }
 }

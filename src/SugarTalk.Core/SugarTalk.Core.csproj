@@ -6,6 +6,7 @@
     </PropertyGroup>
 
     <ItemGroup>
+      <PackageReference Include="Aliyun.OSS.SDK.NetCore" Version="2.13.0" />
       <PackageReference Include="Autofac" Version="7.0.0" />
       <PackageReference Include="Autofac.Extensions.DependencyInjection" Version="8.0.0" />
       <PackageReference Include="AutoMapper" Version="12.0.1" />
@@ -80,6 +81,7 @@
         <None Remove="DbUp\Scripts_2024\Script0009_alter_meeting_record_table.sql" />
         <None Remove="DbUp\Scripts_2024\Script0008_modify_meeting_record_column.sql" />
         <EmbeddedResource Include="DbUp\Scripts_2024\Script0008_modify_meeting_record_column.sql" />
+        <EmbeddedResource Include="DbUp\Scripts_2024\Script0009_add_delete_for_meeting_record_table.sql" />
     </ItemGroup>
     
     <ItemGroup>

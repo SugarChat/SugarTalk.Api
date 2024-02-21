@@ -28,6 +28,9 @@ public class MeetingRecord : IEntity
     
     [Column("created_date")]
     public DateTimeOffset CreatedDate { get; set; }
+    
+    [Column("is_deleted", TypeName = "tinyint(1)")]
+    public bool IsDeleted { get; set; }
 
     [Column("meeting_record_type")]
     public MeetingRecordType RecordType { get; set; }

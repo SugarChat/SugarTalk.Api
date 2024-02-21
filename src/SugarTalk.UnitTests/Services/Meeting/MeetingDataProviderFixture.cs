@@ -1,3 +1,4 @@
+using Microsoft.EntityFrameworkCore;
 using Shouldly;
 using SugarTalk.Core.Domain.Account;
 using SugarTalk.Core.Domain.Meeting;
@@ -142,6 +143,62 @@ public class MeetingDataProviderFixture : BaseFixture
         };
         var (count, items) = await _meetingDataProvider.GetMeetingRecordsByUserIdAsync(1, getCurrentUserMeetingRecordRequest, CancellationToken.None);
         count.ShouldBe(0);
+    }
+
+    [Fact]
+    public async Task CanDeleteMeetingHistory()
+    {
+        var meetingHistory1Id = Guid.NewGuid();
+        var meetingHistory2Id = Guid.NewGuid();
+        var meetingHistory3Id = Guid.NewGuid();
+        
+        var meeting1Id = Guid.NewGuid();
+        var meeting2Id = Guid.NewGuid();
+        var meeting3Id = Guid.NewGuid();
+        
+        MockMeetingHistoriesDb(_repository, new List<MeetingHistory>
+        {
+            CreateMeetingHistoryEvent(meetingHistory1Id, meeting1Id, userId: 1, null),
+            CreateMeetingHistoryEvent(meetingHistory2Id, meeting2Id, userId: 1, null),
+            CreateMeetingHistoryEvent(meetingHistory3Id, meeting3Id, userId: 1, null)
+        });
+
+        await _meetingDataProvider.DeleteMeetingHistoryAsync(new List<Guid> { meetingHistory1Id, meetingHistory2Id }, 1, CancellationToken.None);
+
+        var meetingHistories = await _repository
+            .Query<MeetingHistory>().Where(x => x.UserId == 1 && !x.IsDeleted).ToListAsync();
+
+        meetingHistories.Count(x =>
+            x.MeetingId == meeting3Id &&
+            x.Id == meetingHistory3Id).ShouldBe(1);
+    }
+    
+    [Fact]
+    public async Task CanDeleteMeetingRecord()
+    {
+        var meetingRecord1Id = Guid.NewGuid();
+        var meetingRecord2Id = Guid.NewGuid();
+        var meetingRecord3Id = Guid.NewGuid();
+        
+        var meeting1Id = Guid.NewGuid();
+        var meeting2Id = Guid.NewGuid();
+        var meeting3Id = Guid.NewGuid();
+        
+        MockMeetingRecordDb(_repository, new List<MeetingRecord>
+        {
+            CreateMeetingRecordEvent(meetingRecord1Id, meeting1Id, "", _clock.Now),
+            CreateMeetingRecordEvent(meetingRecord2Id, meeting2Id, "", _clock.Now),
+            CreateMeetingRecordEvent(meetingRecord3Id, meeting3Id, "", _clock.Now)
+        });
+
+        await _meetingDataProvider.DeleteMeetingRecordAsync(new List<Guid> { meetingRecord1Id, meetingRecord2Id }, CancellationToken.None);
+
+        var meetingRecords = await _repository
+            .Query<MeetingRecord>().Where(x => !x.IsDeleted).ToListAsync();
+
+        meetingRecords.Count(x =>
+            x.MeetingId == meeting3Id &&
+            x.Id == meetingRecord3Id).ShouldBe(1);
     }
 
     [Fact]

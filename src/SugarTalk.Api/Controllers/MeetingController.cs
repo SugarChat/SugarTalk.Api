@@ -152,6 +152,33 @@ public class MeetingController : ControllerBase
 
     #endregion
     
+    [Route("history/delete"), HttpPost]
+    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(DeleteMeetingHistoryResponse))]
+    public async Task<IActionResult> DeleteMeetingHistoryAsync([FromBody] DeleteMeetingHistoryCommand command)
+    {
+        var response = await _mediator.SendAsync<DeleteMeetingHistoryCommand, DeleteMeetingHistoryResponse>(command).ConfigureAwait(false);
+
+        return Ok(response);
+    }
+    
+    [Route("record/delete"), HttpPost]
+    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(DeleteMeetingRecordResponse))]
+    public async Task<IActionResult> DeleteMeetingRecordAsync([FromBody] DeleteMeetingRecordCommand command)
+    {
+        var response = await _mediator.SendAsync<DeleteMeetingRecordCommand, DeleteMeetingRecordResponse>(command).ConfigureAwait(false);
+
+        return Ok(response);
+    }
+    
+    [Route("recording/start"), HttpPost]
+    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(StartMeetingRecordingResponse))]
+    public async Task<IActionResult> StartMeetingRecordingAsync([FromBody] StartMeetingRecordingCommand command)
+    {
+        var response = await _mediator.SendAsync<StartMeetingRecordingCommand, StartMeetingRecordingResponse>(command).ConfigureAwait(false);
+
+        return Ok(response);
+    }
+    
     [Route("recording/stop"), HttpPost]
     [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(StorageMeetingRecordVideoResponse))]
     public async Task<IActionResult> StorageMeetingRecordVideoAsync(StorageMeetingRecordVideoCommand command)

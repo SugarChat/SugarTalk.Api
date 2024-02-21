@@ -20,6 +20,7 @@ using SugarTalk.Core.Services.Http.Clients;
 using SugarTalk.Core.Services.Identity;
 using SugarTalk.Core.Services.LiveKit;
 using SugarTalk.Core.Services.Utils;
+using SugarTalk.Core.Settings.Aliyun;
 using SugarTalk.Core.Settings.LiveKit;
 using SugarTalk.Messages.Commands.Meetings;
 using SugarTalk.Messages.Commands.Speech;
@@ -71,6 +72,8 @@ namespace SugarTalk.Core.Services.Meetings
             MeetingRepeatType repeatType, CancellationToken cancellationToken);
         
         Task<GetAppointmentMeetingsResponse> GetAppointmentMeetingsAsync(GetAppointmentMeetingsRequest request, CancellationToken cancellationToken);
+        
+        Task DeleteMeetingHistoryAsync(DeleteMeetingHistoryCommand command, CancellationToken cancellationToken);
     }
     
     public partial class MeetingService : IMeetingService
@@ -88,6 +91,7 @@ namespace SugarTalk.Core.Services.Meetings
         private readonly ILiveKitServerUtilService _liveKitServerUtilService;
         private readonly IAntMediaServerUtilService _antMediaServerUtilService;
 
+        private readonly AliYunOssSettings _aliYunOssSetting;
         private readonly LiveKitServerSetting _liveKitServerSetting;
         
         public MeetingService(
@@ -99,6 +103,7 @@ namespace SugarTalk.Core.Services.Meetings
             ILiveKitClient liveKitClient,
             IMeetingDataProvider meetingDataProvider,
             IAccountDataProvider accountDataProvider,
+            AliYunOssSettings aliYunOssSetting,
             LiveKitServerSetting liveKitServerSetting,
             ILiveKitServerUtilService liveKitServerUtilService,
             IAntMediaServerUtilService antMediaServerUtilService)
@@ -111,6 +116,7 @@ namespace SugarTalk.Core.Services.Meetings
             _liveKitClient = liveKitClient;
             _accountDataProvider = accountDataProvider;
             _meetingDataProvider = meetingDataProvider;
+            _aliYunOssSetting = aliYunOssSetting;
             _liveKitServerSetting = liveKitServerSetting;
             _liveKitServerUtilService = liveKitServerUtilService;
             _antMediaServerUtilService = antMediaServerUtilService;
@@ -566,6 +572,24 @@ namespace SugarTalk.Core.Services.Meetings
                     Records = records
                 }
             };
+        }
+
+        public async Task DeleteMeetingHistoryAsync(DeleteMeetingHistoryCommand command, CancellationToken cancellationToken)
+        {
+            var user = await _accountDataProvider.GetUserAccountAsync(_currentUser.Id, cancellationToken: cancellationToken).ConfigureAwait(false);
+
+            if (user is null) throw new UnauthorizedAccessException();
+            
+            await _meetingDataProvider.DeleteMeetingHistoryAsync(command.MeetingHistoryIds, user.Id, cancellationToken).ConfigureAwait(false);
+        }
+
+        public async Task DeleteMeetingRecordAsync(DeleteMeetingRecordCommand command, CancellationToken cancellationToken)
+        {
+            var user = await _accountDataProvider.GetUserAccountAsync(_currentUser.Id, cancellationToken: cancellationToken).ConfigureAwait(false);
+
+            if (user is null) throw new UnauthorizedAccessException();
+            
+            await _meetingDataProvider.DeleteMeetingRecordAsync(command.MeetingRecordIds, cancellationToken).ConfigureAwait(false);
         }
     }
 }

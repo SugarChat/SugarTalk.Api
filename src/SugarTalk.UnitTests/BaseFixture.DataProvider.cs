@@ -27,4 +27,9 @@ public partial class BaseFixture
     {
         repository.Query<MeetingUserSession>().Returns(x => userSessionList.AsQueryable().BuildMockDbSet());
     }
+    
+    protected void MockMeetingHistoriesDb(IRepository repository, List<MeetingHistory> meetingHistories)
+    {
+        repository.Query<MeetingHistory>().Returns(x => meetingHistories.AsQueryable().BuildMockDbSet());
+    }
 }
