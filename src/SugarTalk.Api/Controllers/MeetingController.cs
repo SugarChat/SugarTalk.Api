@@ -175,10 +175,8 @@ public class MeetingController : ControllerBase
     }
     
     #endregion
-    
-    #region MeetingDetail
 
-    [Route("meeting/detail"), HttpGet]
+    [Route("record/detail"), HttpGet]
     [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(GetMeetingRecordDetailsResponse))]
     public async Task<IActionResult> GetMeetingRecordDetailsAsync([FromBody] GetMeetingRecordDetailsRequest request)
     {
@@ -195,9 +193,7 @@ public class MeetingController : ControllerBase
 
         return Ok(response);
     }
-    
-    #endregion
-    
+
     [Route("recording/start"), HttpPost]
     [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(StartMeetingRecordingResponse))]
     public async Task<IActionResult> StartMeetingRecordingAsync([FromBody] StartMeetingRecordingCommand command)
