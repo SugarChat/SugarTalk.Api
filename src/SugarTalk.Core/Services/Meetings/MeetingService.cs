@@ -76,8 +76,6 @@ namespace SugarTalk.Core.Services.Meetings
         Task<GetAppointmentMeetingsResponse> GetAppointmentMeetingsAsync(GetAppointmentMeetingsRequest request, CancellationToken cancellationToken);
         
         Task DeleteMeetingHistoryAsync(DeleteMeetingHistoryCommand command, CancellationToken cancellationToken);
-        
-        Task<MeetingInviteResponse> MeetingInviteAsync(MeetingInviteRequest command, CancellationToken cancellationToken);
     }
     
     public partial class MeetingService : IMeetingService
@@ -597,21 +595,6 @@ namespace SugarTalk.Core.Services.Meetings
             if (user is null) throw new UnauthorizedAccessException();
             
             await _meetingDataProvider.DeleteMeetingHistoryAsync(command.MeetingHistoryIds, user.Id, cancellationToken).ConfigureAwait(false);
-        }
-
-        public async Task<MeetingInviteResponse> MeetingInviteAsync(MeetingInviteRequest request, CancellationToken cancellationToken)
-        {
-            var joinMeetingResponse = await JoinMeetingAsync(new JoinMeetingCommand
-            {
-                MeetingNumber = request.MeetingNumber,
-                SecurityCode = request.RequestData.SecurityCode
-            }, cancellationToken).ConfigureAwait(false);
-            
-            return new MeetingInviteResponse
-            {
-                Token = joinMeetingResponse.Meeting.MeetingTokenFromLiveKit,
-                HasMeetingPassword = joinMeetingResponse.Meeting.IsPasswordEnabled
-            };
         }
 
         public async Task DeleteMeetingRecordAsync(DeleteMeetingRecordCommand command, CancellationToken cancellationToken)

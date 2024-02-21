@@ -738,21 +738,21 @@ public partial class MeetingServiceFixture : MeetingFixtureBase
         {
             await Assert.ThrowsAsync<MeetingSecurityCodeNotMatchException>(async () =>
             {
-                await mediator.RequestAsync<MeetingInviteRequest, MeetingInviteResponse>(new MeetingInviteRequest
+                await mediator.SendAsync<JoinMeetingCommand, JoinMeetingResponse>(new JoinMeetingCommand
                 {
-                    RequestData = new MeetingInviteRequestDto { SecurityCode = "123" },
-                    MeetingNumber = meeting.Data.MeetingNumber
+                    MeetingNumber = meeting.Data.MeetingNumber,
+                    SecurityCode = "666"
                 });
             });
             
-            var response = await mediator.RequestAsync<MeetingInviteRequest, MeetingInviteResponse>(new MeetingInviteRequest
+            var response = await mediator.SendAsync<JoinMeetingCommand, JoinMeetingResponse>(new JoinMeetingCommand
             {
-                RequestData = new MeetingInviteRequestDto { SecurityCode = "123456" },
-                MeetingNumber = meeting.Data.MeetingNumber
+                MeetingNumber = meeting.Data.MeetingNumber,
+                SecurityCode = "123456"
             });
             
-            response.Token.ShouldBe("token123");
-            response.HasMeetingPassword.ShouldBeTrue();
+            response.Data.Meeting.MeetingTokenFromLiveKit.ShouldBe("token123");
+            response.Data.Meeting.IsPasswordEnabled.ShouldBeTrue();
         }, builder =>
         {
             MockLiveKitService(builder);
