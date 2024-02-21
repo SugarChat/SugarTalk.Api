@@ -9,8 +9,9 @@ namespace SugarTalk.Core.Domain.Meeting;
 public class MeetingSpeakDetail : IEntity
 {
     [Key]
-    [Column("id", TypeName = "char(36)")]
-    public Guid Id { get; set; }
+    [Column("id")]
+    [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
+    public int Id { get; set; }
     
     [Column("meeting_number"), StringLength(48)]
     public string MeetingNumber { get; set; }

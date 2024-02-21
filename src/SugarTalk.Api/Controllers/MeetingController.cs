@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Authorization;
 using SugarTalk.Messages.Commands.Meetings;
 using SugarTalk.Messages.Requests.Meetings;
 using SugarTalk.Messages.Commands.Meetings.Speak;
+using SugarTalk.Messages.Commands.Meetings.Summary;
 
 namespace SugarTalk.Api.Controllers;
 
@@ -151,6 +152,17 @@ public class MeetingController : ControllerBase
     }
 
     #endregion
+
+    #region Summary
+
+    [Route("summary"), HttpPost]
+    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(SummaryMeetingRecordResponse))]
+    public async Task<IActionResult> SummaryMeetingRecordAsync([FromBody] SummaryMeetingRecordCommand command)
+    {
+        var response = await _mediator.SendAsync<SummaryMeetingRecordCommand, SummaryMeetingRecordResponse>(command).ConfigureAwait(false);
+
+        return Ok(response);
+    }
     
     [Route("history/delete"), HttpPost]
     [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(DeleteMeetingHistoryResponse))]
@@ -161,6 +173,19 @@ public class MeetingController : ControllerBase
         return Ok(response);
     }
     
+    #endregion
+    
+    #region MeetingDetail
+
+    [Route("meeting/detail"), HttpGet]
+    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(GetMeetingRecordDetailsResponse))]
+    public async Task<IActionResult> GetMeetingRecordDetailsAsync([FromBody] GetMeetingRecordDetailsRequest request)
+    {
+        var response = await _mediator.RequestAsync<GetMeetingRecordDetailsRequest, GetMeetingRecordDetailsResponse>(request).ConfigureAwait(false);
+
+        return Ok(response);
+    }
+
     [Route("record/delete"), HttpPost]
     [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(DeleteMeetingRecordResponse))]
     public async Task<IActionResult> DeleteMeetingRecordAsync([FromBody] DeleteMeetingRecordCommand command)
@@ -169,6 +194,8 @@ public class MeetingController : ControllerBase
 
         return Ok(response);
     }
+    
+    #endregion
     
     [Route("recording/start"), HttpPost]
     [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(StartMeetingRecordingResponse))]

@@ -1,17 +1,18 @@
 using System;
-using System.Collections.Generic;
-using System.Diagnostics;
+using Serilog;
+using AutoMapper;
 using System.Linq;
 using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
-using AutoMapper;
 using Newtonsoft.Json;
-using Serilog;
-using SugarTalk.Core.Data;
-using SugarTalk.Core.Domain.Meeting;
-using SugarTalk.Core.Extensions;
+using System.Threading;
 using SugarTalk.Core.Ioc;
+using System.Diagnostics;
+using SugarTalk.Core.Data;
+using System.Threading.Tasks;
+using SugarTalk.Core.Extensions;
+using System.Collections.Generic;
+using Google.Cloud.Translation.V2;
+using SugarTalk.Core.Services.Jobs;
 using SugarTalk.Core.Services.Account;
 using SugarTalk.Core.Services.AntMediaServer;
 using SugarTalk.Core.Services.Exceptions;
@@ -27,10 +28,11 @@ using SugarTalk.Messages.Dto.Meetings;
 using SugarTalk.Messages.Dto.Meetings.User;
 using SugarTalk.Messages.Dto.Users;
 using SugarTalk.Messages.Enums.Account;
+using SugarTalk.Core.Domain.Meeting;
 using SugarTalk.Messages.Enums.Meeting;
 using SugarTalk.Messages.Events.Meeting;
-using SugarTalk.Messages.Events.Meeting.User;
 using SugarTalk.Messages.Requests.Meetings;
+using SugarTalk.Messages.Events.Meeting.User;
 using SugarTalk.Messages.Requests.Meetings.User;
 
 namespace SugarTalk.Core.Services.Meetings
@@ -88,8 +90,11 @@ namespace SugarTalk.Core.Services.Meetings
         private readonly ICurrentUser _currentUser;
         private readonly ISpeechClient _speechClient;
         private readonly ILiveKitClient _liveKitClient;
+        private readonly TranslationClient _translationClient;
+        private readonly IMeetingUtilService _meetingUtilService;
         private readonly IAccountDataProvider _accountDataProvider;
         private readonly IMeetingDataProvider _meetingDataProvider;
+        private readonly ISugarTalkBackgroundJobClient _backgroundJobClient;
         private readonly ILiveKitServerUtilService _liveKitServerUtilService;
         private readonly IAntMediaServerUtilService _antMediaServerUtilService;
 
@@ -103,10 +108,13 @@ namespace SugarTalk.Core.Services.Meetings
             ICurrentUser currentUser,
             ISpeechClient speechClient,
             ILiveKitClient liveKitClient,
+            TranslationClient translationClient,
+            IMeetingUtilService meetingUtilService,
             IMeetingDataProvider meetingDataProvider,
             IAccountDataProvider accountDataProvider,
             AliYunOssSettings aliYunOssSetting,
             LiveKitServerSetting liveKitServerSetting,
+            ISugarTalkBackgroundJobClient backgroundJobClient,
             ILiveKitServerUtilService liveKitServerUtilService,
             IAntMediaServerUtilService antMediaServerUtilService)
         {
@@ -116,8 +124,11 @@ namespace SugarTalk.Core.Services.Meetings
             _currentUser = currentUser;
             _speechClient = speechClient;
             _liveKitClient = liveKitClient;
+            _translationClient = translationClient;
+            _meetingUtilService = meetingUtilService;
             _accountDataProvider = accountDataProvider;
             _meetingDataProvider = meetingDataProvider;
+            _backgroundJobClient = backgroundJobClient;
             _aliYunOssSetting = aliYunOssSetting;
             _liveKitServerSetting = liveKitServerSetting;
             _liveKitServerUtilService = liveKitServerUtilService;

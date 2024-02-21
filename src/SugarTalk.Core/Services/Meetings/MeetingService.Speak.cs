@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Serilog;
 using System.Linq;
 using System.Threading;
@@ -30,7 +31,7 @@ public partial class MeetingService
         };
 
         var result = (await _meetingDataProvider.GetMeetingSpeakDetailsAsync(
-            speakDetail.Id, cancellationToken: cancellationToken).ConfigureAwait(false)).FirstOrDefault();
+            new List<int>{ speakDetail.Id }, cancellationToken: cancellationToken).ConfigureAwait(false)).FirstOrDefault();
         
         return new MeetingSpeakRecordedEvent
         {
@@ -79,7 +80,7 @@ public partial class MeetingService
     private async Task<MeetingSpeakDetail> EndRecordUserSpeakDetailAsync(RecordMeetingSpeakCommand command, CancellationToken cancellationToken)
     {
         var speakDetail = (await _meetingDataProvider.GetMeetingSpeakDetailsAsync(
-            command.Id.Value, speakStatus: SpeakStatus.Speaking, cancellationToken: cancellationToken).ConfigureAwait(false)).FirstOrDefault();
+            new List<int>{ command.Id.Value }, speakStatus: SpeakStatus.Speaking, cancellationToken: cancellationToken).ConfigureAwait(false)).FirstOrDefault();
 
         Log.Information("Ending record user Speak, speak detail: {@SpeakDetail}", speakDetail);
         

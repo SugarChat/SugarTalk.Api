@@ -27,7 +27,7 @@ public partial class MeetingServiceFixture
     [InlineData(true)]
     public async Task ShouldRecordMeetingSpeak(bool isUpdate)
     {
-        var speakDetailId = Guid.NewGuid();
+        const int speakDetailId = 1;
         const string roomNumber = "123456";
         const string trackId = "1707894406";
         var starTime = DateTimeOffset.Parse("2024-01-01 00:00:00 +00:00").ToUnixTimeSeconds();
@@ -112,15 +112,15 @@ public partial class MeetingServiceFixture
     [InlineData(null, "123456", null, 1707894406, null, null, false)]
     [InlineData(null, "123456", 1707894406, 1707894406, null, null, false)]
     [InlineData(null, "123456", null, null, null, null, false)]
-    [InlineData("4d992f24-346b-48ce-a855-1b10cfd4bd6e", "123456", null, 1707894406, null, null, false)]
-    [InlineData("4d992f24-346b-48ce-a855-1b10cfd4bd6e", "123456", 1707894406, null, null, null, false)]
+    [InlineData(2, "123456", null, 1707894406, null, null, false)]
+    [InlineData(3, "123456", 1707894406, null, null, null, false)]
     [InlineData(null, "123456", 1707894406, null, "test", "7a7f6ff4-1832-4f5f-b059-c2ebdc6196a3", true)]
-    [InlineData("4d992f24-346b-48ce-a855-1b10cfd4bd6e", "123456", null, 1707894406, "test", "7a7f6ff4-1832-4f5f-b059-c2ebdc6196a3", true)]
-    public async Task CanValidateRecordMeetingSpeak(string id, string roomNumber, int? startTime, int? endTime, string trackId, string recordId, bool isValid)
+    [InlineData(4, "123456", null, 1707894406, "test", "7a7f6ff4-1832-4f5f-b059-c2ebdc6196a3", true)]
+    public async Task CanValidateRecordMeetingSpeak(int? id, string roomNumber, int? startTime, int? endTime, string trackId, string recordId, bool isValid)
     {
         var command = new RecordMeetingSpeakCommand
         {
-            Id = string.IsNullOrEmpty(id) ? null : Guid.Parse(id),
+            Id = id,
             MeetingNumber = roomNumber,
             SpeakStartTime = startTime,
             SpeakEndTime = endTime,
