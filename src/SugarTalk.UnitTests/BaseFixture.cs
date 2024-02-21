@@ -55,7 +55,7 @@ public partial class BaseFixture
         _currentUser = Substitute.For<ICurrentUser>();
         _currentUser.Id.Returns(1);
         _liveKitServerUtilService = Substitute.For<ILiveKitServerUtilService>();
-        _sugarTalkBackgroundJobClient = Substitute.For<SugarTalkBackgroundJobClient>();
+        _sugarTalkBackgroundJobClient = Substitute.For<ISugarTalkBackgroundJobClient>();
         _accountDataProvider = MockAccountDataProvider(_mapper, _repository, _unitOfWork);
         _meetingDataProvider = MockMeetingDataProvider(_clock, _mapper, _repository, _unitOfWork, _currentUser, _accountDataProvider);
         _meetingService = MockMeetingService(_clock, _mapper, _unitOfWork, _currentUser, _speechClient,
