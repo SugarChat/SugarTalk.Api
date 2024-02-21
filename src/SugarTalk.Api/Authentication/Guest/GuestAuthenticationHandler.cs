@@ -34,7 +34,7 @@ namespace SugarTalk.Api.Authentication.Guest
             
             var guestSessionId = Request.Headers[RequestHeaderKeys.GuestSessionId].ToString();
 
-            Log.Information("request headers for guestSessionId:{guestSessionId}", guestSessionId);
+            Log.Information("Request headers for Guest Session Id: {GuestSessionId}", guestSessionId);
             
             if (string.IsNullOrEmpty(guestSessionId)) return AuthenticateResult.NoResult();
             
