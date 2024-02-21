@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Linq;
 using System.Reflection;
+using Aliyun.OSS;
 using Autofac;
 using AutoMapper.Contrib.Autofac.DependencyInjection;
 using Mediator.Net;
@@ -18,6 +19,7 @@ using SugarTalk.Core.Middlewares.UnifyResponse;
 using SugarTalk.Core.Middlewares.UnitOfWork;
 using SugarTalk.Core.Services.Caching;
 using SugarTalk.Core.Settings;
+using SugarTalk.Core.Settings.Aliyun;
 using Module = Autofac.Module;
 
 namespace SugarTalk.Core
@@ -50,6 +52,7 @@ namespace SugarTalk.Core
             RegisterDatabase(builder);
             RegisterDependency(builder);
             RegisterAutoMapper(builder);
+            RegisterAliYunOssClient(builder);
             RegisterMultiBus(builder, _configuration);
         }
 
@@ -120,6 +123,15 @@ namespace SugarTalk.Core
                 else
                     builder.RegisterType(type).AsSelf().AsImplementedInterfaces();
             }
+        }
+        
+        private void RegisterAliYunOssClient(ContainerBuilder builder)
+        {
+            builder.Register(c =>
+            {
+                var settings = c.Resolve<AliYunOssSettings>();
+                return new OssClient(settings.Endpoint, settings.AccessKeyId, settings.AccessKeySecret);
+            }).AsSelf().InstancePerLifetimeScope();
         }
 
         private void RegisterAutoMapper(ContainerBuilder builder)
