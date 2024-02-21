@@ -73,6 +73,8 @@ namespace SugarTalk.Core.Services.Meetings
         Task<GetAppointmentMeetingsResponse> GetAppointmentMeetingsAsync(GetAppointmentMeetingsRequest request, CancellationToken cancellationToken);
         
         Task DeleteMeetingHistoryAsync(DeleteMeetingHistoryCommand command, CancellationToken cancellationToken);
+        
+        Task<MeetingInvitedEvent> MeetingInviteAsync(MeetingInviteCommand command, CancellationToken cancellationToken);
     }
     
     public partial class MeetingService : IMeetingService
@@ -231,8 +233,6 @@ namespace SugarTalk.Core.Services.Meetings
             await _meetingDataProvider.UpdateMeetingIfRequiredAsync(meeting.Id, user.Id, cancellationToken).ConfigureAwait(false);
             
             await ConnectUserToMeetingAsync(user, meeting, command.IsMuted, cancellationToken).ConfigureAwait(false);
-            
-            //TODO：创建人加入会议时开启录制
             
             var userSetting = await _meetingDataProvider.DistributeLanguageForMeetingUserAsync(meeting.Id, cancellationToken).ConfigureAwait(false);
             
@@ -580,6 +580,39 @@ namespace SugarTalk.Core.Services.Meetings
             if (user is null) throw new UnauthorizedAccessException();
             
             await _meetingDataProvider.DeleteMeetingHistoryAsync(command.MeetingHistoryIds, user.Id, cancellationToken).ConfigureAwait(false);
+        }
+
+        public async Task<MeetingInvitedEvent> MeetingInviteAsync(MeetingInviteCommand command, CancellationToken cancellationToken)
+        {
+            var meeting = await _meetingDataProvider.GetMeetingAsync(command.MeetingNumber, cancellationToken).ConfigureAwait(false);
+            
+            if (meeting is null) throw new MeetingNotFoundException();
+
+            if (meeting.IsPasswordEnabled)
+            {
+                if (string.IsNullOrEmpty(command.SecurityCode))
+                {
+                    return new MeetingInvitedEvent
+                    {
+                        Token = string.Empty,
+                        HasMeetingPassword = true
+                    }; 
+                }
+
+                await _meetingDataProvider
+                    .CheckMeetingSecurityCodeAsync(meeting.Id, command.SecurityCode, cancellationToken).ConfigureAwait(false);
+            }
+            
+            var user = await _accountDataProvider
+                .GetUserAccountAsync(_currentUser?.Id, cancellationToken: cancellationToken).ConfigureAwait(false);
+            
+            var token = _liveKitServerUtilService.GenerateTokenForJoinMeeting(user, meeting.MeetingNumber);
+
+            return new MeetingInvitedEvent
+            {
+                Token = token,
+                HasMeetingPassword = meeting.IsPasswordEnabled
+            };
         }
 
         public async Task DeleteMeetingRecordAsync(DeleteMeetingRecordCommand command, CancellationToken cancellationToken)

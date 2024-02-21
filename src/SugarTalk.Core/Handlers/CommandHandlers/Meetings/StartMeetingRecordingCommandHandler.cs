@@ -19,6 +19,8 @@ public class StartMeetingRecordingCommandHandler : ICommandHandler<StartMeetingR
     public async Task<StartMeetingRecordingResponse> Handle(IReceiveContext<StartMeetingRecordingCommand> context, CancellationToken cancellationToken)
     {
         var @event = await _meetingService.StartMeetingRecordingAsync(context.Message, cancellationToken).ConfigureAwait(false);
+        
+        await context.PublishAsync(@event, cancellationToken).ConfigureAwait(false);
 
         return new StartMeetingRecordingResponse
         {

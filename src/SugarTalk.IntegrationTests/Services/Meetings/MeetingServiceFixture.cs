@@ -11,6 +11,7 @@ using SugarTalk.Core.Data;
 using Microsoft.EntityFrameworkCore;
 using SugarTalk.Core.Domain.Meeting;
 using SugarTalk.Core.Extensions;
+using SugarTalk.Core.Services.Account;
 using SugarTalk.Core.Services.AntMediaServer;
 using SugarTalk.Core.Services.Exceptions;
 using SugarTalk.Core.Services.LiveKit;
@@ -728,6 +729,49 @@ public partial class MeetingServiceFixture : MeetingFixtureBase
         });
     }
     
+    [Fact]
+    public async Task ShouldJoinMeetingWhenHasMeetingInvite()
+    {
+        var meeting = await _meetingUtil.ScheduleMeeting(securityCode: "123456");
+
+        await Run<IMediator>(async (mediator) =>
+        {
+            var response1 = await mediator.SendAsync<MeetingInviteCommand, MeetingInviteResponse>(new MeetingInviteCommand
+            {
+                SecurityCode = "",
+                MeetingNumber = meeting.Data.MeetingNumber
+            });
+            
+            response1.Token.ShouldBeNullOrEmpty();
+            response1.HasMeetingPassword.ShouldBeTrue();
+
+            await Assert.ThrowsAsync<MeetingSecurityCodeNotMatchException>(async () =>
+            {
+                await mediator.SendAsync<MeetingInviteCommand, MeetingInviteResponse>(new MeetingInviteCommand
+                {
+                    SecurityCode = "123",
+                    MeetingNumber = meeting.Data.MeetingNumber
+                });
+            });
+            
+            var response2 = await mediator.SendAsync<MeetingInviteCommand, MeetingInviteResponse>(new MeetingInviteCommand
+            {
+                SecurityCode = "123456",
+                MeetingNumber = meeting.Data.MeetingNumber
+            });
+            
+            response2.Token.ShouldBe("token123");
+            response2.HasMeetingPassword.ShouldBeTrue();
+        }, builder =>
+        {
+            MockLiveKitService(builder);
+            
+            var accountDataProvider = Substitute.For<IAccountDataProvider>();
+            accountDataProvider.GetUserAccountAsync(Arg.Any<int>()).Returns(new UserAccountDto());
+            builder.RegisterInstance(accountDataProvider);
+        });
+    }
+
     private static void MockLiveKitService(ContainerBuilder builder)
     {
         var liveKitServerUtilService = Substitute.For<ILiveKitServerUtilService>();
