@@ -129,17 +129,22 @@ public partial class MeetingServiceFixture : MeetingFixtureBase
             {
                 MeetingId = meeting.Id
             });
+
             var afterUserSession = await repository.QueryNoTracking<MeetingUserSession>()
                 .SingleAsync(x => x.MeetingId == meeting.Id);
             afterUserSession.OnlineType.ShouldBe(MeetingUserSessionOnlineType.OutMeeting);
             afterUserSession.LastQuitTime.ShouldNotBeNull();
+            afterUserSession.LastQuitTime.Value.ShouldBeGreaterThanOrEqualTo(beforeUserSession.First().FirstJoinTime.Value);
+            afterUserSession.CumulativeTime.ShouldNotBeNull();
+            afterUserSession.CumulativeTime.ShouldBe(afterUserSession.LastQuitTime.Value -
+                                                     beforeUserSession.First().FirstJoinTime.Value);
         }, builder =>
         {
             var liveKitServerUtilService = Substitute.For<ILiveKitServerUtilService>();
 
             liveKitServerUtilService.GenerateTokenForJoinMeeting(Arg.Any<UserAccountDto>(), Arg.Any<string>())
                 .Returns("token123");
-            
+
             builder.RegisterInstance(liveKitServerUtilService);
         });
     }

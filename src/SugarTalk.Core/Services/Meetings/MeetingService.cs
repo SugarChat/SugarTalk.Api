@@ -242,9 +242,14 @@ namespace SugarTalk.Core.Services.Meetings
                 .GetMeetingUserSessionByMeetingIdAsync(command.MeetingId, _currentUser.Id.Value, cancellationToken).ConfigureAwait(false);
 
             if (userSession == null) return new MeetingOutedEvent();
-           
+
+            var lastQuitTimeBeforeChange = userSession.LastQuitTime ??
+                                           userSession.FirstJoinTime ??
+                                           userSession.CreatedDate.ToUnixTimeSeconds();
             userSession.OnlineType = MeetingUserSessionOnlineType.OutMeeting;
             userSession.LastQuitTime = _clock.Now.ToUnixTimeSeconds();
+            userSession.CumulativeTime = (userSession.CumulativeTime ?? 0) +
+                                         (userSession.LastQuitTime - lastQuitTimeBeforeChange);
             await _meetingDataProvider.UpdateMeetingUserSessionAsync(userSession, cancellationToken)
                 .ConfigureAwait(false);
             return new MeetingOutedEvent();
