@@ -14,7 +14,7 @@ namespace SugarTalk.Core.Services.Meetings;
 
 public interface IMeetingRecordDetailsDataProvider : IScopedDependency
 {
-    Task<GetMeetingRecordDetailsResponse> GetMeetingRecordDetailsAsync(Guid recordId, CancellationToken cancellationToken);
+    Task<GetMeetingRecordDetailsDto> GetMeetingRecordDetailsAsync(Guid recordId, CancellationToken cancellationToken);
 }
 
 public class MeetingRecordDetailsDataProvider : IMeetingRecordDetailsDataProvider
@@ -28,7 +28,7 @@ public class MeetingRecordDetailsDataProvider : IMeetingRecordDetailsDataProvide
         _repository = repository;
     }
 
-    public async Task<GetMeetingRecordDetailsResponse> GetMeetingRecordDetailsAsync(Guid recordId, CancellationToken cancellationToken)
+    public async Task<GetMeetingRecordDetailsDto> GetMeetingRecordDetailsAsync(Guid recordId, CancellationToken cancellationToken)
     {
         var meetingRecordDetails = await _repository.Query<MeetingSpeakDetail>()
             .Where(x => x.MeetingRecordId == recordId).ToListAsync(cancellationToken: cancellationToken);
@@ -51,9 +51,6 @@ public class MeetingRecordDetailsDataProvider : IMeetingRecordDetailsDataProvide
             }
         ).FirstOrDefaultAsync(cancellationToken: cancellationToken);
 
-        return new GetMeetingRecordDetailsResponse
-        {
-            Data = meetingInfos
-        };
+        return meetingInfos;
     }
 }

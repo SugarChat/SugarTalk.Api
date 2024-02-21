@@ -22,6 +22,11 @@ public class MeetingRecordDetailsService : IMeetingRecordDetailsService
     
     public async Task<GetMeetingRecordDetailsResponse> GetMeetingRecordDetailsAsync(GetMeetingRecordDetailsRequest request, CancellationToken cancellationToken)
     {
-        return await _meetingRecordDetailsDataProvider.GetMeetingRecordDetailsAsync(request.Id, cancellationToken);
+        var response =  await _meetingRecordDetailsDataProvider.GetMeetingRecordDetailsAsync(request.Id, cancellationToken);
+        
+        return new GetMeetingRecordDetailsResponse
+        {
+            Data = response
+        };
     }
 }
