@@ -4,6 +4,7 @@ using System;
 using System.IO;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using Google.Cloud.Translation.V2;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Caching.Memory;
@@ -44,6 +45,7 @@ public partial class TestBase
         containerBuilder.RegisterModule(
             new SugarTalkModule(logger, configuration, typeof(SugarTalkModule).Assembly, typeof(TestBase).Assembly));
 
+        containerBuilder.RegisterInstance(Substitute.For<TranslationClient>());
         containerBuilder.RegisterInstance(new TestCurrentUser()).As<ICurrentUser>();
         containerBuilder.RegisterInstance(Substitute.For<IMemoryCache>()).AsImplementedInterfaces();
         containerBuilder.RegisterInstance(Substitute.For<IHttpContextAccessor>()).AsImplementedInterfaces();
