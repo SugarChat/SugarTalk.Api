@@ -27,8 +27,9 @@ namespace SugarTalk.Core.Services.Account
 
         Task PersistUser(UserAccount user, CancellationToken cancellationToken);
         
-        Task<UserAccountDto> GetUserAccountAsync(int? id = null, string username = null, string thirdPartyUserId = null, bool includeRoles = false,
-            CancellationToken cancellationToken = default);
+        Task<UserAccountDto> GetUserAccountAsync(
+            int? id = null, string username = null, string thirdPartyUserId = null, bool includeRoles = false,
+            UserAccountIssuer? issuer = null, CancellationToken cancellationToken = default);
 
         Task<UserAccount> CreateUserAccountAsync(string userName, string password, string thirdPartyUserId = null,
             UserAccountIssuer authType = UserAccountIssuer.Wiltechs, CancellationToken cancellationToken = default);
@@ -67,16 +68,22 @@ namespace SugarTalk.Core.Services.Account
         }
         
         public async Task<UserAccountDto> GetUserAccountAsync(
-            int? id = null, string username = null, string thirdPartyUserId = null, bool includeRoles = false, CancellationToken cancellationToken = default)
+            int? id = null, string username = null, string thirdPartyUserId = null, bool includeRoles = false,
+            UserAccountIssuer? issuer = null, CancellationToken cancellationToken = default)
         {
             var query = _repository.QueryNoTracking<UserAccount>();
 
             if (id.HasValue)
                 query = query.Where(x => x.Id == id);
+            
             if (!string.IsNullOrEmpty(username))
                 query = query.Where(x => x.UserName == username);
+            
             if (thirdPartyUserId != null)
                 query = query.Where(x => x.ThirdPartyUserId == thirdPartyUserId);
+
+            if (issuer.HasValue)
+                query = query.Where(x => x.Issuer == issuer.Value);
         
             var account = await query
                 .ProjectTo<UserAccountDto>(_mapper.ConfigurationProvider)
