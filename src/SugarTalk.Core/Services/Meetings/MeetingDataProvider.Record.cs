@@ -139,6 +139,7 @@ public partial class MeetingDataProvider
         var meetingRecord = await _repository
             .QueryNoTracking<MeetingRecord>(x => x.MeetingId == meetingId && x.RecordType == MeetingRecordType.OnRecord)
             .OrderByDescending(x => x.CreatedDate).FirstOrDefaultAsync(cancellationToken).ConfigureAwait(false);
+        
         return meetingRecord;
     }
     
@@ -147,6 +148,7 @@ public partial class MeetingDataProvider
         var meetingRecord = await _repository
             .Query<MeetingRecord>(x => x.Id == meetingRecordId && x.RecordType == MeetingRecordType.OnRecord)
             .FirstOrDefaultAsync(cancellationToken).ConfigureAwait(false);
+        
         return meetingRecord;
     }
 }

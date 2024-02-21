@@ -18,6 +18,7 @@ using SugarTalk.Core.Services.AntMediaServer;
 using SugarTalk.Core.Services.Exceptions;
 using SugarTalk.Core.Services.Http.Clients;
 using SugarTalk.Core.Services.Identity;
+using SugarTalk.Core.Services.Jobs;
 using SugarTalk.Core.Services.LiveKit;
 using SugarTalk.Core.Services.Utils;
 using SugarTalk.Core.Settings.Aliyun;
@@ -90,6 +91,7 @@ namespace SugarTalk.Core.Services.Meetings
         private readonly IMeetingDataProvider _meetingDataProvider;
         private readonly ILiveKitServerUtilService _liveKitServerUtilService;
         private readonly IAntMediaServerUtilService _antMediaServerUtilService;
+        private readonly ISugarTalkBackgroundJobClient _sugarTalkBackgroundJobClient;
 
         private readonly AliYunOssSettings _aliYunOssSetting;
         private readonly LiveKitServerSetting _liveKitServerSetting;
@@ -106,7 +108,8 @@ namespace SugarTalk.Core.Services.Meetings
             AliYunOssSettings aliYunOssSetting,
             LiveKitServerSetting liveKitServerSetting,
             ILiveKitServerUtilService liveKitServerUtilService,
-            IAntMediaServerUtilService antMediaServerUtilService)
+            IAntMediaServerUtilService antMediaServerUtilService,
+            ISugarTalkBackgroundJobClient sugarTalkBackgroundJobClient)
         {
             _clock = clock;
             _mapper = mapper;
@@ -120,6 +123,7 @@ namespace SugarTalk.Core.Services.Meetings
             _liveKitServerSetting = liveKitServerSetting;
             _liveKitServerUtilService = liveKitServerUtilService;
             _antMediaServerUtilService = antMediaServerUtilService;
+            _sugarTalkBackgroundJobClient = sugarTalkBackgroundJobClient;
         }
         
         public async Task<MeetingScheduledEvent> ScheduleMeetingAsync(ScheduleMeetingCommand command, CancellationToken cancellationToken)

@@ -11,7 +11,7 @@ using System.Threading.Tasks;
 
 namespace SugarTalk.Core.Handlers.CommandHandlers.Meetings
 {
-    public class StorageMeetingRecordVideoCommandHandler : ICommandHandler<StorageMeetingRecordVideoCommand,StorageMeetingRecordVideoResponse>
+    public class StorageMeetingRecordVideoCommandHandler : ICommandHandler<StorageMeetingRecordVideoCommand, StorageMeetingRecordVideoResponse>
     {
         private readonly IMeetingService _meetingService;
         
@@ -23,6 +23,7 @@ namespace SugarTalk.Core.Handlers.CommandHandlers.Meetings
         public async Task<StorageMeetingRecordVideoResponse> Handle(IReceiveContext<StorageMeetingRecordVideoCommand> context, CancellationToken cancellationToken)
         {
            var response = await _meetingService.StorageMeetingRecordVideoAsync(context.Message, cancellationToken).ConfigureAwait(false);
+           
            return response;
         }
     }
