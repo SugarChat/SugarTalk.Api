@@ -24,6 +24,8 @@ namespace SugarTalk.Core.Services.Account
         Task<UserAccountRegisteredEvent> RegisterAsync(RegisterCommand command, CancellationToken cancellationToken);
         
         Task<UserAccountDto> GetOrCreateUserAccountFromThirdPartyAsync(string userId, string userName, UserAccountIssuer issuer, CancellationToken cancellationToken);
+
+        Task<UserAccountDto> GetOrCreateGuestUserAccountAsync(string userName, CancellationToken cancellationToken);
     }
     
     public class AccountService : IAccountService
@@ -76,6 +78,19 @@ namespace SugarTalk.Core.Services.Account
 
             var account = await _accountDataProvider
                 .CreateUserAccountAsync(userName, "123abc", userId, issuer, cancellationToken).ConfigureAwait(false);
+
+            return _mapper.Map<UserAccountDto>(account);
+        }
+
+        public async Task<UserAccountDto> GetOrCreateGuestUserAccountAsync(string userName, CancellationToken cancellationToken)
+        {
+            var userAccount = await _accountDataProvider.GetUserAccountAsync(
+                username: userName, includeRoles: true, issuer: UserAccountIssuer.Guest, cancellationToken: cancellationToken).ConfigureAwait(false);
+            
+            if (userAccount != null) return userAccount;
+            
+            var account = await _accountDataProvider
+                .CreateUserAccountAsync(userName, string.Empty, authType: UserAccountIssuer.Guest, cancellationToken: cancellationToken).ConfigureAwait(false);
 
             return _mapper.Map<UserAccountDto>(account);
         }
