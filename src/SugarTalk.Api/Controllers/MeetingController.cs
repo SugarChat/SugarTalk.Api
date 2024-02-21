@@ -160,7 +160,7 @@ public class MeetingController : ControllerBase
     #region MeetingDetail
 
     [Route("meeting/detail"),HttpGet]
-    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(RecordMeetingSpeakResponse))]
+    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(GetMeetingRecordDetailsResponse))]
     public async Task<IActionResult> GetMeetingRecordDetailsAsync([FromBody] GetMeetingRecordDetailsRequest request)
     {
         var response = await _mediator.RequestAsync<GetMeetingRecordDetailsRequest, GetMeetingRecordDetailsResponse>(request).ConfigureAwait(false);
