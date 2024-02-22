@@ -11,6 +11,7 @@ using SugarTalk.Core.Data;
 using Microsoft.EntityFrameworkCore;
 using SugarTalk.Core.Domain.Meeting;
 using SugarTalk.Core.Extensions;
+using SugarTalk.Core.Services.Account;
 using SugarTalk.Core.Services.AntMediaServer;
 using SugarTalk.Core.Services.Exceptions;
 using SugarTalk.Core.Services.LiveKit;
@@ -716,7 +717,59 @@ public partial class MeetingServiceFixture : MeetingFixtureBase
             MockClock(builder, DateTimeOffset.Now);
         });
     }
+
+    [Fact]
+    public async Task ShouldThrowWhenAppointmentMeetingUtilDateIncorrect()
+    {
+        await Assert.ThrowsAsync<CannotCreateRepeatMeetingWhenUtilDateIsBeforeNowException>(async () =>
+        {
+            await Run<IClock>(async (clock) =>
+            {
+                await _meetingUtil.ScheduleMeeting(
+                    appointmentType: MeetingAppointmentType.Appointment, repeatType: MeetingRepeatType.Daily,
+                    startDate: clock.Now, endDate: clock.Now.AddHours(1), utilDate: clock.Now.AddDays(-1));
+            }, builder =>
+            {
+                MockLiveKitService(builder);
+                MockClock(builder, DateTimeOffset.Now);
+            });
+        });
+    }
     
+    [Fact]
+    public async Task ShouldJoinMeetingWhenHasMeetingInvite()
+    {
+        var meeting = await _meetingUtil.ScheduleMeeting(securityCode: "123456");
+
+        await Run<IMediator>(async (mediator) =>
+        {
+            await Assert.ThrowsAsync<MeetingSecurityCodeNotMatchException>(async () =>
+            {
+                await mediator.SendAsync<JoinMeetingCommand, JoinMeetingResponse>(new JoinMeetingCommand
+                {
+                    MeetingNumber = meeting.Data.MeetingNumber,
+                    SecurityCode = "666"
+                });
+            });
+            
+            var response = await mediator.SendAsync<JoinMeetingCommand, JoinMeetingResponse>(new JoinMeetingCommand
+            {
+                MeetingNumber = meeting.Data.MeetingNumber,
+                SecurityCode = "123456"
+            });
+            
+            response.Data.Meeting.MeetingTokenFromLiveKit.ShouldBe("token123");
+            response.Data.Meeting.IsPasswordEnabled.ShouldBeTrue();
+        }, builder =>
+        {
+            MockLiveKitService(builder);
+            
+            var accountDataProvider = Substitute.For<IAccountDataProvider>();
+            accountDataProvider.GetUserAccountAsync(Arg.Any<int>()).Returns(new UserAccountDto());
+            builder.RegisterInstance(accountDataProvider);
+        });
+    }
+
     private static void MockLiveKitService(ContainerBuilder builder)
     {
         var liveKitServerUtilService = Substitute.For<ILiveKitServerUtilService>();

@@ -1,11 +1,11 @@
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
-using SugarTalk.Core.Domain.Account;
 using SugarTalk.Core.Domain.Meeting;
+using SugarTalk.Core.Domain.Account;
 using SugarTalk.Messages.Dto.Meetings;
 using SugarTalk.Messages.Requests.Meetings;
 
@@ -13,11 +13,30 @@ namespace SugarTalk.Core.Services.Meetings;
 
 public partial interface IMeetingDataProvider
 {
-    public Task<(int count, List<MeetingRecordDto> items)> GetMeetingRecordsByUserIdAsync(int? currentUserId, GetCurrentUserMeetingRecordRequest request, CancellationToken cancellationToken);
+    Task<List<MeetingRecord>> GetMeetingRecordsAsync(Guid? id = null, CancellationToken cancellationToken = default);
+    
+    Task<(int count, List<MeetingRecordDto> items)> GetMeetingRecordsByUserIdAsync(int? currentUserId, GetCurrentUserMeetingRecordRequest request, CancellationToken cancellationToken);
+    
+    Task DeleteMeetingRecordAsync(List<Guid> meetingRecordIds, CancellationToken cancellationToken);
+    
+    Task PersistMeetingRecordAsync(Guid meetingId, Guid meetingRecordId, CancellationToken cancellationToken);
+    
+    Task<GetMeetingRecordDetailsResponse> GetMeetingRecordDetailsAsync(Guid recordId, CancellationToken cancellationToken);
 }
 
 public partial class MeetingDataProvider
 {
+    public async Task<List<MeetingRecord>> GetMeetingRecordsAsync(
+        Guid? id = null, CancellationToken cancellationToken = default)
+    {
+        var query = _repository.Query<MeetingRecord>();
+
+        if (id.HasValue)
+            query = query.Where(x => x.Id == id.Value);
+
+        return await query.ToListAsync(cancellationToken).ConfigureAwait(false);
+    }
+
     public async Task<(int count, List<MeetingRecordDto> items)> GetMeetingRecordsByUserIdAsync(int? currentUserId, GetCurrentUserMeetingRecordRequest request, CancellationToken cancellationToken)
     {
         if (currentUserId == null)
@@ -48,7 +67,7 @@ public partial class MeetingDataProvider
                     result.Session,
                     User = user
                 })
-            .Where(x => x.Session.UserId == currentUserId);
+            .Where(x => x.Session.UserId == currentUserId && !x.Record.IsDeleted);
 
         query = string.IsNullOrEmpty(request.Keyword) ? query : query.Where(x =>
                 x.Meeting.Title.Contains(request.Keyword) ||
@@ -83,5 +102,70 @@ public partial class MeetingDataProvider
             .ToList();
 
         return (total, items);
+    }
+
+    public async Task DeleteMeetingRecordAsync(List<Guid> meetingRecordIds, CancellationToken cancellationToken)
+    {
+        var meetingRecords = await _repository.Query<MeetingRecord>()
+            .Where(x => meetingRecordIds.Contains(x.Id))
+            .Where(x => !x.IsDeleted).ToListAsync(cancellationToken).ConfigureAwait(false);
+
+        if (meetingRecords is not { Count: > 0 }) return;
+        
+        meetingRecords.ForEach(x => x.IsDeleted = true);
+    }
+
+    public async Task PersistMeetingRecordAsync(Guid meetingId, Guid meetingRecordId, CancellationToken cancellationToken)
+    {
+        var meetingRecordTotal = await _repository.Query<MeetingRecord>()
+            .CountAsync(x => x.MeetingId == meetingId, cancellationToken).ConfigureAwait(false);
+
+        await _repository.InsertAsync(new MeetingRecord
+        {
+            Id = meetingRecordId,
+            MeetingId = meetingId,
+            RecordNumber = GenerateRecordNumber(meetingRecordTotal + 1)
+        }, cancellationToken).ConfigureAwait(false);
+    }
+    
+    public async Task<GetMeetingRecordDetailsResponse> GetMeetingRecordDetailsAsync(Guid recordId, CancellationToken cancellationToken)
+    {
+        var currentUser = await _accountDataProvider
+            .GetUserAccountAsync(_currentUser.Id.Value, cancellationToken: cancellationToken).ConfigureAwait(false);
+
+        if (currentUser is null) throw new UnauthorizedAccessException();
+        
+        var meetingRecordDetails = await _repository.QueryNoTracking<MeetingSpeakDetail>()
+            .Where(x => x.MeetingRecordId == recordId).ToListAsync(cancellationToken).ConfigureAwait(false);
+
+        var meetingInfo = await (
+            from meetingRecord in _repository.QueryNoTracking<MeetingRecord>()
+            join meeting in _repository.QueryNoTracking<Meeting>() on meetingRecord.MeetingId equals meeting.Id
+            join meetingSummary in _repository.QueryNoTracking<MeetingSummary>() on meetingRecord.Id equals meetingSummary.RecordId
+            where meetingRecord.Id == recordId
+            select new GetMeetingRecordDetailsDto
+            {
+                Id = recordId,
+                MeetingTitle = meeting.Title,
+                MeetingNumber = meeting.MeetingNumber,
+                MeetingStartDate = meeting.StartDate,
+                MeetingEndDate = meeting.EndDate,
+                Url = meetingRecord.Url,
+                Summary = meetingSummary.Summary,
+                MeetingRecordDetail = meetingRecordDetails.Select(x => _mapper.Map<MeetingRecordDetail>(x)).ToList()
+            }
+        ).FirstOrDefaultAsync(cancellationToken).ConfigureAwait(false);
+
+        return new GetMeetingRecordDetailsResponse
+        {
+            Data = meetingInfo
+        };
+    }
+
+    private string GenerateRecordNumber(int total)
+    {
+        var sequenceToString = total.ToString().PadLeft(6, '0');
+
+        return $"ZNZX-{_clock.Now.Year}{_clock.Now.Month}{_clock.Now.Day}{sequenceToString}";
     }
 }

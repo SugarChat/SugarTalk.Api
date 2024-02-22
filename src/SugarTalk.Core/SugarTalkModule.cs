@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Linq;
 using System.Reflection;
+using Aliyun.OSS;
 using Autofac;
 using AutoMapper.Contrib.Autofac.DependencyInjection;
+using Google.Cloud.Translation.V2;
 using Mediator.Net;
 using Mediator.Net.Autofac;
 using Mediator.Net.Middlewares.Serilog;
@@ -14,10 +16,13 @@ using SugarTalk.Core.Ioc;
 using SugarTalk.Core.Masstransit;
 using SugarTalk.Core.Middlewares;
 using SugarTalk.Core.Middlewares.FluentMessageValidator;
+using SugarTalk.Core.Middlewares.GuestValidator;
 using SugarTalk.Core.Middlewares.UnifyResponse;
 using SugarTalk.Core.Middlewares.UnitOfWork;
 using SugarTalk.Core.Services.Caching;
 using SugarTalk.Core.Settings;
+using SugarTalk.Core.Settings.Google;
+using SugarTalk.Core.Settings.Aliyun;
 using Module = Autofac.Module;
 
 namespace SugarTalk.Core
@@ -50,6 +55,8 @@ namespace SugarTalk.Core
             RegisterDatabase(builder);
             RegisterDependency(builder);
             RegisterAutoMapper(builder);
+            RegisterTranslationClient(builder);
+            RegisterAliYunOssClient(builder);
             RegisterMultiBus(builder, _configuration);
         }
 
@@ -80,6 +87,7 @@ namespace SugarTalk.Core
             {
                 c.UseUnitOfWork();
                 c.UseUnifyResponse();
+                c.UseGuestValidator();
                 c.UseMessageValidator();
                 c.UseSerilog(logger: _logger);
             });
@@ -120,6 +128,24 @@ namespace SugarTalk.Core
                 else
                     builder.RegisterType(type).AsSelf().AsImplementedInterfaces();
             }
+        }
+        
+        private void RegisterTranslationClient(ContainerBuilder builder)
+        {
+            builder.Register(c =>
+            {
+                var googleTranslateApiKey = c.Resolve<GoogleTranslateApiKeySetting>().Value;
+                return TranslationClient.CreateFromApiKey(googleTranslateApiKey);
+            }).AsSelf().InstancePerLifetimeScope();
+        }
+
+        private void RegisterAliYunOssClient(ContainerBuilder builder)
+        {
+            builder.Register(c =>
+            {
+                var settings = c.Resolve<AliYunOssSettings>();
+                return new OssClient(settings.Endpoint, settings.AccessKeyId, settings.AccessKeySecret);
+            }).AsSelf().InstancePerLifetimeScope();
         }
 
         private void RegisterAutoMapper(ContainerBuilder builder)

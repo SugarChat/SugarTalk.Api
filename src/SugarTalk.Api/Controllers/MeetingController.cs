@@ -4,6 +4,8 @@ using Microsoft.AspNetCore.Authorization;
 using SugarTalk.Messages.Commands.Meetings;
 using SugarTalk.Messages.Requests.Meetings;
 using SugarTalk.Messages.Commands.Meetings.Speak;
+using SugarTalk.Messages.Commands.Meetings.Summary;
+using SugarTalk.Messages.Dto.Meetings;
 
 namespace SugarTalk.Api.Controllers;
 
@@ -151,4 +153,66 @@ public class MeetingController : ControllerBase
     }
 
     #endregion
+
+    #region Summary
+
+    [Route("summary"), HttpPost]
+    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(SummaryMeetingRecordResponse))]
+    public async Task<IActionResult> SummaryMeetingRecordAsync([FromBody] SummaryMeetingRecordCommand command)
+    {
+        var response = await _mediator.SendAsync<SummaryMeetingRecordCommand, SummaryMeetingRecordResponse>(command).ConfigureAwait(false);
+
+        return Ok(response);
+    }
+    
+    [Route("history/delete"), HttpPost]
+    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(DeleteMeetingHistoryResponse))]
+    public async Task<IActionResult> DeleteMeetingHistoryAsync([FromBody] DeleteMeetingHistoryCommand command)
+    {
+        var response = await _mediator.SendAsync<DeleteMeetingHistoryCommand, DeleteMeetingHistoryResponse>(command).ConfigureAwait(false);
+
+        return Ok(response);
+    }
+    
+    #endregion
+
+    [Route("record/detail"), HttpGet]
+    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(GetMeetingRecordDetailsResponse))]
+    public async Task<IActionResult> GetMeetingRecordDetailsAsync([FromBody] GetMeetingRecordDetailsRequest request)
+    {
+        var response = await _mediator.RequestAsync<GetMeetingRecordDetailsRequest, GetMeetingRecordDetailsResponse>(request).ConfigureAwait(false);
+
+        return Ok(response);
+    }
+
+    [Route("record/delete"), HttpPost]
+    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(DeleteMeetingRecordResponse))]
+    public async Task<IActionResult> DeleteMeetingRecordAsync([FromBody] DeleteMeetingRecordCommand command)
+    {
+        var response = await _mediator.SendAsync<DeleteMeetingRecordCommand, DeleteMeetingRecordResponse>(command).ConfigureAwait(false);
+
+        return Ok(response);
+    }
+
+    [Route("recording/start"), HttpPost]
+    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(StartMeetingRecordingResponse))]
+    public async Task<IActionResult> StartMeetingRecordingAsync([FromBody] StartMeetingRecordingCommand command)
+    {
+        var response = await _mediator.SendAsync<StartMeetingRecordingCommand, StartMeetingRecordingResponse>(command).ConfigureAwait(false);
+
+        return Ok(response);
+    }
+    
+    [Route("invite/{meetingNumber}"), HttpPost]
+    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(JoinMeetingCommand))]
+    public async Task<IActionResult> MeetingInviteAsync(string meetingNumber, [FromBody] MeetingInviteRequestDto requestData)
+    {
+        var response = await _mediator.SendAsync<JoinMeetingCommand, JoinMeetingResponse>(new JoinMeetingCommand
+        {
+            MeetingNumber = meetingNumber,
+            SecurityCode = requestData.SecurityCode
+        }).ConfigureAwait(false);
+
+        return Ok(response);
+    }
 }

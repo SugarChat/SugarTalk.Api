@@ -7,7 +7,7 @@ namespace SugarTalk.Messages.Commands.Meetings.Speak;
 
 public class RecordMeetingSpeakCommand : ICommand
 {
-    public Guid? Id { get; set; }
+    public int? Id { get; set; }
     
     public string MeetingNumber { get; set; }
     

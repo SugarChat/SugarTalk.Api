@@ -74,4 +74,18 @@ public partial class BaseFixture
             CreatedDate = createDate
         };
     }
+    
+    protected MeetingHistory CreateMeetingHistoryEvent(Guid id, Guid meetingId, int userId, Guid? meetingSubId, 
+        long? joinTime = null, long duration = 1000)
+    {
+        return new MeetingHistory
+        {
+            Id = id,
+            MeetingId = meetingId,
+            MeetingSubId = meetingSubId,
+            UserId = userId,
+            CreatorJoinTime = joinTime ?? _clock.Now.ToUnixTimeSeconds(),
+            Duration = duration
+        };
+    }
 }

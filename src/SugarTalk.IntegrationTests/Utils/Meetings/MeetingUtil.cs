@@ -33,7 +33,8 @@ public class MeetingUtil : TestUtil
 
     public async Task<ScheduleMeetingResponse> ScheduleMeeting(
         string title = null, string timezone = null, string securityCode = null, 
-        DateTimeOffset? startDate = null, DateTimeOffset? endDate = null, MeetingAppointmentType appointmentType = MeetingAppointmentType.Quick,
+        DateTimeOffset? startDate = null, DateTimeOffset? endDate = null, DateTimeOffset? utilDate = null,
+        MeetingAppointmentType appointmentType = MeetingAppointmentType.Quick,
         MeetingRepeatType repeatType = MeetingRepeatType.None, bool isMuted = false, bool isRecorded = false)
     {
         return await Run<IMediator, ScheduleMeetingResponse>(async (mediator) =>
@@ -46,6 +47,7 @@ public class MeetingUtil : TestUtil
                     SecurityCode = securityCode,
                     StartDate = startDate ?? DateTimeOffset.Now,
                     EndDate = endDate ?? DateTimeOffset.Now.AddDays(2),
+                    UtilDate = utilDate,
                     AppointmentType = appointmentType,
                     RepeatType = repeatType,
                     IsMuted = isMuted,

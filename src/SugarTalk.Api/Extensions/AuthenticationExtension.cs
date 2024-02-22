@@ -2,6 +2,7 @@ using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.IdentityModel.Tokens;
+using SugarTalk.Api.Authentication.Guest;
 using SugarTalk.Api.Authentication.Wiltechs;
 using SugarTalk.Core.Constants;
 using SugarTalk.Core.Services.Identity;
@@ -30,13 +31,15 @@ public static class AuthenticationExtension
             })
             .AddScheme<WiltechsAuthenticationOptions, WiltechsAuthenticationHandler>(
                 AuthenticationSchemeConstants.WiltechsAuthenticationScheme,
-                options => options.Authority = configuration["Authentication:Wiltechs:Authority"]);
+                options => options.Authority = configuration["Authentication:Wiltechs:Authority"])
+            .AddScheme<GuestAuthenticationOptions, GuestAuthenticationHandler>(AuthenticationSchemeConstants.GuestAuthenticationScheme, op => { });
 
         services.AddAuthorization(options =>
         {
             options.DefaultPolicy = new AuthorizationPolicyBuilder(
                 JwtBearerDefaults.AuthenticationScheme,
-                AuthenticationSchemeConstants.WiltechsAuthenticationScheme).RequireAuthenticatedUser().Build();
+                AuthenticationSchemeConstants.WiltechsAuthenticationScheme,
+                AuthenticationSchemeConstants.GuestAuthenticationScheme).RequireAuthenticatedUser().Build();
         });
         
         services.AddScoped<ICurrentUser, CurrentUser>();
