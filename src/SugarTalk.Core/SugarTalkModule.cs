@@ -16,6 +16,7 @@ using SugarTalk.Core.Ioc;
 using SugarTalk.Core.Masstransit;
 using SugarTalk.Core.Middlewares;
 using SugarTalk.Core.Middlewares.FluentMessageValidator;
+using SugarTalk.Core.Middlewares.GuestValidator;
 using SugarTalk.Core.Middlewares.UnifyResponse;
 using SugarTalk.Core.Middlewares.UnitOfWork;
 using SugarTalk.Core.Services.Caching;
@@ -86,6 +87,7 @@ namespace SugarTalk.Core
             {
                 c.UseUnitOfWork();
                 c.UseUnifyResponse();
+                c.UseGuestValidator();
                 c.UseMessageValidator();
                 c.UseSerilog(logger: _logger);
             });
