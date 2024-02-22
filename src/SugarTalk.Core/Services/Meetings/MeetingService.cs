@@ -267,7 +267,7 @@ namespace SugarTalk.Core.Services.Meetings
             CancellationToken cancellationToken)
         {
             var userSession = await _meetingDataProvider
-                .GetMeetingUserSessionByMeetingIdAsync(command.MeetingId, command.MeetingSubId, _currentUser.Id.Value,
+                .GetMeetingUserSessionByMeetingIdAsync(command.MeetingId, command.MeetingSubId, _currentUser?.Id,
                     cancellationToken).ConfigureAwait(false);
 
             if (userSession == null) return new MeetingOutedEvent();

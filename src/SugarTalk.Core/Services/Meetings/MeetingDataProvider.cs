@@ -26,7 +26,7 @@ namespace SugarTalk.Core.Services.Meetings
 {
     public partial interface IMeetingDataProvider : IScopedDependency
     {
-        Task<MeetingUserSession> GetMeetingUserSessionByMeetingIdAsync(Guid meetingId, Guid? meetingSubId, int userId,
+        Task<MeetingUserSession> GetMeetingUserSessionByMeetingIdAsync(Guid meetingId, Guid? meetingSubId, int? userId,
             CancellationToken cancellationToken);
         
         Task<Meeting> GetMeetingByIdAsync(Guid meetingId, CancellationToken cancellationToken = default);
@@ -106,7 +106,7 @@ namespace SugarTalk.Core.Services.Meetings
         }
 
         public async Task<MeetingUserSession> GetMeetingUserSessionByMeetingIdAsync(Guid meetingId, Guid? meetingSubId,
-            int userId, CancellationToken cancellationToken)
+            int? userId, CancellationToken cancellationToken)
         {
             var query = _repository
                 .QueryNoTracking<MeetingUserSession>()
