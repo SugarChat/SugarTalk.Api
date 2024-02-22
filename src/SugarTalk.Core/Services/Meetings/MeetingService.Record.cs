@@ -97,7 +97,7 @@ public partial class MeetingService
             .GetMeetingByIdAsync(command.MeetingId, cancellationToken).ConfigureAwait(false);
         
         var user = await _accountDataProvider
-            .GetUserAccountAsync(_currentUser.Id, cancellationToken: cancellationToken).ConfigureAwait(false);
+            .GetUserAccountAsync(_currentUser.Id.Value, cancellationToken: cancellationToken).ConfigureAwait(false);
 
         var recordMeetingToken = _liveKitServerUtilService.GenerateTokenForRecordMeeting(user, meeting.MeetingNumber);
         
@@ -114,8 +114,7 @@ public partial class MeetingService
         return new StorageMeetingRecordVideoResponse();
     }
 
-    public async Task ExecuteStorageMeetingRecordVideoDelayedJobAsync(DateTimeOffset startDate, StorageMeetingRecordVideoCommand command,
-        string token, CancellationToken cancellationToken)
+    public async Task ExecuteStorageMeetingRecordVideoDelayedJobAsync(DateTimeOffset startDate, StorageMeetingRecordVideoCommand command, string token, CancellationToken cancellationToken)
     {
         var now = _clock.Now;
         if ((now - startDate).TotalMinutes > 5)
@@ -125,8 +124,7 @@ public partial class MeetingService
         if (res) _sugarTalkBackgroundJobClient.RemoveRecurringJobIfExists(nameof(ExecuteStorageMeetingRecordVideoDelayedJobAsync));
     }
 
-    public async Task<bool> StorageMeetingRecordVideoJobAsync(StorageMeetingRecordVideoCommand command, string token,
-        CancellationToken cancellationToken)
+    public async Task<bool> StorageMeetingRecordVideoJobAsync(StorageMeetingRecordVideoCommand command, string token, CancellationToken cancellationToken)
     {
         var meetingRecord = await _meetingDataProvider
             .GetMeetingRecordByMeetingRecordIdAsync(command.MeetingRecordId, cancellationToken).ConfigureAwait(false);
