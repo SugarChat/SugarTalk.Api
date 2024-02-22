@@ -278,7 +278,7 @@ namespace SugarTalk.Core.Services.Meetings
             await _meetingDataProvider.UpdateMeetingUserSessionAsync(userSession, cancellationToken).ConfigureAwait(false);
 
             await _meetingDataProvider.HandleMeetingStatusWhenOutMeetingAsync(
-                userSession.UserId, command.MeetingId, command.MeetingSubId.Value, cancellationToken).ConfigureAwait(false);
+                userSession.UserId, command.MeetingId, command.MeetingSubId, cancellationToken).ConfigureAwait(false);
 
             return new MeetingOutedEvent();
         }
