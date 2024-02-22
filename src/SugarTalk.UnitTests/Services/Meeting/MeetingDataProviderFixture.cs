@@ -259,15 +259,15 @@ public class MeetingDataProviderFixture : BaseFixture
             CreateUserSessionEvent(7, userId1, meetingId3, meetingSubId1, status: MeetingAttendeeStatus.Absent)
         });
         
-        await _meetingDataProvider.HandleMeetingStatusWhenOutMeeting(userId1, meetingId1, meetingSubId1, CancellationToken.None);
+        await _meetingDataProvider.HandleMeetingStatusWhenOutMeetingAsync(userId1, meetingId1, meetingSubId1, CancellationToken.None);
         var response1 = await _repository.Query<Core.Domain.Meeting.Meeting>().FirstOrDefaultAsync(x => x.Id == meetingId1);
         response1?.Status.ShouldBe(MeetingStatus.Pending);
         
-        await _meetingDataProvider.HandleMeetingStatusWhenOutMeeting(userId1, meetingId2, null, CancellationToken.None);
+        await _meetingDataProvider.HandleMeetingStatusWhenOutMeetingAsync(userId1, meetingId2, null, CancellationToken.None);
         var response2 = await _repository.Query<Core.Domain.Meeting.Meeting>().FirstOrDefaultAsync(x => x.Id == meetingId2);
         response2?.Status.ShouldBe(MeetingStatus.Completed);
 
-        await _meetingDataProvider.HandleMeetingStatusWhenOutMeeting(userId1, meetingId3, null, CancellationToken.None);
+        await _meetingDataProvider.HandleMeetingStatusWhenOutMeetingAsync(userId1, meetingId3, null, CancellationToken.None);
         var response3 = await _repository.Query<Core.Domain.Meeting.Meeting>().FirstOrDefaultAsync(x => x.Id == meetingId3);
         response3?.Status.ShouldBe(MeetingStatus.InProgress);
     }

@@ -83,7 +83,7 @@ namespace SugarTalk.Core.Services.Meetings
 
         Task DeleteMeetingHistoryAsync(List<Guid> meetingHistoryIds, int userId, CancellationToken cancellationToken);
 
-        Task HandleMeetingStatusWhenOutMeeting(int userId, Guid meetingId, Guid? meetingSubId = null, CancellationToken cancellationToken = default);
+        Task HandleMeetingStatusWhenOutMeetingAsync(int userId, Guid meetingId, Guid? meetingSubId = null, CancellationToken cancellationToken = default);
     }
     
     public partial class MeetingDataProvider : IMeetingDataProvider
@@ -495,7 +495,7 @@ namespace SugarTalk.Core.Services.Meetings
             meetingHistories.ForEach(x => x.IsDeleted = true);
         }
 
-        public async Task HandleMeetingStatusWhenOutMeeting(int userId, Guid meetingId, Guid? meetingSubId = null, CancellationToken cancellationToken = default)
+        public async Task HandleMeetingStatusWhenOutMeetingAsync(int userId, Guid meetingId, Guid? meetingSubId = null, CancellationToken cancellationToken = default)
         {
             //当预定会议未到真正开始时间时，最后一个人退出会议，会议状态根据当前时间改变。
             var meeting = await _repository.Query<Meeting>()
