@@ -21,6 +21,9 @@ public class MeetingUserSession : IEntity
     [Column("meeting_id", TypeName = "char(36)")]
     public Guid MeetingId { get; set; }
 
+    [Column("meeting_sub_id", TypeName = "char(36)")]
+    public Guid? MeetingSubId { get; set; }
+
     [Column("user_id")]
     public int UserId { get; set; }
 

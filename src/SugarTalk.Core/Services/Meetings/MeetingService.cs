@@ -262,15 +262,25 @@ namespace SugarTalk.Core.Services.Meetings
                 MeetingUserSetting = _mapper.Map<MeetingUserSettingDto>(userSetting)
             };
         }
-        
-        public async Task<MeetingOutedEvent> OutMeetingAsync(OutMeetingCommand command, CancellationToken cancellationToken)
+
+        public async Task<MeetingOutedEvent> OutMeetingAsync(OutMeetingCommand command,
+            CancellationToken cancellationToken)
         {
             var userSession = await _meetingDataProvider
-                .GetMeetingUserSessionByMeetingIdAsync(command.MeetingId, _currentUser.Id.Value, cancellationToken).ConfigureAwait(false);
+                .GetMeetingUserSessionByMeetingIdAsync(command.MeetingId, command.MeetingSubId, _currentUser?.Id,
+                    cancellationToken).ConfigureAwait(false);
 
             if (userSession == null) return new MeetingOutedEvent();
 
-            // TODO: 更新用户退出会议时间, 会议时长
+            var lastQuitTimeBeforeChange = userSession.LastQuitTime ??
+                                           userSession.FirstJoinTime ??
+                                           userSession.CreatedDate.ToUnixTimeSeconds();
+            userSession.OnlineType = MeetingUserSessionOnlineType.OutMeeting;
+            userSession.LastQuitTime = _clock.Now.ToUnixTimeSeconds();
+            userSession.CumulativeTime = (userSession.CumulativeTime ?? 0) +
+                                         (userSession.LastQuitTime - lastQuitTimeBeforeChange);
+            await _meetingDataProvider.UpdateMeetingUserSessionAsync(userSession, cancellationToken)
+                .ConfigureAwait(false);
             return new MeetingOutedEvent();
         }
         
@@ -312,7 +322,7 @@ namespace SugarTalk.Core.Services.Meetings
 
             if (userSession == null)
             {
-                userSession = GenerateNewUserSessionFromUser(user, meeting.Id, isMuted ?? false);
+                userSession = GenerateNewUserSessionFromUser(user, meeting.Id, meeting.MeetingSubId, isMuted ?? false);
                 
                 await _meetingDataProvider.AddMeetingUserSessionAsync(userSession, cancellationToken).ConfigureAwait(false);
 
@@ -329,7 +339,7 @@ namespace SugarTalk.Core.Services.Meetings
                 userSession.Status = MeetingAttendeeStatus.Present;
                 userSession.FirstJoinTime = _clock.Now.ToUnixTimeSeconds();
                 userSession.TotalJoinCount += 1;
-
+                userSession.MeetingSubId = meeting.MeetingSubId;
                 userSession.OnlineType = MeetingUserSessionOnlineType.Online;
 
                 await _meetingDataProvider.UpdateMeetingUserSessionAsync(userSession, cancellationToken).ConfigureAwait(false);
@@ -559,8 +569,9 @@ namespace SugarTalk.Core.Services.Meetings
             }
             return result.ToString();
         }
-        
-        private MeetingUserSession GenerateNewUserSessionFromUser(UserAccountDto user, Guid meetingId, bool isMuted)
+
+        private MeetingUserSession GenerateNewUserSessionFromUser(UserAccountDto user, Guid meetingId,
+            Guid? meetingSubId, bool isMuted)
         {
             return new MeetingUserSession
             {
@@ -569,7 +580,8 @@ namespace SugarTalk.Core.Services.Meetings
                 MeetingId = meetingId,
                 Status = MeetingAttendeeStatus.Present,
                 FirstJoinTime = _clock.Now.ToUnixTimeSeconds(),
-                TotalJoinCount = 1
+                TotalJoinCount = 1,
+                MeetingSubId = meetingSubId
             };
         }
         
