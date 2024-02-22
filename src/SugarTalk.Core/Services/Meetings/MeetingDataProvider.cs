@@ -63,7 +63,7 @@ namespace SugarTalk.Core.Services.Meetings
         Task UpdateMeetingRepeatRuleAsync(Guid meetingId, MeetingRepeatType repeatType, CancellationToken cancellationToken);
 
         Task<(List<MeetingHistoryDto> MeetingHistoryList, int TotalCount)> GetMeetingHistoriesByUserIdAsync(
-            int userId, PageSetting pageSetting, CancellationToken cancellationToken);
+            int userId, string keyword, PageSetting pageSetting, CancellationToken cancellationToken);
 
         Task UpdateMeetingIfRequiredAsync(Guid meetingId, int userId, CancellationToken cancellationToken);
         
@@ -291,10 +291,19 @@ namespace SugarTalk.Core.Services.Meetings
         }
 
         public async Task<(List<MeetingHistoryDto> MeetingHistoryList, int TotalCount)> GetMeetingHistoriesByUserIdAsync(
-            int userId, PageSetting pageSetting, CancellationToken cancellationToken)
+            int userId, string keyword, PageSetting pageSetting, CancellationToken cancellationToken)
         {
             var query = _repository.QueryNoTracking<MeetingHistory>()
                 .Where(x => x.UserId == userId && !x.IsDeleted);
+
+            if (!string.IsNullOrEmpty(keyword))
+            {
+                query = from history in query
+                    join meeting in _repository.QueryNoTracking<Meeting>() on history.MeetingId equals meeting.Id
+                    join user in _repository.QueryNoTracking<UserAccount>() on meeting.MeetingMasterUserId equals user.Id
+                    where meeting.Title.Contains(keyword) || meeting.MeetingNumber.Contains(keyword) || user.UserName.Contains(keyword)
+                    select history;
+            }
 
             var totalCount = await query.CountAsync(cancellationToken).ConfigureAwait(false);
             
