@@ -779,17 +779,12 @@ public partial class MeetingServiceFixture : MeetingFixtureBase
 
                 await Assert.ThrowsAsync<CannotCancelAppointmentMeetingStatusException>(async () =>
                 {
-                    await mediator.SendAsync<CancelAppointmentMeetingCommand, CancelAppointmentMeetingResponse>(
-                        new CancelAppointmentMeetingCommand { MeetingId = meeting.Data.Id });
+                    await mediator.SendAsync(new CancelAppointmentMeetingCommand { MeetingId = meeting.Data.Id });
                 });
             }
             else
             {
-                await mediator.SendAsync<CancelAppointmentMeetingCommand, CancelAppointmentMeetingResponse>(
-                    new CancelAppointmentMeetingCommand
-                    {
-                        MeetingId = meeting.Data.Id
-                    });
+                await mediator.SendAsync(new CancelAppointmentMeetingCommand { MeetingId = meeting.Data.Id });
 
                 (await repository.Query<Meeting>().FirstOrDefaultAsync())?.Status.ShouldBe(MeetingStatus.Cancelled);
             }
