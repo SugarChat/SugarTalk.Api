@@ -22,6 +22,8 @@ public partial interface IMeetingDataProvider
     
     Task PersistMeetingRecordAsync(Guid meetingId, Guid meetingRecordId, CancellationToken cancellationToken);
     
+    Task<GetMeetingRecordDetailsResponse> GetMeetingRecordDetailsAsync(Guid recordId, CancellationToken cancellationToken);
+    
     Task UpdateMeetingRecordAsync(MeetingRecord record, CancellationToken cancellationToken);
     
     Task<MeetingRecord> GetNewestMeetingRecordByMeetingIdAsync(Guid meetingId, CancellationToken cancellationToken);
@@ -133,6 +135,40 @@ public partial class MeetingDataProvider
         }, cancellationToken).ConfigureAwait(false);
     }
     
+    public async Task<GetMeetingRecordDetailsResponse> GetMeetingRecordDetailsAsync(Guid recordId, CancellationToken cancellationToken)
+    {
+        var currentUser = await _accountDataProvider
+            .GetUserAccountAsync(_currentUser.Id.Value, cancellationToken: cancellationToken).ConfigureAwait(false);
+
+        if (currentUser is null) throw new UnauthorizedAccessException();
+        
+        var meetingRecordDetails = await _repository.QueryNoTracking<MeetingSpeakDetail>()
+            .Where(x => x.MeetingRecordId == recordId).ToListAsync(cancellationToken).ConfigureAwait(false);
+
+        var meetingInfo = await (
+            from meetingRecord in _repository.QueryNoTracking<MeetingRecord>()
+            join meeting in _repository.QueryNoTracking<Meeting>() on meetingRecord.MeetingId equals meeting.Id
+            join meetingSummary in _repository.QueryNoTracking<MeetingSummary>() on meetingRecord.Id equals meetingSummary.RecordId
+            where meetingRecord.Id == recordId
+            select new GetMeetingRecordDetailsDto
+            {
+                Id = recordId,
+                MeetingTitle = meeting.Title,
+                MeetingNumber = meeting.MeetingNumber,
+                MeetingStartDate = meeting.StartDate,
+                MeetingEndDate = meeting.EndDate,
+                Url = meetingRecord.Url,
+                Summary = meetingSummary.Summary,
+                MeetingRecordDetail = meetingRecordDetails.Select(x => _mapper.Map<MeetingRecordDetail>(x)).ToList()
+            }
+        ).FirstOrDefaultAsync(cancellationToken).ConfigureAwait(false);
+
+        return new GetMeetingRecordDetailsResponse
+        {
+            Data = meetingInfo
+        };
+    }
+
     private string GenerateRecordNumber(int total)
     {
         var sequenceToString = total.ToString().PadLeft(6, '0');

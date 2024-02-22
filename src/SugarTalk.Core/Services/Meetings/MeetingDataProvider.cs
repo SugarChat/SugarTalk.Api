@@ -319,6 +319,7 @@ namespace SugarTalk.Core.Services.Meetings
                 .Where(x => meetingIds.Contains(x.Id))
                 .ToDictionaryAsync(x => x.Id, y => y, cancellationToken).ConfigureAwait(false);
 
+            // todo : 找出UserSession所属的子会议
             var userSessions = await _repository.QueryNoTracking<MeetingUserSession>()
                 .Where(x => meetingIds.Contains(x.MeetingId))
                 .ToListAsync(cancellationToken).ConfigureAwait(false);

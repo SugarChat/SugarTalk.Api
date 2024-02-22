@@ -9,15 +9,15 @@ namespace SugarTalk.Core.Handlers.RequestHandlers.Meetings;
 
 public class GetMeetingRecordDetailsRequestHandler: IRequestHandler<GetMeetingRecordDetailsRequest, GetMeetingRecordDetailsResponse>
 {
-    private readonly IMeetingRecordDetailsService _meetingRecordDetailsService;
+    private readonly IMeetingService _meetingService;
 
-    public GetMeetingRecordDetailsRequestHandler(IMeetingRecordDetailsService meetingRecordDetailsService)
+    public GetMeetingRecordDetailsRequestHandler(IMeetingService meetingService)
     {
-        _meetingRecordDetailsService = meetingRecordDetailsService;
+        _meetingService = meetingService;
     }
     
     public async Task<GetMeetingRecordDetailsResponse> Handle(IReceiveContext<GetMeetingRecordDetailsRequest> context, CancellationToken cancellationToken)
     {
-        return await _meetingRecordDetailsService.GetMeetingRecordDetailsAsync(context.Message, cancellationToken).ConfigureAwait(false);
+        return await _meetingService.GetMeetingRecordDetailsAsync(context.Message, cancellationToken).ConfigureAwait(false);
     }
 }
