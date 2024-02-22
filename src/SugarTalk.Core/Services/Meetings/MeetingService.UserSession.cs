@@ -134,8 +134,10 @@ public partial class MeetingService
         
         var meeting = await _meetingDataProvider.GetMeetingByIdAsync(request.MeetingId, cancellationToken).ConfigureAwait(false);
         if (meeting == null) { throw new MeetingNotFoundException(); }
-        
-        var userSession = await _meetingDataProvider.GetMeetingUserSessionByMeetingIdAsync(request.MeetingId, request.UserId, cancellationToken).ConfigureAwait(false);
+
+        var userSession = await _meetingDataProvider
+            .GetMeetingUserSessionByMeetingIdAsync(request.MeetingId, null, request.UserId, cancellationToken)
+            .ConfigureAwait(false);
         if (userSession is null) throw new MeetingUserSessionNotFoundException();
         
         if (meeting.Id == userSession.MeetingId && meeting.MeetingMasterUserId == userSession.UserId)
