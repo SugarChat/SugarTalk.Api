@@ -75,26 +75,6 @@ public class MeetingController : ControllerBase
 
         return Ok(response);
     }
-    
-    [Route("get/userSession/list"), HttpGet]
-    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(GetMeetingUserSessionsResponse))]
-    public async Task<IActionResult> GetMeetingUserSessionsAsync([FromQuery] GetMeetingUserSessionsRequest request)
-    {
-        var response = await _mediator.RequestAsync<GetMeetingUserSessionsRequest, GetMeetingUserSessionsResponse>(request).ConfigureAwait(false);
-
-        return Ok(response);
-    }
-    
-    [Route("get/userSession/{userId}"), HttpGet]
-    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(GetMeetingUserSessionByUserIdResponse))]
-    public async Task<IActionResult> GetMeetingUserSessionByUserIdAsync(int userId)
-    {
-        var response =
-            await _mediator.RequestAsync<GetMeetingUserSessionByUserIdRequest, GetMeetingUserSessionByUserIdResponse>(
-                new GetMeetingUserSessionByUserIdRequest { UserId = userId }).ConfigureAwait(false);
-
-        return Ok(response);
-    }
 
     [Route("screen/share"), HttpPost]
     [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ShareScreenResponse))]
@@ -114,6 +94,30 @@ public class MeetingController : ControllerBase
         return Ok(response);
     }
 
+    #region Appointment Meeting
+
+    [Route("appointment"), HttpGet]
+    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(GetAppointmentMeetingsResponse))]
+    public async Task<IActionResult> GetAppointmentMeetingsAsync([FromQuery] GetAppointmentMeetingsRequest request)
+    {
+        var response = await _mediator.RequestAsync<GetAppointmentMeetingsRequest, GetAppointmentMeetingsResponse>(request).ConfigureAwait(false);
+
+        return Ok(response);
+    }
+    
+    [Route("appointment/cancel"), HttpPost]
+    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(CancelAppointmentMeetingResponse))]
+    public async Task<IActionResult> CancelAppointmentMeetingAsync([FromBody] CancelAppointmentMeetingCommand command)
+    {
+        var response = await _mediator.SendAsync<CancelAppointmentMeetingCommand, CancelAppointmentMeetingResponse>(command).ConfigureAwait(false);
+
+        return Ok(response);
+    }
+
+    #endregion
+
+    #region MeetingHistory
+
     [Route("history"), HttpGet]
     [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(GetMeetingHistoriesByUserResponse))]
     public async Task<IActionResult> GetMeetingHistoriesByUserAsync([FromQuery] GetMeetingHistoriesByUserRequest request)
@@ -123,23 +127,16 @@ public class MeetingController : ControllerBase
         return Ok(response);
     }
     
-    [Route("appointment"), HttpGet]
-    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(GetAppointmentMeetingsResponse))]
-    public async Task<IActionResult> GetAppointmentMeetingsAsync([FromQuery] GetAppointmentMeetingsRequest request)
+    [Route("history/delete"), HttpPost]
+    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(DeleteMeetingHistoryResponse))]
+    public async Task<IActionResult> DeleteMeetingHistoryAsync([FromBody] DeleteMeetingHistoryCommand command)
     {
-        var response = await _mediator.RequestAsync<GetAppointmentMeetingsRequest, GetAppointmentMeetingsResponse>(request).ConfigureAwait(false);
+        var response = await _mediator.SendAsync<DeleteMeetingHistoryCommand, DeleteMeetingHistoryResponse>(command).ConfigureAwait(false);
 
         return Ok(response);
     }
 
-    [Route("record"), HttpGet]
-    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(GetCurrentUserMeetingRecordResponse))]
-    public async Task<IActionResult> GetCurrentUserMeetingRecordAsync([FromQuery] GetCurrentUserMeetingRecordRequest request)
-    {
-        var response = await _mediator.RequestAsync<GetCurrentUserMeetingRecordRequest, GetCurrentUserMeetingRecordResponse>(request).ConfigureAwait(false);
-
-        return Ok(response);
-    }
+    #endregion
 
     #region Speak Detail
 
@@ -165,17 +162,19 @@ public class MeetingController : ControllerBase
         return Ok(response);
     }
     
-    [Route("history/delete"), HttpPost]
-    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(DeleteMeetingHistoryResponse))]
-    public async Task<IActionResult> DeleteMeetingHistoryAsync([FromBody] DeleteMeetingHistoryCommand command)
+    #endregion
+
+    #region MeetingRecord
+
+    [Route("record"), HttpGet]
+    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(GetCurrentUserMeetingRecordResponse))]
+    public async Task<IActionResult> GetCurrentUserMeetingRecordAsync([FromQuery] GetCurrentUserMeetingRecordRequest request)
     {
-        var response = await _mediator.SendAsync<DeleteMeetingHistoryCommand, DeleteMeetingHistoryResponse>(command).ConfigureAwait(false);
+        var response = await _mediator.RequestAsync<GetCurrentUserMeetingRecordRequest, GetCurrentUserMeetingRecordResponse>(request).ConfigureAwait(false);
 
         return Ok(response);
     }
     
-    #endregion
-
     [Route("record/detail"), HttpGet]
     [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(GetMeetingRecordDetailsResponse))]
     public async Task<IActionResult> GetMeetingRecordDetailsAsync([FromBody] GetMeetingRecordDetailsRequest request)
@@ -202,6 +201,32 @@ public class MeetingController : ControllerBase
 
         return Ok(response);
     }
+    
+    #endregion
+    
+    #region MeetingUserSession
+
+    [Route("get/userSession/list"), HttpGet]
+    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(GetMeetingUserSessionsResponse))]
+    public async Task<IActionResult> GetMeetingUserSessionsAsync([FromQuery] GetMeetingUserSessionsRequest request)
+    {
+        var response = await _mediator.RequestAsync<GetMeetingUserSessionsRequest, GetMeetingUserSessionsResponse>(request).ConfigureAwait(false);
+
+        return Ok(response);
+    }
+    
+    [Route("get/userSession/{userId}"), HttpGet]
+    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(GetMeetingUserSessionByUserIdResponse))]
+    public async Task<IActionResult> GetMeetingUserSessionByUserIdAsync(int userId)
+    {
+        var response =
+            await _mediator.RequestAsync<GetMeetingUserSessionByUserIdRequest, GetMeetingUserSessionByUserIdResponse>(
+                new GetMeetingUserSessionByUserIdRequest { UserId = userId }).ConfigureAwait(false);
+
+        return Ok(response);
+    }
+
+    #endregion
     
     [Route("invite/{meetingNumber}"), HttpPost]
     [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(JoinMeetingCommand))]

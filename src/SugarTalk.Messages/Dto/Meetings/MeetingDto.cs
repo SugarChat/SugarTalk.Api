@@ -73,6 +73,8 @@ public class MeetingBaseDto
     public MeetingStreamMode MeetingStreamMode { get; set; }
     
     public MeetingAppointmentType AppointmentType { get; set; }
+    
+    public MeetingStatus Status { get; set; }
 
     public bool IsMuted { get; set; } = false;
     

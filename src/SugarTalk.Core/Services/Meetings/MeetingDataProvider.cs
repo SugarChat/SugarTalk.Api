@@ -81,6 +81,8 @@ namespace SugarTalk.Core.Services.Meetings
             CancellationToken cancellationToken);
 
         Task DeleteMeetingHistoryAsync(List<Guid> meetingHistoryIds, int userId, CancellationToken cancellationToken);
+        
+        Task CancelAppointmentMeetingAsync(Guid meetingId, CancellationToken cancellationToken);
     }
     
     public partial class MeetingDataProvider : IMeetingDataProvider
@@ -483,6 +485,18 @@ namespace SugarTalk.Core.Services.Meetings
             if (meetingHistories is not { Count: > 0 }) return;
 
             meetingHistories.ForEach(x => x.IsDeleted = true);
+        }
+
+        public async Task CancelAppointmentMeetingAsync(Guid meetingId, CancellationToken cancellationToken)
+        {
+            var meeting = await _repository.Query<Meeting>()
+                .FirstOrDefaultAsync(x => x.Id == meetingId, cancellationToken).ConfigureAwait(false);
+
+            if (meeting is null) throw new MeetingNotFoundException();
+
+            if (meeting.Status != MeetingStatus.Pending) throw new CannotCancelAppointmentMeetingStatusException();
+
+            meeting.Status = MeetingStatus.Cancelled;
         }
     }
 }
