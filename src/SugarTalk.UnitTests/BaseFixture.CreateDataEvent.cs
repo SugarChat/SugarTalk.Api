@@ -9,12 +9,14 @@ public partial class BaseFixture
 {
     protected Meeting CreateMeetingEvent(Guid meetingId, long? startDate = null, long? endDate = null,
         string meetingNumber = "5201314", string securityCode = "123456", string timeZone = "Asia/Shanghai",
-        MeetingStatus status = MeetingStatus.Pending, bool isMuted = false, bool isRecorded = false, int meetingMasterUserId = 1)
+        MeetingAppointmentType appointmentType = MeetingAppointmentType.Quick, MeetingStatus status = MeetingStatus.Pending, 
+        bool isMuted = false, bool isRecorded = false, int meetingMasterUserId = 1)
     {
         return new Meeting
         {
             Id = meetingId,
             Title = "Greg Meeting",
+            AppointmentType = appointmentType,
             StartDate = startDate?? _clock.Now.ToUnixTimeSeconds(),
             EndDate = endDate ?? _clock.Now.AddDays(7).ToUnixTimeSeconds(),
             MeetingMasterUserId = meetingMasterUserId,
@@ -43,7 +45,7 @@ public partial class BaseFixture
         };
     }
 
-    protected MeetingUserSession CreateUserSessionEvent(int id, int userId, Guid meetingId, DateTimeOffset? createdDate = null,
+    protected MeetingUserSession CreateUserSessionEvent(int id, int userId, Guid meetingId, Guid? meetingSubId = null, DateTimeOffset? createdDate = null,
         MeetingAttendeeStatus status = MeetingAttendeeStatus.Absent, long firstJoinTime = 0, long lastQuitTime = 0,
         int totalJoinCount = 0, long cumulativeTime = 0, bool isMuted = false, bool isSharingScreen = false)
     {
@@ -52,6 +54,7 @@ public partial class BaseFixture
             Id = id,
             UserId = userId,
             MeetingId = meetingId,
+            MeetingSubId = meetingSubId,
             Status = status,
             FirstJoinTime = firstJoinTime,
             LastQuitTime = lastQuitTime,

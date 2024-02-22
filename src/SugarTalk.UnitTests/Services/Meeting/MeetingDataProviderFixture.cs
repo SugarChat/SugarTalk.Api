@@ -1,10 +1,12 @@
-using Microsoft.EntityFrameworkCore;
+using Xunit;
 using Shouldly;
+using NSubstitute;
+using SugarTalk.Messages.Dto;
+using Microsoft.EntityFrameworkCore;
 using SugarTalk.Core.Domain.Account;
 using SugarTalk.Core.Domain.Meeting;
-using SugarTalk.Messages.Dto;
+using SugarTalk.Messages.Enums.Meeting;
 using SugarTalk.Messages.Requests.Meetings;
-using Xunit;
 
 namespace SugarTalk.UnitTests.Services.Meeting;
 
@@ -198,5 +200,75 @@ public class MeetingDataProviderFixture : BaseFixture
         meetingRecords.Count(x =>
             x.MeetingId == meeting3Id &&
             x.Id == meetingRecord3Id).ShouldBe(1);
+    }
+
+    [Fact]
+    public async Task CanUpdateMeetingStatusWhenOutMeeting()
+    {
+        const int userId1 = 1;
+        const int userId2 = 2;
+        const int userId3 = 3;
+        
+        var meetingId1 = Guid.NewGuid();
+        var meetingId2 = Guid.NewGuid();
+        var meetingId3 = Guid.NewGuid();
+        
+        var meetingSubId1 = Guid.NewGuid();
+        var meetingSubId2 = Guid.NewGuid();
+
+        _clock.Now.Returns(DateTimeOffset.Now);
+
+        MockMeetingDb(_repository, new List<Core.Domain.Meeting.Meeting>
+        {
+            CreateMeetingEvent(
+                meetingId1,
+                appointmentType: MeetingAppointmentType.Appointment,
+                status: MeetingStatus.InProgress,
+                startDate: _clock.Now.AddHours(1).ToUnixTimeSeconds(),
+                endDate: _clock.Now.AddHours(2).ToUnixTimeSeconds(),
+                meetingNumber: Guid.NewGuid().ToString()
+            ),
+            CreateMeetingEvent(
+                meetingId2,
+                appointmentType: MeetingAppointmentType.Appointment,
+                status: MeetingStatus.InProgress,
+                startDate: _clock.Now.AddHours(-2).ToUnixTimeSeconds(),
+                endDate: _clock.Now.AddHours(-1).ToUnixTimeSeconds(),
+                meetingNumber: Guid.NewGuid().ToString()
+            ),
+            CreateMeetingEvent(
+                meetingId3,
+                appointmentType: MeetingAppointmentType.Quick,
+                status: MeetingStatus.InProgress,
+                startDate: _clock.Now.ToUnixTimeSeconds(),
+                endDate: _clock.Now.AddHours(1).ToUnixTimeSeconds(),
+                meetingNumber: Guid.NewGuid().ToString()
+            )
+        });
+
+        MockUserSessionDb(_repository, new List<MeetingUserSession>
+        {
+            CreateUserSessionEvent(1, userId1, meetingId1, meetingSubId1, status: MeetingAttendeeStatus.Present),
+            CreateUserSessionEvent(2, userId2, meetingId1, meetingSubId1, status: MeetingAttendeeStatus.Absent),
+            CreateUserSessionEvent(3, userId3, meetingId1, meetingSubId2, status: MeetingAttendeeStatus.Present),
+            
+            CreateUserSessionEvent(4, userId1, meetingId2, status: MeetingAttendeeStatus.Present),
+            CreateUserSessionEvent(5, userId2, meetingId2, status: MeetingAttendeeStatus.Absent),
+            CreateUserSessionEvent(6, userId3, meetingId2, status: MeetingAttendeeStatus.Absent),
+            
+            CreateUserSessionEvent(7, userId1, meetingId3, meetingSubId1, status: MeetingAttendeeStatus.Absent)
+        });
+        
+        await _meetingDataProvider.HandleMeetingStatusWhenOutMeeting(userId1, meetingId1, meetingSubId1, CancellationToken.None);
+        var response1 = await _repository.Query<Core.Domain.Meeting.Meeting>().FirstOrDefaultAsync(x => x.Id == meetingId1);
+        response1?.Status.ShouldBe(MeetingStatus.Pending);
+        
+        await _meetingDataProvider.HandleMeetingStatusWhenOutMeeting(userId1, meetingId2, null, CancellationToken.None);
+        var response2 = await _repository.Query<Core.Domain.Meeting.Meeting>().FirstOrDefaultAsync(x => x.Id == meetingId2);
+        response2?.Status.ShouldBe(MeetingStatus.Completed);
+
+        await _meetingDataProvider.HandleMeetingStatusWhenOutMeeting(userId1, meetingId3, null, CancellationToken.None);
+        var response3 = await _repository.Query<Core.Domain.Meeting.Meeting>().FirstOrDefaultAsync(x => x.Id == meetingId3);
+        response3?.Status.ShouldBe(MeetingStatus.InProgress);
     }
 }

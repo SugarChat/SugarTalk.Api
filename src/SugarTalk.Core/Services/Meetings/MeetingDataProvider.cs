@@ -83,6 +83,7 @@ namespace SugarTalk.Core.Services.Meetings
 
         Task DeleteMeetingHistoryAsync(List<Guid> meetingHistoryIds, int userId, CancellationToken cancellationToken);
 
+        Task HandleMeetingStatusWhenOutMeeting(int userId, Guid meetingId, Guid? meetingSubId = null, CancellationToken cancellationToken = default);
     }
     
     public partial class MeetingDataProvider : IMeetingDataProvider
@@ -492,6 +493,37 @@ namespace SugarTalk.Core.Services.Meetings
             if (meetingHistories is not { Count: > 0 }) return;
 
             meetingHistories.ForEach(x => x.IsDeleted = true);
+        }
+
+        public async Task HandleMeetingStatusWhenOutMeeting(int userId, Guid meetingId, Guid? meetingSubId = null, CancellationToken cancellationToken = default)
+        {
+            //当预定会议未到真正开始时间时，最后一个人退出会议，会议状态根据当前时间改变。
+            var meeting = await _repository.Query<Meeting>()
+                .FirstOrDefaultAsync(x => x.Id == meetingId, cancellationToken).ConfigureAwait(false);
+
+            if (meeting is null) throw new MeetingNotFoundException();
+
+            if (meeting.AppointmentType == MeetingAppointmentType.Appointment)
+            {
+                var attendingUserSessionsExceptCurrentUser = await _repository.QueryNoTracking<MeetingUserSession>()
+                    .Where(x => x.MeetingId == meetingId && x.MeetingSubId == meetingSubId && x.UserId != userId)
+                    .Where(x => x.Status == MeetingAttendeeStatus.Present)
+                    .ToListAsync(cancellationToken).ConfigureAwait(false);
+
+                if (attendingUserSessionsExceptCurrentUser is { Count: > 0 }) return;
+                
+                meeting.Status = MeetingStatus.InProgress;
+
+                if (_clock.Now < DateTimeOffset.FromUnixTimeSeconds(meeting.StartDate))
+                {
+                    meeting.Status = MeetingStatus.Pending;
+                }
+
+                if (_clock.Now > DateTimeOffset.FromUnixTimeSeconds(meeting.EndDate))
+                {
+                    meeting.Status = MeetingStatus.Completed;
+                }
+            }
         }
     }
 }
