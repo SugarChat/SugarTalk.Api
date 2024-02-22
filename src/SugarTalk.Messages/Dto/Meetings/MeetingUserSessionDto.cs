@@ -22,4 +22,6 @@ public class MeetingUserSessionDto
     public bool IsMeetingMaster { get; set; }
     
     public MeetingUserSessionOnlineType OnlineType { get; set; }
+
+    public Guid? MeetingSubId { get; set; }
 }
