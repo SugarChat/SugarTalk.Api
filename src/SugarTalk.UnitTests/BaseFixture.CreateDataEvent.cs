@@ -8,13 +8,13 @@ namespace SugarTalk.UnitTests;
 public partial class BaseFixture
 {
     protected Meeting CreateMeetingEvent(Guid meetingId, long? startDate = null, long? endDate = null,
-        string meetingNumber = "5201314", string securityCode = "123456", string timeZone = "Asia/Shanghai",
+        string meetingNumber = "5201314", string title = "Greg Meeting", string securityCode = "123456", string timeZone = "Asia/Shanghai",
         MeetingStatus status = MeetingStatus.Pending, bool isMuted = false, bool isRecorded = false, int meetingMasterUserId = 1)
     {
         return new Meeting
         {
             Id = meetingId,
-            Title = "Greg Meeting",
+            Title = title,
             StartDate = startDate?? _clock.Now.ToUnixTimeSeconds(),
             EndDate = endDate ?? _clock.Now.AddDays(7).ToUnixTimeSeconds(),
             MeetingMasterUserId = meetingMasterUserId,

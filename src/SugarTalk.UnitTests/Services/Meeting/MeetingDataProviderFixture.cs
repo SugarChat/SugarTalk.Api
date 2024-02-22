@@ -199,4 +199,69 @@ public class MeetingDataProviderFixture : BaseFixture
             x.MeetingId == meeting3Id &&
             x.Id == meetingRecord3Id).ShouldBe(1);
     }
+
+    [Fact]
+    public async Task CanGetMeetingHistoryByKeyword()
+    {
+        const int userId1 = 1;
+        const int userId2 = 2;
+        
+        var meetingHistory1Id = Guid.NewGuid();
+        var meetingHistory2Id = Guid.NewGuid();
+        var meetingHistory3Id = Guid.NewGuid();
+        
+        var meeting1Id = Guid.NewGuid();
+        var meeting2Id = Guid.NewGuid();
+        var meeting3Id = Guid.NewGuid();
+        
+        MockMeetingDb(_repository, new List<Core.Domain.Meeting.Meeting>
+        {
+            CreateMeetingEvent(meeting1Id, meetingMasterUserId: userId1, meetingNumber: "123456", title: "mars meeting"),
+            CreateMeetingEvent(meeting2Id, meetingMasterUserId: userId1, meetingNumber: "111111", title: "mars meeting"),
+            CreateMeetingEvent(meeting3Id, meetingMasterUserId: userId2, meetingNumber: "666666", title: "greg meeting")
+        });
+
+        MockMeetingHistoriesDb(_repository, new List<MeetingHistory>
+        {
+            CreateMeetingHistoryEvent(meetingHistory1Id, meeting1Id, userId: userId1, null),
+            CreateMeetingHistoryEvent(meetingHistory2Id, meeting2Id, userId: userId1, null),
+            CreateMeetingHistoryEvent(meetingHistory3Id, meeting3Id, userId: userId1, null)
+        });
+        
+        MockUserSessionDb(_repository, new List<MeetingUserSession>
+        {
+            CreateUserSessionEvent(1, userId1, meeting1Id),
+            CreateUserSessionEvent(2, userId2, meeting2Id),
+            CreateUserSessionEvent(3, userId2, meeting3Id)
+        });
+        
+        MockUserAccountsDb(_repository, new List<UserAccount>
+        {
+           CreateUserAccountEvent(userId: userId1, Guid.NewGuid(), "mars"),
+           CreateUserAccountEvent(userId: userId2, Guid.NewGuid(), "greg")
+        });
+
+        var response1 = await _meetingDataProvider
+            .GetMeetingHistoriesByUserIdAsync(1, "greg", null, CancellationToken.None);
+        
+        response1.TotalCount.ShouldBe(1);
+        response1.MeetingHistoryList.Count(x => x.MeetingId == meeting3Id && x.MeetingCreator == "greg").ShouldBe(1);
+        
+        var response2 = await _meetingDataProvider
+            .GetMeetingHistoriesByUserIdAsync(1, "123456", null, CancellationToken.None);
+        
+        response2.TotalCount.ShouldBe(1);
+        response2.MeetingHistoryList.Count(x => x.MeetingId == meeting1Id && x.MeetingCreator == "mars").ShouldBe(1);
+        
+        var response3 = await _meetingDataProvider
+            .GetMeetingHistoriesByUserIdAsync(1, "greg meeting", null, CancellationToken.None);
+        
+        response3.TotalCount.ShouldBe(1);
+        response3.MeetingHistoryList.Count(x => x.MeetingId == meeting3Id && x.MeetingCreator == "greg").ShouldBe(1);
+        
+        var response4 = await _meetingDataProvider
+            .GetMeetingHistoriesByUserIdAsync(1, "greg777999", null, CancellationToken.None);
+        
+        response4.TotalCount.ShouldBe(0);
+    }
 }

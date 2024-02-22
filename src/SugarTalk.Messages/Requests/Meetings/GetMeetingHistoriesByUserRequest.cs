@@ -8,6 +8,8 @@ namespace SugarTalk.Messages.Requests.Meetings;
 
 public class GetMeetingHistoriesByUserRequest : IRequest
 {
+    public string Keyword { get; set; }
+
     public PageSetting PageSetting { get; set; }
 }
 
