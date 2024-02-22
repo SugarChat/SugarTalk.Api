@@ -183,7 +183,7 @@ namespace SugarTalk.Core.Services.Meetings
             if (user is null) throw new UnauthorizedAccessException();
 
             var (meetingHistoryList, totalCount) = await _meetingDataProvider
-                .GetMeetingHistoriesByUserIdAsync(user.Id, request.PageSetting, cancellationToken).ConfigureAwait(false);
+                .GetMeetingHistoriesByUserIdAsync(user.Id, request.Keyword, request.PageSetting, cancellationToken).ConfigureAwait(false);
 
             return new GetMeetingHistoriesByUserResponse
             {
@@ -266,24 +266,20 @@ namespace SugarTalk.Core.Services.Meetings
             };
         }
 
-        public async Task<MeetingOutedEvent> OutMeetingAsync(OutMeetingCommand command,
-            CancellationToken cancellationToken)
+        public async Task<MeetingOutedEvent> OutMeetingAsync(OutMeetingCommand command, CancellationToken cancellationToken)
         {
-            var userSession = await _meetingDataProvider
-                .GetMeetingUserSessionByMeetingIdAsync(command.MeetingId, command.MeetingSubId, _currentUser?.Id,
-                    cancellationToken).ConfigureAwait(false);
+            var userSession = await _meetingDataProvider.GetMeetingUserSessionByMeetingIdAsync(
+                command.MeetingId, command.MeetingSubId, _currentUser?.Id, cancellationToken).ConfigureAwait(false);
 
             if (userSession == null) return new MeetingOutedEvent();
 
-            var lastQuitTimeBeforeChange = userSession.LastQuitTime ??
-                                           userSession.FirstJoinTime ??
-                                           userSession.CreatedDate.ToUnixTimeSeconds();
-            userSession.OnlineType = MeetingUserSessionOnlineType.OutMeeting;
-            userSession.LastQuitTime = _clock.Now.ToUnixTimeSeconds();
-            userSession.CumulativeTime = (userSession.CumulativeTime ?? 0) +
-                                         (userSession.LastQuitTime - lastQuitTimeBeforeChange);
-            await _meetingDataProvider.UpdateMeetingUserSessionAsync(userSession, cancellationToken)
-                .ConfigureAwait(false);
+            EnrichMeetingUserSessionForOutMeeting(userSession);
+            
+            await _meetingDataProvider.UpdateMeetingUserSessionAsync(userSession, cancellationToken).ConfigureAwait(false);
+
+            await _meetingDataProvider.HandleMeetingStatusWhenOutMeetingAsync(
+                userSession.UserId, command.MeetingId, command.MeetingSubId.Value, cancellationToken).ConfigureAwait(false);
+
             return new MeetingOutedEvent();
         }
         
@@ -631,6 +627,18 @@ namespace SugarTalk.Core.Services.Meetings
             if (user is null) throw new UnauthorizedAccessException();
             
             await _meetingDataProvider.DeleteMeetingRecordAsync(command.MeetingRecordIds, cancellationToken).ConfigureAwait(false);
+        }
+        
+        private void EnrichMeetingUserSessionForOutMeeting(MeetingUserSession userSession)
+        {
+            var lastQuitTimeBeforeChange =
+                userSession.LastQuitTime ??
+                userSession.FirstJoinTime ??
+                userSession.CreatedDate.ToUnixTimeSeconds();
+            
+            userSession.OnlineType = MeetingUserSessionOnlineType.OutMeeting;
+            userSession.LastQuitTime = _clock.Now.ToUnixTimeSeconds();
+            userSession.CumulativeTime = (userSession.CumulativeTime ?? 0) + (userSession.LastQuitTime - lastQuitTimeBeforeChange);
         }
     }
 }
