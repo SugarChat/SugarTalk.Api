@@ -23,8 +23,9 @@ public partial interface IMeetingDataProvider
     Task AddMeetingUserSessionAsync(MeetingUserSession userSession, CancellationToken cancellationToken);
         
     Task UpdateMeetingUserSessionAsync(MeetingUserSession userSession, CancellationToken cancellationToken);
-    
-    Task<List<MeetingUserSessionDto>> GetUserSessionsByMeetingIdAsync(Guid meetingId, CancellationToken cancellationToken);
+
+    Task<List<MeetingUserSessionDto>> GetUserSessionsByMeetingIdAsync(Guid meetingId, Guid? meetingSubId,
+        CancellationToken cancellationToken);
 
     Task RemoveMeetingUserSessionsIfRequiredAsync(int userId, Guid meetingId, CancellationToken cancellationToken);
     
@@ -66,11 +67,17 @@ public partial class MeetingDataProvider
         await _unitOfWork.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
     }
 
-    public async Task<List<MeetingUserSessionDto>> GetUserSessionsByMeetingIdAsync(Guid meetingId, CancellationToken cancellationToken)
+    public async Task<List<MeetingUserSessionDto>> GetUserSessionsByMeetingIdAsync(Guid meetingId, Guid? meetingSubId,
+        CancellationToken cancellationToken)
     {
-        var userSessions = await _repository.QueryNoTracking<MeetingUserSession>(x => x.MeetingId == meetingId)
-            .ToListAsync(cancellationToken).ConfigureAwait(false);
-        
+        var query = _repository.QueryNoTracking<MeetingUserSession>(x => x.MeetingId == meetingId);
+        if (meetingSubId is not null)
+        {
+            query = query.Where(x => x.MeetingSubId == meetingSubId);
+        }
+
+        var userSessions = await query.ToListAsync(cancellationToken).ConfigureAwait(false);
+
         return _mapper.Map<List<MeetingUserSessionDto>>(userSessions);
     }
 

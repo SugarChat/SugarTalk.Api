@@ -1,0 +1,1 @@
+alter table `meeting_user_session` add column `meeting_sub_id` char(36) null;

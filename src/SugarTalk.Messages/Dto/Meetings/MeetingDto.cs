@@ -34,6 +34,7 @@ public class MeetingDto : MeetingBaseDto
 
     public void AddUserSession(MeetingUserSessionDto userSession)
     {
+        userSession.IsMeetingMaster = userSession.UserId == MeetingMasterUserId;
         UserSessions.Add(userSession);
     }
 
@@ -42,7 +43,10 @@ public class MeetingDto : MeetingBaseDto
         var index = UserSessions.FindIndex(x => x.Id == userSession.Id);
 
         if (index > -1)
+        {
+            userSession.IsMeetingMaster = userSession.UserId == MeetingMasterUserId;
             UserSessions[index] = userSession;
+        }
     }
 }
 
