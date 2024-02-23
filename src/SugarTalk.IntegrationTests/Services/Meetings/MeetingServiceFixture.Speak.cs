@@ -38,8 +38,8 @@ public partial class MeetingServiceFixture
         const int speakDetailId = 1;
         const string roomNumber = "123456";
         const string trackId = "1707894406"; 
-        var fileUrl = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "test.mp4");;
-        const string audioContent = "你好，欢迎使用";
+        const string fileUrl = "http://smartiestest.oss-cn-hongkong.aliyuncs.com/20231225/a2421020-f81a-4ade-9628-1b5b1414fd1d.wav?Expires=253402300799&OSSAccessKeyId=LTAI5tCcEbGZDf6m55ccFE7V&Signature=wAXV6gVtwpNP62mzHAU%2BD%2BQLH8c%3D";
+        const string audioContent = "0123123测试测试";
         var fileContent = Encoding.UTF8.GetBytes(audioContent);
         var starTime = DateTimeOffset.Parse("2024-01-01 00:00:00 +00:00").ToUnixTimeSeconds();
         var endTime = DateTimeOffset.Parse("2024-01-01 00:01:00 +00:00").ToUnixTimeSeconds();
@@ -140,7 +140,7 @@ public partial class MeetingServiceFixture
                             EgressId = "test",
                             File = new FileDetails()
                             {
-                                Filename = "test.mp4",
+                                Filename = "a2421020-f81a-4ade-9628-1b5b1414fd1d.wav",
                                 StartedAt = "2024-01-01T00:00:00Z",
                                 EndedAt = "2024-01-01T00:00:12Z",
                                 Duration = "12s",
@@ -150,12 +150,13 @@ public partial class MeetingServiceFixture
                         }
                     }
                 });
-            
-            File.WriteAllBytes(fileUrl, fileContent);
 
             openAiService.TranscriptionAsync(Arg.Any<byte[]>(), Arg.Any<TranscriptionLanguage?>(),
                 Arg.Any<TranscriptionFileType>(), Arg.Any<TranscriptionResponseFormat>(),
                 Arg.Any<CancellationToken>()).Returns(audioContent);
+
+            openAiService.GetAsync<byte[]>(Arg.Any<string>(), Arg.Any<CancellationToken>())
+                .Returns(fileContent);
             
             liveKitServerUtilService.GenerateTokenForRecordMeeting(Arg.Any<UserAccountDto>(), Arg.Any<string>())
                 .Returns("token123");

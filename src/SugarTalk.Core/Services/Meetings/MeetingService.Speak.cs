@@ -105,6 +105,8 @@ public partial class MeetingService
         
         if (speakDetail.FileTranscriptionStatus == FileTranscriptionStatus.Pending)
         {
+            speakDetail.FileTranscriptionStatus = FileTranscriptionStatus.InProcess;
+            
             _backgroundJobClient.Enqueue(() => TranscriptionMeetingAsync(speakDetail, cancellationToken));
         }
         
@@ -113,8 +115,6 @@ public partial class MeetingService
 
     private async Task TranscriptionMeetingAsync(MeetingSpeakDetail speakDetail,CancellationToken cancellationToken)
     {
-        speakDetail.FileTranscriptionStatus = FileTranscriptionStatus.InProcess;
-        
         var user = await _accountDataProvider.GetUserAccountAsync(_currentUser.Id, cancellationToken: cancellationToken).ConfigureAwait(false);
         
         var getEgressInfoList = await _liveKitClient.GetEgressInfoListAsync(
@@ -125,10 +125,16 @@ public partial class MeetingService
         }, cancellationToken).ConfigureAwait(false);
 
         speakDetail.FileUrl =  getEgressInfoList.EgressItems.FirstOrDefault()?.File.Location;
+
+        if (string.IsNullOrEmpty(speakDetail.FileUrl))
+        {
+            speakDetail.FileTranscriptionStatus = FileTranscriptionStatus.Pending;
+            throw new InvalidOperationException();
+        }
+
+        var fileBytes = await _openAiService.GetAsync<byte[]>(speakDetail.FileUrl, cancellationToken).ConfigureAwait(false);
         
-        var file = await File.ReadAllBytesAsync(speakDetail.FileUrl ?? throw new InvalidOperationException(), cancellationToken).ConfigureAwait(false);
-            
-        speakDetail.SpeakContent = await _openAiService.TranscriptionAsync(file, TranscriptionLanguage.Chinese, cancellationToken: cancellationToken).ConfigureAwait(false);
+        speakDetail.SpeakContent = await _openAiService.TranscriptionAsync(fileBytes, TranscriptionLanguage.Chinese, cancellationToken: cancellationToken).ConfigureAwait(false);
         
         if (speakDetail.SpeakContent == null) speakDetail.FileTranscriptionStatus = FileTranscriptionStatus.Pending;
 

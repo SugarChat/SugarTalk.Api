@@ -6,9 +6,15 @@ using System.Threading;
 using SugarTalk.Core.Ioc;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using System.Net.Http;
 using System.Text;
+using Autofac;
 using AutoMapper;
+using Newtonsoft.Json;
+using OpenAI.Interfaces;
 using OpenAI.ObjectModels;
+using OpenAI.ObjectModels.RequestModels;
+using SugarTalk.Core.Extensions;
 using SugarTalk.Core.Services.Ffmpeg;
 using Exception = System.Exception;
 using SugarTalk.Messages.Dto.OpenAi;
@@ -27,21 +33,28 @@ public interface IOpenAiService : IScopedDependency
     Task<string> TranscriptionAsync(
         byte[] file, TranscriptionLanguage? language, TranscriptionFileType fileType = TranscriptionFileType.Wav, 
         TranscriptionResponseFormat responseFormat = TranscriptionResponseFormat.Vtt, CancellationToken cancellationToken = default);
+    
+    Task<T> GetAsync<T>(string requestUrl, CancellationToken cancellationToken, 
+        TimeSpan? timeout = null, bool beginScope = false, Dictionary<string, string> headers = null, HttpClient innerClient = null, bool shouldThrow = false);
 }
 
 public class OpenAiService : IOpenAiService
 {
     private readonly IMapper _mapper;
+    private readonly ILifetimeScope _scope;
     private readonly IOpenAiClient _openAiClient;
+    private readonly IOpenAIService _openAiService;
     private readonly OpenAiSettings _openAiSettings;
     private readonly IFfmpegService _ffmpegService;
     
-    public OpenAiService(IOpenAiClient openAiClient, OpenAiSettings openAiSettings, IMapper mapper,IFfmpegService ffmpegService)
+    public OpenAiService(ILifetimeScope scope, IOpenAiClient openAiClient, OpenAiSettings openAiSettings, IOpenAIService openAiService, IMapper mapper,IFfmpegService ffmpegService)
     {
+        _scope = scope;
         _mapper = mapper;
         _openAiClient = openAiClient;
         _openAiSettings = openAiSettings;
-        _ffmpegService = ffmpegService;
+        _ffmpegService = ffmpegService; 
+        _openAiService = openAiService;
     }
 
     public async Task<CompletionsResponseDto> ChatCompletionsAsync(
@@ -101,15 +114,15 @@ public class OpenAiService : IOpenAiService
         };
 
         var response = await SafelyProcessRequestAsync(nameof(CreateTranscriptionAsync), async () =>
-            await _openAiClient.CreateTranscriptionAsync(new CreateTranscriptionRequestDto
-        {
-            File = file,
-            FileName = filename,
-            Model = Models.WhisperV1,
-            ResponseFormat = fileResponseFormat,
-            Language =  language ?? TranscriptionLanguage.Chinese
-        }, cancellationToken).ConfigureAwait(false), cancellationToken).ConfigureAwait(false);
-        
+            await _openAiService.Audio.CreateTranscription(new AudioCreateTranscriptionRequest
+            {
+                File = file,
+                FileName = filename,
+                Model = Models.WhisperV1,
+                ResponseFormat = fileResponseFormat,
+                Language = language?.GetDescription() ?? TranscriptionLanguage.Chinese.GetDescription()
+            }, cancellationToken).ConfigureAwait(false), cancellationToken).ConfigureAwait(false);
+
         Log.Information("Transcription {FileName} response {@Response}", filename, response);
         
         return _mapper.Map<AudioTranscriptionResponseDto>(response);
@@ -131,6 +144,67 @@ public class OpenAiService : IOpenAiService
                 throw;
             return default;
         }
+    }
+    
+    public async Task<T> GetAsync<T>(string requestUrl, CancellationToken cancellationToken,
+        TimeSpan? timeout = null, bool beginScope = false, Dictionary<string, string> headers = null, HttpClient innerClient = null, bool shouldThrow = false)
+    {
+        return await SafelyProcessRequestAsync(requestUrl, async () =>
+        {
+            var response = await CreateClient(timeout: timeout, beginScope: beginScope, headers: headers, innerClient)
+                .GetAsync(requestUrl, cancellationToken).ConfigureAwait(false);
+            
+            return await ReadAndLogResponseAsync<T>(requestUrl, HttpMethod.Get, response, cancellationToken).ConfigureAwait(false);
+            
+        }, cancellationToken, shouldThrow).ConfigureAwait(false);
+    }
+    
+    public HttpClient CreateClient(TimeSpan? timeout = null, bool beginScope = false, Dictionary<string, string> headers = null, HttpClient innerClient = null)
+    {
+        if (innerClient != null) return innerClient;
+        
+        var scope = beginScope ? _scope.BeginLifetimeScope() : _scope;
+        
+        var canResolve = scope.TryResolve(out IHttpClientFactory httpClientFactory);
+        
+        var client = canResolve ? httpClientFactory.CreateClient() : new HttpClient();
+        
+        if (timeout != null)
+            client.Timeout = timeout.Value;
+
+        if (headers == null) return client;
+        
+        foreach (var header in headers)
+        {
+            client.DefaultRequestHeaders.Add(header.Key, header.Value);
+        }
+
+        return client;
+    }
+    
+    private static async Task<T> ReadAndLogResponseAsync<T>(string requestUrl, HttpMethod httpMethod, HttpResponseMessage response, CancellationToken cancellationToken)
+    {
+        if (response.IsSuccessStatusCode)
+            return await ReadResponseContentAs<T>(response, cancellationToken).ConfigureAwait(false);
+        
+        LogHttpError(requestUrl, httpMethod, response);
+
+        return default;
+    }
+    
+    private static async Task<T> ReadResponseContentAs<T>(HttpResponseMessage response, CancellationToken cancellationToken)
+    {
+        if (typeof(T) == typeof(string))
+            return (T)(object) await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
+        if (typeof(T) == typeof(byte[]))
+            return (T)(object) await response.Content.ReadAsByteArrayAsync(cancellationToken).ConfigureAwait(false);
+        return await response.Content.ReadAsAsync<T>(cancellationToken: cancellationToken).ConfigureAwait(false);
+    }
+    
+    private static void LogHttpError(string requestUrl, HttpMethod httpMethod, HttpResponseMessage response)
+    {
+        Log.Error("PostBoy http {Method} {Url} error, The response: {ResponseJson}", 
+            httpMethod.ToString(), requestUrl, JsonConvert.SerializeObject(response));
     }
 
     private (ChatCompletionsRequestDto Request, CompletionsResponseDto LimitedResponse) ConfigureChatCompletions(
