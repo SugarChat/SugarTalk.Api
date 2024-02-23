@@ -1,10 +1,12 @@
 using System.Text.Json;
 using Correlate.AspNetCore;
 using Correlate.DependencyInjection;
+using OpenAI.Extensions;
 using Serilog;
 using SugarTalk.Api.Extensions;
 using SugarTalk.Api.Filters;
 using SugarTalk.Core.Hubs;
+using SugarTalk.Core.Settings.OpenAi;
 using SugarTalk.Messages;
 using Swashbuckle.AspNetCore.SwaggerUI;
 
@@ -47,6 +49,9 @@ namespace SugarTalk.Api
             {
                 options.PayloadSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
             });
+            
+            services.AddOpenAIService(settings => { settings.ApiKey = new OpenAiSettings(Configuration).ApiKey; })
+                .ConfigureHttpClient(http => http.Timeout = TimeSpan.FromSeconds(6000));
         }
 
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)

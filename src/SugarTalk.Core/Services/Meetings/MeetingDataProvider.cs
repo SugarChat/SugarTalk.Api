@@ -79,6 +79,8 @@ namespace SugarTalk.Core.Services.Meetings
             CancellationToken cancellationToken);
 
         Task DeleteMeetingHistoryAsync(List<Guid> meetingHistoryIds, int userId, CancellationToken cancellationToken);
+        
+        Task CancelAppointmentMeetingAsync(Guid meetingId, CancellationToken cancellationToken);
 
         Task HandleMeetingStatusWhenOutMeetingAsync(int userId, Guid meetingId, Guid? meetingSubId = null, CancellationToken cancellationToken = default);
     }
@@ -504,6 +506,18 @@ namespace SugarTalk.Core.Services.Meetings
             meetingHistories.ForEach(x => x.IsDeleted = true);
         }
 
+        public async Task CancelAppointmentMeetingAsync(Guid meetingId, CancellationToken cancellationToken)
+        {
+            var meeting = await _repository.Query<Meeting>()
+                .FirstOrDefaultAsync(x => x.Id == meetingId, cancellationToken).ConfigureAwait(false);
+
+            if (meeting is null) throw new MeetingNotFoundException();
+
+            if (meeting.Status != MeetingStatus.Pending) throw new CannotCancelAppointmentMeetingStatusException();
+
+            meeting.Status = MeetingStatus.Cancelled;
+        }
+        
         public async Task HandleMeetingStatusWhenOutMeetingAsync(int userId, Guid meetingId, Guid? meetingSubId = null, CancellationToken cancellationToken = default)
         {
             //当预定会议未到真正开始时间时，最后一个人退出会议，会议状态根据当前时间改变。

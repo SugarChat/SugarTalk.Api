@@ -8,6 +8,8 @@ ALTER TABLE `meeting_speak_detail` ADD COLUMN `track_id` varchar(128) not null;
 ALTER TABLE `meeting_speak_detail` ADD COLUMN `egress_id` varchar(128) not null;
 ALTER TABLE `meeting_speak_detail` ADD COLUMN `meeting_number` varchar(48) not null;
 ALTER TABLE `meeting_speak_detail` ADD COLUMN `file_path` varchar(256) not null;
+ALTER TABLE `meeting_speak_detail` ADD COLUMN `file_url` varchar(256) null;
+ALTER TABLE `meeting_speak_detail` ADD COLUMN `file_transcription_status` int not null default 10;
 
 ALTER TABLE `meeting_speak_detail` modify `meeting_record_id` varchar(36) not null;
 

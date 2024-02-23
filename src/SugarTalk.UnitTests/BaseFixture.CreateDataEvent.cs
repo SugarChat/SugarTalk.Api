@@ -16,7 +16,7 @@ public partial class BaseFixture
         return new Meeting
         {
             Id = meetingId,
-            Title = "Greg Meeting",
+            Title = title,
             AppointmentType = appointmentType,
             StartDate = startDate?? _clock.Now.ToUnixTimeSeconds(),
             EndDate = endDate ?? _clock.Now.AddDays(7).ToUnixTimeSeconds(),
@@ -75,7 +75,8 @@ public partial class BaseFixture
             Id = id,
             MeetingId = meetingId,
             Url = url,
-            CreatedDate = createDate
+            CreatedDate = createDate,
+            RecordType = MeetingRecordType.OnRecord
         };
     }
     

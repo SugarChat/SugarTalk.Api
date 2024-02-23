@@ -7,6 +7,7 @@ using Microsoft.EntityFrameworkCore;
 using SugarTalk.Core.Domain.Meeting;
 using SugarTalk.Core.Domain.Account;
 using SugarTalk.Messages.Dto.Meetings;
+using SugarTalk.Messages.Enums.Meeting;
 using SugarTalk.Messages.Requests.Meetings;
 
 namespace SugarTalk.Core.Services.Meetings;
@@ -22,6 +23,12 @@ public partial interface IMeetingDataProvider
     Task PersistMeetingRecordAsync(Guid meetingId, Guid meetingRecordId, CancellationToken cancellationToken);
     
     Task<GetMeetingRecordDetailsResponse> GetMeetingRecordDetailsAsync(Guid recordId, CancellationToken cancellationToken);
+    
+    Task UpdateMeetingRecordAsync(MeetingRecord record, CancellationToken cancellationToken);
+    
+    Task<MeetingRecord> GetNewestMeetingRecordByMeetingIdAsync(Guid meetingId, CancellationToken cancellationToken);
+
+    Task<MeetingRecord> GetMeetingRecordByMeetingRecordIdAsync(Guid meetingRecordId, CancellationToken cancellationToken);
 }
 
 public partial class MeetingDataProvider
@@ -167,5 +174,26 @@ public partial class MeetingDataProvider
         var sequenceToString = total.ToString().PadLeft(6, '0');
 
         return $"ZNZX-{_clock.Now.Year}{_clock.Now.Month}{_clock.Now.Day}{sequenceToString}";
+    }
+
+    public async Task UpdateMeetingRecordAsync(MeetingRecord record, CancellationToken cancellationToken)
+    {
+        if (record == null) return;
+
+        await _repository.UpdateAsync(record, cancellationToken).ConfigureAwait(false);
+    }
+
+    public async Task<MeetingRecord> GetNewestMeetingRecordByMeetingIdAsync(Guid meetingId, CancellationToken cancellationToken)
+    {
+        return await _repository
+            .QueryNoTracking<MeetingRecord>(x => x.MeetingId == meetingId && x.RecordType == MeetingRecordType.OnRecord)
+            .OrderByDescending(x => x.CreatedDate).FirstOrDefaultAsync(cancellationToken).ConfigureAwait(false);
+    }
+
+    public async Task<MeetingRecord> GetMeetingRecordByMeetingRecordIdAsync(Guid meetingRecordId, CancellationToken cancellationToken)
+    {
+        return await _repository
+            .Query<MeetingRecord>(x => x.Id == meetingRecordId && x.RecordType == MeetingRecordType.OnRecord)
+            .FirstOrDefaultAsync(cancellationToken).ConfigureAwait(false);
     }
 }
