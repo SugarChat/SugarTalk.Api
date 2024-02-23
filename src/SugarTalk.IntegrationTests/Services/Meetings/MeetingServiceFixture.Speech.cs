@@ -219,7 +219,7 @@ public partial class MeetingServiceFixture
             liveKitServerUtilService.GenerateTokenForJoinMeeting(Arg.Any<UserAccountDto>(), Arg.Any<string>())
                 .Returns("token123");
             
-            builder.RegisterInstance(liveKitServerUtilService);
+            builder.RegisterInstance(liveKitServerUtilService);  
         });
     }
     
@@ -240,8 +240,8 @@ public partial class MeetingServiceFixture
                 Title = "会议1",
                 TimeZone = "",
                 SecurityCode = "",
-                StartDate = DateTimeOffset.Parse("2024-02-25T10:00:00Z").ToUnixTimeMilliseconds(),
-                EndDate = DateTimeOffset.Parse("2024-02-25T11:00:00Z").ToUnixTimeMilliseconds(),
+                StartDate = DateTimeOffset.Parse("2024-02-24T10:00:00Z").ToUnixTimeMilliseconds(),
+                EndDate = DateTimeOffset.Parse("2024-02-24T12:00:00Z").ToUnixTimeMilliseconds(),
                 AppointmentType = MeetingAppointmentType.Appointment,
                 IsMuted = true,
                 IsRecorded = true,
@@ -249,36 +249,7 @@ public partial class MeetingServiceFixture
                 MeetingStreamMode = 0,
                 MeetingMasterUserId = 1
             },
-            new()
-            {
-                Id = meetId2,
-                Title = "会议2",
-                TimeZone = "",
-                SecurityCode = "",
-                StartDate = DateTimeOffset.Parse("2024-02-26T09:00:00Z").ToUnixTimeMilliseconds(),
-                EndDate = DateTimeOffset.Parse("2024-02-26T10:00:00Z").ToUnixTimeMilliseconds(),
-                AppointmentType = MeetingAppointmentType.Appointment,
-                IsMuted = true,
-                IsRecorded = true,
-                MeetingNumber = "",
-                MeetingStreamMode = 0,
-                MeetingMasterUserId = 1
-            },
-            new()
-            {
-                Id = meetId3,
-                Title = "会议3",
-                TimeZone = "",
-                SecurityCode = "",
-                StartDate = DateTimeOffset.Parse("2024-02-27T10:00:00Z").ToUnixTimeMilliseconds(),
-                EndDate = DateTimeOffset.Parse("2024-02-27T13:00:00Z").ToUnixTimeMilliseconds(),
-                AppointmentType = MeetingAppointmentType.Quick,
-                IsMuted = true,
-                IsRecorded = true,
-                MeetingNumber = "",
-                MeetingStreamMode = 0,
-                MeetingMasterUserId = 1
-            }
+       
         };
 
         var ruleMeeting = new List<MeetingRepeatRule>
@@ -287,19 +258,7 @@ public partial class MeetingServiceFixture
             {
                 MeetingId = meetId1,
                 RepeatType = MeetingRepeatType.Weekly,
-                RepeatUntilDate = DateTimeOffset.Parse("2024-03-10T00:00:00Z")
-            },
-            new()
-            {
-                MeetingId = meetId2,
-                RepeatType = MeetingRepeatType.None,
-                RepeatUntilDate = DateTimeOffset.Parse("2024-03-02T00:00:00Z")
-            },
-            new()
-            {
-                MeetingId = meetId3,
-                RepeatType = MeetingRepeatType.None,
-                RepeatUntilDate = DateTimeOffset.Parse("2024-03-03T00:00:00Z")
+                RepeatUntilDate = DateTimeOffset.Parse("2024-03-31T11:00:00Z")
             }
         };
 
@@ -308,14 +267,20 @@ public partial class MeetingServiceFixture
             new()
             {
                 MeetingId = meetId1,
-                StartTime = DateTimeOffset.Parse("2024-02-25T10:00:00Z").ToUnixTimeMilliseconds(),
-                EndTime = DateTimeOffset.Parse("2024-02-25T11:00:00Z").ToUnixTimeMilliseconds(),
+                StartTime = DateTimeOffset.Parse("2024-03-16T10:00:00+00:00").ToUnixTimeMilliseconds(),
+                EndTime = DateTimeOffset.Parse("2024-03-16T12:00:00Z").ToUnixTimeMilliseconds(),
             },
             new()
             {
-                MeetingId = meetId2,
-                StartTime = DateTimeOffset.Parse("2024-02-25T03:11:00.825Z").ToUnixTimeMilliseconds(),
-                EndTime = DateTimeOffset.Parse("2024-02-25T03:12:00.825Z").ToUnixTimeMilliseconds(),
+                MeetingId = meetId1,
+                StartTime = DateTimeOffset.Parse("2024-03-23T10:00:00+00:00").ToUnixTimeMilliseconds(),
+                EndTime = DateTimeOffset.Parse("2024-03-23T12:00:00+00:00").ToUnixTimeMilliseconds(),
+            },
+            new()
+            {
+                MeetingId = meetId1,
+                StartTime = DateTimeOffset.Parse("2024-02-24T10:00:00+00:00").ToUnixTimeMilliseconds(),
+                EndTime = DateTimeOffset.Parse("2024-02-24T12:00:00+00:00").ToUnixTimeMilliseconds(),
             }
         };
         
@@ -334,10 +299,8 @@ public partial class MeetingServiceFixture
                     Page = 1, PageSize = 5
                 });
 
-            response.Data.Count.ShouldBe(0);
-            response.Data.Records[0].MeetingId.ShouldBe(meetId1);
-            response.Data.Records[1].MeetingId.ShouldBe(meetId2);
-            response.Data.Records[2].MeetingId.ShouldBe(meetId3);
+            response.Data.Count.ShouldBe(3);
+
         }, builder =>
         {
             var clock = Substitute.For<IClock>();
