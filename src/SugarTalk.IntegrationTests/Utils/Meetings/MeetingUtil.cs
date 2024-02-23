@@ -54,7 +54,7 @@ public class MeetingUtil : TestUtil
                     Title = title,
                     TimeZone = timezone,
                     SecurityCode = securityCode,
-                    StartDate = startDate ?? DateTimeOffset.Now,
+                    StartDate = startDate ?? DateTimeOffset.Now.AddHours(-1),
                     EndDate = endDate ?? DateTimeOffset.Now.AddDays(2),
                     UtilDate = utilDate,
                     AppointmentType = appointmentType,

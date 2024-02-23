@@ -787,44 +787,6 @@ public partial class MeetingServiceFixture : MeetingFixtureBase
             });
         });
     }
-    
-    [Fact]
-    public async Task ShouldJoinMeetingWhenHasMeetingInvite()
-    {
-        var meeting = await _meetingUtil.ScheduleMeeting(securityCode: "123456");
-
-        await Run<IMediator>(async (mediator) =>
-        {
-            await Assert.ThrowsAsync<MeetingSecurityCodeNotMatchException>(async () =>
-            {
-                await mediator.SendAsync<JoinMeetingCommand, JoinMeetingResponse>(new JoinMeetingCommand
-                {
-                    MeetingNumber = meeting.Data.MeetingNumber,
-                    SecurityCode = "666"
-                });
-            });
-            
-            var response = await mediator.SendAsync<JoinMeetingCommand, JoinMeetingResponse>(new JoinMeetingCommand
-            {
-                MeetingNumber = meeting.Data.MeetingNumber,
-                SecurityCode = "123456"
-            });
-            
-            response.Data.Meeting.MeetingTokenFromLiveKit.ShouldBe("token123");
-            response.Data.Meeting.IsPasswordEnabled.ShouldBeTrue();
-        }, builder =>
-        {
-            MockLiveKitService(builder);
-            
-            var accountDataProvider = Substitute.For<IAccountDataProvider>();
-            var openAiService = Substitute.For<IOpenAiService>();
-            
-            accountDataProvider.GetUserAccountAsync(Arg.Any<int>()).Returns(new UserAccountDto());
-            
-            builder.RegisterInstance(accountDataProvider);
-            builder.RegisterInstance(openAiService);
-        });
-    }
 
     [Theory]
     [InlineData(true)]

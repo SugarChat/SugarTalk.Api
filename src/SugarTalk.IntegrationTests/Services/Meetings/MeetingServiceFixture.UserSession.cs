@@ -51,12 +51,13 @@ namespace SugarTalk.IntegrationTests.Services.Meetings
             var scheduleMeetingResponse = await _meetingUtil.ScheduleMeeting();
             var testUser1 = await _accountUtil.AddUserAccount("Test", "123456");
 
+            var masterUser = await _meetingUtil.JoinMeeting(scheduleMeetingResponse.Data.MeetingNumber);
+            masterUser.UserSessionCount.ShouldBe(1);
+            
             var joinMeetingDto1 = await _meetingUtil.JoinMeetingByUserAsync(testUser1, scheduleMeetingResponse.Data.MeetingNumber);
-            joinMeetingDto1.UserSessionCount.ShouldBe(1);
+            joinMeetingDto1.UserSessionCount.ShouldBe(2);
             (joinMeetingDto1.MeetingMasterUserId == testUser1.Id).ShouldBeFalse();
 
-            var masterUser = await _meetingUtil.JoinMeeting(scheduleMeetingResponse.Data.MeetingNumber);
-            masterUser.UserSessionCount.ShouldBe(2);
             _meetingUtil.KickOutUserByUserIdAsync
                      (scheduleMeetingResponse.Data.Id, 1, masterUser.MeetingMasterUserId, scheduleMeetingResponse.Data.MeetingNumber).ShouldThrow<CannotKickOutMeetingUserSessionException>();
         }
@@ -69,12 +70,12 @@ namespace SugarTalk.IntegrationTests.Services.Meetings
             var scheduleMeetingResponse = await _meetingUtil.ScheduleMeeting();
             var testUser1 = await _accountUtil.AddUserAccount(userName, password);
 
-            var joinMeetingDto1 = await _meetingUtil.JoinMeetingByUserAsync(testUser1, scheduleMeetingResponse.Data.MeetingNumber);
-            joinMeetingDto1.UserSessionCount.ShouldBe(1);
-            (joinMeetingDto1.MeetingMasterUserId == testUser1.Id).ShouldBeFalse();
-
             var masterUser = await _meetingUtil.JoinMeeting(scheduleMeetingResponse.Data.MeetingNumber);
-            masterUser.UserSessionCount.ShouldBe(2);
+            masterUser.UserSessionCount.ShouldBe(1);
+            
+            var joinMeetingDto1 = await _meetingUtil.JoinMeetingByUserAsync(testUser1, scheduleMeetingResponse.Data.MeetingNumber);
+            joinMeetingDto1.UserSessionCount.ShouldBe(2);
+            (joinMeetingDto1.MeetingMasterUserId == testUser1.Id).ShouldBeFalse();
 
             var kickOutMeetingResponse = await _meetingUtil.KickOutUserByUserIdAsync
                   (scheduleMeetingResponse.Data.Id, testUser1.Id, masterUser.MeetingMasterUserId, scheduleMeetingResponse.Data.MeetingNumber);
@@ -90,12 +91,12 @@ namespace SugarTalk.IntegrationTests.Services.Meetings
             var scheduleMeetingResponse = await _meetingUtil.ScheduleMeeting();
 
             var testUser1 = await _accountUtil.AddUserAccount("Test1", "123");
+            
+            var masterUser = await _meetingUtil.JoinMeeting(scheduleMeetingResponse.Data.MeetingNumber);
 
             var joinMeetingDto1 = await _meetingUtil.JoinMeetingByUserAsync(testUser1, scheduleMeetingResponse.Data.MeetingNumber);
 
             (joinMeetingDto1.MeetingMasterUserId == testUser1.Id).ShouldBeFalse();
-
-            var masterUser = await _meetingUtil.JoinMeeting(scheduleMeetingResponse.Data.MeetingNumber);
 
             var kickOutMeetingResponse = await _meetingUtil.KickOutUserByUserIdAsync
                   (scheduleMeetingResponse.Data.Id, testUser1.Id, masterUser.MeetingMasterUserId, scheduleMeetingResponse.Data.MeetingNumber);
@@ -110,12 +111,12 @@ namespace SugarTalk.IntegrationTests.Services.Meetings
             var scheduleMeetingResponse = await _meetingUtil.ScheduleMeeting();
 
             var testUser1 = await _accountUtil.AddUserAccount("Test1", "123");
+            
+            var masterUser = await _meetingUtil.JoinMeeting(scheduleMeetingResponse.Data.MeetingNumber);
 
             var joinMeetingDto1 = await _meetingUtil.JoinMeetingByUserAsync(testUser1, scheduleMeetingResponse.Data.MeetingNumber);
 
             (joinMeetingDto1.MeetingMasterUserId == testUser1.Id).ShouldBeFalse();
-
-            var masterUser = await _meetingUtil.JoinMeeting(scheduleMeetingResponse.Data.MeetingNumber);
 
             var kickOutMeetingResponse = await _meetingUtil.KickOutUserByUserIdAsync
                   (scheduleMeetingResponse.Data.Id, testUser1.Id, masterUser.MeetingMasterUserId, scheduleMeetingResponse.Data.MeetingNumber);
@@ -133,12 +134,12 @@ namespace SugarTalk.IntegrationTests.Services.Meetings
             var scheduleMeetingResponse = await _meetingUtil.ScheduleMeeting();
 
             var testUser1 = await _accountUtil.AddUserAccount("Test1", "123");
+            
+            var masterUser = await _meetingUtil.JoinMeeting(scheduleMeetingResponse.Data.MeetingNumber);
 
             var joinMeetingDto1 = await _meetingUtil.JoinMeetingByUserAsync(testUser1, scheduleMeetingResponse.Data.MeetingNumber);
 
             (joinMeetingDto1.MeetingMasterUserId == testUser1.Id).ShouldBeFalse();
-
-            var masterUser = await _meetingUtil.JoinMeeting(scheduleMeetingResponse.Data.MeetingNumber);
 
             var kickOutMeetingResponse = await _meetingUtil.KickOutUserByUserIdAsync
                   (scheduleMeetingResponse.Data.Id, testUser1.Id, masterUser.MeetingMasterUserId, scheduleMeetingResponse.Data.MeetingNumber);
@@ -153,11 +154,11 @@ namespace SugarTalk.IntegrationTests.Services.Meetings
 
             var testUser1 = await _accountUtil.AddUserAccount("Test1", "123");
 
+            var masterUser = await _meetingUtil.JoinMeeting(scheduleMeetingResponse.Data.MeetingNumber);
+            
             var joinMeetingDto1 = await _meetingUtil.JoinMeetingByUserAsync(testUser1, scheduleMeetingResponse.Data.MeetingNumber);
 
             (joinMeetingDto1.MeetingMasterUserId == testUser1.Id).ShouldBeFalse();
-
-            var masterUser = await _meetingUtil.JoinMeeting(scheduleMeetingResponse.Data.MeetingNumber);
 
             var kickOutMeetingResponse = await _meetingUtil.KickOutUserByUserIdAsync
                   (scheduleMeetingResponse.Data.Id, testUser1.Id, masterUser.MeetingMasterUserId, scheduleMeetingResponse.Data.MeetingNumber);
@@ -175,12 +176,12 @@ namespace SugarTalk.IntegrationTests.Services.Meetings
 
             var testUser1 = await _accountUtil.AddUserAccount("Test1", "123");
 
+            var masterUser = await _meetingUtil.JoinMeeting(scheduleMeetingResponse.Data.MeetingNumber);
+            
             var joinMeetingDto = await _meetingUtil.JoinMeetingByUserAsync(testUser1, scheduleMeetingResponse.Data.MeetingNumber);
 
             (joinMeetingDto.MeetingMasterUserId == testUser1.Id).ShouldBeFalse();
-
-            var masterUser = await _meetingUtil.JoinMeeting(scheduleMeetingResponse.Data.MeetingNumber);
-
+            
             var kickOutMeetingResponse = await _meetingUtil.KickOutUserByUserIdAsync
                   (scheduleMeetingResponse.Data.Id, testUser1.Id, masterUser.MeetingMasterUserId, scheduleMeetingResponse.Data.MeetingNumber);
 
@@ -200,6 +201,7 @@ namespace SugarTalk.IntegrationTests.Services.Meetings
 
             var testUser1 = await _accountUtil.AddUserAccount("Test1", "123");
 
+            var masterUser = await _meetingUtil.JoinMeeting(scheduleMeetingResponse.Data.MeetingNumber);
             var joinMeetingDto = await _meetingUtil.JoinMeetingByUserAsync(testUser1, scheduleMeetingResponse.Data.MeetingNumber);
             var repeatJoinMeetingDto = await _meetingUtil.JoinMeetingByUserAsync(testUser1, scheduleMeetingResponse.Data.MeetingNumber);
             var joinMeetingUserSession = joinMeetingDto.UserSessions.FirstOrDefault(x => x.UserId == testUser1.Id);
