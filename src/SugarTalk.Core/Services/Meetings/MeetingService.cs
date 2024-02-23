@@ -240,6 +240,8 @@ namespace SugarTalk.Core.Services.Meetings
 
             if (user is null) throw new UnauthorizedAccessException();
 
+            CheckJoinMeetingConditions(meeting, user);
+            
             meeting.MeetingTokenFromLiveKit = user.Issuer switch
             {
                 UserAccountIssuer.Guest => _liveKitServerUtilService.GenerateTokenForGuest(user, meeting.MeetingNumber),
@@ -261,6 +263,19 @@ namespace SugarTalk.Core.Services.Meetings
                 Meeting = meeting,
                 MeetingUserSetting = _mapper.Map<MeetingUserSettingDto>(userSetting)
             };
+        }
+
+        private void CheckJoinMeetingConditions(MeetingDto meeting, UserAccountDto user)
+        {
+            //加入未在进行中的会议时判断当前用户是否是主持人，如果不是则判断会议开始时间、会议中是否有主持人。都不符合则抛出异常
+            if (meeting.MeetingMasterUserId == user.Id) return;
+            
+            var now = _clock.Now.ToUnixTimeSeconds();
+
+            if (!meeting.UserSessions.Any(x => x.IsMeetingMaster) || now < meeting.StartDate || now > meeting.EndDate)
+            {
+                throw new CannotJoinMeetingWhenMeetingClosedException();
+            }
         }
 
         public async Task<MeetingOutedEvent> OutMeetingAsync(OutMeetingCommand command, CancellationToken cancellationToken)

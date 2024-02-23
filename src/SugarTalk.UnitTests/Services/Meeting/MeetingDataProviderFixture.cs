@@ -275,6 +275,7 @@ public class MeetingDataProviderFixture : BaseFixture
         response3?.Status.ShouldBe(MeetingStatus.InProgress);
     }
 
+    [Fact]
     public async Task CanGetMeetingHistoryByKeyword()
     {
         const int userId1 = 1;
