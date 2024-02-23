@@ -17,6 +17,7 @@ using SugarTalk.Core.Domain.Meeting;
 using SugarTalk.Core.Services.Utils;
 using SugarTalk.Core.Services.Http.Clients;
 using SugarTalk.Core.Services.LiveKit;
+using SugarTalk.Core.Services.OpenAi;
 using SugarTalk.Messages.Commands.Meetings;
 using SugarTalk.Messages.Requests.Meetings;
 using SugarTalk.Messages.Dto.LiveKit.Egress;
@@ -120,6 +121,11 @@ public partial class MeetingServiceFixture
             meetingRecordDto.MeetingId.ShouldBe(meeting1.Id);
             meetingRecordDto.MeetingNumber.ShouldBe(meeting1.MeetingNumber);
             meetingRecordDto.MeetingCreator.ShouldBe(testCurrentUser.UserName);
+        }, builder =>
+        {
+            var openAiService = Substitute.For<IOpenAiService>();
+            
+            builder.RegisterInstance(openAiService);
         });
     }
 
@@ -215,6 +221,11 @@ public partial class MeetingServiceFixture
             response.Data.Count.ShouldBe(1);
             var meetingRecordDto = response.Data.Records[0];
             meetingRecordDto.MeetingId.ShouldBe(meeting2.Id);
+        }, builder =>
+        {
+            var openAiService = Substitute.For<IOpenAiService>();
+            
+            builder.RegisterInstance(openAiService);
         });
 
         await RunWithUnitOfWork<IMediator, IRepository>(async (mediator, repository) =>
@@ -232,6 +243,11 @@ public partial class MeetingServiceFixture
             response.Data.Count.ShouldBe(2);
             var meetingRecordDto = response.Data.Records[0];
             meetingRecordDto.MeetingId.ShouldBe(meeting1.Id);
+        }, builder =>
+        {
+            var openAiService = Substitute.For<IOpenAiService>();
+            
+            builder.RegisterInstance(openAiService);
         });
 
         await RunWithUnitOfWork<IMediator, IRepository>(async (mediator, repository) =>
@@ -249,6 +265,11 @@ public partial class MeetingServiceFixture
             response.Data.Count.ShouldBe(1);
             var meetingRecordDto = response.Data.Records[0];
             meetingRecordDto.MeetingId.ShouldBe(meeting2.Id);
+        }, builder =>
+        {
+            var openAiService = Substitute.For<IOpenAiService>();
+            
+            builder.RegisterInstance(openAiService);
         });
     }
 
@@ -318,6 +339,11 @@ public partial class MeetingServiceFixture
             };
             var response = await mediator.RequestAsync<GetCurrentUserMeetingRecordRequest, GetCurrentUserMeetingRecordResponse>(getCurrentUserMeetingRecordRequest).ConfigureAwait(false);
             response.Data.Count.ShouldBe(0);
+        }, builder =>
+        {
+            var openAiService = Substitute.For<IOpenAiService>();
+    
+            builder.RegisterInstance(openAiService);
         });
     }
 
@@ -396,6 +422,11 @@ public partial class MeetingServiceFixture
             var creatorList = response.Data.Records.Select(x => x.MeetingCreator).ToList();
             creatorList.ShouldContain(otherUser.UserName);
             creatorList.ShouldContain(testCurrentUser.UserName);
+        }, builder =>
+        {
+            var openAiService = Substitute.For<IOpenAiService>();
+    
+            builder.RegisterInstance(openAiService);
         });
     }
 
@@ -449,6 +480,7 @@ public partial class MeetingServiceFixture
             meetingRecords.Count(x => x.RecordNumber == $"ZNZX-{clock.Now.Year}{clock.Now.Month}{clock.Now.Day}{2.ToString().PadLeft(6, '0')}").ShouldBe(1);
         }, builder =>
         {
+            var openAiService = Substitute.For<IOpenAiService>();
             var liveKitClient = Substitute.For<ILiveKitClient>();
             var liveKitServerUtilService = Substitute.For<ILiveKitServerUtilService>();
 
@@ -458,6 +490,7 @@ public partial class MeetingServiceFixture
             liveKitServerUtilService.GenerateTokenForRecordMeeting(Arg.Any<UserAccountDto>(), Arg.Any<string>())
                 .Returns("token123");
             
+            builder.RegisterInstance(openAiService);
             builder.RegisterInstance(liveKitClient);
             builder.RegisterInstance(liveKitServerUtilService);
 
@@ -546,6 +579,11 @@ public partial class MeetingServiceFixture
             await repository.InsertAsync(meetingRecord);
             await repository.InsertAsync(meetingRecordSummary);
             await repository.InsertAllAsync(meetingRecordDetails);
+        }, builder =>
+        {
+            var openAiService = Substitute.For<IOpenAiService>();
+            
+            builder.RegisterInstance(openAiService);
         });
 
         await Run<IMediator>(async mediator =>
@@ -571,6 +609,11 @@ public partial class MeetingServiceFixture
             result.Data.MeetingRecordDetail.FirstOrDefault(x => x.UserId == 2)?.SpeakContent.ShouldBe(meetingContent2);
             result.Data.MeetingRecordDetail.FirstOrDefault(x => x.UserId == 2)?.SpeakStartTime
                 .ShouldBe(new DateTimeOffset(2024, 1, 1, 0, 0, 0, TimeSpan.Zero).ToUnixTimeSeconds());
+        }, builder =>
+        {
+            var openAiService = Substitute.For<IOpenAiService>();
+            
+            builder.RegisterInstance(openAiService);
         });
     }
 }

@@ -15,6 +15,7 @@ using SugarTalk.Core.Services.Account;
 using SugarTalk.Core.Services.AntMediaServer;
 using SugarTalk.Core.Services.Exceptions;
 using SugarTalk.Core.Services.LiveKit;
+using SugarTalk.Core.Services.OpenAi;
 using SugarTalk.Core.Services.Utils;
 using SugarTalk.IntegrationTests.TestBaseClasses;
 using SugarTalk.IntegrationTests.Utils.Account;
@@ -101,12 +102,14 @@ public partial class MeetingServiceFixture : MeetingFixtureBase
             response.Data.Meeting.Id.ShouldBe(meetingResult.Id);
         }, builder =>
         {
+            var openAiService = Substitute.For<IOpenAiService>();
             var liveKitServerUtilService = Substitute.For<ILiveKitServerUtilService>();
 
             liveKitServerUtilService.GenerateTokenForJoinMeeting(Arg.Any<UserAccountDto>(), Arg.Any<string>())
                 .Returns("token123");
 
             builder.RegisterInstance(liveKitServerUtilService);
+            builder.RegisterInstance(openAiService);
         });
     }
 
@@ -135,12 +138,16 @@ public partial class MeetingServiceFixture : MeetingFixtureBase
         }, builder =>
         {
             var liveKitServerUtilService = Substitute.For<ILiveKitServerUtilService>();
-
+            var openAiService = Substitute.For<IOpenAiService>();
+            
             liveKitServerUtilService.GenerateTokenForJoinMeeting(Arg.Any<UserAccountDto>(), Arg.Any<string>())
                 .Returns("token123");
             
+            builder.RegisterInstance(openAiService);
             builder.RegisterInstance(liveKitServerUtilService);
         });
+        
+        
     }
 
     [Fact]
@@ -234,6 +241,11 @@ public partial class MeetingServiceFixture : MeetingFixtureBase
             });
 
             response.Status.ShouldBe(MeetingStatus.Completed);
+        }, builder =>
+        {
+            var openAiService = Substitute.For<IOpenAiService>();
+    
+            builder.RegisterInstance(openAiService);
         });
     }
     [Fact]
@@ -279,6 +291,11 @@ public partial class MeetingServiceFixture : MeetingFixtureBase
             response.Data.UserSessions.Single(x => x.UserId == 1).UserName.ShouldBe("TEST_USER");
             response.Data.UserSessions.Single(x => x.UserId == user1.Id).UserName.ShouldBe("mars");
             response.Data.UserSessions.Single(x => x.UserId == user2.Id).UserName.ShouldBe("greg");
+        }, builder =>
+        {
+            var openAiService = Substitute.For<IOpenAiService>();
+            
+            builder.RegisterInstance(openAiService);
         });
     }
 
@@ -376,6 +393,11 @@ public partial class MeetingServiceFixture : MeetingFixtureBase
                         MeetingNumber = "5201314",
                         IsMuted = true
                     });
+            }, builder =>
+            {
+                var openAiService = Substitute.For<IOpenAiService>();
+
+                builder.RegisterInstance(openAiService);
             });
         });
     }
@@ -420,6 +442,11 @@ public partial class MeetingServiceFixture : MeetingFixtureBase
             response.Data.EndDate.ShouldBe(scheduleMeetingResponse.Data.EndDate);
             response.Data.MeetingNumber.ShouldBe(scheduleMeetingResponse.Data.MeetingNumber);
             response.Data.MeetingStreamMode.ShouldBe(scheduleMeetingResponse.Data.MeetingStreamMode);
+        }, builder =>
+        {
+            var openAiService = Substitute.For<IOpenAiService>();
+            
+            builder.RegisterInstance(openAiService);
         });
     }
 
@@ -458,6 +485,11 @@ public partial class MeetingServiceFixture : MeetingFixtureBase
                 IsMuted = meeting.IsMuted,
                 IsRecorded = meeting.IsRecorded
             });
+        }, builder =>
+        {
+            var openAiService = Substitute.For<IOpenAiService>();
+    
+            builder.RegisterInstance(openAiService);
         });
 
         var response = await _meetingUtil.GetMeeting(meeting.MeetingNumber);
@@ -500,11 +532,14 @@ public partial class MeetingServiceFixture : MeetingFixtureBase
             });
         }, builder =>
         {
+            var openAiService = Substitute.For<IOpenAiService>();
             var liveKitServerUtilService = Substitute.For<ILiveKitServerUtilService>();
 
             liveKitServerUtilService.GenerateTokenForJoinMeeting(Arg.Any<UserAccountDto>(), Arg.Any<string>())
                 .Returns("token123");
             
+    
+            builder.RegisterInstance(openAiService);
             builder.RegisterInstance(liveKitServerUtilService);
         });
     }
@@ -547,6 +582,9 @@ public partial class MeetingServiceFixture : MeetingFixtureBase
             subMeetingList.Count.ShouldBe(expectSubMeetingCount);
         }, builder =>
         {
+            var openAiService = Substitute.For<IOpenAiService>();
+            builder.RegisterInstance(openAiService);
+            
             MockLiveKitService(builder);
             MockClock(builder, new DateTimeOffset(2024, 2, 1, 7, 0, 0, TimeSpan.Zero));
         });
@@ -585,6 +623,9 @@ public partial class MeetingServiceFixture : MeetingFixtureBase
             subMeetingList.Count.ShouldBe(7);
         }, builder =>
         {
+            var openAiService = Substitute.For<IOpenAiService>();
+            builder.RegisterInstance(openAiService);
+            
             MockLiveKitService(builder);
             MockClock(builder, new DateTimeOffset(2024, 2, 1, 7, 0, 0, TimeSpan.Zero));
         });
@@ -628,6 +669,10 @@ public partial class MeetingServiceFixture : MeetingFixtureBase
             subMeetingList.Count.ShouldBe(29);
         }, builder =>
         {
+            var openAiService = Substitute.For<IOpenAiService>();
+    
+            builder.RegisterInstance(openAiService);
+            
             MockLiveKitService(builder);
             MockClock(builder, now);
         });
@@ -669,6 +714,10 @@ public partial class MeetingServiceFixture : MeetingFixtureBase
             updatedSubMeetingList.Count.ShouldBe(1);
         }, builder =>
         {
+            var openAiService = Substitute.For<IOpenAiService>();
+    
+            builder.RegisterInstance(openAiService);
+            
             MockLiveKitService(builder);
             MockClock(builder, now);
         });
@@ -706,6 +755,10 @@ public partial class MeetingServiceFixture : MeetingFixtureBase
             response2.TotalCount.ShouldBe(3);
         }, builder =>
         {
+            var openAiService = Substitute.For<IOpenAiService>();
+            
+            builder.RegisterInstance(openAiService);
+            
             MockLiveKitService(builder);
             MockClock(builder, DateTimeOffset.Now);
         });
@@ -758,8 +811,12 @@ public partial class MeetingServiceFixture : MeetingFixtureBase
             MockLiveKitService(builder);
             
             var accountDataProvider = Substitute.For<IAccountDataProvider>();
+            var openAiService = Substitute.For<IOpenAiService>();
+            
             accountDataProvider.GetUserAccountAsync(Arg.Any<int>()).Returns(new UserAccountDto());
+            
             builder.RegisterInstance(accountDataProvider);
+            builder.RegisterInstance(openAiService);
         });
     }
 
@@ -778,6 +835,7 @@ public partial class MeetingServiceFixture : MeetingFixtureBase
     
     private void SetupMocking(ContainerBuilder builder)
     {
+        var openAiService = Substitute.For<IOpenAiService>();
         var antMediaServerUtilService = Substitute.For<IAntMediaServerUtilService>();
 
         antMediaServerUtilService.AddStreamToMeetingAsync(
@@ -788,6 +846,7 @@ public partial class MeetingServiceFixture : MeetingFixtureBase
                 Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), CancellationToken.None)
             .Returns(new ConferenceRoomResponseBaseDto { Success = true });
 
-        builder.RegisterInstance(antMediaServerUtilService); 
-    }
+        builder.RegisterInstance(antMediaServerUtilService);
+        builder.RegisterInstance(openAiService);
+        }
 }

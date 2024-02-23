@@ -13,6 +13,7 @@ using SugarTalk.Core.Data;
 using SugarTalk.Core.Domain.Meeting;
 using SugarTalk.Core.Services.Http.Clients;
 using SugarTalk.Core.Services.LiveKit;
+using SugarTalk.Core.Services.OpenAi;
 using SugarTalk.Core.Services.Utils;
 using SugarTalk.Messages.Commands.Meetings;
 using SugarTalk.Messages.Commands.Speech;
@@ -56,6 +57,7 @@ public partial class MeetingServiceFixture
             meetingSpeech.UserId.ShouldBe(currentUser.Id.Value);
         }, builder =>
         {
+            var openAiService = Substitute.For<IOpenAiService>();
             var speechClient = Substitute.For<ISpeechClient>();
 
             speechClient.TranslateTextAsync(Arg.Any<TextTranslationDto>(), CancellationToken.None)
@@ -68,6 +70,7 @@ public partial class MeetingServiceFixture
                 .Returns(new SpeechResponseDto { Result = "text.url" });
 
             builder.RegisterInstance(speechClient);
+            builder.RegisterInstance(openAiService);
         });
     }
 
@@ -113,6 +116,11 @@ public partial class MeetingServiceFixture
 
             await _meetingUtil.AddMeetingUserSetting(Guid.NewGuid(), user1.Id, meetingId,
                 SpeechTargetLanguageType.Cantonese, CantoneseToneType.WanLungNeural);
+        }, builder =>
+        {
+            var openAiService = Substitute.For<IOpenAiService>();
+    
+            builder.RegisterInstance(openAiService);
         });
 
         await Run<IMediator, IRepository>(async (mediator, repository) =>
@@ -135,6 +143,7 @@ public partial class MeetingServiceFixture
             response.Data.First().TranslatedText.ShouldBe("translated_text");
         }, builder =>
         {
+            var openAiService = Substitute.For<IOpenAiService>();
             var speechClient = Substitute.For<ISpeechClient>();
 
             speechClient.TranslateTextAsync(Arg.Any<TextTranslationDto>(), CancellationToken.None)
@@ -146,6 +155,7 @@ public partial class MeetingServiceFixture
             speechClient.GetAudioFromTextAsync(Arg.Any<TextToSpeechDto>(), CancellationToken.None)
                 .Returns(new SpeechResponseDto { Result = "test.url" });
 
+            builder.RegisterInstance(openAiService);
             builder.RegisterInstance(speechClient);
         });
     }
@@ -170,6 +180,11 @@ public partial class MeetingServiceFixture
                     Status = SpeechStatus.UnViewed
                 }
             }, CancellationToken.None);
+        }, builder =>
+        {
+            var openAiService = Substitute.For<IOpenAiService>();
+    
+            builder.RegisterInstance(openAiService);
         });
         
         await Run<IMediator, IRepository>(async (mediator, db) =>
@@ -183,6 +198,11 @@ public partial class MeetingServiceFixture
             var meetingSpeech = await db.Query<MeetingSpeech>().ToListAsync(CancellationToken.None);
 
             meetingSpeech.First().Status.ShouldBe(SpeechStatus.Viewed);
+        }, builder =>
+        {
+            var openAiService = Substitute.For<IOpenAiService>();
+    
+            builder.RegisterInstance(openAiService);
         });
     }
     
@@ -214,11 +234,13 @@ public partial class MeetingServiceFixture
             responseUserSetting.Data.UserId.ShouldBe(currentUser.Id.Value);
         }, builder =>
         {
+            var openAiService = Substitute.For<IOpenAiService>();
             var liveKitServerUtilService = Substitute.For<ILiveKitServerUtilService>();
 
             liveKitServerUtilService.GenerateTokenForJoinMeeting(Arg.Any<UserAccountDto>(), Arg.Any<string>())
                 .Returns("token123");
             
+            builder.RegisterInstance(openAiService);
             builder.RegisterInstance(liveKitServerUtilService);
         });
     }
@@ -334,9 +356,11 @@ public partial class MeetingServiceFixture
         }, builder =>
         {
             var clock = Substitute.For<IClock>();
-                        
+            var openAiService = Substitute.For<IOpenAiService>();          
             clock.Now.Returns(DateTimeOffset.Parse("2024-02-02T02:09:00.825Z"));
             
+            
+            builder.RegisterInstance(openAiService);
             builder.RegisterInstance(clock);
         });
     }
