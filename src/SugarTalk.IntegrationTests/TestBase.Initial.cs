@@ -13,6 +13,7 @@ using NSubstitute;
 using SugarTalk.Core;
 using MySqlConnector;
 using Newtonsoft.Json;
+using OpenAI.Interfaces;
 using StackExchange.Redis;
 using SugarTalk.Core.DbUp;
 using SugarTalk.Core.Hubs;
@@ -48,6 +49,7 @@ public partial class TestBase
         containerBuilder.RegisterInstance(Substitute.For<TranslationClient>());
         containerBuilder.RegisterInstance(new TestCurrentUser()).As<ICurrentUser>();
         containerBuilder.RegisterInstance(Substitute.For<IMemoryCache>()).AsImplementedInterfaces();
+        containerBuilder.RegisterInstance(Substitute.For<IOpenAIService>()).AsImplementedInterfaces();
         containerBuilder.RegisterInstance(Substitute.For<IHttpContextAccessor>()).AsImplementedInterfaces();
         containerBuilder.RegisterInstance(Substitute.For<IHubContext<MeetingHub>>()).AsImplementedInterfaces();
         
