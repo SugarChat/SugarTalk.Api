@@ -20,6 +20,7 @@ using SugarTalk.Messages.Commands.Meetings;
 using SugarTalk.Messages.Dto.Users;
 using SugarTalk.Messages.Enums.Speech;
 using SugarTalk.Core.Services.Account;
+using SugarTalk.Core.Services.OpenAi;
 using SugarTalk.Messages.Dto.LiveKit.Egress;
 using SugarTalk.Messages.Requests.Meetings;
 
@@ -58,13 +59,14 @@ public class MeetingUtil : TestUtil
         }, builder =>
         {
             var liveKitServerUtilService = Substitute.For<ILiveKitServerUtilService>();
-
+            var openAiService = Substitute.For<IOpenAiService>();
             liveKitServerUtilService.CreateMeetingAsync(Arg.Any<string>(), Arg.Any<string>())
                 .Returns(new CreateMeetingFromLiveKitResponseDto { RoomInfo = new LiveKitRoom() });
 
             liveKitServerUtilService.GenerateTokenForCreateMeeting(Arg.Any<UserAccountDto>(), Arg.Any<string>())
                 .Returns("token123");
             
+            builder.RegisterInstance(openAiService);
             builder.RegisterInstance(liveKitServerUtilService);
         });
     }
@@ -83,10 +85,12 @@ public class MeetingUtil : TestUtil
         }, builder =>
         {
             var liveKitServerUtilService = Substitute.For<ILiveKitServerUtilService>();
-
+            var openAiService = Substitute.For<IOpenAiService>();
+            
             liveKitServerUtilService.GenerateTokenForJoinMeeting(Arg.Any<UserAccountDto>(), Arg.Any<string>())
                 .Returns("token123");
             
+            builder.RegisterInstance(openAiService);
             builder.RegisterInstance(liveKitServerUtilService);
         });
     }
@@ -149,6 +153,11 @@ public class MeetingUtil : TestUtil
             {
                 MeetingNumber = meetingNumber
             });
+        }, builder =>
+        {
+            var openAiService = Substitute.For<IOpenAiService>();
+            
+            builder.RegisterInstance(openAiService);
         });
     }
 
@@ -166,9 +175,12 @@ public class MeetingUtil : TestUtil
         }, builder =>
         {
             var services = Substitute.For<ILiveKitServerUtilService>();
+            var openAiService = Substitute.For<IOpenAiService>();
+
             services.GenerateTokenForJoinMeeting(Arg.Any<UserAccountDto>(), Arg.Any<string>())
                 .Returns("11231312312312312313223");
             builder.RegisterInstance(services);
+            builder.RegisterInstance(openAiService);
         });
     }
 
@@ -177,6 +189,11 @@ public class MeetingUtil : TestUtil
         return await Run<IMediator, VerifyMeetingUserPermissionResponse>(async mediator =>
         {
             return await mediator.SendAsync<VerifyMeetingUserPermissionCommand, VerifyMeetingUserPermissionResponse>(verifyMeetingUserPermissionCommand);
+        }, builder =>
+        {
+            var openAiService = Substitute.For<IOpenAiService>();
+    
+            builder.RegisterInstance(openAiService);
         });
     }
 
@@ -188,6 +205,11 @@ public class MeetingUtil : TestUtil
             {
                 MeetingNumber = meetingNumber
             });
+        }, builder =>
+        {
+            var openAiService = Substitute.For<IOpenAiService>();
+    
+            builder.RegisterInstance(openAiService);
         });
     }
 
@@ -196,6 +218,11 @@ public class MeetingUtil : TestUtil
         return await Run<IRepository, MeetingUserSession>(async repo =>
         {
             return await repo.FirstOrDefaultAsync<MeetingUserSession>(x => x.UserId == userId && x.MeetingId == meetingId);
+        }, builder =>
+        {
+            var openAiService = Substitute.For<IOpenAiService>();
+            
+            builder.RegisterInstance(openAiService);
         });
     }
     
@@ -213,6 +240,8 @@ public class MeetingUtil : TestUtil
         {
             var liveKitServerUtilService = Substitute.For<ILiveKitServerUtilService>();
             var accountDataProvider = Substitute.For<IAccountDataProvider>();
+            var openAiService = Substitute.For<IOpenAiService>();
+            
             accountDataProvider.GetUserAccountAsync(Arg.Any<int>()).Returns(new UserAccountDto()
             {
                 Id = user.Id,
@@ -226,6 +255,7 @@ public class MeetingUtil : TestUtil
             });
             builder.RegisterInstance(liveKitServerUtilService);
             builder.RegisterInstance(accountDataProvider);
+            builder.RegisterInstance(openAiService);
         });
     }
 

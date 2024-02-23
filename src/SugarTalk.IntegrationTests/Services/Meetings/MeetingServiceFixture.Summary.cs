@@ -15,6 +15,7 @@ using Microsoft.EntityFrameworkCore;
 using SugarTalk.Core.Domain.Account;
 using SugarTalk.Core.Domain.Meeting;
 using SugarTalk.Core.Services.Meetings;
+using SugarTalk.Core.Services.OpenAi;
 using SugarTalk.IntegrationTests.Mocks;
 using SugarTalk.Messages.Enums.Meeting;
 using SugarTalk.Messages.Dto.Meetings.Speak;
@@ -125,7 +126,8 @@ public partial class MeetingServiceFixture
         }, builder =>
         {
             var meetingUtilService = Substitute.For<IMeetingUtilService>();
-
+            var openAiService = Substitute.For<IOpenAiService>();
+            
             meetingUtilService.SummarizeAsync(Arg.Any<MeetingSummaryBaseInfoDto>(), Arg.Any<CancellationToken>())
                 .Returns(canSummary ? "summary" : string.Empty);
             
@@ -134,6 +136,7 @@ public partial class MeetingServiceFixture
             translationClient.TranslateTextAsync(Arg.Is("summary"), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<TranslationModel?>(), Arg.Any<CancellationToken>())
                 .Returns(new TranslationResult("", canTranslation ? "总结" : "", "", "", "", null));
 
+            builder.RegisterInstance(openAiService);
             builder.RegisterInstance(translationClient);
             builder.RegisterInstance(meetingUtilService);
             builder.RegisterType<MockingBackgroundJobClient>().As<ISugarTalkBackgroundJobClient>().InstancePerLifetimeScope();

@@ -1,9 +1,11 @@
 using System.Threading.Tasks;
 using Autofac;
 using Mediator.Net;
+using NSubstitute;
 using SugarTalk.Core.Data;
 using SugarTalk.Core.Domain.Account;
 using SugarTalk.Core.Extensions;
+using SugarTalk.Core.Services.OpenAi;
 using SugarTalk.Messages.Commands.Account;
 using SugarTalk.Messages.Enums.Account;
 
@@ -28,6 +30,11 @@ public class AccountUtil : TestUtil
             };
             await repository.InsertAsync(account);
             return account;
+        }, builder =>
+        {
+            var openAiService = Substitute.For<IOpenAiService>();
+            
+            builder.RegisterInstance(openAiService);
         });
     }
 

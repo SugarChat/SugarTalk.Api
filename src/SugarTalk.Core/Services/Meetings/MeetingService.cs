@@ -29,6 +29,7 @@ using SugarTalk.Messages.Dto.Meetings.User;
 using SugarTalk.Messages.Dto.Users;
 using SugarTalk.Messages.Enums.Account;
 using SugarTalk.Core.Domain.Meeting;
+using SugarTalk.Core.Services.OpenAi;
 using SugarTalk.Messages.Enums.Meeting;
 using SugarTalk.Messages.Events.Meeting;
 using SugarTalk.Messages.Requests.Meetings;
@@ -86,6 +87,7 @@ namespace SugarTalk.Core.Services.Meetings
         private readonly IMapper _mapper;
         private readonly IUnitOfWork _unitOfWork;
         private readonly ICurrentUser _currentUser;
+        private readonly IOpenAiService _openAiService;
         private readonly ISpeechClient _speechClient;
         private readonly ILiveKitClient _liveKitClient;
         private readonly TranslationClient _translationClient;
@@ -104,6 +106,7 @@ namespace SugarTalk.Core.Services.Meetings
             IMapper mapper,
             IUnitOfWork unitOfWork,
             ICurrentUser currentUser,
+            IOpenAiService openAiService,
             ISpeechClient speechClient,
             ILiveKitClient liveKitClient,
             TranslationClient translationClient,
@@ -120,6 +123,7 @@ namespace SugarTalk.Core.Services.Meetings
             _mapper = mapper;
             _unitOfWork = unitOfWork;
             _currentUser = currentUser;
+            _openAiService = openAiService;
             _speechClient = speechClient;
             _liveKitClient = liveKitClient;
             _translationClient = translationClient;
