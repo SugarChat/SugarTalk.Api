@@ -844,6 +844,12 @@ public partial class MeetingServiceFixture : MeetingFixtureBase
         });
     }
     
+    [Fact]
+    public async Task FunTest()
+    {
+    
+    }
+    
     private static void MockLiveKitService(ContainerBuilder builder)
     {
         var liveKitServerUtilService = Substitute.For<ILiveKitServerUtilService>();
