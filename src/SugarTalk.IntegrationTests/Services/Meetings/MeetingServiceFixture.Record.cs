@@ -619,16 +619,17 @@ public partial class MeetingServiceFixture
         meetingRecord.Url.ShouldBe(test3.Url);
         meetingRecord.MeetingId.ShouldBe(meetingDto.Id);
     }
-    
+
     [Theory]
     [InlineData("mock url1")]
     [InlineData("mock url2")]
-    public async Task CanMeetingRecordShouldBeValue( string url)
+    public async Task CanMeetingRecordShouldBeValue(string url)
     {
         var scheduleMeetingResponse = await _meetingUtil.ScheduleMeeting();
         var meetingDto = await _meetingUtil.JoinMeeting(scheduleMeetingResponse.Data.MeetingNumber);
         var meetingRecord = await _meetingUtil.GenerateMeetingRecordAsync(meetingDto, url);
         await _meetingUtil.AddMeetingRecordAsync(meetingRecord);
+        
         var response = await _meetingUtil.GetMeetingRecordByMeetingIdAsync(meetingDto.Id);
         response.ShouldNotBeNull();
         response.Url.ShouldBe(url);

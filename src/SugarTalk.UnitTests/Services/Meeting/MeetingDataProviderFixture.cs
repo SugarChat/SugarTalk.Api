@@ -5,6 +5,7 @@ using SugarTalk.Messages.Dto;
 using Microsoft.EntityFrameworkCore;
 using SugarTalk.Core.Domain.Account;
 using SugarTalk.Core.Domain.Meeting;
+using SugarTalk.Messages.Enums.Meeting;
 using SugarTalk.Messages.Requests.Meetings;
 
 namespace SugarTalk.UnitTests.Services.Meeting;

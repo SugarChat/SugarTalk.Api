@@ -114,7 +114,8 @@ public partial class MeetingService
         return new StorageMeetingRecordVideoResponse();
     }
 
-    public async Task ExecuteStorageMeetingRecordVideoDelayedJobAsync(DateTimeOffset startDate, StorageMeetingRecordVideoCommand command, string token, CancellationToken cancellationToken)
+    public async Task ExecuteStorageMeetingRecordVideoDelayedJobAsync(DateTimeOffset startDate, StorageMeetingRecordVideoCommand command,
+        string token, CancellationToken cancellationToken)
     {
         var now = _clock.Now;
         if ((now - startDate).TotalMinutes > 5)

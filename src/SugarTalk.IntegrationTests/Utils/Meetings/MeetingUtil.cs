@@ -117,8 +117,7 @@ public class MeetingUtil : TestUtil
         });
     }
 
-    public async Task AddMeetingUserSession(int id, Guid meetingId, int userId, bool isMuted = false,
-        bool isSharingScreen = false)
+    public async Task AddMeetingUserSession(int id, Guid meetingId, int userId, bool isMuted = false, bool isSharingScreen = false)
     {
         await RunWithUnitOfWork<IRepository>(async repository =>
         {
@@ -260,8 +259,7 @@ public class MeetingUtil : TestUtil
             MeetingId = meetingDto.Id,
             CreatedDate = DateTimeOffset.Now,
             RecordType = MeetingRecordType.OnRecord,
-            Url = url ??
-                  "mock url"
+            Url = url ?? "mock url"
         };
     }
 
@@ -277,8 +275,7 @@ public class MeetingUtil : TestUtil
     {
         return await Run<IRepository, List<MeetingRecord>>(async repository =>
         {
-            return await repository.QueryNoTracking<MeetingRecord>().Where(x => x.MeetingId == meetingId)
-                .ToListAsync();
+            return await repository.QueryNoTracking<MeetingRecord>().Where(x => x.MeetingId == meetingId).ToListAsync();
         });
     }
 
