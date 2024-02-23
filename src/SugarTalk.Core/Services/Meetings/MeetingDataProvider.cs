@@ -1,13 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
 using AutoMapper;
-using AutoMapper.QueryableExtensions;
 using Microsoft.EntityFrameworkCore;
-using Newtonsoft.Json;
 using SugarTalk.Core.Data;
 using SugarTalk.Core.Domain.Account;
 using SugarTalk.Core.Domain.Meeting;
@@ -418,25 +415,28 @@ namespace SugarTalk.Core.Services.Meetings
 
         public async Task<(int Count, List<AppointmentMeetingDto> Records)> GetAppointmentMeetingsByUserIdAsync(GetAppointmentMeetingsRequest request, CancellationToken cancellationToken)
         {
-            var query = 
+            var oneMonthLaterUnixTimestamp = new DateTimeOffset(DateTime.Now.AddMonths(1)).ToUnixTimeSeconds();
+
+            var query =
                 from meeting in _repository.Query<Meeting>()
-                join rules in _repository.Query<MeetingRepeatRule>()
-                    on meeting.Id equals rules.MeetingId
-                join subMeetings in _repository.Query<MeetingSubMeeting>()
-                    on meeting.Id equals subMeetings.MeetingId into subMeetingGroup
+                join rules in _repository.Query<MeetingRepeatRule>() on meeting.Id equals rules.MeetingId
+                join subMeetings in _repository.Query<MeetingSubMeeting>() on meeting.Id equals subMeetings.MeetingId
+                    into subMeetingGroup
                 from subMeeting in subMeetingGroup.DefaultIfEmpty()
-                where meeting.MeetingMasterUserId == _currentUser.Id
+                where meeting.MeetingMasterUserId == _currentUser.Id &&
+                      meeting.AppointmentType == MeetingAppointmentType.Appointment &&
+                      subMeeting.StartTime < oneMonthLaterUnixTimestamp
                 select new AppointmentMeetingDto
                 {
                     MeetingId = meeting.Id,
                     MeetingNumber = meeting.MeetingNumber,
                     StartDate = rules.RepeatType == MeetingRepeatType.None ? meeting.StartDate : subMeeting.StartTime,
-                    EndDate = rules.RepeatType == MeetingRepeatType.None ? meeting.StartDate : subMeeting.EndTime,
+                    EndDate = rules.RepeatType == MeetingRepeatType.None ? meeting.EndDate : subMeeting.EndTime,
                     Status = meeting.Status,
                     Title = meeting.Title,
                     AppointmentType = meeting.AppointmentType
-                }; 
-    
+                };
+            
             var count = await query.CountAsync(cancellationToken).ConfigureAwait(false);
 
             var records = await query
