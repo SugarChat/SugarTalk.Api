@@ -291,8 +291,8 @@ public class MeetingDataProviderFixture : BaseFixture
         
         MockMeetingDb(_repository, new List<Core.Domain.Meeting.Meeting>
         {
-            CreateMeetingEvent(meeting1Id, meetingMasterUserId: userId1, meetingNumber: "123456", title: "mars meeting"),
-            CreateMeetingEvent(meeting2Id, meetingMasterUserId: userId1, meetingNumber: "111111", title: "mars meeting"),
+            CreateMeetingEvent(meeting1Id, meetingMasterUserId: userId1, meetingNumber: "123456", title: "mars meeting1"),
+            CreateMeetingEvent(meeting2Id, meetingMasterUserId: userId1, meetingNumber: "111111", title: "mars meeting2"),
             CreateMeetingEvent(meeting3Id, meetingMasterUserId: userId2, meetingNumber: "666666", title: "greg meeting")
         });
 
@@ -329,10 +329,10 @@ public class MeetingDataProviderFixture : BaseFixture
         response2.MeetingHistoryList.Count(x => x.MeetingId == meeting1Id && x.MeetingCreator == "mars").ShouldBe(1);
         
         var response3 = await _meetingDataProvider
-            .GetMeetingHistoriesByUserIdAsync(1, "greg meeting", null, CancellationToken.None);
+            .GetMeetingHistoriesByUserIdAsync(1, "mars meeting", null, CancellationToken.None);
         
-        response3.TotalCount.ShouldBe(1);
-        response3.MeetingHistoryList.Count(x => x.MeetingId == meeting3Id && x.MeetingCreator == "greg").ShouldBe(1);
+        response3.TotalCount.ShouldBe(2);
+        response3.MeetingHistoryList.Count(x => x.MeetingId == meeting2Id && x.MeetingCreator == "mars").ShouldBe(1);
         
         var response4 = await _meetingDataProvider
             .GetMeetingHistoriesByUserIdAsync(1, "greg777999", null, CancellationToken.None);
