@@ -6,6 +6,10 @@ using System.Threading;
 using SugarTalk.Core.Ioc;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using System.Text;
+using AutoMapper;
+using OpenAI.ObjectModels;
+using SugarTalk.Core.Services.Ffmpeg;
 using Exception = System.Exception;
 using SugarTalk.Messages.Dto.OpenAi;
 using SugarTalk.Core.Settings.OpenAi;
@@ -19,17 +23,25 @@ public interface IOpenAiService : IScopedDependency
     Task<CompletionsResponseDto> ChatCompletionsAsync(
         List<CompletionsRequestMessageDto> messages, List<CompletionsRequestFunctionDto> functions = null, object functionCall = null,
         OpenAiModel model = OpenAiModel.Gpt35Turbo16K, int? maxTokens = null, double temperature = 0, bool shouldNotSendWhenTokenLimited = false, CancellationToken cancellationToken = default);
+    
+    Task<string> TranscriptionAsync(
+        byte[] file, TranscriptionLanguage? language, TranscriptionFileType fileType = TranscriptionFileType.Wav, 
+        TranscriptionResponseFormat responseFormat = TranscriptionResponseFormat.Vtt, CancellationToken cancellationToken = default);
 }
 
 public class OpenAiService : IOpenAiService
 {
+    private readonly IMapper _mapper;
     private readonly IOpenAiClient _openAiClient;
     private readonly OpenAiSettings _openAiSettings;
-
-    public OpenAiService(IOpenAiClient openAiClient, OpenAiSettings openAiSettings)
+    private readonly IFfmpegService _ffmpegService;
+    
+    public OpenAiService(IOpenAiClient openAiClient, OpenAiSettings openAiSettings, IMapper mapper,IFfmpegService ffmpegService)
     {
+        _mapper = mapper;
         _openAiClient = openAiClient;
         _openAiSettings = openAiSettings;
+        _ffmpegService = ffmpegService;
     }
 
     public async Task<CompletionsResponseDto> ChatCompletionsAsync(
@@ -49,6 +61,78 @@ public class OpenAiService : IOpenAiService
         return response;
     }
     
+    public async Task<string> TranscriptionAsync(
+        byte[] file, TranscriptionLanguage? language, TranscriptionFileType fileType = TranscriptionFileType.Wav, 
+        TranscriptionResponseFormat responseFormat = TranscriptionResponseFormat.Vtt, CancellationToken cancellationToken = default)
+    {
+        if (file == null) return null;
+        
+        var audioBytes = await _ffmpegService.ConvertFileFormatAsync(file, fileType, cancellationToken).ConfigureAwait(false);
+    
+        var splitAudios = await _ffmpegService.SplitAudioAsync(audioBytes, secondsPerAudio: 60 * 3, cancellationToken: cancellationToken).ConfigureAwait(false);
+    
+        var transcriptionResult = new StringBuilder();
+    
+        foreach (var audio in splitAudios)
+        {
+            var transcriptionResponse = await CreateTranscriptionAsync(audio, language, fileType, responseFormat, cancellationToken).ConfigureAwait(false);
+            
+            transcriptionResult.Append(transcriptionResponse?.Text);
+        }
+    
+        Log.Information("Transcription result {Transcription}", transcriptionResult.ToString());
+        
+        return transcriptionResult.ToString();
+    }
+    
+    private async Task<AudioTranscriptionResponseDto> CreateTranscriptionAsync(
+        byte[] file, TranscriptionLanguage? language, TranscriptionFileType fileType = TranscriptionFileType.Wav, 
+        TranscriptionResponseFormat responseFormat = TranscriptionResponseFormat.Vtt, CancellationToken cancellationToken = default)
+    {
+        var filename = $"{Guid.NewGuid()}.{fileType.ToString().ToLower()}";
+        
+        var fileResponseFormat = responseFormat switch
+        {
+            TranscriptionResponseFormat.Vtt => StaticValues.AudioStatics.ResponseFormat.Vtt,
+            TranscriptionResponseFormat.Srt => StaticValues.AudioStatics.ResponseFormat.Srt,
+            TranscriptionResponseFormat.Text => StaticValues.AudioStatics.ResponseFormat.Text,
+            TranscriptionResponseFormat.Json => StaticValues.AudioStatics.ResponseFormat.Json,
+            TranscriptionResponseFormat.VerboseJson => StaticValues.AudioStatics.ResponseFormat.Vtt
+        };
+
+        var response = await SafelyProcessRequestAsync(nameof(CreateTranscriptionAsync), async () =>
+            await _openAiClient.CreateTranscriptionAsync(new CreateTranscriptionRequestDto
+        {
+            File = file,
+            FileName = filename,
+            Model = Models.WhisperV1,
+            ResponseFormat = fileResponseFormat,
+            Language =  language ?? TranscriptionLanguage.Chinese
+        }, cancellationToken).ConfigureAwait(false), cancellationToken).ConfigureAwait(false);
+        
+        Log.Information("Transcription {FileName} response {@Response}", filename, response);
+        
+        return _mapper.Map<AudioTranscriptionResponseDto>(response);
+    }
+    
+    private static async Task<T> SafelyProcessRequestAsync<T>(string methodName, Func<Task<T>> func, CancellationToken cancellationToken, bool shouldThrow = false)
+    {
+        try
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            
+            return await func().ConfigureAwait(false);
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Error on method: {Method}", methodName);
+            
+            if (shouldThrow)
+                throw;
+            return default;
+        }
+    }
+
     private (ChatCompletionsRequestDto Request, CompletionsResponseDto LimitedResponse) ConfigureChatCompletions(
         List<CompletionsRequestMessageDto> messages, List<CompletionsRequestFunctionDto> functions = null, object functionCall = null,
         OpenAiModel model = OpenAiModel.Gpt35Turbo16K, int? maxTokens = null, double temperature = 0.5, bool shouldNotSendWhenTokenLimited = false, bool? stream = false)

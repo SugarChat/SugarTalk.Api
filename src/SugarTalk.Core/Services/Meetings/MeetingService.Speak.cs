@@ -1,9 +1,11 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using Serilog;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Hangfire;
 using SugarTalk.Core.Domain.Meeting;
 using SugarTalk.Messages.Dto.LiveKit;
 using SugarTalk.Messages.Dto.Meetings.Speak;
@@ -12,6 +14,7 @@ using SugarTalk.Messages.Events.Meeting.Speak;
 using SugarTalk.Messages.Commands.Meetings.Speak;
 using SugarTalk.Core.Services.Meetings.Exceptions;
 using SugarTalk.Messages.Dto.LiveKit.Egress;
+using SugarTalk.Messages.Enums.OpenAi;
 
 namespace SugarTalk.Core.Services.Meetings;
 
@@ -41,9 +44,9 @@ public partial class MeetingService
     
     private async Task<MeetingSpeakDetail> StartRecordUserSpeakDetailAsync(RecordMeetingSpeakCommand command, CancellationToken cancellationToken)
     {
-        //todo get record token
-        var token = string.Empty;
-        var filePath = string.Empty;
+        var user = await _accountDataProvider.GetUserAccountAsync(_currentUser.Id, cancellationToken: cancellationToken).ConfigureAwait(false);
+        var token = _liveKitServerUtilService.GenerateTokenForRecordMeeting(user, command.MeetingNumber);
+        var filePath = $"SugarTalk/{command.MeetingRecordId}.mp4";
         
         var egressResponse = await _liveKitClient.StartTrackCompositeEgressAsync(new StartTrackCompositeEgressRequestDto
         {
@@ -100,6 +103,37 @@ public partial class MeetingService
         
         await _meetingDataProvider.UpdateMeetingSpeakDetailAsync(speakDetail, cancellationToken: cancellationToken).ConfigureAwait(false);
         
+        if (speakDetail.FileTranscriptionStatus == FileTranscriptionStatus.Pending)
+        {
+            _backgroundJobClient.Enqueue(() => TranscriptionMeetingAsync(speakDetail, cancellationToken));
+        }
+        
         return speakDetail;
+    }
+
+    private async Task TranscriptionMeetingAsync(MeetingSpeakDetail speakDetail,CancellationToken cancellationToken)
+    {
+        speakDetail.FileTranscriptionStatus = FileTranscriptionStatus.InProcess;
+        
+        var user = await _accountDataProvider.GetUserAccountAsync(_currentUser.Id, cancellationToken: cancellationToken).ConfigureAwait(false);
+        
+        var getEgressInfoList = await _liveKitClient.GetEgressInfoListAsync(
+            new GetEgressRequestDto()
+        {
+            Token =  _liveKitServerUtilService.GenerateTokenForRecordMeeting(user, speakDetail.MeetingNumber),
+            EgressId = speakDetail.EgressId
+        }, cancellationToken).ConfigureAwait(false);
+
+        speakDetail.FileUrl =  getEgressInfoList.EgressItems.FirstOrDefault()?.File.Location;
+        
+        var file = await File.ReadAllBytesAsync(speakDetail.FileUrl ?? throw new InvalidOperationException(), cancellationToken).ConfigureAwait(false);
+            
+        speakDetail.SpeakContent = await _openAiService.TranscriptionAsync(file, TranscriptionLanguage.Chinese, cancellationToken: cancellationToken).ConfigureAwait(false);
+        
+        if (speakDetail.SpeakContent == null) speakDetail.FileTranscriptionStatus = FileTranscriptionStatus.Pending;
+
+        speakDetail.FileTranscriptionStatus = FileTranscriptionStatus.Completed;
+        
+        await _meetingDataProvider.UpdateMeetingSpeakDetailAsync(speakDetail, cancellationToken: cancellationToken).ConfigureAwait(false);
     }
 }
