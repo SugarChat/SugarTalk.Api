@@ -798,6 +798,34 @@ public partial class MeetingServiceFixture : MeetingFixtureBase
         });
     }
     
+    [Fact]
+    public async Task CanCheckAttendeeWhenJoinMeeting()
+    {
+        await Run<IMediator, IClock>(async (mediator, clock) =>
+        {
+            var meeting = await _meetingUtil.ScheduleMeeting(startDate: clock.Now.AddHours(1), endDate: clock.Now.AddHours(2));
+
+            await Assert.ThrowsAsync<CannotJoinMeetingWhenMeetingClosedException>(async () =>
+            {
+                await mediator.SendAsync<JoinMeetingCommand, JoinMeetingResponse>(new JoinMeetingCommand
+                {
+                    MeetingNumber = meeting.Data.MeetingNumber
+                });
+            });
+        }, builder =>
+        {
+            MockLiveKitService(builder);
+            MockClock(builder, DateTimeOffset.Now);
+            
+            var accountDataProvider = Substitute.For<IAccountDataProvider>();
+            accountDataProvider.GetUserAccountAsync(Arg.Any<int>()).Returns(new UserAccountDto
+            {
+                Id = 2
+            });
+            builder.RegisterInstance(accountDataProvider);
+        });
+    }
+    
     private static void MockLiveKitService(ContainerBuilder builder)
     {
         var liveKitServerUtilService = Substitute.For<ILiveKitServerUtilService>();
