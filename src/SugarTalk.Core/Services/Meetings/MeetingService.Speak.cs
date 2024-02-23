@@ -126,11 +126,7 @@ public partial class MeetingService
 
         speakDetail.FileUrl =  getEgressInfoList.EgressItems.FirstOrDefault()?.File.Location;
 
-        if (string.IsNullOrEmpty(speakDetail.FileUrl))
-        {
-            speakDetail.FileTranscriptionStatus = FileTranscriptionStatus.Pending;
-            throw new InvalidOperationException();
-        }
+        if (string.IsNullOrEmpty(speakDetail.FileUrl)) speakDetail.FileTranscriptionStatus = FileTranscriptionStatus.Pending;
 
         var fileBytes = await _openAiService.GetAsync<byte[]>(speakDetail.FileUrl, cancellationToken).ConfigureAwait(false);
         
