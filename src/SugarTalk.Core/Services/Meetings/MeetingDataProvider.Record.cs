@@ -185,19 +185,15 @@ public partial class MeetingDataProvider
 
     public async Task<MeetingRecord> GetNewestMeetingRecordByMeetingIdAsync(Guid meetingId, CancellationToken cancellationToken)
     {
-        var meetingRecord = await _repository
+        return await _repository
             .QueryNoTracking<MeetingRecord>(x => x.MeetingId == meetingId && x.RecordType == MeetingRecordType.OnRecord)
             .OrderByDescending(x => x.CreatedDate).FirstOrDefaultAsync(cancellationToken).ConfigureAwait(false);
-        
-        return meetingRecord;
     }
-    
+
     public async Task<MeetingRecord> GetMeetingRecordByMeetingRecordIdAsync(Guid meetingRecordId, CancellationToken cancellationToken)
     {
-        var meetingRecord = await _repository
+        return await _repository
             .Query<MeetingRecord>(x => x.Id == meetingRecordId && x.RecordType == MeetingRecordType.OnRecord)
             .FirstOrDefaultAsync(cancellationToken).ConfigureAwait(false);
-        
-        return meetingRecord;
     }
 }

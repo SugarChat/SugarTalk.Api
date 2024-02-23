@@ -208,6 +208,7 @@ public class MeetingController : ControllerBase
     public async Task<IActionResult> StorageMeetingRecordVideoAsync(StorageMeetingRecordVideoCommand command)
     {
         var response = await _mediator.SendAsync<StorageMeetingRecordVideoCommand, StorageMeetingRecordVideoResponse>(command).ConfigureAwait(false);
+        
         return Ok(response);
     }
     

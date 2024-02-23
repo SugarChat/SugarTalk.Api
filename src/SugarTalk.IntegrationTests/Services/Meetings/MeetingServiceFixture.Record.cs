@@ -12,20 +12,15 @@ using SugarTalk.Core.Data;
 using SugarTalk.Messages.Dto;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
-using Smarties.Messages.DTO.Account;
-using SugarTalk.Core.Domain.Account;
 using SugarTalk.Core.Domain.Meeting;
 using SugarTalk.Core.Services.Utils;
 using SugarTalk.Core.Services.Http.Clients;
 using SugarTalk.Core.Services.LiveKit;
-using SugarTalk.Core.Services.Utils;
 using SugarTalk.Messages.Commands.Meetings;
-using SugarTalk.Messages.Dto;
 using SugarTalk.Messages.Enums.Meeting;
 using SugarTalk.Messages.Requests.Meetings;
 using SugarTalk.Messages.Dto.LiveKit.Egress;
 using SugarTalk.Messages.Dto.Translation;
-using SugarTalk.Messages.Enums.Meeting;
 using SugarTalk.Messages.Enums.Meeting.Speak;
 using SugarTalk.Messages.Enums.Meeting.Summary;
 using UserAccountDto = SugarTalk.Messages.Dto.Users.UserAccountDto;
@@ -577,46 +572,31 @@ public partial class MeetingServiceFixture
                 .ShouldBe(new DateTimeOffset(2024, 1, 1, 0, 0, 0, TimeSpan.Zero).ToUnixTimeSeconds());
         });
     }
-
-    [Fact]
-    public async Task CanGetNewMeetingRecord()
-    {
-        var scheduleMeetingResponse = await _meetingUtil.ScheduleMeeting();
-        var meetingDto = await _meetingUtil.JoinMeeting(scheduleMeetingResponse.Data.MeetingNumber);
-
-        var testRecord1 = await _meetingUtil.GenerateMeetingRecordAsync(meetingDto, "mock url1");
-        await _meetingUtil.AddMeetingRecordAsync(testRecord1);
-        var testRecord2 = await _meetingUtil.GenerateMeetingRecordAsync(meetingDto, "mock url12");
-        await _meetingUtil.AddMeetingRecordAsync(testRecord2);
-        var testRecord3 = await _meetingUtil.GenerateMeetingRecordAsync(meetingDto, "mock url3");
-        await _meetingUtil.AddMeetingRecordAsync(testRecord3);
-
-        var meetingRecords = await _meetingUtil.GetMeetingRecordsByMeetingIdAsync(meetingDto.Id);
-        var test3 = meetingRecords.FirstOrDefault(x => x.Url == "mock url3");
-        var newMeetingRecord = await _meetingUtil.GetMeetingRecordByMeetingIdAsync(meetingDto.Id);
-        newMeetingRecord.CreatedDate.ShouldBe(test3.CreatedDate);
-    }
     
-    [Fact]
-    public async Task CanGetMeetingRecordByMeetingRecordId()
+    [Theory]
+    [InlineData("mock url", "mock url1", "mock url2" )]
+    public async Task CanGetNewMeetingRecordByMeetingRecordId(string url, string url2, string url3)
     {
+        
         var scheduleMeetingResponse = await _meetingUtil.ScheduleMeeting();
         var meetingDto = await _meetingUtil.JoinMeeting(scheduleMeetingResponse.Data.MeetingNumber);
 
-        var testRecord1 = await _meetingUtil.GenerateMeetingRecordAsync(meetingDto, "mock url1");
-        await _meetingUtil.AddMeetingRecordAsync(testRecord1);
-        var testRecord2 = await _meetingUtil.GenerateMeetingRecordAsync(meetingDto, "mock url12");
+        var testRecord = await _meetingUtil.GenerateMeetingRecordAsync(meetingDto, url);
+        var testRecord2 = await _meetingUtil.GenerateMeetingRecordAsync(meetingDto, url2);
+        var testRecord3 = await _meetingUtil.GenerateMeetingRecordAsync(meetingDto, url3);
+        
+        await _meetingUtil.AddMeetingRecordAsync(testRecord);
         await _meetingUtil.AddMeetingRecordAsync(testRecord2);
-        var testRecord3 = await _meetingUtil.GenerateMeetingRecordAsync(meetingDto, "mock url3");
         await _meetingUtil.AddMeetingRecordAsync(testRecord3);
-
+        
         var meetingRecords = await _meetingUtil.GetMeetingRecordsByMeetingIdAsync(meetingDto.Id);
-        var test3 = meetingRecords.FirstOrDefault(x => x.Url == "mock url3");
-
+        var test = meetingRecords.FirstOrDefault(x => x.Url == url3);
+        
         var meetingRecord = await _meetingUtil.GetMeetingRecordByMeetingRecordIdAsync(testRecord3.Id);
-        meetingRecord.CreatedDate.ShouldBe(test3.CreatedDate);
-        meetingRecord.RecordType.ShouldBe(test3.RecordType);
-        meetingRecord.Url.ShouldBe(test3.Url);
+        
+        meetingRecord.CreatedDate.ShouldBe(test.CreatedDate);
+        meetingRecord.RecordType.ShouldBe(test.RecordType);
+        meetingRecord.Url.ShouldBe(test.Url);
         meetingRecord.MeetingId.ShouldBe(meetingDto.Id);
     }
 
@@ -642,6 +622,7 @@ public partial class MeetingServiceFixture
         var scheduleMeetingResponse = await _meetingUtil.ScheduleMeeting();
         var meetingDto = await _meetingUtil.JoinMeeting(scheduleMeetingResponse.Data.MeetingNumber);
         var meetingRecord = await _meetingUtil.GenerateMeetingRecordAsync(meetingDto);
+        
         await _meetingUtil.AddMeetingRecordAsync(meetingRecord);
         var dbMeetingRecord = await _meetingUtil.GetMeetingRecordByMeetingIdAsync(meetingDto.Id);
         dbMeetingRecord.RecordType.ShouldBe(MeetingRecordType.OnRecord);
@@ -656,6 +637,7 @@ public partial class MeetingServiceFixture
         var scheduleMeetingResponse = await _meetingUtil.ScheduleMeeting();
         var meetingDto = await _meetingUtil.JoinMeeting(scheduleMeetingResponse.Data.MeetingNumber);
         var meetingRecord = await _meetingUtil.GenerateMeetingRecordAsync(meetingDto);
+        
         await _meetingUtil.AddMeetingRecordAsync(meetingRecord);
         var boolRes = await _meetingUtil.StorageMeetingRecordVideoAsync(new StorageMeetingRecordVideoCommand
         {
@@ -663,6 +645,7 @@ public partial class MeetingServiceFixture
             MeetingId = meetingDto.Id,
             MeetingRecordId = meetingRecord.Id
         });
+        
         boolRes.ShouldBe(true);
     } 
     
@@ -672,6 +655,7 @@ public partial class MeetingServiceFixture
         var scheduleMeetingResponse = await _meetingUtil.ScheduleMeeting();
         var meetingDto = await _meetingUtil.JoinMeeting(scheduleMeetingResponse.Data.MeetingNumber);
         var meetingRecord = await _meetingUtil.GenerateMeetingRecordAsync(meetingDto);
+        
         await _meetingUtil.AddMeetingRecordAsync(meetingRecord);
         var boolRes = await _meetingUtil.StorageMeetingRecordVideoAsync(new StorageMeetingRecordVideoCommand
         {
@@ -682,6 +666,7 @@ public partial class MeetingServiceFixture
         boolRes.ShouldBe(true);
 
         var dbMeetingRecord = await _meetingUtil.GetMeetingRecordByMeetingIdAsync(meetingDto.Id);
+        
         dbMeetingRecord.RecordType.ShouldBe(MeetingRecordType.EndRecord);
         dbMeetingRecord.MeetingId.ShouldBe(meetingDto.Id);
         dbMeetingRecord.Id.ShouldBe(meetingRecord.Id);

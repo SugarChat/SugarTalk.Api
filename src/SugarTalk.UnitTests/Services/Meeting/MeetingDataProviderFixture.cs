@@ -339,24 +339,22 @@ public class MeetingDataProviderFixture : BaseFixture
         response4.TotalCount.ShouldBe(0);
     }
 
-    [Fact]
-    public async Task CanGetMeetingRecordByMeetingRecordId()
+    [Theory]
+    [InlineData("mock url")]
+    [InlineData("mock url1")]
+    public async Task CanGetMeetingRecordByMeetingRecordId(string mockUrl)
     {
         var meetingRecordId = new Guid();
         var meetingRecordId1 = new Guid();
 
         MockMeetingRecordDb(_repository, new List<MeetingRecord>
         {
-            CreateMeetingRecordEvent(meetingRecordId, new Guid(), "mock url", DateTimeOffset.Now),
-            CreateMeetingRecordEvent(meetingRecordId1, new Guid(), "mock url1", DateTimeOffset.Now)
+            CreateMeetingRecordEvent(meetingRecordId, new Guid(), mockUrl, DateTimeOffset.Now),
         });
-        var meetingRecord =
-            await _meetingDataProvider.GetMeetingRecordByMeetingRecordIdAsync(meetingRecordId, CancellationToken.None);
-        var meetingRecord1 =
-            await _meetingDataProvider.GetMeetingRecordByMeetingRecordIdAsync(meetingRecordId1, CancellationToken.None);
+        
+        var meetingRecord = await _meetingDataProvider.GetMeetingRecordByMeetingRecordIdAsync(meetingRecordId, CancellationToken.None);
+        
         meetingRecord.Id.ShouldBe(meetingRecordId);
         meetingRecord.RecordType.ShouldBe(MeetingRecordType.OnRecord);
-        meetingRecord1.Id.ShouldBe(meetingRecordId1);
-        meetingRecord1.RecordType.ShouldBe(MeetingRecordType.OnRecord);
     }
 }

@@ -251,8 +251,7 @@ public class MeetingUtil : TestUtil
         });
     }
 
-    public async Task<MeetingRecord> GenerateMeetingRecordAsync(MeetingDto meetingDto,
-        string url = null)
+    public async Task<MeetingRecord> GenerateMeetingRecordAsync(MeetingDto meetingDto, string url = null)
     {
         return new MeetingRecord()
         {
@@ -297,8 +296,7 @@ public class MeetingUtil : TestUtil
         });
     }
 
-    public async Task<StorageMeetingRecordVideoResponse> StorageMeetingRecordVideoByMeetingIdAsync(Guid meetingId,
-        Guid meetingRecordId, string egressId = null)
+    public async Task<StorageMeetingRecordVideoResponse> StorageMeetingRecordVideoByMeetingIdAsync(Guid meetingId, Guid meetingRecordId, string egressId = null)
     {
         return await Run<IMediator, StorageMeetingRecordVideoResponse>(async mediator =>
         {
@@ -312,6 +310,9 @@ public class MeetingUtil : TestUtil
         }, builder =>
         {
             var meetingService = Substitute.For<IMeetingService>();
+            var liveKitservices = Substitute.For<ILiveKitServerUtilService>();
+            var liveKitClient = Substitute.For<ILiveKitClient>();
+            
             meetingService
                 .StorageMeetingRecordVideoAsync(Arg.Any<StorageMeetingRecordVideoCommand>(),
                     Arg.Any<CancellationToken>()).Returns(new StorageMeetingRecordVideoResponse
@@ -319,10 +320,10 @@ public class MeetingUtil : TestUtil
                     Code = HttpStatusCode.OK,
                     Msg = "Ok"
                 });
-            var liveKitservices = Substitute.For<ILiveKitServerUtilService>();
+            
             liveKitservices.GenerateTokenForJoinMeeting(Arg.Any<UserAccountDto>(), Arg.Any<string>())
                 .Returns("11231312312312312313223");
-            var liveKitClient = Substitute.For<ILiveKitClient>();
+            
             liveKitClient.StopEgressAsync(Arg.Any<StopEgressRequestDto>(), Arg.Any<CancellationToken>())
                 .Returns(new StopEgressResponseDto()
                 {
@@ -347,6 +348,7 @@ public class MeetingUtil : TestUtil
                         }
                     }
                 });
+            
             builder.RegisterInstance(liveKitservices);
             builder.RegisterInstance(liveKitClient);
             builder.RegisterInstance(meetingService);
@@ -356,6 +358,7 @@ public class MeetingUtil : TestUtil
     public async Task<bool> StorageMeetingRecordVideoAsync(StorageMeetingRecordVideoCommand command, string token = null)
     {
         token = token ?? "11231312312312312313223";
+        
         return await Run<IMeetingService,SugarTalkDbContext, Task<bool>>(async (meetingService,dbContenxt) =>
         {
             var res = await meetingService.StorageMeetingRecordVideoJobAsync(command, token, CancellationToken.None
@@ -365,9 +368,11 @@ public class MeetingUtil : TestUtil
         }, builder =>
         {
             var liveKitservices = Substitute.For<ILiveKitServerUtilService>();
+            var liveKitClient = Substitute.For<ILiveKitClient>();
+            
             liveKitservices.GenerateTokenForJoinMeeting(Arg.Any<UserAccountDto>(), Arg.Any<string>())
                 .Returns(token);
-            var liveKitClient = Substitute.For<ILiveKitClient>();
+            
             liveKitClient.StopEgressAsync(Arg.Any<StopEgressRequestDto>(), Arg.Any<CancellationToken>())
                 .Returns(new StopEgressResponseDto()
                 {
@@ -392,6 +397,7 @@ public class MeetingUtil : TestUtil
                         }
                     }
                 });
+            
             builder.RegisterInstance(liveKitservices);
             builder.RegisterInstance(liveKitClient);
         });
