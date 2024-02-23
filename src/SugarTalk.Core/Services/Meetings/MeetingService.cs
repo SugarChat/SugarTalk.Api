@@ -29,6 +29,7 @@ using SugarTalk.Messages.Dto.Meetings.User;
 using SugarTalk.Messages.Dto.Users;
 using SugarTalk.Messages.Enums.Account;
 using SugarTalk.Core.Domain.Meeting;
+using SugarTalk.Core.Services.OpenAi;
 using SugarTalk.Messages.Enums.Meeting;
 using SugarTalk.Messages.Events.Meeting;
 using SugarTalk.Messages.Requests.Meetings;
@@ -86,6 +87,7 @@ namespace SugarTalk.Core.Services.Meetings
         private readonly IMapper _mapper;
         private readonly IUnitOfWork _unitOfWork;
         private readonly ICurrentUser _currentUser;
+        private readonly IOpenAiService _openAiService;
         private readonly ISpeechClient _speechClient;
         private readonly ILiveKitClient _liveKitClient;
         private readonly TranslationClient _translationClient;
@@ -105,6 +107,7 @@ namespace SugarTalk.Core.Services.Meetings
             IMapper mapper,
             IUnitOfWork unitOfWork,
             ICurrentUser currentUser,
+            IOpenAiService openAiService,
             ISpeechClient speechClient,
             ILiveKitClient liveKitClient,
             TranslationClient translationClient,
@@ -122,6 +125,7 @@ namespace SugarTalk.Core.Services.Meetings
             _mapper = mapper;
             _unitOfWork = unitOfWork;
             _currentUser = currentUser;
+            _openAiService = openAiService;
             _speechClient = speechClient;
             _liveKitClient = liveKitClient;
             _translationClient = translationClient;
@@ -243,6 +247,8 @@ namespace SugarTalk.Core.Services.Meetings
 
             if (user is null) throw new UnauthorizedAccessException();
 
+            CheckJoinMeetingConditions(meeting, user);
+            
             meeting.MeetingTokenFromLiveKit = user.Issuer switch
             {
                 UserAccountIssuer.Guest => _liveKitServerUtilService.GenerateTokenForGuest(user, meeting.MeetingNumber),
@@ -266,6 +272,24 @@ namespace SugarTalk.Core.Services.Meetings
             };
         }
 
+        private void CheckJoinMeetingConditions(MeetingDto meeting, UserAccountDto user)
+        {
+            //加入未在进行中的会议时判断当前用户是否是主持人，如果不是则判断会议开始时间、会议中是否有主持人。都不符合则抛出异常
+            if (meeting.MeetingMasterUserId == user.Id) return;
+            
+            var now = _clock.Now.ToUnixTimeSeconds();
+
+            var hasUserSessions = meeting.UserSessions.Count > 0;
+            var hasMeetingMaster = meeting.UserSessions.Any(x => x.IsMeetingMaster);
+            
+            if (now >= meeting.StartDate && now <= meeting.EndDate && (hasMeetingMaster || hasUserSessions))
+            {
+                return;
+            }
+    
+            throw new CannotJoinMeetingWhenMeetingClosedException();
+        }
+
         public async Task<MeetingOutedEvent> OutMeetingAsync(OutMeetingCommand command, CancellationToken cancellationToken)
         {
             var userSession = await _meetingDataProvider.GetMeetingUserSessionByMeetingIdAsync(
@@ -278,7 +302,7 @@ namespace SugarTalk.Core.Services.Meetings
             await _meetingDataProvider.UpdateMeetingUserSessionAsync(userSession, cancellationToken).ConfigureAwait(false);
 
             await _meetingDataProvider.HandleMeetingStatusWhenOutMeetingAsync(
-                userSession.UserId, command.MeetingId, command.MeetingSubId.Value, cancellationToken).ConfigureAwait(false);
+                userSession.UserId, command.MeetingId, command.MeetingSubId, cancellationToken).ConfigureAwait(false);
 
             return new MeetingOutedEvent();
         }
