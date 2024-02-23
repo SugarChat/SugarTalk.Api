@@ -226,21 +226,18 @@ public partial class MeetingServiceFixture
     [Fact]
     public async Task CanGetAppointmentMeetings()
     {
-        var currentUser = new TestCurrentUser();
-        
         var meetId1 = Guid.NewGuid();
         var meetId2 = Guid.NewGuid();
-        var meetId3 = Guid.NewGuid();
 
         var meeting = new List<Meeting>
         {
             new()
             {
                 Id = meetId1,
-                Title = "会议1",
+                Title = "重复会议每周重复，mock未来一个月的时间为2024-03-24 10:09:00",
                 TimeZone = "",
                 SecurityCode = "",
-                StartDate = DateTimeOffset.Parse("2024-02-24T10:00:00Z").ToUnixTimeMilliseconds(),
+                StartDate = DateTimeOffset.Parse("2024-02-24T11:00:00").ToUnixTimeMilliseconds(),
                 EndDate = DateTimeOffset.Parse("2024-02-24T12:00:00Z").ToUnixTimeMilliseconds(),
                 AppointmentType = MeetingAppointmentType.Appointment,
                 IsMuted = true,
@@ -249,7 +246,21 @@ public partial class MeetingServiceFixture
                 MeetingStreamMode = 0,
                 MeetingMasterUserId = 1
             },
-       
+            new()
+            {
+                Id = meetId2,
+                Title = "快速会议",
+                TimeZone = "",
+                SecurityCode = "",
+                StartDate = DateTimeOffset.Parse("2024-02-24T10:00:00Z").ToUnixTimeMilliseconds(),
+                EndDate = DateTimeOffset.Parse("2024-02-24T12:00:00Z").ToUnixTimeMilliseconds(),
+                AppointmentType = MeetingAppointmentType.Quick,
+                IsMuted = true,
+                IsRecorded = true,
+                MeetingNumber = "",
+                MeetingStreamMode = 0,
+                MeetingMasterUserId = 1
+            }
         };
 
         var ruleMeeting = new List<MeetingRepeatRule>
@@ -267,20 +278,20 @@ public partial class MeetingServiceFixture
             new()
             {
                 MeetingId = meetId1,
-                StartTime = DateTimeOffset.Parse("2024-03-16T10:00:00Z").ToUnixTimeMilliseconds(),
-                EndTime = DateTimeOffset.Parse("2024-03-16T12:00:00Z").ToUnixTimeMilliseconds(),
+                StartTime = DateTimeOffset.Parse("2024-03-16T10:00:00").ToUnixTimeSeconds(),
+                EndTime = DateTimeOffset.Parse("2024-03-16T12:00:00Z").ToUnixTimeSeconds(),
             },
             new()
             {
                 MeetingId = meetId1,
-                StartTime = DateTimeOffset.Parse("2024-03-23T10:00:00Z").ToUnixTimeMilliseconds(),
-                EndTime = DateTimeOffset.Parse("2024-03-23T12:00:00Z").ToUnixTimeMilliseconds(),
+                StartTime = DateTimeOffset.Parse("2024-03-23T10:00:00Z").ToUnixTimeSeconds(),
+                EndTime = DateTimeOffset.Parse("2024-03-23T12:00:00Z").ToUnixTimeSeconds(),
             },
             new()
             {
                 MeetingId = meetId1,
-                StartTime = DateTimeOffset.Parse("2024-02-24T10:00:00Z").ToUnixTimeMilliseconds(),
-                EndTime = DateTimeOffset.Parse("2024-02-24T12:00:00Z").ToUnixTimeMilliseconds(),
+                StartTime = DateTimeOffset.Parse("2024-02-24T10:00:00Z").ToUnixTimeSeconds(),
+                EndTime = DateTimeOffset.Parse("2024-02-24T12:00:00Z").ToUnixTimeSeconds(),
             }
         };
         

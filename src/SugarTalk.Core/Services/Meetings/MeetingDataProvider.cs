@@ -415,7 +415,7 @@ namespace SugarTalk.Core.Services.Meetings
 
         public async Task<(int Count, List<AppointmentMeetingDto> Records)> GetAppointmentMeetingsByUserIdAsync(GetAppointmentMeetingsRequest request, CancellationToken cancellationToken)
         {
-            var oneMonthLaterUnixTimestamp = new DateTimeOffset(DateTime.Now.AddMonths(1)).ToUnixTimeSeconds();
+            var oneMonthLaterUnixTimestamp =_clock.Now.AddMonths(1).ToUnixTimeSeconds();
 
             var query =
                 from meeting in _repository.Query<Meeting>()
