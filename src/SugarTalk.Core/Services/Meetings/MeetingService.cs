@@ -272,10 +272,15 @@ namespace SugarTalk.Core.Services.Meetings
             
             var now = _clock.Now.ToUnixTimeSeconds();
 
-            if (!meeting.UserSessions.Any(x => x.IsMeetingMaster) || now < meeting.StartDate || now > meeting.EndDate)
+            var hasUserSessions = meeting.UserSessions.Count > 0;
+            var hasMeetingMaster = meeting.UserSessions.Any(x => x.IsMeetingMaster);
+            
+            if (now >= meeting.StartDate && now <= meeting.EndDate && (hasMeetingMaster || hasUserSessions))
             {
-                throw new CannotJoinMeetingWhenMeetingClosedException();
+                return;
             }
+    
+            throw new CannotJoinMeetingWhenMeetingClosedException();
         }
 
         public async Task<MeetingOutedEvent> OutMeetingAsync(OutMeetingCommand command, CancellationToken cancellationToken)
