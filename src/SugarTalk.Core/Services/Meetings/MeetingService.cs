@@ -5,10 +5,10 @@ using System.Linq;
 using System.Text;
 using Newtonsoft.Json;
 using System.Threading;
+using System.Threading.Tasks;
 using SugarTalk.Core.Ioc;
 using System.Diagnostics;
 using SugarTalk.Core.Data;
-using System.Threading.Tasks;
 using SugarTalk.Core.Extensions;
 using System.Collections.Generic;
 using Google.Cloud.Translation.V2;
@@ -97,6 +97,7 @@ namespace SugarTalk.Core.Services.Meetings
         private readonly ISugarTalkBackgroundJobClient _backgroundJobClient;
         private readonly ILiveKitServerUtilService _liveKitServerUtilService;
         private readonly IAntMediaServerUtilService _antMediaServerUtilService;
+        private readonly ISugarTalkBackgroundJobClient _sugarTalkBackgroundJobClient;
 
         private readonly AliYunOssSettings _aliYunOssSetting;
         private readonly LiveKitServerSetting _liveKitServerSetting;
@@ -117,7 +118,8 @@ namespace SugarTalk.Core.Services.Meetings
             LiveKitServerSetting liveKitServerSetting,
             ISugarTalkBackgroundJobClient backgroundJobClient,
             ILiveKitServerUtilService liveKitServerUtilService,
-            IAntMediaServerUtilService antMediaServerUtilService)
+            IAntMediaServerUtilService antMediaServerUtilService,
+            ISugarTalkBackgroundJobClient sugarTalkBackgroundJobClient)
         {
             _clock = clock;
             _mapper = mapper;
@@ -135,6 +137,7 @@ namespace SugarTalk.Core.Services.Meetings
             _liveKitServerSetting = liveKitServerSetting;
             _liveKitServerUtilService = liveKitServerUtilService;
             _antMediaServerUtilService = antMediaServerUtilService;
+            _sugarTalkBackgroundJobClient = sugarTalkBackgroundJobClient;
         }
         
         public async Task<MeetingScheduledEvent> ScheduleMeetingAsync(ScheduleMeetingCommand command, CancellationToken cancellationToken)

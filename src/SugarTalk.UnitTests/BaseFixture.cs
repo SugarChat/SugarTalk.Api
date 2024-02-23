@@ -45,6 +45,7 @@ public partial class BaseFixture
     protected readonly ISugarTalkBackgroundJobClient _backgroundJobClient;
     protected readonly IMeetingUtilService _meetingUtilService;
     protected readonly TranslationClient _translationClient;
+    protected readonly ISugarTalkBackgroundJobClient _sugarTalkBackgroundJobClient;
 
     public BaseFixture()
     {
@@ -60,11 +61,12 @@ public partial class BaseFixture
         _openAiService = Substitute.For<IOpenAiService>();
         _currentUser.Id.Returns(1);
         _liveKitServerUtilService = Substitute.For<ILiveKitServerUtilService>();
+        _sugarTalkBackgroundJobClient = Substitute.For<ISugarTalkBackgroundJobClient>();
         _accountDataProvider = MockAccountDataProvider(_mapper, _repository, _unitOfWork);
         _meetingDataProvider = MockMeetingDataProvider(_clock, _mapper, _repository, _unitOfWork, _currentUser, _accountDataProvider);
         _meetingService = MockMeetingService(_clock, _mapper, _unitOfWork, _currentUser, _openAiService, _speechClient, _liveKitClient, _translationClient,
              _meetingUtilService, _meetingDataProvider, _accountDataProvider, _backgroundJobClient, _aliYunOssSetting, _liveKitServerSetting, _liveKitServerUtilService,
-            _antMediaServerUtilService);
+            _antMediaServerUtilService,_sugarTalkBackgroundJobClient);
         _meetingProcessJobService = MockMeetingProcessJobService(_clock, _unitOfWork, _meetingDataProvider);
     }
 
@@ -94,11 +96,13 @@ public partial class BaseFixture
         AliYunOssSettings aliYunOssSetting,
         LiveKitServerSetting liveKitServerSetting, 
         ILiveKitServerUtilService liveKitServerUtilService,
-        IAntMediaServerUtilService antMediaServerUtilService)
+        IAntMediaServerUtilService antMediaServerUtilService,
+        ISugarTalkBackgroundJobClient sugarTalkBackgroundJobClient)
     {
         return new MeetingService(
             clock, mapper, unitOfWork, currentUser,openAiService, speechClient, liveKitClient, translationClient ,meetingUtilService, meetingDataProvider,
-            accountDataProvider, aliYunOssSetting, liveKitServerSetting, backgroundJobClient, liveKitServerUtilService, antMediaServerUtilService);
+            accountDataProvider, aliYunOssSetting, liveKitServerSetting, backgroundJobClient, liveKitServerUtilService, 
+            antMediaServerUtilService,sugarTalkBackgroundJobClient);
     }
     
     protected IMeetingDataProvider MockMeetingDataProvider(
