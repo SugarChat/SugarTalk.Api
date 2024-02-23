@@ -75,7 +75,8 @@ public partial class BaseFixture
             Id = id,
             MeetingId = meetingId,
             Url = url,
-            CreatedDate = createDate
+            CreatedDate = createDate,
+            RecordType = MeetingRecordType.OnRecord
         };
     }
     

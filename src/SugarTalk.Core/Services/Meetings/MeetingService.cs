@@ -5,10 +5,10 @@ using System.Linq;
 using System.Text;
 using Newtonsoft.Json;
 using System.Threading;
+using System.Threading.Tasks;
 using SugarTalk.Core.Ioc;
 using System.Diagnostics;
 using SugarTalk.Core.Data;
-using System.Threading.Tasks;
 using SugarTalk.Core.Extensions;
 using System.Collections.Generic;
 using Google.Cloud.Translation.V2;
@@ -29,6 +29,7 @@ using SugarTalk.Messages.Dto.Meetings.User;
 using SugarTalk.Messages.Dto.Users;
 using SugarTalk.Messages.Enums.Account;
 using SugarTalk.Core.Domain.Meeting;
+using SugarTalk.Core.Services.OpenAi;
 using SugarTalk.Messages.Enums.Meeting;
 using SugarTalk.Messages.Events.Meeting;
 using SugarTalk.Messages.Requests.Meetings;
@@ -88,6 +89,7 @@ namespace SugarTalk.Core.Services.Meetings
         private readonly IMapper _mapper;
         private readonly IUnitOfWork _unitOfWork;
         private readonly ICurrentUser _currentUser;
+        private readonly IOpenAiService _openAiService;
         private readonly ISpeechClient _speechClient;
         private readonly ILiveKitClient _liveKitClient;
         private readonly TranslationClient _translationClient;
@@ -97,6 +99,7 @@ namespace SugarTalk.Core.Services.Meetings
         private readonly ISugarTalkBackgroundJobClient _backgroundJobClient;
         private readonly ILiveKitServerUtilService _liveKitServerUtilService;
         private readonly IAntMediaServerUtilService _antMediaServerUtilService;
+        private readonly ISugarTalkBackgroundJobClient _sugarTalkBackgroundJobClient;
 
         private readonly AliYunOssSettings _aliYunOssSetting;
         private readonly LiveKitServerSetting _liveKitServerSetting;
@@ -106,6 +109,7 @@ namespace SugarTalk.Core.Services.Meetings
             IMapper mapper,
             IUnitOfWork unitOfWork,
             ICurrentUser currentUser,
+            IOpenAiService openAiService,
             ISpeechClient speechClient,
             ILiveKitClient liveKitClient,
             TranslationClient translationClient,
@@ -116,12 +120,14 @@ namespace SugarTalk.Core.Services.Meetings
             LiveKitServerSetting liveKitServerSetting,
             ISugarTalkBackgroundJobClient backgroundJobClient,
             ILiveKitServerUtilService liveKitServerUtilService,
-            IAntMediaServerUtilService antMediaServerUtilService)
+            IAntMediaServerUtilService antMediaServerUtilService,
+            ISugarTalkBackgroundJobClient sugarTalkBackgroundJobClient)
         {
             _clock = clock;
             _mapper = mapper;
             _unitOfWork = unitOfWork;
             _currentUser = currentUser;
+            _openAiService = openAiService;
             _speechClient = speechClient;
             _liveKitClient = liveKitClient;
             _translationClient = translationClient;
@@ -133,6 +139,7 @@ namespace SugarTalk.Core.Services.Meetings
             _liveKitServerSetting = liveKitServerSetting;
             _liveKitServerUtilService = liveKitServerUtilService;
             _antMediaServerUtilService = antMediaServerUtilService;
+            _sugarTalkBackgroundJobClient = sugarTalkBackgroundJobClient;
         }
         
         public async Task<MeetingScheduledEvent> ScheduleMeetingAsync(ScheduleMeetingCommand command, CancellationToken cancellationToken)

@@ -11,6 +11,7 @@
       <PackageReference Include="Autofac.Extensions.DependencyInjection" Version="8.0.0" />
       <PackageReference Include="AutoMapper" Version="12.0.1" />
       <PackageReference Include="AutoMapper.Contrib.Autofac.DependencyInjection" Version="7.1.0" />
+      <PackageReference Include="Betalgo.OpenAI" Version="7.4.6" />
       <PackageReference Include="C-sharp-livekit-sdk" Version="0.0.8" />
       <PackageReference Include="dbup" Version="5.0.8" />
       <PackageReference Include="dbup-mysql" Version="5.0.10" />
@@ -19,7 +20,7 @@
       <PackageReference Include="FluentValidation" Version="11.5.2" />
       <PackageReference Include="Google.Cloud.Translation.V2" Version="3.2.0" />
       <PackageReference Include="Hangfire" Version="1.8.3" />
-      <PackageReference Include="Hangfire.Pro.Redis" Version="2.8.19" />
+      <PackageReference Include="Hangfire.Pro.Redis" Version="3.0.0" />
       <PackageReference Include="HR.Message.Contract" Version="1.3.0" />
       <PackageReference Include="Kurento.NET" Version="1.1.1" />
       <PackageReference Include="MassTransit" Version="8.0.3" />
@@ -79,6 +80,9 @@
         <EmbeddedResource Include="DbUp\Scripts_2024\Script0006_add_meeting_session_table.sql" />
         <EmbeddedResource Include="DbUp\Scripts_2024\Script0007_modify_columns_for_meeting_speak_detail_table.sql" />
         <EmbeddedResource Include="DbUp\Scripts_2024\Script0008_add_meeting_summary_relate_tables.sql" />
+        <EmbeddedResource Include="DbUp\Scripts_2024\Script0007_add_meeting_record_table.sql" />
+        <None Remove="DbUp\Scripts_2024\Script0009_alter_meeting_record_table.sql" />
+        <None Remove="DbUp\Scripts_2024\Script0008_modify_meeting_record_column.sql" />
         <EmbeddedResource Include="DbUp\Scripts_2024\Script0008_modify_meeting_record_column.sql" />
         <EmbeddedResource Include="DbUp\Scripts_2024\Script0009_add_delete_for_meeting_record_table.sql" />
         <EmbeddedResource Include="DbUp\Scripts_2024\Script0010_add_meeting_sub_id_to_meeting_user_session_table.sql" />
@@ -87,5 +91,5 @@
     <ItemGroup>
       <Folder Include="Jobs\RecurringJobs" />
     </ItemGroup>
-
+    
 </Project>

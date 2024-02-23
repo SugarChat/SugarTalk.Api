@@ -1,6 +1,7 @@
 using System;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using SugarTalk.Messages.Enums.Meeting;
 
 namespace SugarTalk.Core.Domain.Meeting;
 
@@ -30,4 +31,7 @@ public class MeetingRecord : IEntity
     
     [Column("is_deleted", TypeName = "tinyint(1)")]
     public bool IsDeleted { get; set; }
+
+    [Column("meeting_record_type")]
+    public MeetingRecordType RecordType { get; set; }
 }
