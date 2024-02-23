@@ -826,6 +826,34 @@ public partial class MeetingServiceFixture : MeetingFixtureBase
         });
     }
 
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task CanCancelAppointmentMeeting(bool isJoinMeeting)
+    {
+        var meeting = await _meetingUtil.ScheduleMeeting(appointmentType: MeetingAppointmentType.Appointment, repeatType: MeetingRepeatType.Daily);
+        meeting.Data.Status.ShouldBe(MeetingStatus.Pending);
+
+        await Run<IMediator, IRepository>(async (mediator, repository) =>
+        {
+            if (isJoinMeeting)
+            {
+                await _meetingUtil.JoinMeeting(meeting.Data.MeetingNumber);
+
+                await Assert.ThrowsAsync<CannotCancelAppointmentMeetingStatusException>(async () =>
+                {
+                    await mediator.SendAsync(new CancelAppointmentMeetingCommand { MeetingId = meeting.Data.Id });
+                });
+            }
+            else
+            {
+                await mediator.SendAsync(new CancelAppointmentMeetingCommand { MeetingId = meeting.Data.Id });
+
+                (await repository.Query<Meeting>().FirstOrDefaultAsync())?.Status.ShouldBe(MeetingStatus.Cancelled);
+            }
+        });
+    }
+    
     [Fact]
     public async Task CanCheckAttendeeWhenJoinMeeting()
     {
