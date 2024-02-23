@@ -267,20 +267,20 @@ public partial class MeetingServiceFixture
             new()
             {
                 MeetingId = meetId1,
-                StartTime = DateTimeOffset.Parse("2024-03-16T10:00:00+00:00").ToUnixTimeMilliseconds(),
+                StartTime = DateTimeOffset.Parse("2024-03-16T10:00:00Z").ToUnixTimeMilliseconds(),
                 EndTime = DateTimeOffset.Parse("2024-03-16T12:00:00Z").ToUnixTimeMilliseconds(),
             },
             new()
             {
                 MeetingId = meetId1,
-                StartTime = DateTimeOffset.Parse("2024-03-23T10:00:00+00:00").ToUnixTimeMilliseconds(),
-                EndTime = DateTimeOffset.Parse("2024-03-23T12:00:00+00:00").ToUnixTimeMilliseconds(),
+                StartTime = DateTimeOffset.Parse("2024-03-23T10:00:00Z").ToUnixTimeMilliseconds(),
+                EndTime = DateTimeOffset.Parse("2024-03-23T12:00:00Z").ToUnixTimeMilliseconds(),
             },
             new()
             {
                 MeetingId = meetId1,
-                StartTime = DateTimeOffset.Parse("2024-02-24T10:00:00+00:00").ToUnixTimeMilliseconds(),
-                EndTime = DateTimeOffset.Parse("2024-02-24T12:00:00+00:00").ToUnixTimeMilliseconds(),
+                StartTime = DateTimeOffset.Parse("2024-02-24T10:00:00Z").ToUnixTimeMilliseconds(),
+                EndTime = DateTimeOffset.Parse("2024-02-24T12:00:00Z").ToUnixTimeMilliseconds(),
             }
         };
         
