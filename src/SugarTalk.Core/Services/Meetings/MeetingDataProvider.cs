@@ -440,17 +440,18 @@ namespace SugarTalk.Core.Services.Meetings
                     Title = meeting.Title,
                     AppointmentType = meeting.AppointmentType
                 };
-            
-            var count = await query.CountAsync(cancellationToken).ConfigureAwait(false);
 
-            var records = await query
-                .OrderBy(m => (m.StartDate - _clock.Now.ToUnixTimeSeconds()))
-                .Skip((request.Page - 1) * request.PageSize) 
-                .Take(request.PageSize) 
-                .ToListAsync(cancellationToken)
-                .ConfigureAwait(false);
-    
-            return (count, records);
+            var appointmentMeetingRecords = await query.ToListAsync(cancellationToken).ConfigureAwait(false);
+
+            var records = appointmentMeetingRecords
+                .GroupBy(record => record.MeetingId)
+                .Select(g => g.MinBy(m => m.StartDate))
+                .OrderBy(record => record.StartDate)
+                .Skip((request.Page - 1) * request.PageSize)
+                .Take(request.PageSize)
+                .ToList();
+            
+            return (records.Count, records);
         }
         
         public async Task MarkMeetingAsCompletedAsync(Meeting meeting, CancellationToken cancellationToken)

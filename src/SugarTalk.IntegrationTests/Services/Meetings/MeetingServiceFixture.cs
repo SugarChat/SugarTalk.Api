@@ -847,7 +847,7 @@ public partial class MeetingServiceFixture : MeetingFixtureBase
     [Fact]
     public async Task CanGetAppointmentMeetings()
     {
-        await RunWithUnitOfWork<IMediator, IClock>(async (mediator, clock) =>
+        await RunWithUnitOfWork<IMediator>(async (mediator) =>
         {
             var meeting1Response = await _meetingUtil.ScheduleMeeting(appointmentType: MeetingAppointmentType.Appointment, repeatType: MeetingRepeatType.BiWeekly, startDate: DateTimeOffset.Parse("2024-02-24T10:00:00"), endDate: DateTimeOffset.Parse("2024-02-24T11:00:00"));
             
@@ -857,10 +857,8 @@ public partial class MeetingServiceFixture : MeetingFixtureBase
                     Page = 1, PageSize = 10
                 });
 
-            response.Data.Count.ShouldBe(3);
+            response.Data.Count.ShouldBe(1);
             response.Data.Records[0].MeetingId.ShouldBe(meeting1Response.Data.Id);
-            response.Data.Records[1].MeetingId.ShouldBe(meeting1Response.Data.Id);
-            response.Data.Records[2].MeetingId.ShouldBe(meeting1Response.Data.Id);
         }, builder =>
         {
             var openAiService = Substitute.For<IOpenAiService>();          
