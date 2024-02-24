@@ -15,6 +15,7 @@ using SugarTalk.Messages.Commands.Meetings.Speak;
 using SugarTalk.Core.Services.Meetings.Exceptions;
 using SugarTalk.Messages.Commands.Meetings;
 using SugarTalk.Messages.Dto.LiveKit.Egress;
+using SugarTalk.Messages.Dto.Users;
 using SugarTalk.Messages.Enums.OpenAi;
 
 namespace SugarTalk.Core.Services.Meetings;
@@ -53,36 +54,41 @@ public partial class MeetingService
         var meetingSpeakDetails = await _meetingDataProvider
             .GetMeetingSpeakDetailsAsync(cancellationToken: cancellationToken).ConfigureAwait(false);
         
-        var recurringJobIds = _backgroundJobClient.GetRecurringJobs().Select(x => x.Id).ToList();
-
-        foreach(var meetingSpeakDetail in meetingSpeakDetails)
-        {
-            var getEgressInfoListResponse = await _liveKitClient.GetEgressInfoListAsync(
-                new GetEgressRequestDto()
-                {
-                    Token = _liveKitServerUtilService.GenerateTokenForRecordMeeting(user, meetingSpeakDetail.MeetingNumber),
-                    EgressId = meetingSpeakDetail.EgressId
-                }, cancellationToken).ConfigureAwait(false);
-
-            var egressItem = getEgressInfoListResponse.EgressItems.FirstOrDefault() ?? new EgressItemDto();
-            
-            
-            switch (egressItem.Status)
+        meetingSpeakDetails.ForEach(meetingSpeakDetail => ProcessMeetingSpeakDetailAsync(meetingSpeakDetail, user, cancellationToken).ConfigureAwait(false));
+    }
+    
+    private async Task ProcessMeetingSpeakDetailAsync(
+        MeetingSpeakDetail meetingSpeakDetail, UserAccountDto user, CancellationToken cancellationToken)
+    {
+        var getEgressInfoListResponse = await _liveKitClient.GetEgressInfoListAsync(
+            new GetEgressRequestDto()
             {
-                case "EGRESS_COMPLETE" when !string.IsNullOrEmpty(egressItem.File.Location):
-                    continue;
+                Token = _liveKitServerUtilService.GenerateTokenForRecordMeeting(user, meetingSpeakDetail.MeetingNumber),
+                EgressId = meetingSpeakDetail.EgressId
+            }, cancellationToken).ConfigureAwait(false);
+        
+        var egressItem = getEgressInfoListResponse.EgressItems.FirstOrDefault() ?? new EgressItemDto();
+
+        switch (egressItem.Status)
+        {
+            case "EGRESS_COMPLETE" when !string.IsNullOrEmpty(egressItem.File.Location):
+                return;
+
+            case "EGRESS_COMPLETE" when string.IsNullOrEmpty(egressItem.File.Location):
+
+            case "EGRESS_LIMIT_REACHED":
+                meetingSpeakDetail.FileTranscriptionStatus = FileTranscriptionStatus.Exception;
+                await _meetingDataProvider.UpdateMeetingSpeakDetailAsync(meetingSpeakDetail, cancellationToken: cancellationToken).ConfigureAwait(false);
+                break;
+
+            case "EGRESS_STARTING"
+                when meetingSpeakDetail.FileTranscriptionStatus == FileTranscriptionStatus.Pending:
                 
-                case "EGRESS_COMPLETE" when string.IsNullOrEmpty(egressItem.File.Location):
-                    
-                case "EGRESS_LIMIT_REACHED":
-                    meetingSpeakDetail.FileTranscriptionStatus = FileTranscriptionStatus.Exception;
-                    await _meetingDataProvider.UpdateMeetingSpeakDetailAsync(meetingSpeakDetail, cancellationToken: cancellationToken).ConfigureAwait(false);
-                    break;
+                meetingSpeakDetail.FileTranscriptionStatus = FileTranscriptionStatus.InProcess;
+                await _meetingDataProvider.UpdateMeetingSpeakDetailAsync(meetingSpeakDetail, cancellationToken: cancellationToken).ConfigureAwait(false);
                 
-                case "EGRESS_STARTING" when meetingSpeakDetail.FileTranscriptionStatus == FileTranscriptionStatus.Pending && !recurringJobIds.Contains(meetingSpeakDetail.EgressId):
-                    _backgroundJobClient.Enqueue(() => TranscriptionMeetingAsync(meetingSpeakDetail, cancellationToken));
-                    break;
-            }
+                _backgroundJobClient.Enqueue(() => TranscriptionMeetingAsync(meetingSpeakDetail, cancellationToken));
+                break;
         }
     }
 
@@ -150,6 +156,8 @@ public partial class MeetingService
         if (speakDetail.FileTranscriptionStatus == FileTranscriptionStatus.Pending)
         {
             speakDetail.FileTranscriptionStatus = FileTranscriptionStatus.InProcess;
+            
+            await _meetingDataProvider.UpdateMeetingSpeakDetailAsync(speakDetail, cancellationToken: cancellationToken).ConfigureAwait(false);
             
             _backgroundJobClient.Enqueue(() => TranscriptionMeetingAsync(speakDetail, cancellationToken));
         }
