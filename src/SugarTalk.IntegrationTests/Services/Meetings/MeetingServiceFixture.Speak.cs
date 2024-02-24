@@ -20,6 +20,7 @@ using SugarTalk.Core.Services.Http.Clients;
 using SugarTalk.Core.Services.LiveKit;
 using SugarTalk.Core.Services.Meetings;
 using SugarTalk.Core.Services.OpenAi;
+using SugarTalk.Messages.Commands.Meetings;
 using SugarTalk.Messages.Enums.Meeting.Speak;
 using SugarTalk.Messages.Commands.Meetings.Speak;
 using SugarTalk.Messages.Dto.LiveKit.Egress;
