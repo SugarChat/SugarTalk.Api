@@ -861,7 +861,6 @@ public partial class MeetingServiceFixture : MeetingFixtureBase
             response.Data.Records[0].MeetingId.ShouldBe(meeting1Response.Data.Id);
             response.Data.Records[1].MeetingId.ShouldBe(meeting1Response.Data.Id);
             response.Data.Records[2].MeetingId.ShouldBe(meeting1Response.Data.Id);
-            
         }, builder =>
         {
             var openAiService = Substitute.For<IOpenAiService>();          
