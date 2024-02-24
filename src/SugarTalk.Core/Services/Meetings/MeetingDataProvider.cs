@@ -569,12 +569,13 @@ namespace SugarTalk.Core.Services.Meetings
         {
             var meetingIds = appointmentMeetings.Select(x => x.Id);
 
+            // 过滤出席会议并在线的会议
             var filteredMeetingId = await _repository.QueryNoTracking<MeetingUserSession>()
                 .Where(x => meetingIds.Contains(x.MeetingId))
-                .Where(x => x.Status != MeetingAttendeeStatus.Present || x.OnlineType != MeetingUserSessionOnlineType.Online)
+                .Where(x => x.Status == MeetingAttendeeStatus.Present && x.OnlineType == MeetingUserSessionOnlineType.Online)
                 .Select(x => x.MeetingId).Distinct().ToListAsync(cancellationToken).ConfigureAwait(false);
 
-            return appointmentMeetings.Where(x => filteredMeetingId.Contains(x.Id)).ToList();
+            return appointmentMeetings.Where(x => !filteredMeetingId.Contains(x.Id)).ToList();
         }
     }
 }

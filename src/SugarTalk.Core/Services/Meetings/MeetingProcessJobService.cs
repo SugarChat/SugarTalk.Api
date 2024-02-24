@@ -33,7 +33,7 @@ public class MeetingProcessJobService : IMeetingProcessJobService
 
         foreach (var appointmentMeeting in appointmentMeetings)
         {
-            if (appointmentMeeting.StartDate < _clock.Now.ToUnixTimeSeconds() || appointmentMeeting.EndDate > _clock.Now.ToUnixTimeSeconds())
+            if (appointmentMeeting.StartDate < _clock.Now.ToUnixTimeSeconds() && appointmentMeeting.EndDate > _clock.Now.ToUnixTimeSeconds())
             {
                 appointmentMeeting.Status = MeetingStatus.InProgress;
             }
