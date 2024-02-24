@@ -86,6 +86,10 @@ namespace SugarTalk.Core.Services.Meetings
         Task CancelAppointmentMeetingAsync(Guid meetingId, CancellationToken cancellationToken);
 
         Task HandleMeetingStatusWhenOutMeetingAsync(int userId, Guid meetingId, Guid? meetingSubId = null, CancellationToken cancellationToken = default);
+        
+        Task<List<Meeting>> GetAllRepeatMeetingAsync(CancellationToken cancellationToken);
+        
+        Task<List<MeetingSubMeeting>> GetMeetingSubMeetingsAsync(IEnumerable<Guid> meetingIds, CancellationToken cancellationToken);
     }
     
     public partial class MeetingDataProvider : IMeetingDataProvider
@@ -547,6 +551,21 @@ namespace SugarTalk.Core.Services.Meetings
                     meeting.Status = MeetingStatus.Completed;
                 }
             }
+        }
+
+        public async Task<List<Meeting>> GetAllRepeatMeetingAsync(CancellationToken cancellationToken)
+        {
+            return await _repository.Query<Meeting>()
+                .Where(x => x.AppointmentType == MeetingAppointmentType.Appointment)
+                .ToListAsync(cancellationToken).ConfigureAwait(false);
+        }
+
+        public async Task<List<MeetingSubMeeting>> GetMeetingSubMeetingsAsync(IEnumerable<Guid> meetingIds, CancellationToken cancellationToken)
+        {
+            return await _repository.QueryNoTracking<MeetingSubMeeting>()
+                .Where(x => meetingIds.Contains(x.MeetingId))
+                .Where(x => x.SubConferenceStatus == MeetingRecordSubConferenceStatus.Default)
+                .ToListAsync(cancellationToken).ConfigureAwait(false);
         }
     }
 }
