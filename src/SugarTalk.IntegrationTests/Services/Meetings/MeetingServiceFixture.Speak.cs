@@ -18,7 +18,6 @@ using SugarTalk.Core.Services.Identity;
 using SugarTalk.Core.Validators.Commands;
 using SugarTalk.Core.Services.Http.Clients;
 using SugarTalk.Core.Services.LiveKit;
-using SugarTalk.Core.Services.Meetings;
 using SugarTalk.Core.Services.OpenAi;
 using SugarTalk.Messages.Commands.Meetings;
 using SugarTalk.Messages.Enums.Meeting.Speak;

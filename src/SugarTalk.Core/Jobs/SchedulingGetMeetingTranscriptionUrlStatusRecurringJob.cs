@@ -14,7 +14,6 @@ public class SchedulingGetMeetingTranscriptionUrlStatusRecurringJob : IRecurring
         _mediator = mediator;
     }
     
-    
     public async Task Execute()
     {
         await _mediator.SendAsync(new SchedulingGetMeetingTranscriptionUrlStatusCommand()).ConfigureAwait(false);
