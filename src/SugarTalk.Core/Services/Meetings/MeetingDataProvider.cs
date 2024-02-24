@@ -417,7 +417,8 @@ namespace SugarTalk.Core.Services.Meetings
 
         public async Task<(int Count, List<AppointmentMeetingDto> Records)> GetAppointmentMeetingsByUserIdAsync(GetAppointmentMeetingsRequest request, CancellationToken cancellationToken)
         {
-            var oneMonthLaterUnixTimestamp =_clock.Now.AddMonths(1).ToUnixTimeSeconds();
+            var maxQueryDate = _clock.Now.AddMonths(1).ToUnixTimeSeconds();
+            var startOfDay = new DateTimeOffset(_clock.Now.Year, _clock.Now.Month, _clock.Now.Day, 0, 0, 0, TimeSpan.Zero).ToUnixTimeSeconds();
 
             var query =
                 from meeting in _repository.Query<Meeting>()
@@ -427,7 +428,8 @@ namespace SugarTalk.Core.Services.Meetings
                 from subMeeting in subMeetingGroup.DefaultIfEmpty()
                 where meeting.MeetingMasterUserId == _currentUser.Id &&
                       meeting.AppointmentType == MeetingAppointmentType.Appointment &&
-                      subMeeting.StartTime < oneMonthLaterUnixTimestamp
+                      subMeeting.StartTime >= startOfDay &&
+                      subMeeting.EndTime <= maxQueryDate
                 select new AppointmentMeetingDto
                 {
                     MeetingId = meeting.Id,

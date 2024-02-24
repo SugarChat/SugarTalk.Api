@@ -844,6 +844,33 @@ public partial class MeetingServiceFixture : MeetingFixtureBase
         });
     }
     
+    [Fact]
+    public async Task CanGetAppointmentMeetings()
+    {
+        await RunWithUnitOfWork<IMediator, IClock>(async (mediator, clock) =>
+        {
+            var meeting1Response = await _meetingUtil.ScheduleMeeting(appointmentType: MeetingAppointmentType.Appointment, repeatType: MeetingRepeatType.BiWeekly, startDate: DateTimeOffset.Parse("2024-02-24T10:00:00"), endDate: DateTimeOffset.Parse("2024-02-24T11:00:00"));
+            
+            var response = await mediator.RequestAsync<GetAppointmentMeetingsRequest, GetAppointmentMeetingsResponse>(
+                new GetAppointmentMeetingsRequest
+                {
+                    Page = 1, PageSize = 10
+                });
+
+            response.Data.Count.ShouldBe(3);
+            response.Data.Records[0].MeetingId.ShouldBe(meeting1Response.Data.Id);
+            response.Data.Records[1].MeetingId.ShouldBe(meeting1Response.Data.Id);
+            response.Data.Records[2].MeetingId.ShouldBe(meeting1Response.Data.Id);
+            
+        }, builder =>
+        {
+            var openAiService = Substitute.For<IOpenAiService>();          
+            
+            builder.RegisterInstance(openAiService);
+            MockClock(builder, new DateTimeOffset(2024, 2, 24, 10, 0, 0, TimeSpan.Zero));
+        });
+    }
+    
     private static void MockLiveKitService(ContainerBuilder builder)
     {
         var liveKitServerUtilService = Substitute.For<ILiveKitServerUtilService>();
