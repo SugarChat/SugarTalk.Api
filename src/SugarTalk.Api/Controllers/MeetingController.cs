@@ -128,12 +128,11 @@ public class MeetingController : ControllerBase
     }
     
     [Route("history/delete"), HttpPost]
-    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(DeleteMeetingHistoryResponse))]
     public async Task<IActionResult> DeleteMeetingHistoryAsync([FromBody] DeleteMeetingHistoryCommand command)
     {
-        var response = await _mediator.SendAsync<DeleteMeetingHistoryCommand, DeleteMeetingHistoryResponse>(command).ConfigureAwait(false);
+        await _mediator.SendAsync(command).ConfigureAwait(false);
 
-        return Ok(response);
+        return Ok();
     }
 
     #endregion
@@ -185,12 +184,11 @@ public class MeetingController : ControllerBase
     }
 
     [Route("record/delete"), HttpPost]
-    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(DeleteMeetingRecordResponse))]
     public async Task<IActionResult> DeleteMeetingRecordAsync([FromBody] DeleteMeetingRecordCommand command)
     {
-        var response = await _mediator.SendAsync<DeleteMeetingRecordCommand, DeleteMeetingRecordResponse>(command).ConfigureAwait(false);
+        await _mediator.SendAsync(command).ConfigureAwait(false);
 
-        return Ok(response);
+        return Ok();
     }
 
     [Route("recording/start"), HttpPost]
@@ -238,7 +236,7 @@ public class MeetingController : ControllerBase
     #endregion
     
     [Route("invite/{meetingNumber}"), HttpPost]
-    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(JoinMeetingCommand))]
+    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(JoinMeetingResponse))]
     public async Task<IActionResult> MeetingInviteAsync(string meetingNumber, [FromBody] MeetingInviteRequestDto requestData)
     {
         var response = await _mediator.SendAsync<JoinMeetingCommand, JoinMeetingResponse>(new JoinMeetingCommand
