@@ -2,6 +2,6 @@ using Mediator.Net.Contracts;
 
 namespace SugarTalk.Messages.Commands.Meetings;
 
-public class SchedulingGetMeetingTranscriptionUrlStatusCommand : ICommand
+public class UpdateMeetingFileTranscriptionStatusCommand : ICommand
 {
 }

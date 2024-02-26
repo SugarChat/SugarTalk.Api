@@ -234,7 +234,7 @@ public partial class MeetingServiceFixture
         await RunWithUnitOfWork<IMediator, IRepository>(async (mediator, repository) =>
         {
             await mediator.SendAsync(
-                new SchedulingGetMeetingTranscriptionUrlStatusCommand());
+                new UpdateMeetingFileTranscriptionStatusCommand());
             
             var afterMeetingSpeak = repository.Query<MeetingSpeakDetail>().FirstOrDefault(x => x.Id == 1);
 

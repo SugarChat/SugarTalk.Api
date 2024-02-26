@@ -24,7 +24,7 @@ public partial interface IMeetingService
 {
     Task<MeetingSpeakRecordedEvent> RecordMeetingSpeakAsync(RecordMeetingSpeakCommand command, CancellationToken cancellationToken);
 
-    Task UpdateMeetingFileTranscriptionStatusAsync(SchedulingGetMeetingTranscriptionUrlStatusCommand command, CancellationToken cancellationToken);
+    Task UpdateMeetingFileTranscriptionStatusAsync(UpdateMeetingFileTranscriptionStatusCommand command, CancellationToken cancellationToken);
 }
 
 public partial class MeetingService
@@ -47,7 +47,7 @@ public partial class MeetingService
     }
 
     public async Task UpdateMeetingFileTranscriptionStatusAsync(
-        SchedulingGetMeetingTranscriptionUrlStatusCommand command, CancellationToken cancellationToken)
+        UpdateMeetingFileTranscriptionStatusCommand command, CancellationToken cancellationToken)
     {
         var user = await _accountDataProvider.GetUserAccountAsync(_currentUser.Id, cancellationToken: cancellationToken).ConfigureAwait(false);
         
@@ -69,33 +69,18 @@ public partial class MeetingService
         
         var egressItem = getEgressInfoListResponse.EgressItems.FirstOrDefault() ?? new EgressItemDto();
 
-        switch (egressItem.Status)
+        meetingSpeakDetail.FileTranscriptionStatus = egressItem.Status switch
         {
-            case "EGRESS_COMPLETE" when !string.IsNullOrEmpty(egressItem.File.Location):
-                
-            case "EGRESS_LIMIT_REACHED"  when !string.IsNullOrEmpty(egressItem.File.Location):
-                meetingSpeakDetail.FileTranscriptionStatus = FileTranscriptionStatus.Completed;
-                await _meetingDataProvider.UpdateMeetingSpeakDetailAsync(meetingSpeakDetail, cancellationToken: cancellationToken).ConfigureAwait(false);
-                break;
+            "EGRESS_COMPLETE" or "EGRESS_LIMIT_REACHED" when !string.IsNullOrEmpty(egressItem.File.Location) => FileTranscriptionStatus.Completed,
+            "EGRESS_STARTING" or "EGRESS_ENDING" when meetingSpeakDetail.FileTranscriptionStatus == FileTranscriptionStatus.Pending => FileTranscriptionStatus.InProcess,
+            _ => FileTranscriptionStatus.Exception
+        };
 
-            case "EGRESS_STARTING"
-                when meetingSpeakDetail.FileTranscriptionStatus == FileTranscriptionStatus.Pending:
-                
-            case "EGRESS_ENDING"
-                when meetingSpeakDetail.FileTranscriptionStatus == FileTranscriptionStatus.Pending:
-                meetingSpeakDetail.FileTranscriptionStatus = FileTranscriptionStatus.InProcess;
-                await _meetingDataProvider.UpdateMeetingSpeakDetailAsync(meetingSpeakDetail, cancellationToken: cancellationToken).ConfigureAwait(false);
-                _backgroundJobClient.Enqueue(() => TranscriptionMeetingAsync(meetingSpeakDetail, cancellationToken));
-                break;
-            
-            case "EGRESS_COMPLETE" when string.IsNullOrEmpty(egressItem.File.Location):
+        await _meetingDataProvider.UpdateMeetingSpeakDetailAsync(meetingSpeakDetail, cancellationToken: cancellationToken).ConfigureAwait(false);
 
-            case "EGRESS_LIMIT_REACHED" when string.IsNullOrEmpty(egressItem.File.Location):
-                
-            default:
-                meetingSpeakDetail.FileTranscriptionStatus = FileTranscriptionStatus.Exception;
-                await _meetingDataProvider.UpdateMeetingSpeakDetailAsync(meetingSpeakDetail, cancellationToken: cancellationToken).ConfigureAwait(false);
-                break;
+        if (meetingSpeakDetail.FileTranscriptionStatus == FileTranscriptionStatus.InProcess)
+        {
+            _backgroundJobClient.Enqueue(() => TranscriptionMeetingAsync(meetingSpeakDetail, cancellationToken));
         }
     }
 

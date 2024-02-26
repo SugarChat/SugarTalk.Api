@@ -7,16 +7,16 @@ using SugarTalk.Messages.Commands.Meetings;
 
 namespace SugarTalk.Core.Handlers.CommandHandlers.Meetings;
 
-public class SchedulingGetMeetingTranscriptionUrlStatusCommandHandler : ICommandHandler<SchedulingGetMeetingTranscriptionUrlStatusCommand>
+public class UpdateMeetingFileTranscriptionStatusCommandHandler : ICommandHandler<UpdateMeetingFileTranscriptionStatusCommand>
 {
     private readonly IMeetingService _meetingService;
 
-    public SchedulingGetMeetingTranscriptionUrlStatusCommandHandler(IMeetingService meetingService)
+    public UpdateMeetingFileTranscriptionStatusCommandHandler(IMeetingService meetingService)
     {
         _meetingService = meetingService;
     }
     
-    public async Task Handle(IReceiveContext<SchedulingGetMeetingTranscriptionUrlStatusCommand> context, CancellationToken cancellationToken)
+    public async Task Handle(IReceiveContext<UpdateMeetingFileTranscriptionStatusCommand> context, CancellationToken cancellationToken)
     {
         await _meetingService.UpdateMeetingFileTranscriptionStatusAsync(context.Message, cancellationToken).ConfigureAwait(false);
     }
