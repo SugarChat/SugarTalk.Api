@@ -519,6 +519,8 @@ namespace SugarTalk.Core.Services.Meetings
             if (meetingHistories is not { Count: > 0 }) return;
 
             meetingHistories.ForEach(x => x.IsDeleted = true);
+
+            await _unitOfWork.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
         }
 
         public async Task CancelAppointmentMeetingAsync(Guid meetingId, CancellationToken cancellationToken)
