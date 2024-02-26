@@ -198,7 +198,7 @@ public partial class MeetingServiceFixture
     }
     
     [Theory]
-    [InlineData( "EGRESS_COMPLETE", "", FileTranscriptionStatus.Exception)]
+    [InlineData("EGRESS_COMPLETE", "", FileTranscriptionStatus.Exception)]
     [InlineData("EGRESS_COMPLETE", "path/to/file/url", FileTranscriptionStatus.Completed)]
     [InlineData("EGRESS_LIMIT_REACHED","", FileTranscriptionStatus.Exception)]
     [InlineData("EGRESS_LIMIT_REACHED", "path/to/file/url", FileTranscriptionStatus.Completed)]
@@ -272,6 +272,5 @@ public partial class MeetingServiceFixture
             builder.RegisterInstance(liveKitClient);
             builder.RegisterInstance(liveKitServerUtilService);
         });
-        
     }
 }

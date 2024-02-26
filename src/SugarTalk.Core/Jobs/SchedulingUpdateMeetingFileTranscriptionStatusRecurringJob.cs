@@ -21,5 +21,5 @@ public class SchedulingUpdateMeetingFileTranscriptionStatusRecurringJob : IRecur
 
     public string JobId => nameof(SchedulingUpdateMeetingFileTranscriptionStatusRecurringJob);
 
-    public string CronExpression => "*/5 * * * *";
+    public string CronExpression => "*/3 * * * *";
 }
