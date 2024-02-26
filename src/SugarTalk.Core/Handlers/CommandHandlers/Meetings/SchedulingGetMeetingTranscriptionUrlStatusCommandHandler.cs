@@ -18,6 +18,6 @@ public class SchedulingGetMeetingTranscriptionUrlStatusCommandHandler : ICommand
     
     public async Task Handle(IReceiveContext<SchedulingGetMeetingTranscriptionUrlStatusCommand> context, CancellationToken cancellationToken)
     {
-        await _meetingService.SchedulingGetMeetingTranscriptionUrlStatusRecurringJobAsync(context.Message, cancellationToken).ConfigureAwait(false);
+        await _meetingService.UpdateMeetingFileTranscriptionStatusAsync(context.Message, cancellationToken).ConfigureAwait(false);
     }
 }
