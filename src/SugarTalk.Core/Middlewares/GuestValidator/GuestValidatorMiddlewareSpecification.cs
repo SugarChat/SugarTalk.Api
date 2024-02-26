@@ -32,7 +32,7 @@ public class GuestValidatorMiddlewareSpecification<TContext> : IPipeSpecificatio
     {
         if (!ShouldExecute(context, cancellationToken)) return;
         
-        var currentUser = await _identityService.GetCurrentUserAsync(cancellationToken: cancellationToken);
+        var currentUser = await _identityService.GetCurrentUserAsync(true, cancellationToken: cancellationToken);
         
         if (currentUser.Issuer == UserAccountIssuer.Guest && !context.Message.GetType().GetAttribute<AllowGuestAccessAttribute>().Any()) 
             throw new GuestIsNotAllowException();
