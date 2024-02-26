@@ -22,6 +22,8 @@ public class JoinMeetingResponse : SugarTalkResponse<JoinMeetingResponseData>
 
 public class JoinMeetingResponseData
 {
+    public int UserId { get; set; }
+    
     public MeetingDto Meeting { get; set; }
     
     public MeetingUserSettingDto MeetingUserSetting { get; set; }

@@ -120,6 +120,8 @@ public partial class MeetingDataProvider
         if (meetingRecords is not { Count: > 0 }) return;
         
         meetingRecords.ForEach(x => x.IsDeleted = true);
+        
+        await _unitOfWork.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
     }
 
     public async Task PersistMeetingRecordAsync(Guid meetingId, Guid meetingRecordId, CancellationToken cancellationToken)

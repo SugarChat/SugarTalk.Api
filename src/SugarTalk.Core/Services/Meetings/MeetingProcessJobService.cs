@@ -5,12 +5,15 @@ using SugarTalk.Core.Ioc;
 using SugarTalk.Core.Data;
 using SugarTalk.Core.Services.Utils;
 using SugarTalk.Messages.Commands.Meetings;
+using SugarTalk.Messages.Enums.Meeting;
 
 namespace SugarTalk.Core.Services.Meetings;
 
 public interface IMeetingProcessJobService : IScopedDependency
 {
     Task UpdateRepeatMeetingAsync(UpdateRepeatMeetingCommand command, CancellationToken cancellationToken);
+    
+    Task CheckAppointmentMeetingDateAsync(CheckAppointmentMeetingDateCommand command, CancellationToken cancellationToken);
 }
 
 public class MeetingProcessJobService : IMeetingProcessJobService
@@ -28,12 +31,35 @@ public class MeetingProcessJobService : IMeetingProcessJobService
 
     public async Task UpdateRepeatMeetingAsync(UpdateRepeatMeetingCommand command, CancellationToken cancellationToken)
     {
-        var allAppointmentMeeting = await _meetingDataProvider.GetAllRepeatMeetingAsync(cancellationToken).ConfigureAwait(false);
+        var allAppointmentMeeting =
+            await _meetingDataProvider.GetAllRepeatMeetingAsync(cancellationToken).ConfigureAwait(false);
 
         if (allAppointmentMeeting is not { Count: > 0 }) return;
 
         var meetingIds = allAppointmentMeeting.Select(x => x.Id);
 
-        var subMeetings = await _meetingDataProvider.GetMeetingSubMeetingsAsync(meetingIds, cancellationToken).ConfigureAwait(false);
+        var subMeetings = await _meetingDataProvider.GetMeetingSubMeetingsAsync(meetingIds, cancellationToken)
+            .ConfigureAwait(false);
+    }
+
+    public async Task CheckAppointmentMeetingDateAsync(CheckAppointmentMeetingDateCommand command, CancellationToken cancellationToken)
+    {
+        var appointmentMeetings = await _meetingDataProvider
+            .GetAllAppointmentMeetingWithPendingAndInProgressAsync(cancellationToken).ConfigureAwait(false);
+
+        foreach (var appointmentMeeting in appointmentMeetings)
+        {
+            if (appointmentMeeting.StartDate < _clock.Now.ToUnixTimeSeconds() && appointmentMeeting.EndDate > _clock.Now.ToUnixTimeSeconds())
+            {
+                appointmentMeeting.Status = MeetingStatus.InProgress;
+            }
+            
+            if(appointmentMeeting.EndDate <= _clock.Now.ToUnixTimeSeconds())
+            {
+                appointmentMeeting.Status = MeetingStatus.Completed;
+            }
+        }
+
+        await _unitOfWork.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
     }
 }

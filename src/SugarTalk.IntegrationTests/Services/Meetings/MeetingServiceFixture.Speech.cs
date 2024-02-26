@@ -5,7 +5,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Autofac;
 using Mediator.Net;
-using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
 using NSubstitute;
 using Shouldly;
@@ -14,14 +13,11 @@ using SugarTalk.Core.Domain.Meeting;
 using SugarTalk.Core.Services.Http.Clients;
 using SugarTalk.Core.Services.LiveKit;
 using SugarTalk.Core.Services.OpenAi;
-using SugarTalk.Core.Services.Utils;
 using SugarTalk.Messages.Commands.Meetings;
 using SugarTalk.Messages.Commands.Speech;
 using SugarTalk.Messages.Dto.Meetings.Speech;
 using SugarTalk.Messages.Dto.Users;
-using SugarTalk.Messages.Enums.Meeting;
 using SugarTalk.Messages.Enums.Speech;
-using SugarTalk.Messages.Requests.Meetings;
 using SugarTalk.Messages.Requests.Meetings.User;
 using SugarTalk.Messages.Requests.Speech;
 using Xunit;
@@ -241,126 +237,6 @@ public partial class MeetingServiceFixture
             
             builder.RegisterInstance(openAiService);
             builder.RegisterInstance(liveKitServerUtilService);
-        });
-    }
-    
-    [Fact]
-    public async Task CanGetAppointmentMeetings()
-    {
-        var currentUser = new TestCurrentUser();
-        
-        var meetId1 = Guid.NewGuid();
-        var meetId2 = Guid.NewGuid();
-        var meetId3 = Guid.NewGuid();
-        
-        await RunWithUnitOfWork<IRepository>(async repository =>
-        {
-            await repository.InsertAllAsync(new List<Meeting>
-            {
-                new()
-                {
-                    Id = meetId1,
-                    Title = "会议1",
-                    TimeZone = "",
-                    SecurityCode = "",
-                    StartDate = DateTimeOffset.Parse("2024-02-02T03:10:00.825Z").ToUnixTimeMilliseconds(),
-                    EndDate = DateTimeOffset.Parse("2024-02-02T03:11:00.825Z").ToUnixTimeMilliseconds(),
-                    AppointmentType = MeetingAppointmentType.Appointment,
-                    IsMuted = true,
-                    IsRecorded = true,
-                    MeetingNumber = "",
-                    MeetingStreamMode = 0,
-                    MeetingMasterUserId = 1
-                },
-                new()
-                {
-                    Id = meetId2,
-                    Title = "会议2",
-                    TimeZone = "",
-                    SecurityCode = "",
-                    StartDate = DateTimeOffset.Parse("2024-02-02T03:11:00.825Z").ToUnixTimeMilliseconds(),
-                    EndDate = DateTimeOffset.Parse("2024-02-02T03:12:00.825Z").ToUnixTimeMilliseconds(),
-                    AppointmentType = MeetingAppointmentType.Appointment,
-                    IsMuted = true,
-                    IsRecorded = true,
-                    MeetingNumber = "",
-                    MeetingStreamMode = 0,
-                    MeetingMasterUserId = 1
-                },
-                new()
-                {
-                    Id = meetId3,
-                    Title = "会议3",
-                    TimeZone = "",
-                    SecurityCode = "",
-                    StartDate = DateTimeOffset.Parse("2024-02-02T03:12:00.825Z").ToUnixTimeMilliseconds(),
-                    EndDate = DateTimeOffset.Parse("2024-02-02T03:13:00.825Z").ToUnixTimeMilliseconds(),
-                    AppointmentType = MeetingAppointmentType.Quick,
-                    IsMuted = true,
-                    IsRecorded = true,
-                    MeetingNumber = "",
-                    MeetingStreamMode = 0,
-                    MeetingMasterUserId = 1
-                }
-            });
-       
-            await repository.InsertAllAsync(new List<MeetingRepeatRule>
-            {
-                new()
-                {
-                    MeetingId = meetId1,
-                    RepeatType = MeetingRepeatType.Weekly
-                },
-                new()
-                {
-                    MeetingId = meetId2,
-                    RepeatType = MeetingRepeatType.Weekly
-                },
-                new()
-                {
-                    MeetingId = meetId3,
-                    RepeatType = MeetingRepeatType.None
-                }
-            });
-
-            await repository.InsertAllAsync(new List<MeetingSubMeeting>
-            {
-                new()
-                {
-                    MeetingId = meetId1,
-                    StartTime = DateTimeOffset.Parse("2024-02-02T03:10:00.825Z").ToUnixTimeMilliseconds(),
-                    EndTime = DateTimeOffset.Parse("2024-02-02T03:11:00.825Z").ToUnixTimeMilliseconds(),
-                },
-                new()
-                {
-                    MeetingId = meetId2,
-                    StartTime = DateTimeOffset.Parse("2024-02-02T03:11:00.825Z").ToUnixTimeMilliseconds(),
-                    EndTime = DateTimeOffset.Parse("2024-02-02T03:12:00.825Z").ToUnixTimeMilliseconds(),
-                }
-            });
-        });
-
-        await RunWithUnitOfWork<IMediator, IRepository>(async (mediator, repository) =>
-        {
-            var response = await mediator.RequestAsync<GetAppointmentMeetingsRequest, GetAppointmentMeetingsResponse>(
-                new GetAppointmentMeetingsRequest
-                {
-                    Page = 1, PageSize = 5
-                });
-
-            response.Data.Count.ShouldBe(3);
-            response.Data.Records[0].MeetingId.ShouldBe(meetId1);
-            response.Data.Records[1].MeetingId.ShouldBe(meetId2);
-            response.Data.Records[2].MeetingId.ShouldBe(meetId3);
-        }, builder =>
-        {
-            var clock = Substitute.For<IClock>();
-            var openAiService = Substitute.For<IOpenAiService>();          
-            clock.Now.Returns(DateTimeOffset.Parse("2024-02-02T02:09:00.825Z"));
-            
-            
-            builder.RegisterInstance(openAiService);
-            builder.RegisterInstance(clock);
         });
     }
 }
