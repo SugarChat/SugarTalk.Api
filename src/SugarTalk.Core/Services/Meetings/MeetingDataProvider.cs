@@ -1,13 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
 using AutoMapper;
-using AutoMapper.QueryableExtensions;
 using Microsoft.EntityFrameworkCore;
-using Newtonsoft.Json;
 using SugarTalk.Core.Data;
 using SugarTalk.Core.Domain.Account;
 using SugarTalk.Core.Domain.Meeting;
@@ -432,35 +429,41 @@ namespace SugarTalk.Core.Services.Meetings
 
         public async Task<(int Count, List<AppointmentMeetingDto> Records)> GetAppointmentMeetingsByUserIdAsync(GetAppointmentMeetingsRequest request, CancellationToken cancellationToken)
         {
-            var query = 
+            var maxQueryDate = _clock.Now.AddMonths(1).ToUnixTimeSeconds();
+            var startOfDay = new DateTimeOffset(_clock.Now.Year, _clock.Now.Month, _clock.Now.Day, 0, 0, 0, TimeSpan.Zero).ToUnixTimeSeconds();
+
+            var query =
                 from meeting in _repository.Query<Meeting>()
-                join rules in _repository.Query<MeetingRepeatRule>()
-                    on meeting.Id equals rules.MeetingId
-                join subMeetings in _repository.Query<MeetingSubMeeting>()
-                    on meeting.Id equals subMeetings.MeetingId into subMeetingGroup
+                join rules in _repository.Query<MeetingRepeatRule>() on meeting.Id equals rules.MeetingId
+                join subMeetings in _repository.Query<MeetingSubMeeting>() on meeting.Id equals subMeetings.MeetingId
+                    into subMeetingGroup
                 from subMeeting in subMeetingGroup.DefaultIfEmpty()
-                where meeting.MeetingMasterUserId == _currentUser.Id
+                where meeting.MeetingMasterUserId == _currentUser.Id &&
+                      meeting.AppointmentType == MeetingAppointmentType.Appointment &&
+                      subMeeting.StartTime >= startOfDay &&
+                      subMeeting.EndTime <= maxQueryDate
                 select new AppointmentMeetingDto
                 {
                     MeetingId = meeting.Id,
                     MeetingNumber = meeting.MeetingNumber,
                     StartDate = rules.RepeatType == MeetingRepeatType.None ? meeting.StartDate : subMeeting.StartTime,
-                    EndDate = rules.RepeatType == MeetingRepeatType.None ? meeting.StartDate : subMeeting.EndTime,
+                    EndDate = rules.RepeatType == MeetingRepeatType.None ? meeting.EndDate : subMeeting.EndTime,
                     Status = meeting.Status,
                     Title = meeting.Title,
                     AppointmentType = meeting.AppointmentType
-                }; 
-    
-            var count = await query.CountAsync(cancellationToken).ConfigureAwait(false);
+                };
 
-            var records = await query
-                .OrderBy(m => (m.StartDate - _clock.Now.ToUnixTimeSeconds()))
-                .Skip((request.Page - 1) * request.PageSize) 
-                .Take(request.PageSize) 
-                .ToListAsync(cancellationToken)
-                .ConfigureAwait(false);
-    
-            return (count, records);
+            var appointmentMeetingRecords = await query.ToListAsync(cancellationToken).ConfigureAwait(false);
+
+            var records = appointmentMeetingRecords
+                .GroupBy(record => record.MeetingId)
+                .Select(g => g.MinBy(m => m.StartDate))
+                .OrderBy(record => record.StartDate)
+                .Skip((request.Page - 1) * request.PageSize)
+                .Take(request.PageSize)
+                .ToList();
+            
+            return (records.Count, records);
         }
         
         public async Task MarkMeetingAsCompletedAsync(Meeting meeting, CancellationToken cancellationToken)

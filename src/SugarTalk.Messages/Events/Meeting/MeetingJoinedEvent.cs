@@ -6,6 +6,8 @@ namespace SugarTalk.Messages.Events.Meeting;
 
 public class MeetingJoinedEvent : IEvent
 {
+    public int UserId { get; set; }
+    
     public MeetingDto Meeting { get; set; }
     
     public MeetingUserSettingDto MeetingUserSetting { get; set; }

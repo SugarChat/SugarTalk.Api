@@ -236,7 +236,7 @@ public class MeetingController : ControllerBase
     #endregion
     
     [Route("invite/{meetingNumber}"), HttpPost]
-    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(JoinMeetingCommand))]
+    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(JoinMeetingResponse))]
     public async Task<IActionResult> MeetingInviteAsync(string meetingNumber, [FromBody] MeetingInviteRequestDto requestData)
     {
         var response = await _mediator.SendAsync<JoinMeetingCommand, JoinMeetingResponse>(new JoinMeetingCommand
