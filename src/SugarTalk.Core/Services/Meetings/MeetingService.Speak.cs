@@ -7,6 +7,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Hangfire;
 using SugarTalk.Core.Domain.Meeting;
+using SugarTalk.Core.Extensions;
 using SugarTalk.Messages.Dto.LiveKit;
 using SugarTalk.Messages.Dto.Meetings.Speak;
 using SugarTalk.Messages.Enums.Meeting.Speak;
@@ -49,40 +50,45 @@ public partial class MeetingService
     public async Task UpdateMeetingFileTranscriptionStatusAsync(
         UpdateMeetingFileTranscriptionStatusCommand command, CancellationToken cancellationToken)
     {
-        var user = await _accountDataProvider.GetUserAccountAsync(_currentUser.Id, cancellationToken: cancellationToken).ConfigureAwait(false);
-        
         var meetingSpeakDetails = await _meetingDataProvider
             .GetMeetingSpeakDetailsAsync(cancellationToken: cancellationToken).ConfigureAwait(false);
         
-        meetingSpeakDetails.ForEach(meetingSpeakDetail => ProcessMeetingSpeakDetailAsync(meetingSpeakDetail, user, cancellationToken).ConfigureAwait(false));
+        var groupedMeetings = meetingSpeakDetails.Where(x =>
+                x.FileTranscriptionStatus is FileTranscriptionStatus.Pending or FileTranscriptionStatus.InProcess)
+            .GroupBy(x => x.MeetingNumber);
+
+        groupedMeetings.SelectMany(x => x)
+            .ForEach(y => ProcessMeetingSpeakDetailAsync(y, cancellationToken).ConfigureAwait(false));
     }
     
     private async Task ProcessMeetingSpeakDetailAsync(
-        MeetingSpeakDetail meetingSpeakDetail, UserAccountDto user, CancellationToken cancellationToken)
+        MeetingSpeakDetail meetingSpeakDetail, CancellationToken cancellationToken)
     {
         var getEgressInfoListResponse = await _liveKitClient.GetEgressInfoListAsync(
             new GetEgressRequestDto()
             {
-                Token = _liveKitServerUtilService.GenerateTokenForRecordMeeting(user, meetingSpeakDetail.MeetingNumber),
-                EgressId = meetingSpeakDetail.EgressId
+                Token = _liveKitServerUtilService.GenerateTokenForRecordMeeting(new UserAccountDto() {Id = 0, UserName = "user"}, meetingSpeakDetail.MeetingNumber)
             }, cancellationToken).ConfigureAwait(false);
         
-        var egressItem = getEgressInfoListResponse.EgressItems.FirstOrDefault() ?? new EgressItemDto();
+        var egressList = getEgressInfoListResponse.EgressItems.ToList();
 
-        meetingSpeakDetail.FileTranscriptionStatus = egressItem.Status switch
+        egressList.ForEach(egressItem =>
         {
-            "EGRESS_COMPLETE" or "EGRESS_LIMIT_REACHED" when !string.IsNullOrEmpty(egressItem.File.Location) && meetingSpeakDetail.FileTranscriptionStatus == FileTranscriptionStatus.Pending => FileTranscriptionStatus.InProcess, 
-            "EGRESS_COMPLETE" or "EGRESS_LIMIT_REACHED" when !string.IsNullOrEmpty(egressItem.File.Location) && meetingSpeakDetail.FileTranscriptionStatus != FileTranscriptionStatus.Pending => meetingSpeakDetail.FileTranscriptionStatus, 
-            "EGRESS_ENDING" or "EGRESS_STARTING" => meetingSpeakDetail.FileTranscriptionStatus,
-            _ => FileTranscriptionStatus.Exception
-        };
+            meetingSpeakDetail.FileTranscriptionStatus = egressItem.Status switch
+            {
+                "EGRESS_STARTING" or "EGRESS_ACTIVE" =>  FileTranscriptionStatus.Pending,
+                "EGRESS_ENDING" when !string.IsNullOrEmpty(egressItem.File.Location) => FileTranscriptionStatus.Completed,
+                "EGRESS_ENDING" when string.IsNullOrEmpty(egressItem.File.Location) => FileTranscriptionStatus.InProcess,
+                "EGRESS_COMPLETE" or "EGRESS_LIMIT_REACHED" when !string.IsNullOrEmpty(egressItem.File.Location) => FileTranscriptionStatus.InProcess,
+                _ => FileTranscriptionStatus.Exception
+            };
 
-        await _meetingDataProvider.UpdateMeetingSpeakDetailAsync(meetingSpeakDetail, cancellationToken: cancellationToken).ConfigureAwait(false);
+             _meetingDataProvider.UpdateMeetingSpeakDetailAsync(meetingSpeakDetail, cancellationToken: cancellationToken).ConfigureAwait(false);
 
-        if ((egressItem.Status == "EGRESS_COMPLETE" || egressItem.Status == "EGRESS_LIMIT_REACHED") && meetingSpeakDetail.FileTranscriptionStatus == FileTranscriptionStatus.InProcess)
-        {
-            _backgroundJobClient.Enqueue(() => TranscriptionMeetingAsync(meetingSpeakDetail, cancellationToken));
-        }
+            if ((egressItem.Status == "EGRESS_COMPLETE" || egressItem.Status == "EGRESS_LIMIT_REACHED") && meetingSpeakDetail.FileTranscriptionStatus == FileTranscriptionStatus.InProcess)
+                _backgroundJobClient.Enqueue(() => TranscriptionMeetingAsync(meetingSpeakDetail, cancellationToken));
+        });
+       
     }
 
     private async Task<MeetingSpeakDetail> StartRecordUserSpeakDetailAsync(RecordMeetingSpeakCommand command, CancellationToken cancellationToken)
@@ -177,7 +183,7 @@ public partial class MeetingService
         
         speakDetail.SpeakContent = await _openAiService.TranscriptionAsync(fileBytes, TranscriptionLanguage.Chinese, cancellationToken: cancellationToken).ConfigureAwait(false);
         
-        if (speakDetail.SpeakContent == null) speakDetail.FileTranscriptionStatus = FileTranscriptionStatus.Pending;
+        if (speakDetail.SpeakContent == null) speakDetail.FileTranscriptionStatus = FileTranscriptionStatus.Exception;
 
         speakDetail.FileTranscriptionStatus = FileTranscriptionStatus.Completed;
         
