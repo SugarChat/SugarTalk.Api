@@ -193,10 +193,11 @@ namespace SugarTalk.Core.Services.Meetings
 
             foreach (var session in userSessions.OrderBy(x => x.CreatedDate))
             {
-                if (userAccountsDict.TryGetValue(session.UserId, out var user))
-                {
-                    session.UserName = user.Issuer == UserAccountIssuer.Guest ? $"Anonymity{anonymityCounter++}" : user.UserName;
-                }
+                if (!userAccountsDict.TryGetValue(session.UserId, out var user)) continue;
+
+                if (user.Issuer == UserAccountIssuer.Guest) session.GuestName = $"Anonymity{anonymityCounter++}";
+
+                session.UserName = user.UserName;
             }
 
             return userSessions;
