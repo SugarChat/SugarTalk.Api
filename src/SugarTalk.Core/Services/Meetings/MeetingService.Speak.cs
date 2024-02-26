@@ -71,8 +71,8 @@ public partial class MeetingService
 
         meetingSpeakDetail.FileTranscriptionStatus = egressItem.Status switch
         {
-            "EGRESS_COMPLETE" or "EGRESS_LIMIT_REACHED" when !string.IsNullOrEmpty(egressItem.File.Location) && meetingSpeakDetail.FileTranscriptionStatus == FileTranscriptionStatus.Pending  => FileTranscriptionStatus.InProcess, 
-            "EGRESS_COMPLETE" or "EGRESS_LIMIT_REACHED" when !string.IsNullOrEmpty(egressItem.File.Location) && meetingSpeakDetail.FileTranscriptionStatus != FileTranscriptionStatus.Pending  => meetingSpeakDetail.FileTranscriptionStatus, 
+            "EGRESS_COMPLETE" or "EGRESS_LIMIT_REACHED" when !string.IsNullOrEmpty(egressItem.File.Location) && meetingSpeakDetail.FileTranscriptionStatus == FileTranscriptionStatus.Pending => FileTranscriptionStatus.InProcess, 
+            "EGRESS_COMPLETE" or "EGRESS_LIMIT_REACHED" when !string.IsNullOrEmpty(egressItem.File.Location) && meetingSpeakDetail.FileTranscriptionStatus != FileTranscriptionStatus.Pending => meetingSpeakDetail.FileTranscriptionStatus, 
             "EGRESS_ENDING" or "EGRESS_STARTING" => meetingSpeakDetail.FileTranscriptionStatus,
             _ => FileTranscriptionStatus.Exception
         };
