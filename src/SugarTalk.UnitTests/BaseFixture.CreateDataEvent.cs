@@ -47,7 +47,7 @@ public partial class BaseFixture
     }
 
     protected MeetingUserSession CreateUserSessionEvent(int id, int userId, Guid meetingId, Guid? meetingSubId = null, DateTimeOffset? createdDate = null,
-        MeetingAttendeeStatus status = MeetingAttendeeStatus.Absent, long firstJoinTime = 0, long lastQuitTime = 0,
+        MeetingAttendeeStatus status = MeetingAttendeeStatus.Absent, MeetingUserSessionOnlineType onlineType = MeetingUserSessionOnlineType.Online, long firstJoinTime = 0, long lastQuitTime = 0,
         int totalJoinCount = 0, long cumulativeTime = 0, bool isMuted = false, bool isSharingScreen = false)
     {
         return new MeetingUserSession
@@ -57,6 +57,7 @@ public partial class BaseFixture
             MeetingId = meetingId,
             MeetingSubId = meetingSubId,
             Status = status,
+            OnlineType = onlineType,
             FirstJoinTime = firstJoinTime,
             LastQuitTime = lastQuitTime,
             TotalJoinCount = totalJoinCount,

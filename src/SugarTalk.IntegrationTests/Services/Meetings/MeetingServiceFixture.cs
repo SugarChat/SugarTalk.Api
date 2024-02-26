@@ -214,12 +214,14 @@ public partial class MeetingServiceFixture : MeetingFixtureBase
                 {
                     UserId = user1.Id,
                     IsMuted = false,
+                    Status = MeetingAttendeeStatus.Present,
                     MeetingId = scheduleMeetingResponse.Data.Id
                 },
                 new()
                 {
                     UserId = user2.Id,
                     IsMuted = true,
+                    Status = MeetingAttendeeStatus.Present,
                     MeetingId = scheduleMeetingResponse.Data.Id
                 }
             });
@@ -254,6 +256,7 @@ public partial class MeetingServiceFixture : MeetingFixtureBase
             builder.RegisterInstance(openAiService);
         });
     }
+    
     [Fact]
     public async Task CanGetMeetingByNumber()
     {
@@ -900,5 +903,5 @@ public partial class MeetingServiceFixture : MeetingFixtureBase
 
         builder.RegisterInstance(antMediaServerUtilService);
         builder.RegisterInstance(openAiService);
-        }
+    }
 }
