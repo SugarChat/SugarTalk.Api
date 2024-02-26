@@ -19,6 +19,7 @@ using SugarTalk.Core.Services.Identity;
 using SugarTalk.Core.Services.Utils;
 using SugarTalk.Messages.Dto;
 using SugarTalk.Messages.Dto.Meetings;
+using SugarTalk.Messages.Enums.Account;
 using SugarTalk.Messages.Enums.Meeting;
 using SugarTalk.Messages.Requests.Meetings;
 
@@ -171,30 +172,37 @@ namespace SugarTalk.Core.Services.Meetings
 
             if (includeUserSessions)
             {
-                updateMeeting.UserSessions =
+                var allUserSessions =
                     await GetUserSessionsByMeetingIdAsync(meeting.Id, updateMeeting.MeetingSubId, cancellationToken)
                         .ConfigureAwait(false);
 
-                await EnrichMeetingUserSessionsAsync(updateMeeting.UserSessions, cancellationToken).ConfigureAwait(false);
+                updateMeeting.UserSessions = await EnrichMeetingUserSessionsAsync(allUserSessions, cancellationToken).ConfigureAwait(false);
             }
             
             return updateMeeting;
         }
 
-        private async Task EnrichMeetingUserSessionsAsync(
+        private async Task<List<MeetingUserSessionDto>> EnrichMeetingUserSessionsAsync(
             List<MeetingUserSessionDto> userSessions, CancellationToken cancellationToken)
         {
+            var anonymityCounter = 1;
+            
             var userIds = userSessions.Select(x => x.UserId);
 
             var userAccounts = await _repository
                 .ToListAsync<UserAccount>(x => userIds.Contains(x.Id), cancellationToken).ConfigureAwait(false);
 
-            userSessions.ForEach(userSession =>
+            var userAccountsDict = userAccounts.ToDictionary(x => x.Id, x => x);
+
+            foreach (var session in userSessions.OrderBy(x => x.CreatedDate))
             {
-                userSession.UserName = userAccounts
-                    .Where(x => x.Id == userSession.UserId)
-                    .Select(x => x.UserName).FirstOrDefault();
-            });
+                if (userAccountsDict.TryGetValue(session.UserId, out var user))
+                {
+                    session.UserName = user.Issuer == UserAccountIssuer.Guest ? $"Anonymity{anonymityCounter++}" : user.UserName;
+                }
+            }
+
+            return userSessions;
         }
         
         public async Task RemoveMeetingUserSessionsAsync(
