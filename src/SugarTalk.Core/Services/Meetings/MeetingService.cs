@@ -262,6 +262,8 @@ namespace SugarTalk.Core.Services.Meetings
             await _meetingDataProvider.UpdateMeetingIfRequiredAsync(meeting.Id, user.Id, cancellationToken).ConfigureAwait(false);
             
             await ConnectUserToMeetingAsync(user, meeting, command.IsMuted, cancellationToken).ConfigureAwait(false);
+
+            meeting.Status = MeetingStatus.InProgress;
             
             var userSetting = new MeetingUserSetting();
             

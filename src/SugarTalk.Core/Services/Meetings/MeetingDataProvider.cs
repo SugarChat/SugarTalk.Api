@@ -573,11 +573,11 @@ namespace SugarTalk.Core.Services.Meetings
 
         public async Task<List<Meeting>> GetAvailableRepeatMeetingAsync(CancellationToken cancellationToken)
         {
-            return await _repository.Query<Meeting>()
+            return await _repository.QueryNoTracking<Meeting>()
                 .Where(x => x.AppointmentType == MeetingAppointmentType.Appointment)
                 .Join(_repository.QueryNoTracking<MeetingRepeatRule>(), meeting => meeting.Id, rule => rule.MeetingId,
                     (meeting, rule) => new { meeting, rule })
-                .Where(y => y.rule.RepeatUntilDate > _clock.Now)
+                .Where(y => y.rule.RepeatType != MeetingRepeatType.None)
                 .Select(x => x.meeting).ToListAsync(cancellationToken).ConfigureAwait(false);
         }
 
@@ -586,6 +586,7 @@ namespace SugarTalk.Core.Services.Meetings
         {
             return await _repository.QueryNoTracking<MeetingSubMeeting>()
                 .Where(x => meetingIds.Contains(x.MeetingId))
+                .Where(x => x.StartTime > _clock.Now.ToUnixTimeSeconds())
                 .Where(x => x.SubConferenceStatus == MeetingRecordSubConferenceStatus.Default)
                 .ToListAsync(cancellationToken).ConfigureAwait(false);
         }

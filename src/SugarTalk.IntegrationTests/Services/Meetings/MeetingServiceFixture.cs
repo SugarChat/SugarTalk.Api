@@ -15,6 +15,7 @@ using SugarTalk.Core.Services.Account;
 using SugarTalk.Core.Services.AntMediaServer;
 using SugarTalk.Core.Services.Exceptions;
 using SugarTalk.Core.Services.LiveKit;
+using SugarTalk.Core.Services.Meetings;
 using SugarTalk.Core.Services.OpenAi;
 using SugarTalk.Core.Services.Utils;
 using SugarTalk.IntegrationTests.TestBaseClasses;
@@ -874,6 +875,50 @@ public partial class MeetingServiceFixture : MeetingFixtureBase
             MockClock(builder, new DateTimeOffset(2024, 2, 24, 10, 0, 0, TimeSpan.Zero));
         });
     }
+    
+    
+    [Fact]
+    public async Task CanUpdateRepeatMeeting()
+    {
+        await RunWithUnitOfWork<IRepository, IMeetingProcessJobService>(async (repository, meetingProcessJobService) =>
+        {
+            var meeting1Response = await _meetingUtil.ScheduleMeeting(appointmentType: MeetingAppointmentType.Appointment, repeatType: MeetingRepeatType.Daily, startDate: DateTimeOffset.Parse("2024-02-23T10:00:00"), endDate: DateTimeOffset.Parse("2024-02-23T11:00:00"));
+            var meeting2Response = await _meetingUtil.ScheduleMeeting(appointmentType: MeetingAppointmentType.Appointment, repeatType: MeetingRepeatType.Weekly, startDate: DateTimeOffset.Parse("2024-02-23T10:00:00"), endDate: DateTimeOffset.Parse("2024-02-23T11:00:00"));
+            var meeting3Response = await _meetingUtil.ScheduleMeeting(appointmentType: MeetingAppointmentType.Appointment, repeatType: MeetingRepeatType.BiWeekly, startDate: DateTimeOffset.Parse("2024-02-23T10:00:00"), endDate: DateTimeOffset.Parse("2024-02-23T11:00:00"));
+
+            meeting1Response.Data.Status.ShouldBe(MeetingStatus.Pending);
+            
+            var joinMeeting = await _meetingUtil.JoinMeeting(meeting1Response.Data.MeetingNumber);
+            joinMeeting.Status.ShouldBe(MeetingStatus.InProgress);
+
+            await meetingProcessJobService.UpdateRepeatMeetingAsync(new UpdateRepeatMeetingCommand(), CancellationToken.None);
+
+            var meetings = await repository.Query<Meeting>().ToListAsync(CancellationToken.None).ConfigureAwait(false);
+            meetings.Count.ShouldBe(3);
+
+            meetings.Count(x =>
+                x.MeetingNumber == meeting1Response.Data.MeetingNumber &&
+                x.Status == MeetingStatus.Pending &&
+                x.StartDate == DateTimeOffset.Parse("2024-02-24T10:00:00").ToUnixTimeSeconds()).ShouldBe(1);
+            
+            meetings.Count(x =>
+                x.MeetingNumber == meeting2Response.Data.MeetingNumber &&
+                x.Status == MeetingStatus.Pending &&
+                x.StartDate == DateTimeOffset.Parse("2024-03-01T10:00:00").ToUnixTimeSeconds()).ShouldBe(1);
+            
+            meetings.Count(x =>
+                x.MeetingNumber == meeting3Response.Data.MeetingNumber &&
+                x.Status == MeetingStatus.Pending &&
+                x.StartDate == DateTimeOffset.Parse("2024-03-08T10:00:00").ToUnixTimeSeconds()).ShouldBe(1);
+        }, builder =>
+        {
+            var openAiService = Substitute.For<IOpenAiService>();          
+            
+            builder.RegisterInstance(openAiService);
+            MockClock(builder, new DateTimeOffset(2024, 2, 24, 0, 1, 0, TimeSpan.Zero));
+        });
+    }
+    
     
     private static void MockLiveKitService(ContainerBuilder builder)
     {

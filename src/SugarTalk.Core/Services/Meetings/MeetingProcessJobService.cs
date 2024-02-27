@@ -38,26 +38,26 @@ public class MeetingProcessJobService : IMeetingProcessJobService
 
         var meetingIds = repeatMeetings.Select(x => x.Id);
 
-        var subMeetings = await _meetingDataProvider.GetMeetingSubMeetingsAsync(meetingIds, cancellationToken)
-            .ConfigureAwait(false);
+        var subMeetings = 
+            await _meetingDataProvider.GetMeetingSubMeetingsAsync(meetingIds, cancellationToken).ConfigureAwait(false);
 
         var subMeetingGroupByMeetingIds = subMeetings.GroupBy(x => x.MeetingId).ToList();
 
-        foreach (var subMeetingGroupByMeetingId in subMeetingGroupByMeetingIds)
+        foreach (var group in subMeetingGroupByMeetingIds)
         {
-            var meeting = repeatMeetings.FirstOrDefault(x => x.Id == subMeetingGroupByMeetingId.Key);
+            var earliestSubMeeting = group.MinBy(x => x.StartTime);
 
-            if (meeting is null) continue;
+            if (earliestSubMeeting is null) continue;
 
-            var subMeeting = subMeetingGroupByMeetingId.Select(x => x).MinBy(x=>x.StartTime);
+            var updatedMeeting = repeatMeetings.FirstOrDefault(x => x.Id == group.Key);
 
-            if (subMeeting is null) continue;
+            if (updatedMeeting is null) continue;
             
-            meeting.StartDate = subMeeting.StartTime;
-            meeting.EndDate = subMeeting.EndTime;
-            meeting.Status = MeetingStatus.Pending;
+            updatedMeeting.StartDate = earliestSubMeeting.StartTime;
+            updatedMeeting.EndDate = earliestSubMeeting.EndTime;
+            updatedMeeting.Status = MeetingStatus.Pending;
             
-            await _meetingDataProvider.UpdateMeetingAsync(meeting, cancellationToken).ConfigureAwait(false);
+            await _meetingDataProvider.UpdateMeetingAsync(updatedMeeting, cancellationToken).ConfigureAwait(false);
         }
     }
 
