@@ -483,7 +483,7 @@ public partial class MeetingServiceFixture
             var liveKitClient = Substitute.For<ILiveKitClient>();
             var liveKitServerUtilService = Substitute.For<ILiveKitServerUtilService>();
 
-            liveKitClient.StartTrackCompositeEgressAsync(Arg.Any<StartTrackCompositeEgressRequestDto>(), Arg.Any<CancellationToken>())
+            liveKitClient.StartRoomCompositeEgressAsync(Arg.Any<StartRoomCompositeEgressRequestDto>(), Arg.Any<CancellationToken>())
                 .Returns(new StartEgressResponseDto { EgressId = egressId });
 
             liveKitServerUtilService.GenerateTokenForRecordMeeting(Arg.Any<UserAccountDto>(), Arg.Any<string>())
