@@ -56,7 +56,13 @@ public partial class MeetingService
             File = new EgressEncodedFileOutPutDto
             {
                 FilePath = filePath,
-                AliOssUpload = new EgressAliOssUploadDto()
+                AliOssUpload = new EgressAliOssUploadDto
+                {
+                    AccessKey = _aliYunOssSetting.AccessKeyId,
+                    Secret = _aliYunOssSetting.AccessKeySecret,
+                    Bucket = _aliYunOssSetting.BucketName,
+                    Endpoint = _aliYunOssSetting.Endpoint
+                }
             }
         }, cancellationToken).ConfigureAwait(false);
 
