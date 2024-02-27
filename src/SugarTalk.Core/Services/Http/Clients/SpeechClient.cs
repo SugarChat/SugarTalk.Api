@@ -16,6 +16,10 @@ public interface ISpeechClient : IScopedDependency
     Task<SpeechResponseDto> GetAudioFromTextAsync(TextToSpeechDto textToSpeech, CancellationToken cancellationToken);
     
     Task<SpeechResponseDto> TranslateTextAsync(TextTranslationDto textTranslation, CancellationToken cancellationToken);
+
+    Task<SpeechToInferenceCantonResponseDto> SpeechToInferenceCantonAsync(SpeechToInferenceCantonDto speechToInference, CancellationToken cancellationToken);
+
+    Task<SpeechToInferenceMandarinResponseDto> SpeechToInferenceMandarinAsync(SpeechToInferenceMandarinDto speechToInference, CancellationToken cancellationToken);
 }
 
 public class SpeechClient : ISpeechClient
@@ -61,5 +65,20 @@ public class SpeechClient : ISpeechClient
         return await _httpClientFactory
             .PostAsJsonAsync<SpeechResponseDto>(
                 $"{_speechSettings.BaseUrl}/api/speech/mt", textTranslation, cancellationToken, headers: _headers).ConfigureAwait(false);
+    }
+
+    public async Task<SpeechToInferenceCantonResponseDto> SpeechToInferenceCantonAsync(SpeechToInferenceCantonDto speechToInference, CancellationToken cancellationToken)
+    {
+        Log.Information("SugarTalk, inference to canton:{textTranslation}", JsonConvert.SerializeObject(speechToInference));
+        
+        return await _httpClientFactory.PostAsJsonAsync<SpeechToInferenceCantonResponseDto>($"{_speechSettings.BaseUrl}/api/speech/ptts/inference/canton", speechToInference, cancellationToken, headers: _headers).ConfigureAwait(false);
+    }
+
+    public async Task<SpeechToInferenceMandarinResponseDto> SpeechToInferenceMandarinAsync(SpeechToInferenceMandarinDto speechToInference,
+        CancellationToken cancellationToken)
+    {
+        Log.Information("SugarTalk, inference to mandarin:{textTranslation}", JsonConvert.SerializeObject(speechToInference));
+    
+        return await _httpClientFactory.PostAsJsonAsync<SpeechToInferenceMandarinResponseDto>($"{_speechSettings.BaseUrl}/api/speech/ptts/inference/mandarin", speechToInference, cancellationToken, headers: _headers).ConfigureAwait(false);
     }
 }
