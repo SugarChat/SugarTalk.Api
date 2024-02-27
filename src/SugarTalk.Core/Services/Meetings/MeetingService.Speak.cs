@@ -57,9 +57,9 @@ public partial class MeetingService
                 x.FileTranscriptionStatus is FileTranscriptionStatus.Pending or FileTranscriptionStatus.InProcess)
             .GroupBy(x => x.MeetingNumber);
 
-        foreach (var y in groupedMeetings.SelectMany(x=>x))
+        foreach (var y in groupedMeetings.SelectMany(x => x))
         {
-          await  ProcessMeetingSpeakDetailAsync(y, cancellationToken).ConfigureAwait(false);
+          await ProcessMeetingSpeakDetailAsync(y, cancellationToken).ConfigureAwait(false);
         }
     }
     
@@ -73,15 +73,13 @@ public partial class MeetingService
                Token = _liveKitServerUtilService.GenerateTokenForRecordMeeting(new UserAccountDto() {Id = 0, UserName = "user"}, meetingSpeakDetail.MeetingNumber)
            }, cancellationToken).ConfigureAwait(false);
        
-       var egressItem = getEgressInfoListResponse.EgressItems.FirstOrDefault();
+       var egressItem = getEgressInfoListResponse?.EgressItems?.FirstOrDefault();
 
        if (egressItem != null)
        {
            meetingSpeakDetail.FileTranscriptionStatus = egressItem.Status switch
            {
-               "EGRESS_STARTING" or "EGRESS_ACTIVE" =>  FileTranscriptionStatus.Pending,
-               "EGRESS_ENDING" when !string.IsNullOrEmpty(egressItem.File.Location) => FileTranscriptionStatus.Completed,
-               "EGRESS_ENDING" when string.IsNullOrEmpty(egressItem.File.Location) => FileTranscriptionStatus.InProcess,
+               "EGRESS_STARTING" or "EGRESS_ACTIVE" or "EGRESS_ENDING" =>  FileTranscriptionStatus.Pending,
                "EGRESS_COMPLETE" or "EGRESS_LIMIT_REACHED" when !string.IsNullOrEmpty(egressItem.File.Location) => FileTranscriptionStatus.InProcess,
                _ => FileTranscriptionStatus.Exception
            };
