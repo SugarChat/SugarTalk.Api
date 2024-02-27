@@ -441,8 +441,9 @@ namespace SugarTalk.Core.Services.Meetings
                 from subMeeting in subMeetingGroup.DefaultIfEmpty()
                 where meeting.MeetingMasterUserId == _currentUser.Id &&
                       meeting.AppointmentType == MeetingAppointmentType.Appointment &&
-                      subMeeting.StartTime >= startOfDay &&
-                      subMeeting.EndTime <= maxQueryDate
+                      ((subMeeting == null && rules.RepeatType == MeetingRepeatType.None) || (subMeeting != null &&
+                          subMeeting.StartTime >= startOfDay &&
+                          subMeeting.EndTime <= maxQueryDate))
                 select new AppointmentMeetingDto
                 {
                     MeetingId = meeting.Id,
@@ -454,17 +455,19 @@ namespace SugarTalk.Core.Services.Meetings
                     AppointmentType = meeting.AppointmentType
                 };
 
-            var appointmentMeetingRecords = await query.ToListAsync(cancellationToken).ConfigureAwait(false);
+            var meetingsRecords = await query.ToListAsync(cancellationToken).ConfigureAwait(false);
 
-            var records = appointmentMeetingRecords
+            var appointmentMeetingRecords = meetingsRecords
                 .GroupBy(record => record.MeetingId)
                 .Select(g => g.MinBy(m => m.StartDate))
                 .OrderBy(record => record.StartDate)
-                .Skip((request.Page - 1) * request.PageSize)
+                .ToList();
+
+            var records = appointmentMeetingRecords.Skip((request.Page - 1) * request.PageSize)
                 .Take(request.PageSize)
                 .ToList();
             
-            return (records.Count, records);
+            return (appointmentMeetingRecords.Count, records);
         }
         
         public async Task MarkMeetingAsCompletedAsync(Meeting meeting, CancellationToken cancellationToken)
