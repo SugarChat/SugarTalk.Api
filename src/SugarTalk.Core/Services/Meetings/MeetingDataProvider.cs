@@ -85,6 +85,10 @@ namespace SugarTalk.Core.Services.Meetings
 
         Task HandleMeetingStatusWhenOutMeetingAsync(int userId, Guid meetingId, Guid? meetingSubId = null, CancellationToken cancellationToken = default);
         
+        Task<List<Meeting>> GetAvailableRepeatMeetingAsync(CancellationToken cancellationToken);
+        
+        Task<List<MeetingSubMeeting>> GetMeetingSubMeetingsAsync(IEnumerable<Guid> meetingIds, CancellationToken cancellationToken);
+
         Task<List<Meeting>> GetAllAppointmentMeetingWithPendingAndInProgressAsync(CancellationToken cancellationToken);
     }
     
@@ -568,6 +572,26 @@ namespace SugarTalk.Core.Services.Meetings
                     meeting.Status = MeetingStatus.Completed;
                 }
             }
+        }
+
+        public async Task<List<Meeting>> GetAvailableRepeatMeetingAsync(CancellationToken cancellationToken)
+        {
+            return await _repository.QueryNoTracking<Meeting>()
+                .Where(x => x.AppointmentType == MeetingAppointmentType.Appointment)
+                .Join(_repository.QueryNoTracking<MeetingRepeatRule>(), meeting => meeting.Id, rule => rule.MeetingId,
+                    (meeting, rule) => new { meeting, rule })
+                .Where(y => y.rule.RepeatType != MeetingRepeatType.None)
+                .Select(x => x.meeting).ToListAsync(cancellationToken).ConfigureAwait(false);
+        }
+
+        public async Task<List<MeetingSubMeeting>> GetMeetingSubMeetingsAsync(IEnumerable<Guid> meetingIds,
+            CancellationToken cancellationToken)
+        {
+            return await _repository.QueryNoTracking<MeetingSubMeeting>()
+                .Where(x => meetingIds.Contains(x.MeetingId))
+                .Where(x => x.StartTime > _clock.Now.ToUnixTimeSeconds())
+                .Where(x => x.SubConferenceStatus == MeetingRecordSubConferenceStatus.Default)
+                .ToListAsync(cancellationToken).ConfigureAwait(false);
         }
 
         public async Task<List<Meeting>> GetAllAppointmentMeetingWithPendingAndInProgressAsync(CancellationToken cancellationToken)
