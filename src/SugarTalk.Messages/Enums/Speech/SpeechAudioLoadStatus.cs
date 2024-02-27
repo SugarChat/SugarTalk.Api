@@ -11,5 +11,5 @@ public enum SpeechAudioLoadStatus
     Progress = 20,
     
     [Description("已完成")]
-    Complete = 30,
+    Completed = 30,
 }

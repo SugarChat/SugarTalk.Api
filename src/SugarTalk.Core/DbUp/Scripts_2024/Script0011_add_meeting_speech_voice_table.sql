@@ -5,7 +5,7 @@ create table if not exists `meeting_speech_voice_table`
     `voice_id` varchar(48) not null,
     `language_id` varchar(48) not null,
     `translate_text` text not null,
-    `voice_url` varchar(64) not null,
-    `status` int not null,
-    `create_date` datetime
+    `voice_url` varchar(256) not null,
+    `status` int default 10 not null,
+    `created_date` datetime(3) not null 
 )charset=utf8mb4;
