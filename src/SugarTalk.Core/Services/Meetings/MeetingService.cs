@@ -265,21 +265,16 @@ namespace SugarTalk.Core.Services.Meetings
 
             meeting.Status = MeetingStatus.InProgress;
             
-            var userSetting = new MeetingUserSetting();
+            //接入音色接口后 弃用
+            var userSetting = await _meetingDataProvider.DistributeLanguageForMeetingUserAsync(meeting.Id, cancellationToken).ConfigureAwait(false);
             
-            if (user.Issuer is UserAccountIssuer.Self or UserAccountIssuer.Wiltechs)
-            {
-                //接入音色接口后 弃用
-                userSetting = await _meetingDataProvider.DistributeLanguageForMeetingUserAsync(meeting.Id, cancellationToken).ConfigureAwait(false);
-                
-                Log.Information("SugarTalk get userSetting from JoinMeetingAsync :{userSetting}", JsonConvert.SerializeObject(userSetting));
-            }
-            
+            Log.Information("SugarTalk get userSetting from JoinMeetingAsync :{userSetting}", JsonConvert.SerializeObject(userSetting));
+
             return new MeetingJoinedEvent
             {
                 UserId = user.Id,
                 Meeting = meeting,
-                MeetingUserSetting = user.Issuer is UserAccountIssuer.Guest ? null : _mapper.Map<MeetingUserSettingDto>(userSetting)
+                MeetingUserSetting = _mapper.Map<MeetingUserSettingDto>(userSetting)
             };
         }
 
