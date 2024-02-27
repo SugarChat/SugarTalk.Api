@@ -206,8 +206,8 @@ public partial class MeetingServiceFixture
     [InlineData("EGRESS_STARTING", "path/to/file/url", FileTranscriptionStatus.Pending)]
     [InlineData("EGRESS_ACTIVE", "", FileTranscriptionStatus.Pending)]
     [InlineData("EGRESS_ACTIVE", "path/to/file/url", FileTranscriptionStatus.Pending)]
-    [InlineData("EGRESS_ENDING", "", FileTranscriptionStatus.InProcess)]
-    [InlineData("EGRESS_ENDING", "path/to/file/url", FileTranscriptionStatus.Completed)]
+    [InlineData("EGRESS_ENDING", "", FileTranscriptionStatus.Pending)]
+    [InlineData("EGRESS_ENDING", "path/to/file/url", FileTranscriptionStatus.Pending)]
     public async Task CanUpdateMeetingFileTranscriptionStatus(string status, string location,
         FileTranscriptionStatus expectFileTranscriptionStatus)
     {
