@@ -106,12 +106,11 @@ public class MeetingController : ControllerBase
     }
     
     [Route("appointment/cancel"), HttpPost]
-    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(CancelAppointmentMeetingResponse))]
     public async Task<IActionResult> CancelAppointmentMeetingAsync([FromBody] CancelAppointmentMeetingCommand command)
     {
-        var response = await _mediator.SendAsync<CancelAppointmentMeetingCommand, CancelAppointmentMeetingResponse>(command).ConfigureAwait(false);
+        await _mediator.SendAsync(command).ConfigureAwait(false);
 
-        return Ok(response);
+        return Ok();
     }
 
     #endregion
