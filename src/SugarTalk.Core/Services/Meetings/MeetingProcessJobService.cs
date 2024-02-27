@@ -31,15 +31,34 @@ public class MeetingProcessJobService : IMeetingProcessJobService
 
     public async Task UpdateRepeatMeetingAsync(UpdateRepeatMeetingCommand command, CancellationToken cancellationToken)
     {
-        var allAppointmentMeeting =
-            await _meetingDataProvider.GetAllRepeatMeetingAsync(cancellationToken).ConfigureAwait(false);
+        var repeatMeetings =
+            await _meetingDataProvider.GetAvailableRepeatMeetingAsync(cancellationToken).ConfigureAwait(false);
 
-        if (allAppointmentMeeting is not { Count: > 0 }) return;
+        if (repeatMeetings is not { Count: > 0 }) return;
 
-        var meetingIds = allAppointmentMeeting.Select(x => x.Id);
+        var meetingIds = repeatMeetings.Select(x => x.Id);
 
         var subMeetings = await _meetingDataProvider.GetMeetingSubMeetingsAsync(meetingIds, cancellationToken)
             .ConfigureAwait(false);
+
+        var subMeetingGroupByMeetingIds = subMeetings.GroupBy(x => x.MeetingId).ToList();
+
+        foreach (var subMeetingGroupByMeetingId in subMeetingGroupByMeetingIds)
+        {
+            var meeting = repeatMeetings.FirstOrDefault(x => x.Id == subMeetingGroupByMeetingId.Key);
+
+            if (meeting is null) continue;
+
+            var subMeeting = subMeetingGroupByMeetingId.Select(x => x).MinBy(x=>x.StartTime);
+
+            if (subMeeting is null) continue;
+            
+            meeting.StartDate = subMeeting.StartTime;
+            meeting.EndDate = subMeeting.EndTime;
+            meeting.Status = MeetingStatus.Pending;
+            
+            await _meetingDataProvider.UpdateMeetingAsync(meeting, cancellationToken).ConfigureAwait(false);
+        }
     }
 
     public async Task CheckAppointmentMeetingDateAsync(CheckAppointmentMeetingDateCommand command, CancellationToken cancellationToken)
