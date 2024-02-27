@@ -97,10 +97,10 @@ public partial class MeetingService
         var token = _liveKitServerUtilService.GenerateTokenForRecordMeeting(user, command.MeetingNumber);
         var filePath = $"SugarTalk/{command.MeetingRecordId}.mp4";
         
-        var egressResponse = await _liveKitClient.StartTrackCompositeEgressAsync(new StartTrackCompositeEgressRequestDto
+        var egressResponse = await _liveKitClient.StartTrackEgressAsync(new StartTrackEgressRequestDto()
         {
             Token = token,
-            AudioTrackId = command.TrackId,
+            TrackId = command.TrackId,
             RoomName = command.MeetingNumber,
             File = new EgressEncodedFileOutPutDto
             {
@@ -115,7 +115,7 @@ public partial class MeetingService
             }
         }, cancellationToken).ConfigureAwait(false);
 
-        Log.Information("Start track composite egress response: {@EgressResponse}", egressResponse);
+        Log.Information("Start track egress response: {@EgressResponse}", egressResponse);
 
         if (egressResponse == null) throw new Exception();
         
