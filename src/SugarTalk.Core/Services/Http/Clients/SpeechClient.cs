@@ -74,8 +74,7 @@ public class SpeechClient : ISpeechClient
         return await _httpClientFactory.PostAsJsonAsync<SpeechToInferenceCantonResponseDto>($"{_speechSettings.BaseUrl}/api/speech/ptts/inference/canton", speechToInference, cancellationToken, headers: _headers).ConfigureAwait(false);
     }
 
-    public async Task<SpeechToInferenceMandarinResponseDto> SpeechToInferenceMandarinAsync(SpeechToInferenceMandarinDto speechToInference,
-        CancellationToken cancellationToken)
+    public async Task<SpeechToInferenceMandarinResponseDto> SpeechToInferenceMandarinAsync(SpeechToInferenceMandarinDto speechToInference, CancellationToken cancellationToken)
     {
         Log.Information("SugarTalk, inference to mandarin:{textTranslation}", JsonConvert.SerializeObject(speechToInference));
     
