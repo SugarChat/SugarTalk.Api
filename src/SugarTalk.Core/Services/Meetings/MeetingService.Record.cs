@@ -130,9 +130,8 @@ public partial class MeetingService
         if (meetingRecord == null) return false;
 
         var getResponse = await _liveKitClient.GetEgressInfoListAsync(new GetEgressRequestDto { Token = token, EgressId = command.EgressId }, cancellationToken).ConfigureAwait(false);
-        if (getResponse == null) return false;
 
-        var egressItemDto = getResponse.EgressItems.FirstOrDefault(x => x.EgressId == command.EgressId && x.Status == "EGRESS_COMPLETE");
+        var egressItemDto = getResponse?.EgressItems.FirstOrDefault(x => x.EgressId == command.EgressId && x.Status == "EGRESS_COMPLETE");
         if (egressItemDto == null) return false;
 
         meetingRecord.Url = egressItemDto.File.Location;
