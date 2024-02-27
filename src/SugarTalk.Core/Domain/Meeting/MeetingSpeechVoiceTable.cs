@@ -36,6 +36,6 @@ public class MeetingSpeechVoiceTable : IEntity
     [Column("status")]
     public SpeechAudioLoadStatus Status { get; set; }
     
-    [Column("created_data")]
+    [Column("created_date")]
     public DateTimeOffset CreatedDate { get; set; }
 }
