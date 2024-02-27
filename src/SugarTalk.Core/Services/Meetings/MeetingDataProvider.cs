@@ -445,9 +445,12 @@ namespace SugarTalk.Core.Services.Meetings
                 from subMeeting in subMeetingGroup.DefaultIfEmpty()
                 where meeting.MeetingMasterUserId == _currentUser.Id &&
                       meeting.AppointmentType == MeetingAppointmentType.Appointment &&
-                      (rules.RepeatType == MeetingRepeatType.None || (subMeeting != null &&
-                                                                      subMeeting.StartTime >= startOfDay &&
-                                                                      subMeeting.EndTime <= maxQueryDate))
+                      ((rules.RepeatType == MeetingRepeatType.None &&
+                        meeting.StartDate >= startOfDay &&
+                        meeting.EndDate <= maxQueryDate) ||
+                       (subMeeting != null &&
+                        subMeeting.StartTime >= startOfDay &&
+                        subMeeting.EndTime <= maxQueryDate))
                 select new AppointmentMeetingDto
                 {
                     MeetingId = meeting.Id,
