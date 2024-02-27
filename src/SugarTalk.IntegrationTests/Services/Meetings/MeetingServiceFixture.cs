@@ -851,13 +851,13 @@ public partial class MeetingServiceFixture : MeetingFixtureBase
     [Fact]
     public async Task CanGetAppointmentMeetings()
     {
-        await RunWithUnitOfWork<IMediator>(async (mediator) =>
+        await RunWithUnitOfWork<IMediator, IClock>(async (mediator, clock) =>
         {
-            var meeting1Response = await _meetingUtil.ScheduleMeeting(title:"预定会议有重复子会议",appointmentType: MeetingAppointmentType.Appointment, repeatType: MeetingRepeatType.Daily, startDate: DateTimeOffset.Parse("2024-02-23T10:00:00"), endDate: DateTimeOffset.Parse("2024-02-23T11:00:00"));
-            var meeting2Response = await _meetingUtil.ScheduleMeeting(title:"预定会议有重复子会议",appointmentType: MeetingAppointmentType.Appointment, repeatType: MeetingRepeatType.Weekly, startDate: DateTimeOffset.Parse("2024-02-24T10:00:00"), endDate: DateTimeOffset.Parse("2024-02-24T11:00:00"));
-            var meeting3Response = await _meetingUtil.ScheduleMeeting(title:"预定会议有重复子会议",appointmentType: MeetingAppointmentType.Appointment, repeatType: MeetingRepeatType.BiWeekly, startDate: DateTimeOffset.Parse("2024-02-26T10:00:00"), endDate: DateTimeOffset.Parse("2024-02-26T11:00:00"));
-            var meeting4Response = await _meetingUtil.ScheduleMeeting(title:"预定会议没有重复子会议1",appointmentType: MeetingAppointmentType.Appointment, repeatType: MeetingRepeatType.None, startDate: DateTimeOffset.Parse("2024-02-24T07:00:00"), endDate: DateTimeOffset.Parse("2024-02-24T08:00:00"));
-            var meeting5Response = await _meetingUtil.ScheduleMeeting(title:"预定会议没有重复子会议2",appointmentType: MeetingAppointmentType.Appointment, repeatType: MeetingRepeatType.None, startDate: DateTimeOffset.Parse("2024-02-24T11:00:00"), endDate: DateTimeOffset.Parse("2024-02-24T11:30:00"));
+            var meeting1Response = await _meetingUtil.ScheduleMeeting("预定会议有重复子会议", appointmentType: MeetingAppointmentType.Appointment, repeatType: MeetingRepeatType.Daily, startDate: clock.Now.AddDays(-1), endDate: clock.Now.AddDays(-1).AddHours(1));
+            var meeting2Response = await _meetingUtil.ScheduleMeeting("预定会议有重复子会议", appointmentType: MeetingAppointmentType.Appointment, repeatType: MeetingRepeatType.Weekly, startDate: clock.Now, endDate: clock.Now.AddHours(1));
+            var meeting3Response = await _meetingUtil.ScheduleMeeting("预定会议有重复子会议",appointmentType: MeetingAppointmentType.Appointment, repeatType: MeetingRepeatType.BiWeekly, startDate: clock.Now.AddDays(2), endDate: clock.Now.AddDays(2).AddHours(1));
+            var meeting4Response = await _meetingUtil.ScheduleMeeting("预定会议没有重复子会议1",appointmentType: MeetingAppointmentType.Appointment, repeatType: MeetingRepeatType.None, startDate: clock.Now.AddDays(-1).AddHours(-3), endDate: clock.Now.AddDays(-1).AddHours(-2));
+            var meeting5Response = await _meetingUtil.ScheduleMeeting("预定会议没有重复子会议2",appointmentType: MeetingAppointmentType.Appointment, repeatType: MeetingRepeatType.None, startDate: clock.Now.AddHours(1), endDate: clock.Now.AddHours(2));
             
             var response = await mediator.RequestAsync<GetAppointmentMeetingsRequest, GetAppointmentMeetingsResponse>(
                 new GetAppointmentMeetingsRequest
@@ -875,7 +875,7 @@ public partial class MeetingServiceFixture : MeetingFixtureBase
             var openAiService = Substitute.For<IOpenAiService>();          
             
             builder.RegisterInstance(openAiService);
-            MockClock(builder, new DateTimeOffset(2024, 2, 24, 10, 0, 0, TimeSpan.Zero));
+            MockClock(builder, DateTimeOffset.Now);
         });
     }
     
