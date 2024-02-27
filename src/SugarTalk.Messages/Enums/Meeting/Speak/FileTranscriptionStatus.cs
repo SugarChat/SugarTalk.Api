@@ -4,5 +4,6 @@ public enum FileTranscriptionStatus
 {
     Pending = 10,
     InProcess = 20,
-    Completed = 30
+    Completed = 30,
+    Exception = 40
 }
