@@ -10,7 +10,6 @@ public class MeetingSpeechVoiceTable : IEntity
 {
     public MeetingSpeechVoiceTable()
     {
-        Status = SpeechAudioLoadStatus.Pending;
         CreateDate = DateTimeOffset.Now;
     }
 
