@@ -57,38 +57,40 @@ public partial class MeetingService
                 x.FileTranscriptionStatus is FileTranscriptionStatus.Pending or FileTranscriptionStatus.InProcess)
             .GroupBy(x => x.MeetingNumber);
 
-        groupedMeetings.SelectMany(x => x)
-            .ForEach(y => ProcessMeetingSpeakDetailAsync(y, cancellationToken).ConfigureAwait(false));
+        foreach (var y in groupedMeetings.SelectMany(x=>x))
+        {
+          await  ProcessMeetingSpeakDetailAsync(y, cancellationToken).ConfigureAwait(false);
+        }
     }
     
     private async Task ProcessMeetingSpeakDetailAsync(
         MeetingSpeakDetail meetingSpeakDetail, CancellationToken cancellationToken)
     {
-        var getEgressInfoListResponse = await _liveKitClient.GetEgressInfoListAsync(
-            new GetEgressRequestDto()
-            {
-                Token = _liveKitServerUtilService.GenerateTokenForRecordMeeting(new UserAccountDto() {Id = 0, UserName = "user"}, meetingSpeakDetail.MeetingNumber)
-            }, cancellationToken).ConfigureAwait(false);
-        
-        var egressList = getEgressInfoListResponse.EgressItems.ToList();
-
-        egressList.ForEach(egressItem =>
-        {
-            meetingSpeakDetail.FileTranscriptionStatus = egressItem.Status switch
-            {
-                "EGRESS_STARTING" or "EGRESS_ACTIVE" =>  FileTranscriptionStatus.Pending,
-                "EGRESS_ENDING" when !string.IsNullOrEmpty(egressItem.File.Location) => FileTranscriptionStatus.Completed,
-                "EGRESS_ENDING" when string.IsNullOrEmpty(egressItem.File.Location) => FileTranscriptionStatus.InProcess,
-                "EGRESS_COMPLETE" or "EGRESS_LIMIT_REACHED" when !string.IsNullOrEmpty(egressItem.File.Location) => FileTranscriptionStatus.InProcess,
-                _ => FileTranscriptionStatus.Exception
-            };
-
-             _meetingDataProvider.UpdateMeetingSpeakDetailAsync(meetingSpeakDetail, cancellationToken: cancellationToken).ConfigureAwait(false);
-
-            if ((egressItem.Status == "EGRESS_COMPLETE" || egressItem.Status == "EGRESS_LIMIT_REACHED") && meetingSpeakDetail.FileTranscriptionStatus == FileTranscriptionStatus.InProcess)
-                _backgroundJobClient.Enqueue(() => TranscriptionMeetingAsync(meetingSpeakDetail, cancellationToken));
-        });
+       var getEgressInfoListResponse = await _liveKitClient.GetEgressInfoListAsync(
+           new GetEgressRequestDto()
+           {
+               EgressId = meetingSpeakDetail.EgressId,
+               Token = _liveKitServerUtilService.GenerateTokenForRecordMeeting(new UserAccountDto() {Id = 0, UserName = "user"}, meetingSpeakDetail.MeetingNumber)
+           }, cancellationToken).ConfigureAwait(false);
        
+       var egressItem = getEgressInfoListResponse.EgressItems.FirstOrDefault();
+
+       if (egressItem != null)
+       {
+           meetingSpeakDetail.FileTranscriptionStatus = egressItem.Status switch
+           {
+               "EGRESS_STARTING" or "EGRESS_ACTIVE" =>  FileTranscriptionStatus.Pending,
+               "EGRESS_ENDING" when !string.IsNullOrEmpty(egressItem.File.Location) => FileTranscriptionStatus.Completed,
+               "EGRESS_ENDING" when string.IsNullOrEmpty(egressItem.File.Location) => FileTranscriptionStatus.InProcess,
+               "EGRESS_COMPLETE" or "EGRESS_LIMIT_REACHED" when !string.IsNullOrEmpty(egressItem.File.Location) => FileTranscriptionStatus.InProcess,
+               _ => FileTranscriptionStatus.Exception
+           };
+           
+           await _meetingDataProvider.UpdateMeetingSpeakDetailAsync(meetingSpeakDetail, cancellationToken: cancellationToken).ConfigureAwait(false);
+           
+           if (egressItem.Status is "EGRESS_COMPLETE" or "EGRESS_LIMIT_REACHED" && meetingSpeakDetail.FileTranscriptionStatus == FileTranscriptionStatus.InProcess)
+               _backgroundJobClient.Enqueue(() => TranscriptionMeetingAsync(meetingSpeakDetail, cancellationToken));
+       }
     }
 
     private async Task<MeetingSpeakDetail> StartRecordUserSpeakDetailAsync(RecordMeetingSpeakCommand command, CancellationToken cancellationToken)

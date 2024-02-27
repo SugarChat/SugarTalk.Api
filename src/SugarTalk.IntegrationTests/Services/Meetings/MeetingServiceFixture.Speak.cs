@@ -202,11 +202,14 @@ public partial class MeetingServiceFixture
     [InlineData("EGRESS_COMPLETE", "path/to/file/url", FileTranscriptionStatus.Completed)]
     [InlineData("EGRESS_LIMIT_REACHED","", FileTranscriptionStatus.Exception)]
     [InlineData("EGRESS_LIMIT_REACHED", "path/to/file/url", FileTranscriptionStatus.Completed)]
-    [InlineData("EGRESS_STARTING", "", FileTranscriptionStatus.Exception)]
-    [InlineData("EGRESS_STARTING", "path/to/file/url", FileTranscriptionStatus.Exception)]
-    [InlineData("EGRESS_ENDING", "", FileTranscriptionStatus.Exception)]
-    [InlineData("EGRESS_ENDING", "path/to/file/url", FileTranscriptionStatus.Exception)]
-    public async Task CanUpdateMeetingFileTranscriptionStatus(string status, string location, FileTranscriptionStatus expectFileTranscriptionStatus)
+    [InlineData("EGRESS_STARTING", "", FileTranscriptionStatus.Pending)]
+    [InlineData("EGRESS_STARTING", "path/to/file/url", FileTranscriptionStatus.Pending)]
+    [InlineData("EGRESS_ACTIVE", "", FileTranscriptionStatus.Pending)]
+    [InlineData("EGRESS_ACTIVE", "path/to/file/url", FileTranscriptionStatus.Pending)]
+    [InlineData("EGRESS_ENDING", "", FileTranscriptionStatus.InProcess)]
+    [InlineData("EGRESS_ENDING", "path/to/file/url", FileTranscriptionStatus.Completed)]
+    public async Task CanUpdateMeetingFileTranscriptionStatus(string status, string location,
+        FileTranscriptionStatus expectFileTranscriptionStatus)
     {
         var meetingSpeakList = new MeetingSpeakDetail()
         {
@@ -225,8 +228,8 @@ public partial class MeetingServiceFixture
             FileTranscriptionStatus = FileTranscriptionStatus.Pending,
             CreatedDate = DateTimeOffset.Now
         };
-        
-        await Run<IRepository>(async (repository) =>
+
+        await RunWithUnitOfWork<IRepository>(async repository =>
         {
             await repository.InsertAsync(meetingSpeakList);
         });
@@ -234,11 +237,13 @@ public partial class MeetingServiceFixture
         await RunWithUnitOfWork<IMediator, IRepository>(async (mediator, repository) =>
         {
             await mediator.SendAsync(
-                new UpdateMeetingFileTranscriptionStatusCommand());
+            new UpdateMeetingFileTranscriptionStatusCommand());
+          
+            var afterMeetingSpeak =
+                await repository.Query<MeetingSpeakDetail>().ToListAsync().ConfigureAwait(false);
             
-            var afterMeetingSpeak = repository.Query<MeetingSpeakDetail>().FirstOrDefault(x => x.Id == 1);
-
-            afterMeetingSpeak?.FileTranscriptionStatus.ShouldBe(expectFileTranscriptionStatus);
+            afterMeetingSpeak.Count.ShouldBe(1);
+            afterMeetingSpeak[0].FileTranscriptionStatus.ShouldBe(expectFileTranscriptionStatus);
         }, builder =>
         {
             var liveKitClient = Substitute.For<ILiveKitClient>();
