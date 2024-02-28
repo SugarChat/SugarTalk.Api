@@ -37,12 +37,12 @@ public class SpeechClient : ISpeechClient
         
         _headers = new Dictionary<string, string>
         {
-            { "X-API-KEY", _speechSettings.Apikey },
+            { "X-API-KEY", _speechSettings.Apikey }
         };
         
         _echoAvatarheader = new Dictionary<string, string>
         {
-            { "X-API-KEY", _speechSettings.EchoAvatar.Apikey },
+            { "X-API-KEY", _speechSettings.EchoAvatar.Apikey }
         };
     }
 
