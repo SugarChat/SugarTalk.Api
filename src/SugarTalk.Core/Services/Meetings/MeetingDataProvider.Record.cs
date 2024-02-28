@@ -95,6 +95,7 @@ public partial class MeetingDataProvider
 
         var items = joinResult.Select(x => new MeetingRecordDto
             {
+                MeetingRecordId = x.Record.Id,
                 MeetingId = x.Meeting.Id,
                 MeetingNumber = x.Meeting.MeetingNumber,
                 RecordNumber = x.Record.RecordNumber,
