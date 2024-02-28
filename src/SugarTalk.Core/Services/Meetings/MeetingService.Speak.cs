@@ -93,38 +93,10 @@ public partial class MeetingService
 
     private async Task<MeetingSpeakDetail> StartRecordUserSpeakDetailAsync(RecordMeetingSpeakCommand command, CancellationToken cancellationToken)
     {
-        var user = await _accountDataProvider.GetUserAccountAsync(_currentUser.Id, cancellationToken: cancellationToken).ConfigureAwait(false);
-        var token = _liveKitServerUtilService.GenerateTokenForRecordMeeting(user, command.MeetingNumber);
-        var filePath = $"SugarTalk/{command.MeetingRecordId}.mp4";
-        
-        var egressResponse = await _liveKitClient.StartTrackEgressAsync(new StartTrackEgressRequestDto()
-        {
-            Token = token,
-            TrackId = command.TrackId,
-            RoomName = command.MeetingNumber,
-            File = new EgressEncodedFileOutPutDto
-            {
-                FilePath = filePath,
-                AliOssUpload = new EgressAliOssUploadDto
-                {
-                    AccessKey = _aliYunOssSetting.AccessKeyId,
-                    Secret = _aliYunOssSetting.AccessKeySecret,
-                    Bucket = _aliYunOssSetting.BucketName,
-                    Endpoint = _aliYunOssSetting.Endpoint
-                }
-            }
-        }, cancellationToken).ConfigureAwait(false);
-
-        Log.Information("Start track egress response: {@EgressResponse}", egressResponse);
-
-        if (egressResponse == null) throw new Exception();
-        
         var speakDetail = new MeetingSpeakDetail
         {
-            FilePath = filePath,
             TrackId = command.TrackId,
             UserId = _currentUser.Id.Value,
-            EgressId = egressResponse.EgressId,
             MeetingNumber = command.MeetingNumber,
             MeetingRecordId = command.MeetingRecordId,
             SpeakStartTime = command.SpeakStartTime.Value
@@ -144,28 +116,10 @@ public partial class MeetingService
         
         if (speakDetail == null) throw new SpeakNotFoundException();
         
-        var egressResponse = await _liveKitClient.StopEgressAsync(new StopEgressRequestDto
-        {
-            EgressId = speakDetail.EgressId
-        }, cancellationToken).ConfigureAwait(false);
-        
-        Log.Information("Stop egress response: {@EgressResponse}", egressResponse);
-
-        if (egressResponse == null) throw new Exception();
-        
         speakDetail.SpeakStatus = SpeakStatus.End;
         speakDetail.SpeakEndTime = command.SpeakEndTime.Value;
         
         await _meetingDataProvider.UpdateMeetingSpeakDetailAsync(speakDetail, cancellationToken: cancellationToken).ConfigureAwait(false);
-        
-        if (speakDetail.FileTranscriptionStatus == FileTranscriptionStatus.Pending)
-        {
-            speakDetail.FileTranscriptionStatus = FileTranscriptionStatus.InProcess;
-            
-            await _meetingDataProvider.UpdateMeetingSpeakDetailAsync(speakDetail, cancellationToken: cancellationToken).ConfigureAwait(false);
-            
-            _backgroundJobClient.Enqueue(() => TranscriptionMeetingAsync(speakDetail, cancellationToken));
-        }
         
         return speakDetail;
     }
