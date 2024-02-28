@@ -1,4 +1,7 @@
+using System.Collections.Generic;
 using Newtonsoft.Json;
+using SugarTalk.Messages.Enums.Account;
+using SugarTalk.Messages.Extensions;
 
 namespace SugarTalk.Messages.Dto.Meetings.Speech;
 
@@ -18,6 +21,31 @@ public class SpeechToInferenceCantonDto
     
     [JsonProperty("response_format")]
     public string ResponseFormat { get; set; }
+    
+    public EchoAvatarLanguageType LanguageType { get; set; } 
+    
+    [JsonProperty("language")]
+    public string LanguageStatus
+    {
+        get
+        {
+            return LanguageType switch
+            {
+                EchoAvatarLanguageType.Cantonese => EchoAvatarLanguageType.Cantonese.GetDescription(),
+                EchoAvatarLanguageType.English => EchoAvatarLanguageType.English.GetDescription(),
+                EchoAvatarLanguageType.Korean => EchoAvatarLanguageType.Korean.GetDescription(),
+                EchoAvatarLanguageType.Spanish => EchoAvatarLanguageType.Spanish.GetDescription(),
+                EchoAvatarLanguageType.Mandarin => EchoAvatarLanguageType.Mandarin.GetDescription(),
+                EchoAvatarLanguageType.None => EchoAvatarLanguageType.None.GetDescription(),
+            };
+        }
+    }
+}
+
+public class ErrorResponseDto
+{
+    [JsonProperty("detail")]
+    public List<SpeechToInferenceCantonResponseDto> Detail { get; set; }
 }
 
 public class SpeechToInferenceCantonResponseDto 

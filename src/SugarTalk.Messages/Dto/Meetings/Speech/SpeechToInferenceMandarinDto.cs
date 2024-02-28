@@ -29,5 +29,11 @@ public class SpeechToInferenceMandarinResponseDto
 public class SpeechToInferenceResultDto
 {
     [JsonProperty("url")]
-    public string Url { get; set; }
+    public InferredUrlObject Url { get; set; }
+
+    public class InferredUrlObject
+    {
+        [JsonProperty("value")]
+        public string UrlValue { get; set; }
+    }
 }

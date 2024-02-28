@@ -103,7 +103,7 @@ public class SugarTalkHttpClientFactory : ISugarTalkHttpClientFactory
             
         }, cancellationToken).ConfigureAwait(false);
     }
-    
+
     public async Task<T> PutAsync<T>(string requestUrl, HttpContent content, CancellationToken cancellationToken, 
         TimeSpan? timeout = null, bool beginScope = false, Dictionary<string, string> headers = null)
     {

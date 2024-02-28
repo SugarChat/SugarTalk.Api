@@ -25,6 +25,7 @@ public interface ISpeechClient : IScopedDependency
 public class SpeechClient : ISpeechClient
 {
     private readonly Dictionary<string, string> _headers;
+    private readonly Dictionary<string, string> _echoAvatarheader;
     
     private readonly SpeechSettings _speechSettings;
     private readonly ISugarTalkHttpClientFactory _httpClientFactory;
@@ -36,7 +37,12 @@ public class SpeechClient : ISpeechClient
         
         _headers = new Dictionary<string, string>
         {
-            { "X-API-KEY", _speechSettings.Apikey }
+            { "X-API-KEY", _speechSettings.Apikey },
+        };
+        
+        _echoAvatarheader = new Dictionary<string, string>
+        {
+            { "X-API-KEY", _speechSettings.EchoAvatar.Apikey },
         };
     }
 
@@ -71,13 +77,16 @@ public class SpeechClient : ISpeechClient
     {
         Log.Information("SugarTalk, inference to canton:{textTranslation}", JsonConvert.SerializeObject(speechToInference));
         
-        return await _httpClientFactory.PostAsJsonAsync<SpeechToInferenceCantonResponseDto>($"{_speechSettings.EchoAvatar.CantonBaseUrl}/api/speech/ptts/inference/canton", speechToInference, cancellationToken, headers: _headers).ConfigureAwait(false);
+        return await _httpClientFactory.PostAsJsonAsync<SpeechToInferenceCantonResponseDto>(
+           $"{_speechSettings.EchoAvatar.CantonBaseUrl}/api/speech/ptts/inference/canton", speechToInference, cancellationToken, headers: _echoAvatarheader).ConfigureAwait(false);
     }
 
     public async Task<SpeechToInferenceMandarinResponseDto> SpeechToInferenceMandarinAsync(SpeechToInferenceMandarinDto speechToInference, CancellationToken cancellationToken)
     {
-        Log.Information("SugarTalk, inference to mandarin:{textTranslation}", JsonConvert.SerializeObject(speechToInference));
-    
-        return await _httpClientFactory.PostAsJsonAsync<SpeechToInferenceMandarinResponseDto>($"{_speechSettings.EchoAvatar.BaseUrl}/api/speech/ptts/inference/mandarin", speechToInference, cancellationToken, headers: _headers).ConfigureAwait(false);
+        
+        Log.Information("Speech, inference to mandarin:{textTranslation}", JsonConvert.SerializeObject(speechToInference));
+
+       return await _httpClientFactory.PostAsJsonAsync<SpeechToInferenceMandarinResponseDto>(
+                $"{_speechSettings.EchoAvatar.BaseUrl}/api/speech/ptts/inference/mandarin", speechToInference, cancellationToken, headers: _echoAvatarheader).ConfigureAwait(false);
     }
 }
