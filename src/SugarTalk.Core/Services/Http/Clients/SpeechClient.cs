@@ -16,11 +16,16 @@ public interface ISpeechClient : IScopedDependency
     Task<SpeechResponseDto> GetAudioFromTextAsync(TextToSpeechDto textToSpeech, CancellationToken cancellationToken);
     
     Task<SpeechResponseDto> TranslateTextAsync(TextTranslationDto textTranslation, CancellationToken cancellationToken);
+
+    Task<SpeechToInferenceCantonResponseDto> SpeechToInferenceCantonAsync(SpeechToInferenceCantonDto speechToInference, CancellationToken cancellationToken);
+
+    Task<SpeechToInferenceMandarinResponseDto> SpeechToInferenceMandarinAsync(SpeechToInferenceMandarinDto speechToInference, CancellationToken cancellationToken);
 }
 
 public class SpeechClient : ISpeechClient
 {
     private readonly Dictionary<string, string> _headers;
+    private readonly Dictionary<string, string> _echoAvatarheader;
     
     private readonly SpeechSettings _speechSettings;
     private readonly ISugarTalkHttpClientFactory _httpClientFactory;
@@ -33,6 +38,11 @@ public class SpeechClient : ISpeechClient
         _headers = new Dictionary<string, string>
         {
             { "X-API-KEY", _speechSettings.Apikey }
+        };
+        
+        _echoAvatarheader = new Dictionary<string, string>
+        {
+            { "X-API-KEY", _speechSettings.EchoAvatar.Apikey }
         };
     }
 
@@ -61,5 +71,22 @@ public class SpeechClient : ISpeechClient
         return await _httpClientFactory
             .PostAsJsonAsync<SpeechResponseDto>(
                 $"{_speechSettings.BaseUrl}/api/speech/mt", textTranslation, cancellationToken, headers: _headers).ConfigureAwait(false);
+    }
+
+    public async Task<SpeechToInferenceCantonResponseDto> SpeechToInferenceCantonAsync(SpeechToInferenceCantonDto speechToInference, CancellationToken cancellationToken)
+    {
+        Log.Information("SugarTalk, inference to canton:{textTranslation}", JsonConvert.SerializeObject(speechToInference));
+        
+        return await _httpClientFactory.PostAsJsonAsync<SpeechToInferenceCantonResponseDto>(
+           $"{_speechSettings.EchoAvatar.CantonBaseUrl}/api/speech/ptts/inference/canton", speechToInference, cancellationToken, headers: _echoAvatarheader).ConfigureAwait(false);
+    }
+
+    public async Task<SpeechToInferenceMandarinResponseDto> SpeechToInferenceMandarinAsync(SpeechToInferenceMandarinDto speechToInference, CancellationToken cancellationToken)
+    {
+        
+        Log.Information("Speech, inference to mandarin:{textTranslation}", JsonConvert.SerializeObject(speechToInference));
+
+       return await _httpClientFactory.PostAsJsonAsync<SpeechToInferenceMandarinResponseDto>(
+                $"{_speechSettings.EchoAvatar.BaseUrl}/api/speech/ptts/inference/mandarin", speechToInference, cancellationToken, headers: _echoAvatarheader).ConfigureAwait(false);
     }
 }
