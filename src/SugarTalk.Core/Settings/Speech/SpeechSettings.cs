@@ -5,6 +5,7 @@ namespace SugarTalk.Core.Settings.Speech;
 public class SpeechSettings : IConfigurationSetting
 {
     public EchoAvatarSettings EchoAvatar { get; set; }
+    
     public SpeechSettings(IConfiguration configuration)
     {
         EchoAvatar = new EchoAvatarSettings
@@ -14,6 +15,7 @@ public class SpeechSettings : IConfigurationSetting
             CallBackUrl = configuration.GetValue<string>("Speech:EchoAvatar:CallBackUrl"),
             CantonBaseUrl = configuration.GetValue<string>("Speech:EchoAvatar:CantonBaseUrl")
         };
+        
         BaseUrl = configuration.GetValue<string>("Speech:BaseUrl");
 
         Apikey = configuration.GetValue<string>("Speech:Apikey");
@@ -23,6 +25,7 @@ public class SpeechSettings : IConfigurationSetting
     
     public string Apikey { get; set; }
 }
+
 public class EchoAvatarSettings
 {
     public string BaseUrl { get; set; }
