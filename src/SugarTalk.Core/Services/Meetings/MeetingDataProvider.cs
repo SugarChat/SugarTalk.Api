@@ -264,12 +264,14 @@ namespace SugarTalk.Core.Services.Meetings
 
         public async Task CheckMeetingSecurityCodeAsync(Guid meetingId, string securityCode, CancellationToken cancellationToken)
         {
+            if (string.IsNullOrEmpty(securityCode)) throw new MeetingSecurityCodeException();
+            
             var code = securityCode.ToSha256();
 
             var isCorrect = await _repository.AnyAsync<Meeting>(x =>
                 x.Id == meetingId && x.SecurityCode == code, cancellationToken).ConfigureAwait(false);
 
-            if (!isCorrect) throw new MeetingSecurityCodeNotMatchException();
+            if (!isCorrect) throw new MeetingSecurityCodeException();
         }
 
         public async Task UpdateMeetingsAsync(List<Meeting> meetingList, CancellationToken cancellationToken)
