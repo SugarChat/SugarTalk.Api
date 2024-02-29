@@ -201,6 +201,7 @@ public partial class MeetingService
             foreach (var meetingSpeech in meetingSpeechesDto)
             {
                 var key = (meetingSpeech.Id, meetingSpeech.VoiceId, meetingSpeech.LanguageId);
+                
                 if (meetingSpeechVoiceDictionary.TryGetValue(key, out var speechVoice))
                 {
                     meetingSpeech.TranslateText = speechVoice.TranslateText;
