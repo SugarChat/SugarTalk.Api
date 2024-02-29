@@ -152,6 +152,8 @@ public partial class MeetingDataProvider
             from meetingRecord in _repository.QueryNoTracking<MeetingRecord>()
             join meeting in _repository.QueryNoTracking<Meeting>() on meetingRecord.MeetingId equals meeting.Id
             join meetingSummary in _repository.QueryNoTracking<MeetingSummary>() on meetingRecord.Id equals meetingSummary.RecordId
+            into meetingSummaryLeft
+            from meetingSummary in  meetingSummaryLeft.DefaultIfEmpty()
             where meetingRecord.Id == recordId
             select new GetMeetingRecordDetailsDto
             {
@@ -161,7 +163,7 @@ public partial class MeetingDataProvider
                 MeetingStartDate = meeting.StartDate,
                 MeetingEndDate = meeting.EndDate,
                 Url = meetingRecord.Url,
-                Summary = meetingSummary.Summary,
+                Summary = meetingSummary == null? null : meetingSummary.Summary,
                 MeetingRecordDetail = meetingRecordDetails.Select(x => _mapper.Map<MeetingRecordDetail>(x)).ToList()
             }
         ).FirstOrDefaultAsync(cancellationToken).ConfigureAwait(false);

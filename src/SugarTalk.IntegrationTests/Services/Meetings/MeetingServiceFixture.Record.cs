@@ -498,11 +498,14 @@ public partial class MeetingServiceFixture
     }
     
     [Theory]
-    [InlineData("e581c3fb-8ed0-4b8f-82fc-2453b84d403e", "08db98a9-6a57-48dc-86e5-31bc1c3a8e92", "AI Meeting", "1234567890", "https:/ai meetings/1234567890", "AI Meeting 會議機要", "AI Meeting 會議sugarTalk", "AI Meeting 會議history")]
-    [InlineData("e19489c5-25d8-42e0-a30a-b5bb814cd7de", "08db98b4-3a60-40ac-8d81-c162c97916be", "Solar Meeting", "0123456789", "https:/solar meetings/0123456789", "Solar Meeting 會議機要", "Solar Meeting 會議sugarTalk", "Solar Meeting 會議history")]
-    [InlineData("7de02c6d-198d-4c8f-81c0-b3ebd5041b9a", "08db994a-adac-4591-8181-3cc86099f525", "BI Meeting", "9012345678", "https:/bi meetings/9012345678", "BI Meeting 會議機要", "BI Meeting 會議sugarTalk", "BI Meeting 會議history")]
+    [InlineData("e581c3fb-8ed0-4b8f-82fc-2453b84d403e", "08db98a9-6a57-48dc-86e5-31bc1c3a8e92", "AI Meeting", "1234567890", "https:/ai meetings/1234567890", "AI Meeting 會議機要", "AI Meeting 會議sugarTalk", "AI Meeting 會議history", false)]
+    [InlineData("e581c3fb-8ed0-4b8f-82fc-2453b84d403e", "08db98a9-6a57-48dc-86e5-31bc1c3a8e92", "AI Meeting", "1234567890", "https:/ai meetings/1234567890", "AI Meeting 會議機要", "AI Meeting 會議sugarTalk", "AI Meeting 會議history", true)]
+    [InlineData("e19489c5-25d8-42e0-a30a-b5bb814cd7de", "08db98b4-3a60-40ac-8d81-c162c97916be", "Solar Meeting", "0123456789", "https:/solar meetings/0123456789", "Solar Meeting 會議機要", "Solar Meeting 會議sugarTalk", "Solar Meeting 會議history", false)]
+    [InlineData("e19489c5-25d8-42e0-a30a-b5bb814cd7de", "08db98b4-3a60-40ac-8d81-c162c97916be", "Solar Meeting", "0123456789", "https:/solar meetings/0123456789", "Solar Meeting 會議機要", "Solar Meeting 會議sugarTalk", "Solar Meeting 會議history", true)]
+    [InlineData("7de02c6d-198d-4c8f-81c0-b3ebd5041b9a", "08db994a-adac-4591-8181-3cc86099f525", "BI Meeting", "9012345678", "https:/bi meetings/9012345678", "BI Meeting 會議機要", "BI Meeting 會議sugarTalk", "BI Meeting 會議history", false)]
+    [InlineData("7de02c6d-198d-4c8f-81c0-b3ebd5041b9a", "08db994a-adac-4591-8181-3cc86099f525", "BI Meeting", "9012345678", "https:/bi meetings/9012345678", "BI Meeting 會議機要", "BI Meeting 會議sugarTalk", "BI Meeting 會議history", true)]
     public async Task CanGetMeetingRecordDetailsData(string recordId, string meetingId, string meetingTitle,
-        string meetingNumber, string meetingUrl, string meetingSummary, string meetingContent1, string meetingContent2)
+        string meetingNumber, string meetingUrl, string meetingSummary, string meetingContent1, string meetingContent2, bool isInsertMeetingRecordSummary)
     {
         var request = new GetMeetingRecordDetailsRequest()
         {
@@ -576,7 +579,10 @@ public partial class MeetingServiceFixture
         {
             await repository.InsertAsync(meetingInfo);
             await repository.InsertAsync(meetingRecord);
-            await repository.InsertAsync(meetingRecordSummary);
+            if (isInsertMeetingRecordSummary)
+            {
+                await repository.InsertAsync(meetingRecordSummary);
+            }
             await repository.InsertAllAsync(meetingRecordDetails);
         }, builder =>
         {
@@ -595,8 +601,17 @@ public partial class MeetingServiceFixture
             result.Data.MeetingStartDate.ShouldBe(meetingInfo.StartDate);
             result.Data.MeetingEndDate.ShouldBe(meetingInfo.EndDate);
             result.Data.Url.ShouldBe(meetingUrl);
-            result.Data.Summary.ShouldBe(meetingSummary);
-            
+            if (isInsertMeetingRecordSummary)
+            {
+                result.Data.Summary.ShouldBe(meetingSummary);
+            }
+            else
+            {
+                result.Data.Summary.ShouldBeNull();
+            }
+
+
+
             result.Data.MeetingRecordDetail.ShouldNotBeNull();
             
             result.Data.MeetingRecordDetail.FirstOrDefault(x => x.UserId == 1).ShouldNotBeNull();
