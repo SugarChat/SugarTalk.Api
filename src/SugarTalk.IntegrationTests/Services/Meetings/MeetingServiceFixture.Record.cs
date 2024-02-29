@@ -610,8 +610,6 @@ public partial class MeetingServiceFixture
                 result.Data.Summary.ShouldBeNull();
             }
 
-
-
             result.Data.MeetingRecordDetail.ShouldNotBeNull();
             
             result.Data.MeetingRecordDetail.FirstOrDefault(x => x.UserId == 1).ShouldNotBeNull();
