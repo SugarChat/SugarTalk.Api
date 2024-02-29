@@ -25,7 +25,7 @@ public class MeetingSpeechVoiceTable : IEntity
     public string VoiceId { get; set; }
 
     [Column("language_id")]
-    public string LanguageId { get; set; }
+    public SpeechTargetLanguageType LanguageId { get; set; }
 
     [Column("translate_text")]
     public string TranslateText { get; set; }

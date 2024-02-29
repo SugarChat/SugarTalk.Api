@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 using SugarTalk.Core.Domain.Meeting;
 using SugarTalk.Messages.Enums.Speech;
 
@@ -18,6 +19,9 @@ public partial interface IMeetingDataProvider
     Task<MeetingSpeech> GetMeetingSpeechByIdAsync(Guid meetingSpeechId, CancellationToken cancellationToken);
     
     Task<MeetingUserSetting> DistributeLanguageForMeetingUserAsync(Guid meetingId, CancellationToken cancellationToken);
+    
+    Task<List<MeetingSpeechVoiceTable>> GetMeetingSpeechesVoiceTableAsync(
+        List<Guid> meetingSpeechIds, string voiceId, SpeechTargetLanguageType languageId, CancellationToken cancellationToken);
 }
 
 public partial class MeetingDataProvider
@@ -79,7 +83,19 @@ public partial class MeetingDataProvider
 
         return meetingUserSetting;
     }
-    
+
+    public async Task<List<MeetingSpeechVoiceTable>> GetMeetingSpeechesVoiceTableAsync(
+        List<Guid> meetingSpeechIds, string voiceId, SpeechTargetLanguageType languageId, CancellationToken cancellationToken)
+    {
+        if (meetingSpeechIds.IsNullOrEmpty() || voiceId.IsNullOrEmpty() || languageId == 0)
+            return null;
+        
+        return await _repository.Query<MeetingSpeechVoiceTable>()
+            .Where(x => meetingSpeechIds.Contains(x.MeetingSpeechId) && voiceId == x.VoiceId && languageId == x.LanguageId)
+            .ToListAsync(cancellationToken)
+            .ConfigureAwait(false);
+    }
+
     private void AssignTone<T>(
         List<MeetingUserSetting> userSettings, Func<MeetingUserSetting, T> toneSelector, MeetingUserSetting meetingUserSetting) where T : Enum
     {

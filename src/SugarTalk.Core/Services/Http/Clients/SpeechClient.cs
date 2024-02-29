@@ -20,7 +20,6 @@ public interface ISpeechClient : IScopedDependency
     Task<SpeechToInferenceCantonResponseDto> SpeechToInferenceCantonAsync(SpeechToInferenceCantonDto speechToInference, CancellationToken cancellationToken);
 
     Task<SpeechToInferenceMandarinResponseDto> SpeechToInferenceMandarinAsync(SpeechToInferenceMandarinDto speechToInference, CancellationToken cancellationToken);
-
 }
 
 public class SpeechClient : ISpeechClient

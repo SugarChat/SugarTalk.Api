@@ -8,6 +8,7 @@ using SugarTalk.Messages.Dto.Meetings.Speak;
 using SugarTalk.Messages.Dto.Meetings.Speech;
 using SugarTalk.Messages.Dto.Meetings.Summary;
 using SugarTalk.Messages.Dto.Meetings.User;
+using SugarTalk.Messages.Requests.Speech;
 
 namespace SugarTalk.Core.Mapping
 {
@@ -34,6 +35,10 @@ namespace SugarTalk.Core.Mapping
             CreateMap<MeetingSummary, MeetingSummaryDto>().ReverseMap();
             
             CreateMap<MeetingSpeakDetail,MeetingRecordDetail>();
+
+            CreateMap<MeetingSpeech, SpeechMappingDto>();
+
+            CreateMap<SpeechMappingDto, SpeechDto>();
         }
     }
 }

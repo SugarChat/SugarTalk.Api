@@ -41,7 +41,13 @@ public class MeetingUserSetting : IEntity
     public CantoneseToneType CantoneseToneType { get; set; }
 
     [Column("target_language_type")] 
-    public SpeechTargetLanguageType TargetLanguageType { get; set; } 
+    public SpeechTargetLanguageType TargetLanguageType { get; set; }
+
+    [Column("voice_id")]
+    public string VoiceId { get; set; }
+
+    [Column("language_id")]
+    public SpeechTargetLanguageType LanguageId { get; set; }
     
     [Column("last_modified_date")]
     public DateTimeOffset LastModifiedDate { get; set; }

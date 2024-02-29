@@ -6,7 +6,8 @@ using System.ComponentModel.DataAnnotations.Schema;
 namespace SugarTalk.Core.Domain.Meeting;
 
 [Table("meeting_speech")]
-public class MeetingSpeech : IEntity
+public class 
+    MeetingSpeech : IEntity
 {
     public MeetingSpeech()
     {

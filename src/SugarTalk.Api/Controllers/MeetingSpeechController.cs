@@ -44,4 +44,13 @@ public class MeetingSpeechController : ControllerBase
             
         return Ok(response);
     }
+
+    [Route("get"), HttpGet]
+    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(GetMeetingVoiceListResponse))]
+    public async Task<IActionResult> GetMeetingVoiceListAsync([FromQuery] GetMeetingVoiceListRequest request)
+    {
+        var response = await _mediator.RequestAsync<GetMeetingVoiceListRequest, GetMeetingVoiceListResponse>(request);
+
+        return Ok(response);
+    }
 }

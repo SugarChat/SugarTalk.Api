@@ -10,10 +10,12 @@ using Microsoft.EntityFrameworkCore;
 using SugarTalk.Core.Constants;
 using SugarTalk.Core.Data;
 using SugarTalk.Core.Domain.Account;
+using SugarTalk.Core.Domain.Meeting;
 using SugarTalk.Core.Extensions;
 using SugarTalk.Core.Ioc;
 using SugarTalk.Messages.Dto.Users;
 using SugarTalk.Messages.Enums.Account;
+using SugarTalk.Messages.Enums.Speech;
 using Role = SugarTalk.Core.Domain.Account.Role;
 
 namespace SugarTalk.Core.Services.Account
@@ -41,6 +43,15 @@ namespace SugarTalk.Core.Services.Account
         Task<List<UserAccount>> GetUserAccountsAsync(List<int> userIds, CancellationToken cancellationToken);
         
         Task<List<UserAccount>> GetUserAccountsAsync(int userId, CancellationToken cancellationToken);
+        
+        Task<List<MeetingUserSetting>> GetMeetingUserSettingAsync(List<int> userIds, Guid meetingId, CancellationToken cancellationToken);
+        
+        Task<List<MeetingSpeechVoiceTable>> GetMeetingSpeechVoiceAsync(
+            List<Guid> speechIds = null, List<string> voiceIds = null, List<SpeechTargetLanguageType> languageIds = null, 
+            Guid? speechId = null, string voiceId = null, SpeechTargetLanguageType? languageId = null, CancellationToken cancellationToken = default);
+
+        Task UpdateMeetingSpeechVoiceTableAsync(List<MeetingSpeechVoiceTable> meetingSpeechVoiceTables, CancellationToken cancellationToken);
+
     }
     
     public partial class AccountDataProvider : IAccountDataProvider
@@ -181,6 +192,39 @@ namespace SugarTalk.Core.Services.Account
             return await _repository.QueryNoTracking<UserAccount>()
                 .Where(x => x.UserName.ToUpper().Contains(user.UserName.ToUpper()))
                 .ToListAsync(cancellationToken).ConfigureAwait(false);
+        }
+
+        public async Task<List<MeetingUserSetting>> GetMeetingUserSettingAsync(List<int> userIds, Guid meetingId, CancellationToken cancellationToken)
+        {
+            return await _repository.QueryNoTracking<MeetingUserSetting>()
+                .Where(x => x.MeetingId == meetingId && userIds.Contains(x.UserId))
+                .ToListAsync(cancellationToken)
+                .ConfigureAwait(false);
+        }
+
+        public async Task<List<MeetingSpeechVoiceTable>> GetMeetingSpeechVoiceAsync(
+            List<Guid> speechIds = null, List<string> voiceIds = null, List<SpeechTargetLanguageType> languageIds = null, 
+            Guid? speechId = null, string voiceId = null, SpeechTargetLanguageType? languageId = null, CancellationToken cancellationToken = default)
+        {
+            var query = _repository.QueryNoTracking<MeetingSpeechVoiceTable>();
+            
+            if (speechIds != null && voiceIds != null && languageIds != null)
+                query = query.Where(x =>
+                    speechIds.Contains(x.MeetingSpeechId) && voiceIds.Contains(x.VoiceId) && languageIds.Contains(x.LanguageId));
+
+            if (speechId != null && voiceId != null && languageId != null)
+                query = query.Where(x =>
+                    x.MeetingSpeechId == speechId && x.VoiceId == voiceId && x.LanguageId == languageId);
+                
+            return await query.ToListAsync(cancellationToken).ConfigureAwait(false);
+        }
+
+        public async Task UpdateMeetingSpeechVoiceTableAsync(
+            List<MeetingSpeechVoiceTable> meetingSpeechVoiceTables, CancellationToken cancellationToken)
+        {
+            await _repository.UpdateAllAsync(meetingSpeechVoiceTables, cancellationToken).ConfigureAwait(false);
+
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
         }
     }
 }
