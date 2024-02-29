@@ -546,6 +546,8 @@ namespace SugarTalk.Core.Services.Meetings
             if (meeting.Status != MeetingStatus.Pending) throw new CannotCancelAppointmentMeetingStatusException();
 
             meeting.Status = MeetingStatus.Cancelled;
+
+            await _unitOfWork.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
         }
         
         public async Task HandleMeetingStatusWhenOutMeetingAsync(int userId, Guid meetingId, Guid? meetingSubId = null, CancellationToken cancellationToken = default)
