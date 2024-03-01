@@ -34,4 +34,10 @@ public class MeetingRecord : IEntity
 
     [Column("meeting_record_type")]
     public MeetingRecordType RecordType { get; set; }
+    
+    [Column("url_status")]
+    public MeetingRecordUrlStatus UrlStatus { get; set; }
+    
+    [Column("egress_id"), StringLength(128)]
+    public string EgressId { get; set; }
 }

@@ -532,7 +532,7 @@ public partial class MeetingServiceFixture : MeetingFixtureBase
             
             meetingInfo.Data.IsPasswordEnabled.ShouldBeTrue();
 
-            await Assert.ThrowsAsync<MeetingSecurityCodeNotMatchException>(async () =>
+            await Assert.ThrowsAsync<MeetingSecurityCodeException>(async () =>
             {
                 await mediator.SendAsync<JoinMeetingCommand, JoinMeetingResponse>(new JoinMeetingCommand
                 {
