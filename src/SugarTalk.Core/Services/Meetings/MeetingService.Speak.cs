@@ -67,10 +67,10 @@ public partial class MeetingService
         MeetingSpeakDetail meetingSpeakDetail, CancellationToken cancellationToken)
     {
        var getEgressInfoListResponse = await _liveKitClient.GetEgressInfoListAsync(
-           new GetEgressRequestDto()
+           new GetEgressRequestDto
            {
                EgressId = meetingSpeakDetail.EgressId,
-               Token = _liveKitServerUtilService.GenerateTokenForRecordMeeting(new UserAccountDto() {Id = 0, UserName = "user"}, meetingSpeakDetail.MeetingNumber)
+               Token = _liveKitServerUtilService.GenerateTokenForRecordMeeting(new UserAccountDto {Id = 0, UserName = "user"}, meetingSpeakDetail.MeetingNumber)
            }, cancellationToken).ConfigureAwait(false);
        
        var egressItem = getEgressInfoListResponse?.EgressItems?.FirstOrDefault();
@@ -124,7 +124,7 @@ public partial class MeetingService
         return speakDetail;
     }
 
-    private async Task TranscriptionMeetingAsync(MeetingSpeakDetail speakDetail,CancellationToken cancellationToken)
+    private async Task TranscriptionMeetingAsync(MeetingSpeakDetail speakDetail, CancellationToken cancellationToken)
     {
         var user = await _accountDataProvider.GetUserAccountAsync(_currentUser.Id, cancellationToken: cancellationToken).ConfigureAwait(false);
         
@@ -135,16 +135,31 @@ public partial class MeetingService
             EgressId = speakDetail.EgressId
         }, cancellationToken).ConfigureAwait(false);
 
-        speakDetail.FileUrl =  getEgressInfoList.EgressItems.FirstOrDefault()?.File.Location;
+        speakDetail.FileUrl = getEgressInfoList.EgressItems.FirstOrDefault()?.File.Location;
 
         if (string.IsNullOrEmpty(speakDetail.FileUrl)) speakDetail.FileTranscriptionStatus = FileTranscriptionStatus.Pending;
-
-        var fileBytes = await _openAiService.GetAsync<byte[]>(speakDetail.FileUrl, cancellationToken).ConfigureAwait(false);
         
-        speakDetail.SpeakContent = await _openAiService.TranscriptionAsync(fileBytes, TranscriptionLanguage.Chinese, cancellationToken: cancellationToken).ConfigureAwait(false);
-        
-        if (speakDetail.SpeakContent == null) speakDetail.FileTranscriptionStatus = FileTranscriptionStatus.Exception;
+        var recordFile = await _openAiService.GetAsync<byte[]>(speakDetail.FileUrl, cancellationToken).ConfigureAwait(false);
 
+        var meetingRecord = await _meetingDataProvider.GetNewestMeetingRecordByMeetingIdAsync(speakDetail.MeetingRecordId, cancellationToken).ConfigureAwait(false);
+
+        var speakStartTimeVideo = speakDetail.SpeakStartTime - meetingRecord.CreatedDate.ToUnixTimeMilliseconds();
+        var speakEndTimeVideo = (speakDetail.SpeakEndTime ?? 0) - meetingRecord.CreatedDate.ToUnixTimeMilliseconds();
+
+        try
+        {
+            var transcription = await _openAiService.TranscriptionAsync(
+                recordFile, TranscriptionLanguage.Chinese, speakStartTimeVideo, speakEndTimeVideo,
+                TranscriptionFileType.Mp4, cancellationToken: cancellationToken).ConfigureAwait(false);
+
+            speakDetail.SpeakContent = user.UserName + ":" + transcription;
+        }
+        catch (Exception ex)
+        {
+            speakDetail.FileTranscriptionStatus = FileTranscriptionStatus.Exception;
+            
+            Log.Information("transcription error: {ErrorMessage}", ex.Message);
+        }
         speakDetail.FileTranscriptionStatus = FileTranscriptionStatus.Completed;
         
         await _meetingDataProvider.UpdateMeetingSpeakDetailAsync(speakDetail, cancellationToken: cancellationToken).ConfigureAwait(false);

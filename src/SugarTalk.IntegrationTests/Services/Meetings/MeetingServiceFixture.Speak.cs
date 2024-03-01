@@ -153,7 +153,7 @@ public partial class MeetingServiceFixture
                 });
 
             openAiService.TranscriptionAsync(Arg.Any<byte[]>(), Arg.Any<TranscriptionLanguage?>(),
-                Arg.Any<TranscriptionFileType>(), Arg.Any<TranscriptionResponseFormat>(),
+                Arg.Any<long>(), Arg.Any<long>(), Arg.Any<TranscriptionFileType>(), Arg.Any<TranscriptionResponseFormat>(),
                 Arg.Any<CancellationToken>()).Returns(audioContent);
 
             openAiService.GetAsync<byte[]>(Arg.Any<string>(), Arg.Any<CancellationToken>())
