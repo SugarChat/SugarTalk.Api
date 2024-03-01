@@ -77,6 +77,8 @@ public partial class MeetingService
 
         var userSessionsByGuest = await _meetingDataProvider.GetMeetingUserSessionByUserIdsAsync(userIdsFromGuest, request.MeetingSubId, cancellationToken).ConfigureAwait(false);
 
+        userSessionsByGuest = userSessionsByGuest.DistinctBy(x => x.UserId).ToList();
+        
         meetingSpeechesDto = meetingSpeechesDto.OrderBy(x => x.CreatedDate).ToList();
 
         var userDictionary = users.ToDictionary(user => user.Id, user => user);
