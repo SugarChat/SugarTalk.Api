@@ -210,7 +210,7 @@ public partial class MeetingDataProvider
 
     public async Task<MeetingRecord> GetMeetingRecordByRecordIdAsync(Guid meetingRecordId, CancellationToken cancellationToken)
     {
-        return await _repository.QueryNoTracking<MeetingRecord>(x=>x.Id == meetingRecordId)
+        return await _repository.QueryNoTracking<MeetingRecord>(x => x.Id == meetingRecordId)
             .FirstOrDefaultAsync(cancellationToken).ConfigureAwait(false);
     }
 
