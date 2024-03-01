@@ -128,12 +128,16 @@ public partial class MeetingService
 
         var timeElapsedSinceStart = (currentTime - startDate).TotalMinutes;
 
-        if (timeElapsedSinceStart > 5 || await StorageMeetingRecordVideoJobAsync(command, token, cancellationToken))
+        if (timeElapsedSinceStart > 5)
         {
             await _meetingDataProvider.UpdateMeetingRecordUrlStatusAsync(command.MeetingRecordId, MeetingRecordUrlStatus.Failed, cancellationToken).ConfigureAwait(false);
             
             _sugarTalkBackgroundJobClient.RemoveRecurringJobIfExists(nameof(ExecuteStorageMeetingRecordVideoDelayedJobAsync));
         }
+
+        var res = await StorageMeetingRecordVideoJobAsync(command, token, cancellationToken).ConfigureAwait(false);
+        
+        if (res) _sugarTalkBackgroundJobClient.RemoveRecurringJobIfExists(nameof(ExecuteStorageMeetingRecordVideoDelayedJobAsync));
     }
 
     public async Task<bool> StorageMeetingRecordVideoJobAsync(StorageMeetingRecordVideoCommand command, string token, CancellationToken cancellationToken)
