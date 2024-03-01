@@ -252,16 +252,9 @@ namespace SugarTalk.Core.Services.Meetings
 
             CheckJoinMeetingConditions(meeting, user);
             
-            meeting.MeetingTokenFromLiveKit = user.Issuer switch
-            {
-                UserAccountIssuer.Guest => _liveKitServerUtilService.GenerateTokenForGuest(user, meeting.MeetingNumber),
-                UserAccountIssuer.Self or UserAccountIssuer.Wiltechs => _liveKitServerUtilService.GenerateTokenForJoinMeeting(user, meeting.MeetingNumber),
-                _ => throw new ArgumentOutOfRangeException()
-            };
+            await ConnectUserToMeetingAsync(user, meeting, command.IsMuted, cancellationToken).ConfigureAwait(false);
 
             await _meetingDataProvider.UpdateMeetingIfRequiredAsync(meeting.Id, user.Id, cancellationToken).ConfigureAwait(false);
-            
-            await ConnectUserToMeetingAsync(user, meeting, command.IsMuted, cancellationToken).ConfigureAwait(false);
 
             meeting.Status = MeetingStatus.InProgress;
             
@@ -355,10 +348,21 @@ namespace SugarTalk.Core.Services.Meetings
                 
                 await _meetingDataProvider.AddMeetingUserSessionAsync(userSession, cancellationToken).ConfigureAwait(false);
 
-                var updateUserSession = _mapper.Map<MeetingUserSessionDto>(userSession);
-                updateUserSession.UserName = user.UserName;
+                var addUserSession = _mapper.Map<MeetingUserSessionDto>(userSession);
+                addUserSession.UserName = user.UserName;
 
-                meeting.AddUserSession(updateUserSession);
+                var guestCount = meeting.UserSessions.Count(x => !string.IsNullOrEmpty(x.GuestName));
+
+                if (user.Issuer is UserAccountIssuer.Guest) addUserSession.GuestName = $"Anonymity{guestCount + 1}";
+
+                meeting.AddUserSession(addUserSession);
+                
+                meeting.MeetingTokenFromLiveKit = user.Issuer switch
+                {
+                    UserAccountIssuer.Guest => _liveKitServerUtilService.GenerateTokenForGuest(user.UserName, addUserSession.GuestName, meeting.MeetingNumber),
+                    UserAccountIssuer.Self or UserAccountIssuer.Wiltechs => _liveKitServerUtilService.GenerateTokenForJoinMeeting(user, meeting.MeetingNumber),
+                    _ => throw new ArgumentOutOfRangeException()
+                };
             }
             else
             {
@@ -382,6 +386,8 @@ namespace SugarTalk.Core.Services.Meetings
                     updateUserSession.IsMeetingMaster = true;
                 }
                 meeting.UpdateUserSession(updateUserSession);
+
+                meeting.MeetingTokenFromLiveKit = _liveKitServerUtilService.GenerateTokenForJoinMeeting(user, meeting.MeetingNumber);
             }
         }
 
