@@ -129,12 +129,14 @@ public partial class MeetingService
         var user = await _accountDataProvider.GetUserAccountAsync(_currentUser.Id, cancellationToken: cancellationToken).ConfigureAwait(false);
         
         var getEgressInfoList = await _liveKitClient.GetEgressInfoListAsync(
-            new GetEgressRequestDto()
+            new GetEgressRequestDto
         {
             Token =  _liveKitServerUtilService.GenerateTokenForRecordMeeting(user, speakDetail.MeetingNumber),
             EgressId = speakDetail.EgressId
         }, cancellationToken).ConfigureAwait(false);
 
+        Log.Information("getEgressInfoList: {@GetEgressInfoList}", getEgressInfoList);
+        
         speakDetail.FileUrl = getEgressInfoList.EgressItems.FirstOrDefault()?.File.Location;
 
         if (string.IsNullOrEmpty(speakDetail.FileUrl)) speakDetail.FileTranscriptionStatus = FileTranscriptionStatus.Pending;
