@@ -150,13 +150,15 @@ public partial class MeetingService
         
         try
         {
-           speakDetail.SpeakContent= await _openAiService.TranscriptionAsync(
+            speakDetail.SpeakContent = await _openAiService.TranscriptionAsync(
                 recordFile, TranscriptionLanguage.Chinese, speakStartTimeVideo, speakEndTimeVideo,
                 TranscriptionFileType.Mp4, cancellationToken: cancellationToken).ConfigureAwait(false);
         }
         catch (Exception ex)
         {
             speakDetail.FileTranscriptionStatus = FileTranscriptionStatus.Exception;
+            
+            await _meetingDataProvider.UpdateMeetingSpeakDetailAsync(speakDetail, cancellationToken: cancellationToken).ConfigureAwait(false);
             
             Log.Information("transcription error: {ErrorMessage}", ex.Message);
         }
