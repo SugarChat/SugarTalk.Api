@@ -4,6 +4,7 @@ using System;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Serilog;
 using SugarTalk.Core.Services.Exceptions;
 using SugarTalk.Messages.Dto.LiveKit.Egress;
 using SugarTalk.Messages.Enums.Meeting;
@@ -75,9 +76,11 @@ public partial class MeetingService
             }
         }, cancellationToken).ConfigureAwait(false);
 
+        Log.Information("start meeting recording response: {@postResponse}", postResponse);
+
         if (postResponse is null) throw new Exception("Start Meeting Recording Failed.");
 
-        await _meetingDataProvider.PersistMeetingRecordAsync(meeting.Id, meetingRecordId, cancellationToken).ConfigureAwait(false);
+        await _meetingDataProvider.PersistMeetingRecordAsync(meeting.Id, meetingRecordId, postResponse.EgressId, cancellationToken).ConfigureAwait(false);
 
         return new MeetingRecordingStartedEvent
         {
@@ -99,9 +102,14 @@ public partial class MeetingService
         var user = await _accountDataProvider.GetUserAccountAsync(_currentUser.Id.Value, cancellationToken: cancellationToken).ConfigureAwait(false);
 
         var recordMeetingToken = _liveKitServerUtilService.GenerateTokenForRecordMeeting(user, meeting.MeetingNumber);
+        
+        await _meetingDataProvider.UpdateMeetingRecordUrlStatusAsync(command.MeetingRecordId, MeetingRecordUrlStatus.InProgress, cancellationToken).ConfigureAwait(false);
 
         var stopResponse = await _liveKitClient.StopEgressAsync(
             new StopEgressRequestDto { Token = recordMeetingToken, EgressId = command.EgressId }, cancellationToken).ConfigureAwait(false);
+        
+        Log.Information("stop meeting recording response: {@stopResponse}", stopResponse);
+        
         if (stopResponse == null) throw new Exception();
 
         var startDate = _clock.Now;
@@ -114,14 +122,18 @@ public partial class MeetingService
     }
 
     public async Task ExecuteStorageMeetingRecordVideoDelayedJobAsync(
-        DateTimeOffset startDate, StorageMeetingRecordVideoCommand command,string token, CancellationToken cancellationToken)
+        DateTimeOffset startDate, StorageMeetingRecordVideoCommand command, string token, CancellationToken cancellationToken)
     {
-        var now = _clock.Now;
-        if ((now - startDate).TotalMinutes > 5)
-            _sugarTalkBackgroundJobClient.RemoveRecurringJobIfExists(nameof(ExecuteStorageMeetingRecordVideoDelayedJobAsync));
+        var currentTime = _clock.Now;
 
-        var res = await StorageMeetingRecordVideoJobAsync(command, token, cancellationToken);
-        if (res) _sugarTalkBackgroundJobClient.RemoveRecurringJobIfExists(nameof(ExecuteStorageMeetingRecordVideoDelayedJobAsync));
+        var timeElapsedSinceStart = (currentTime - startDate).TotalMinutes;
+
+        if (timeElapsedSinceStart > 5 || await StorageMeetingRecordVideoJobAsync(command, token, cancellationToken))
+        {
+            await _meetingDataProvider.UpdateMeetingRecordUrlStatusAsync(command.MeetingRecordId, MeetingRecordUrlStatus.Failed, cancellationToken).ConfigureAwait(false);
+            
+            _sugarTalkBackgroundJobClient.RemoveRecurringJobIfExists(nameof(ExecuteStorageMeetingRecordVideoDelayedJobAsync));
+        }
     }
 
     public async Task<bool> StorageMeetingRecordVideoJobAsync(StorageMeetingRecordVideoCommand command, string token, CancellationToken cancellationToken)
@@ -131,12 +143,16 @@ public partial class MeetingService
 
         var getResponse = await _liveKitClient.GetEgressInfoListAsync(new GetEgressRequestDto { Token = token, EgressId = command.EgressId }, cancellationToken).ConfigureAwait(false);
         if (getResponse == null) return false;
+        
+        Log.Information("get egress info list response: {@egressInfo}", getResponse);
+        
+        var egressItemDto = getResponse?.EgressItems.FirstOrDefault(x => x.EgressId == command.EgressId && x.Status == "EGRESS_COMPLETE");
 
-        var egressItemDto = getResponse.EgressItems.FirstOrDefault(x => x.EgressId == command.EgressId && x.Status == "EGRESS_COMPLETE");
         if (egressItemDto == null) return false;
 
         meetingRecord.Url = egressItemDto.File.Location;
         meetingRecord.RecordType = MeetingRecordType.EndRecord;
+        meetingRecord.UrlStatus = MeetingRecordUrlStatus.Completed;
         await _meetingDataProvider.UpdateMeetingRecordAsync(meetingRecord, cancellationToken).ConfigureAwait(false);
 
         return true;

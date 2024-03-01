@@ -20,7 +20,7 @@ public partial interface IMeetingDataProvider
     
     Task DeleteMeetingRecordAsync(List<Guid> meetingRecordIds, CancellationToken cancellationToken);
     
-    Task PersistMeetingRecordAsync(Guid meetingId, Guid meetingRecordId, CancellationToken cancellationToken);
+    Task PersistMeetingRecordAsync(Guid meetingId, Guid meetingRecordId, string egressId, CancellationToken cancellationToken);
     
     Task<GetMeetingRecordDetailsResponse> GetMeetingRecordDetailsAsync(Guid recordId, CancellationToken cancellationToken);
     
@@ -29,6 +29,8 @@ public partial interface IMeetingDataProvider
     Task<MeetingRecord> GetNewestMeetingRecordByMeetingIdAsync(Guid meetingId, CancellationToken cancellationToken);
 
     Task<MeetingRecord> GetMeetingRecordByMeetingRecordIdAsync(Guid meetingRecordId, CancellationToken cancellationToken);
+    
+    Task UpdateMeetingRecordUrlStatusAsync(Guid meetingRecordId, MeetingRecordUrlStatus urlStatus, CancellationToken cancellationToken);
 }
 
 public partial class MeetingDataProvider
@@ -104,7 +106,8 @@ public partial class MeetingDataProvider
                 Timezone = x.Meeting.TimeZone,
                 MeetingCreator = x.User.UserName,
                 Duration = CalculateMeetingDuration(x.Meeting.StartDate, x.Meeting.EndDate),
-                Url = x.Record.Url
+                Url = x.Record.Url,
+                UrlStatus = x.Record.UrlStatus
             })
             .ToList();
 
@@ -122,7 +125,7 @@ public partial class MeetingDataProvider
         meetingRecords.ForEach(x => x.IsDeleted = true);
     }
 
-    public async Task PersistMeetingRecordAsync(Guid meetingId, Guid meetingRecordId, CancellationToken cancellationToken)
+    public async Task PersistMeetingRecordAsync(Guid meetingId, Guid meetingRecordId, string egressId, CancellationToken cancellationToken)
     {
         var meetingRecordTotal = await _repository.Query<MeetingRecord>()
             .CountAsync(x => x.MeetingId == meetingId, cancellationToken).ConfigureAwait(false);
@@ -131,6 +134,7 @@ public partial class MeetingDataProvider
         {
             Id = meetingRecordId,
             MeetingId = meetingId,
+            EgressId = egressId,
             RecordNumber = GenerateRecordNumber(meetingRecordTotal + 1)
         }, cancellationToken).ConfigureAwait(false);
     }
@@ -195,5 +199,17 @@ public partial class MeetingDataProvider
         return await _repository
             .Query<MeetingRecord>(x => x.Id == meetingRecordId && x.RecordType == MeetingRecordType.OnRecord)
             .FirstOrDefaultAsync(cancellationToken).ConfigureAwait(false);
+    }
+
+    public async Task UpdateMeetingRecordUrlStatusAsync(Guid meetingRecordId, MeetingRecordUrlStatus urlStatus, CancellationToken cancellationToken)
+    {
+        var meetingRecord = await _repository.Query<MeetingRecord>()
+            .FirstOrDefaultAsync(x => x.Id == meetingRecordId, cancellationToken).ConfigureAwait(false);
+
+        if (meetingRecord == null) return;
+
+        meetingRecord.UrlStatus = urlStatus;
+
+        await _unitOfWork.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
     }
 }

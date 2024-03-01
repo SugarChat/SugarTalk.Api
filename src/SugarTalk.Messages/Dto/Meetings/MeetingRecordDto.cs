@@ -1,4 +1,5 @@
 using System;
+using SugarTalk.Messages.Enums.Meeting;
 
 namespace SugarTalk.Messages.Dto.Meetings;
 
@@ -23,4 +24,6 @@ public class MeetingRecordDto
     public string MeetingCreator { get; set; }
 
     public string Url { get; set; }
+    
+    public MeetingRecordUrlStatus UrlStatus { get; set; }
 }
