@@ -192,6 +192,8 @@ public partial class MeetingDataProvider
         if (record == null) return;
 
         await _repository.UpdateAsync(record, cancellationToken).ConfigureAwait(false);
+
+        await _unitOfWork.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
     }
 
     public async Task<MeetingRecord> GetNewestMeetingRecordByMeetingIdAsync(Guid meetingId, CancellationToken cancellationToken)

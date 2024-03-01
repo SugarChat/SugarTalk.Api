@@ -13,6 +13,8 @@ public class GetMeetingAudioListRequest : IRequest
 {
     public Guid MeetingId { get; set; }
     
+    public Guid? MeetingSubId { get; set; }
+    
     //我听到的语种设置
     public SpeechTargetLanguageType LanguageType { get; set; } = SpeechTargetLanguageType.Cantonese;
 
