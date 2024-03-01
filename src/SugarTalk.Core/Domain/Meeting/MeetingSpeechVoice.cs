@@ -5,10 +5,10 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace SugarTalk.Core.Domain.Meeting;
 
-[Table("meeting_speech_voice_table")]
-public class MeetingSpeechVoiceTable : IEntity
+[Table("meeting_speech_voice")]
+public class MeetingSpeechVoice : IEntity
 {
-    public MeetingSpeechVoiceTable()
+    public MeetingSpeechVoice()
     {
         Status = SpeechAudioLoadStatus.Pending;
         CreatedDate = DateTimeOffset.Now;

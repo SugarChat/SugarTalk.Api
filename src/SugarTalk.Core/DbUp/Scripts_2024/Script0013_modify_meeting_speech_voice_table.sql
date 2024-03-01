@@ -1,0 +1,1 @@
+RENAME TABLE `meeting_speech_voice_table` TO `meeting_speech_voice`;

@@ -88,6 +88,7 @@
         <EmbeddedResource Include="DbUp\Scripts_2024\Script0010_add_meeting_sub_id_to_meeting_user_session_table.sql" />
         <EmbeddedResource Include="DbUp\Scripts_2024\Script0011_add_meeting_speech_voice_table.sql" />
         <EmbeddedResource Include="DbUp\Scripts_2024\Script0012_modify_meeting_user_setting.sql" />
+        <EmbeddedResource Include="DbUp\Scripts_2024\Script0013_modify_meeting_speech_voice_table.sql" />
     </ItemGroup>
     
     <ItemGroup>

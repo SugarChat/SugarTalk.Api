@@ -248,7 +248,7 @@ public partial class MeetingService
 
         if (meetingSpeechVoice != null) meetingSpeechVoice.Status = SpeechAudioLoadStatus.Completed;
 
-        await _accountDataProvider.UpdateMeetingSpeechVoiceTableAsync(new List<MeetingSpeechVoiceTable>{meetingSpeechVoice}, cancellationToken).ConfigureAwait(false);
+        await _accountDataProvider.UpdateMeetingSpeechVoiceTableAsync(new List<MeetingSpeechVoice>{meetingSpeechVoice}, cancellationToken).ConfigureAwait(false);
     }
 
     private async Task TextByTranslateAsync(SpeechMappingDto meetingSpeech, CancellationToken cancellationToken)

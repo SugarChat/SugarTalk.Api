@@ -20,7 +20,7 @@ public partial interface IMeetingDataProvider
     
     Task<MeetingUserSetting> DistributeLanguageForMeetingUserAsync(Guid meetingId, CancellationToken cancellationToken);
     
-    Task<List<MeetingSpeechVoiceTable>> GetMeetingSpeechesVoiceTableAsync(
+    Task<List<MeetingSpeechVoice>> GetMeetingSpeechesVoiceTableAsync(
         List<Guid> meetingSpeechIds, string voiceId, SpeechTargetLanguageType languageId, CancellationToken cancellationToken);
 }
 
@@ -84,13 +84,13 @@ public partial class MeetingDataProvider
         return meetingUserSetting;
     }
 
-    public async Task<List<MeetingSpeechVoiceTable>> GetMeetingSpeechesVoiceTableAsync(
+    public async Task<List<MeetingSpeechVoice>> GetMeetingSpeechesVoiceTableAsync(
         List<Guid> meetingSpeechIds, string voiceId, SpeechTargetLanguageType languageId, CancellationToken cancellationToken)
     {
         if (meetingSpeechIds.IsNullOrEmpty() || voiceId.IsNullOrEmpty() || languageId == 0)
             return null;
         
-        return await _repository.Query<MeetingSpeechVoiceTable>()
+        return await _repository.Query<MeetingSpeechVoice>()
             .Where(x => meetingSpeechIds.Contains(x.MeetingSpeechId) && voiceId == x.VoiceId && languageId == x.LanguageId)
             .ToListAsync(cancellationToken)
             .ConfigureAwait(false);

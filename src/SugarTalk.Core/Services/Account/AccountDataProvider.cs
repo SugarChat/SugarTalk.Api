@@ -46,11 +46,11 @@ namespace SugarTalk.Core.Services.Account
         
         Task<List<MeetingUserSetting>> GetMeetingUserSettingAsync(List<int> userIds, Guid meetingId, CancellationToken cancellationToken);
         
-        Task<List<MeetingSpeechVoiceTable>> GetMeetingSpeechVoiceAsync(
+        Task<List<MeetingSpeechVoice>> GetMeetingSpeechVoiceAsync(
             List<Guid> speechIds = null, List<string> voiceIds = null, List<SpeechTargetLanguageType> languageIds = null, 
             Guid? speechId = null, string voiceId = null, SpeechTargetLanguageType? languageId = null, CancellationToken cancellationToken = default);
 
-        Task UpdateMeetingSpeechVoiceTableAsync(List<MeetingSpeechVoiceTable> meetingSpeechVoiceTables, CancellationToken cancellationToken);
+        Task UpdateMeetingSpeechVoiceTableAsync(List<MeetingSpeechVoice> meetingSpeechVoiceTables, CancellationToken cancellationToken);
 
     }
     
@@ -202,11 +202,11 @@ namespace SugarTalk.Core.Services.Account
                 .ConfigureAwait(false);
         }
 
-        public async Task<List<MeetingSpeechVoiceTable>> GetMeetingSpeechVoiceAsync(
+        public async Task<List<MeetingSpeechVoice>> GetMeetingSpeechVoiceAsync(
             List<Guid> speechIds = null, List<string> voiceIds = null, List<SpeechTargetLanguageType> languageIds = null, 
             Guid? speechId = null, string voiceId = null, SpeechTargetLanguageType? languageId = null, CancellationToken cancellationToken = default)
         {
-            var query = _repository.QueryNoTracking<MeetingSpeechVoiceTable>();
+            var query = _repository.QueryNoTracking<MeetingSpeechVoice>();
             
             if (speechIds != null && voiceIds != null && languageIds != null)
                 query = query.Where(x =>
@@ -220,7 +220,7 @@ namespace SugarTalk.Core.Services.Account
         }
 
         public async Task UpdateMeetingSpeechVoiceTableAsync(
-            List<MeetingSpeechVoiceTable> meetingSpeechVoiceTables, CancellationToken cancellationToken)
+            List<MeetingSpeechVoice> meetingSpeechVoiceTables, CancellationToken cancellationToken)
         {
             await _repository.UpdateAllAsync(meetingSpeechVoiceTables, cancellationToken).ConfigureAwait(false);
 
