@@ -79,6 +79,8 @@ namespace SugarTalk.Core.Services.Meetings
         Task DeleteMeetingHistoryAsync(DeleteMeetingHistoryCommand command, CancellationToken cancellationToken);
         
         Task CancelAppointmentMeetingAsync(CancelAppointmentMeetingCommand command, CancellationToken cancellationToken);
+        
+        Task<GetMeetingInviteInfoResponse> GetMeetingInviteInfoAsync(GetMeetingInviteInfoRequest request, CancellationToken cancellationToken);
     }
     
     public partial class MeetingService : IMeetingService
@@ -153,6 +155,7 @@ namespace SugarTalk.Core.Services.Meetings
             meeting.MeetingMasterUserId = _currentUser.Id.Value;
             meeting.MeetingStreamMode = MeetingStreamMode.LEGACY;
             meeting.SecurityCode = !string.IsNullOrEmpty(command.SecurityCode) ? command.SecurityCode.ToSha256() : null;
+            meeting.Password = command.SecurityCode;
 
             // 处理周期性预定会议生成的子会议
             if (command.AppointmentType == MeetingAppointmentType.Appointment)
@@ -415,6 +418,7 @@ namespace SugarTalk.Core.Services.Meetings
                 throw new CannotUpdateMeetingWhenMasterUserIdMismatchException();
 
             var updateMeeting = _mapper.Map(command, meeting);
+            updateMeeting.Password = command.SecurityCode;
 
             if (!string.IsNullOrEmpty(command.SecurityCode))
                 updateMeeting.SecurityCode = command.SecurityCode.ToSha256();
@@ -659,6 +663,28 @@ namespace SugarTalk.Core.Services.Meetings
             if (user is null) throw new UnauthorizedAccessException();
             
             await _meetingDataProvider.CancelAppointmentMeetingAsync(command.MeetingId, cancellationToken).ConfigureAwait(false);
+        }
+
+        public async Task<GetMeetingInviteInfoResponse> GetMeetingInviteInfoAsync(GetMeetingInviteInfoRequest request, CancellationToken cancellationToken)
+        {
+            var user = await _accountDataProvider
+                .GetUserAccountAsync(_currentUser?.Id, cancellationToken: cancellationToken).ConfigureAwait(false);
+
+            if (user is null) throw new UnauthorizedAccessException();
+
+            var meeting = await _meetingDataProvider.GetMeetingByIdAsync(request.MeetingId, cancellationToken).ConfigureAwait(false);
+
+            return new GetMeetingInviteInfoResponse
+            {
+                Data = new GetMeetingInviteInfoResponseData
+                {
+                    Sender = user.UserName,
+                    Title = meeting.Title,
+                    MeetingNumber = meeting.MeetingNumber,
+                    Url = string.Empty,
+                    SecurityCode = meeting.Password
+                }
+            };
         }
 
         public async Task DeleteMeetingRecordAsync(DeleteMeetingRecordCommand command, CancellationToken cancellationToken)

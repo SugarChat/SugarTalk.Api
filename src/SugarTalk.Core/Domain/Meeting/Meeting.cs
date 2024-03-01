@@ -49,6 +49,9 @@ public class Meeting : IEntity
 
     [Column("security_code"), StringLength(128)]
     public string SecurityCode { get; set; }
+    
+    [Column("password"), StringLength(128)]
+    public string Password { get; set; }
 
     [Column("status")]
     public MeetingStatus Status { get; set; }
