@@ -141,18 +141,16 @@ public partial class MeetingService
         
         var recordFile = await _openAiService.GetAsync<byte[]>(speakDetail.FileUrl, cancellationToken).ConfigureAwait(false);
 
-        var meetingRecord = await _meetingDataProvider.GetNewestMeetingRecordByMeetingIdAsync(speakDetail.MeetingRecordId, cancellationToken).ConfigureAwait(false);
+        var meetingRecord = await _meetingDataProvider.GetMeetingRecordByRecordIdAsync(speakDetail.MeetingRecordId, cancellationToken).ConfigureAwait(false);
 
         var speakStartTimeVideo = speakDetail.SpeakStartTime - meetingRecord.CreatedDate.ToUnixTimeMilliseconds();
         var speakEndTimeVideo = (speakDetail.SpeakEndTime ?? 0) - meetingRecord.CreatedDate.ToUnixTimeMilliseconds();
-
+        
         try
         {
-            var transcription = await _openAiService.TranscriptionAsync(
+           speakDetail.SpeakContent= await _openAiService.TranscriptionAsync(
                 recordFile, TranscriptionLanguage.Chinese, speakStartTimeVideo, speakEndTimeVideo,
                 TranscriptionFileType.Mp4, cancellationToken: cancellationToken).ConfigureAwait(false);
-
-            speakDetail.SpeakContent = user.UserName + ":" + transcription;
         }
         catch (Exception ex)
         {
@@ -160,6 +158,7 @@ public partial class MeetingService
             
             Log.Information("transcription error: {ErrorMessage}", ex.Message);
         }
+        
         speakDetail.FileTranscriptionStatus = FileTranscriptionStatus.Completed;
         
         await _meetingDataProvider.UpdateMeetingSpeakDetailAsync(speakDetail, cancellationToken: cancellationToken).ConfigureAwait(false);
