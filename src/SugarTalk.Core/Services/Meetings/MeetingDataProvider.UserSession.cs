@@ -112,7 +112,7 @@ public partial class MeetingDataProvider
             query = query.Where(x => x.MeetingSubId == meetingSubId);
         }
 
-        return await query.DistinctBy(x => x.UserId).ToListAsync(cancellationToken).ConfigureAwait(false);
+        return await query.ToListAsync(cancellationToken).ConfigureAwait(false);
     }
 
     public async Task RemoveMeetingUserSessionsIfRequiredAsync(int userId, Guid meetingId, CancellationToken cancellationToken)
