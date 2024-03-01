@@ -682,7 +682,7 @@ namespace SugarTalk.Core.Services.Meetings
                     Title = meeting.Title,
                     MeetingNumber = meeting.MeetingNumber,
                     Url = string.Empty,
-                    SecurityCode = meeting.Password
+                    Password = meeting.Password
                 }
             };
         }
