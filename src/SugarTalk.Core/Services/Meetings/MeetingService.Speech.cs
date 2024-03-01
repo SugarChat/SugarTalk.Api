@@ -11,6 +11,7 @@ using SugarTalk.Core.Services.Exceptions;
 using SugarTalk.Messages.Commands.Speech;
 using SugarTalk.Messages.Requests.Speech;
 using SugarTalk.Messages.Dto.Meetings.Speech;
+using SugarTalk.Messages.Enums.Account;
 using SugarTalk.Messages.Enums.Speech;
 using SugarTalk.Messages.Events.Meeting.Speech;
 
@@ -72,16 +73,26 @@ public partial class MeetingService
         var users = await _accountDataProvider
             .GetUserAccountsAsync(userIds, cancellationToken).ConfigureAwait(false);
 
+        var userIdsFromGuest = users.Where(x => x.Issuer == UserAccountIssuer.Guest).Select(x => x.Id).ToList();
+
+        var userSessionsByGuest = await _meetingDataProvider.GetMeetingUserSessionByUserIdsAsync(userIdsFromGuest, request.MeetingSubId, cancellationToken).ConfigureAwait(false);
+
         meetingSpeechesDto = meetingSpeechesDto.OrderBy(x => x.CreatedDate).ToList();
 
         var userDictionary = users.ToDictionary(user => user.Id, user => user);
 
+        const int guestCount = 1;
+
+        var guestDic = userSessionsByGuest.OrderBy(x => x.CreatedDate)
+            .ToDictionary(x => x.UserId, _ => $"Anonymity{guestCount + 1}");
+        
         foreach (var meetingSpeech in meetingSpeechesDto)
         {
-            if (userDictionary.TryGetValue(meetingSpeech.UserId, out var userAccount))
-            {
-                meetingSpeech.UserName = userAccount.UserName;
-            }
+            if (!userDictionary.TryGetValue(meetingSpeech.UserId, out var userAccount)) continue;
+
+            var guest = guestDic.TryGetValue(meetingSpeech.UserId, out var guestName) ? guestName : null;
+
+            meetingSpeech.UserName = guest is null ? userAccount.UserName : guestName;
         }
 
         await GenerateTextByTranslateAsync(request.LanguageType, meetingSpeechesDto, cancellationToken).ConfigureAwait(false);

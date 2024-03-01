@@ -34,6 +34,8 @@ public partial interface IMeetingDataProvider
     Task<List<MeetingUserSession>> GetMeetingUserSessionsAsync(List<int> ids, CancellationToken cancellationToken);
     
     Task<MeetingUserSession> GetMeetingUserSessionByUserIdAsync(int userId, CancellationToken cancellationToken);
+    
+    Task<List<MeetingUserSession>> GetMeetingUserSessionByUserIdsAsync(List<int> userIds, Guid? meetingSubId, CancellationToken cancellationToken);
 
     Task<List<MeetingUserSession>> GetMeetingUserSessionsByIdsAndMeetingIdAsync(List<int> ids, Guid meetingId, CancellationToken cancellationToken);
 
@@ -99,6 +101,18 @@ public partial class MeetingDataProvider
     {
         return await _repository.Query<MeetingUserSession>().Where(x => x.UserId == userId)
             .FirstOrDefaultAsync(cancellationToken).ConfigureAwait(false);
+    }
+
+    public async Task<List<MeetingUserSession>> GetMeetingUserSessionByUserIdsAsync(List<int> userIds, Guid? meetingSubId, CancellationToken cancellationToken)
+    {
+        var query = _repository.QueryNoTracking<MeetingUserSession>(x => userIds.Contains(x.UserId));
+        
+        if (meetingSubId is not null)
+        {
+            query = query.Where(x => x.MeetingSubId == meetingSubId);
+        }
+
+        return await query.DistinctBy(x => x.UserId).ToListAsync(cancellationToken).ConfigureAwait(false);
     }
 
     public async Task RemoveMeetingUserSessionsIfRequiredAsync(int userId, Guid meetingId, CancellationToken cancellationToken)
