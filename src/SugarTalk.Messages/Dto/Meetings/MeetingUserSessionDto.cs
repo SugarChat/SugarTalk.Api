@@ -14,6 +14,11 @@ public class MeetingUserSessionDto
     public int UserId { get; set; }
 
     public string UserName { set; get; }
+    
+    /// <summary>
+    /// guest custom name
+    /// </summary>
+    public string GuestName { get; set; }
 
     public bool IsMuted { get; set; }
 

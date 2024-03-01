@@ -97,6 +97,7 @@ public partial class MeetingDataProvider
 
         var items = joinResult.Select(x => new MeetingRecordDto
             {
+                MeetingRecordId = x.Record.Id,
                 MeetingId = x.Meeting.Id,
                 MeetingNumber = x.Meeting.MeetingNumber,
                 RecordNumber = x.Record.RecordNumber,
@@ -123,6 +124,8 @@ public partial class MeetingDataProvider
         if (meetingRecords is not { Count: > 0 }) return;
         
         meetingRecords.ForEach(x => x.IsDeleted = true);
+        
+        await _unitOfWork.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
     }
 
     public async Task PersistMeetingRecordAsync(Guid meetingId, Guid meetingRecordId, string egressId, CancellationToken cancellationToken)
@@ -153,6 +156,8 @@ public partial class MeetingDataProvider
             from meetingRecord in _repository.QueryNoTracking<MeetingRecord>()
             join meeting in _repository.QueryNoTracking<Meeting>() on meetingRecord.MeetingId equals meeting.Id
             join meetingSummary in _repository.QueryNoTracking<MeetingSummary>() on meetingRecord.Id equals meetingSummary.RecordId
+            into meetingSummaryLeft
+            from meetingSummary in  meetingSummaryLeft.DefaultIfEmpty()
             where meetingRecord.Id == recordId
             select new GetMeetingRecordDetailsDto
             {
@@ -162,7 +167,7 @@ public partial class MeetingDataProvider
                 MeetingStartDate = meeting.StartDate,
                 MeetingEndDate = meeting.EndDate,
                 Url = meetingRecord.Url,
-                Summary = meetingSummary.Summary,
+                Summary = meetingSummary == null? null : meetingSummary.Summary,
                 MeetingRecordDetail = meetingRecordDetails.Select(x => _mapper.Map<MeetingRecordDetail>(x)).ToList()
             }
         ).FirstOrDefaultAsync(cancellationToken).ConfigureAwait(false);

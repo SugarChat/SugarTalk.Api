@@ -1,12 +1,14 @@
 using System;
-using System.Collections.Generic;
 using Mediator.Net.Contracts;
-using SugarTalk.Messages.Dto.Meetings.Speech;
-using SugarTalk.Messages.Enums.Speech;
+using System.Collections.Generic;
 using SugarTalk.Messages.Responses;
+using SugarTalk.Messages.Attributes;
+using SugarTalk.Messages.Enums.Speech;
+using SugarTalk.Messages.Dto.Meetings.Speech;
 
 namespace SugarTalk.Messages.Requests.Speech;
 
+[AllowGuestAccess]
 public class GetMeetingAudioListRequest : IRequest
 {
     public Guid MeetingId { get; set; }

@@ -59,7 +59,7 @@ public partial class MeetingService
 
         var user = await _accountDataProvider.GetUserAccountAsync(_currentUser.Id, cancellationToken: cancellationToken).ConfigureAwait(false);
 
-        var postResponse = await _liveKitClient.StartTrackCompositeEgressAsync(new StartTrackCompositeEgressRequestDto
+        var postResponse = await _liveKitClient.StartRoomCompositeEgressAsync(new StartRoomCompositeEgressRequestDto
         {
             Token = _liveKitServerUtilService.GenerateTokenForRecordMeeting(user, meeting.MeetingNumber),
             RoomName = meeting.MeetingNumber,
@@ -142,7 +142,6 @@ public partial class MeetingService
         if (meetingRecord == null) return false;
 
         var getResponse = await _liveKitClient.GetEgressInfoListAsync(new GetEgressRequestDto { Token = token, EgressId = command.EgressId }, cancellationToken).ConfigureAwait(false);
-        if (getResponse == null) return false;
         
         Log.Information("get egress info list response: {@egressInfo}", getResponse);
         

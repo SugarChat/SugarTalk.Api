@@ -15,6 +15,7 @@ using SugarTalk.Core.Services.Account;
 using SugarTalk.Core.Services.AntMediaServer;
 using SugarTalk.Core.Services.Exceptions;
 using SugarTalk.Core.Services.LiveKit;
+using SugarTalk.Core.Services.Meetings;
 using SugarTalk.Core.Services.OpenAi;
 using SugarTalk.Core.Services.Utils;
 using SugarTalk.IntegrationTests.TestBaseClasses;
@@ -214,12 +215,14 @@ public partial class MeetingServiceFixture : MeetingFixtureBase
                 {
                     UserId = user1.Id,
                     IsMuted = false,
+                    Status = MeetingAttendeeStatus.Present,
                     MeetingId = scheduleMeetingResponse.Data.Id
                 },
                 new()
                 {
                     UserId = user2.Id,
                     IsMuted = true,
+                    Status = MeetingAttendeeStatus.Present,
                     MeetingId = scheduleMeetingResponse.Data.Id
                 }
             });
@@ -254,6 +257,7 @@ public partial class MeetingServiceFixture : MeetingFixtureBase
             builder.RegisterInstance(openAiService);
         });
     }
+    
     [Fact]
     public async Task CanGetMeetingByNumber()
     {
@@ -528,7 +532,7 @@ public partial class MeetingServiceFixture : MeetingFixtureBase
             
             meetingInfo.Data.IsPasswordEnabled.ShouldBeTrue();
 
-            await Assert.ThrowsAsync<MeetingSecurityCodeNotMatchException>(async () =>
+            await Assert.ThrowsAsync<MeetingSecurityCodeException>(async () =>
             {
                 await mediator.SendAsync<JoinMeetingCommand, JoinMeetingResponse>(new JoinMeetingCommand
                 {
@@ -844,6 +848,81 @@ public partial class MeetingServiceFixture : MeetingFixtureBase
         });
     }
     
+    [Fact]
+    public async Task CanGetAppointmentMeetings()
+    {
+        await RunWithUnitOfWork<IMediator, IClock>(async (mediator, clock) =>
+        {
+            var meeting1Response = await _meetingUtil.ScheduleMeeting("预定会议有重复子会议", appointmentType: MeetingAppointmentType.Appointment, repeatType: MeetingRepeatType.Daily, startDate: clock.Now.AddDays(-1), endDate: clock.Now.AddDays(-1).AddHours(1));
+            var meeting2Response = await _meetingUtil.ScheduleMeeting("预定会议有重复子会议", appointmentType: MeetingAppointmentType.Appointment, repeatType: MeetingRepeatType.Weekly, startDate: clock.Now, endDate: clock.Now.AddHours(1));
+            var meeting3Response = await _meetingUtil.ScheduleMeeting("预定会议有重复子会议",appointmentType: MeetingAppointmentType.Appointment, repeatType: MeetingRepeatType.BiWeekly, startDate: clock.Now.AddDays(2), endDate: clock.Now.AddDays(2).AddHours(1));
+            var meeting4Response = await _meetingUtil.ScheduleMeeting("预定会议没有重复子会议1",appointmentType: MeetingAppointmentType.Appointment, repeatType: MeetingRepeatType.None, startDate: clock.Now.AddDays(-1).AddHours(-3), endDate: clock.Now.AddDays(-1).AddHours(-2));
+            var meeting5Response = await _meetingUtil.ScheduleMeeting("预定会议没有重复子会议2",appointmentType: MeetingAppointmentType.Appointment, repeatType: MeetingRepeatType.None, startDate: clock.Now.AddHours(1), endDate: clock.Now.AddHours(2));
+            
+            var response = await mediator.RequestAsync<GetAppointmentMeetingsRequest, GetAppointmentMeetingsResponse>(
+                new GetAppointmentMeetingsRequest
+                {
+                    Page = 1, PageSize = 10
+                });
+
+            response.Data.Count.ShouldBe(4);
+            response.Data.Records.Count(x => x.MeetingId == meeting1Response.Data.Id).ShouldBe(1);
+            response.Data.Records.Count(x => x.MeetingId == meeting2Response.Data.Id).ShouldBe(1);
+            response.Data.Records.Count(x => x.MeetingId == meeting3Response.Data.Id).ShouldBe(1);
+            response.Data.Records.Count(x => x.MeetingId == meeting5Response.Data.Id && x.Title == "预定会议没有重复子会议2").ShouldBe(1);
+        }, builder =>
+        {
+            var openAiService = Substitute.For<IOpenAiService>();          
+            
+            builder.RegisterInstance(openAiService);
+            MockClock(builder, DateTimeOffset.Now);
+        });
+    }
+    
+    
+    [Fact]
+    public async Task CanUpdateRepeatMeeting()
+    {
+        await RunWithUnitOfWork<IRepository, IMeetingProcessJobService>(async (repository, meetingProcessJobService) =>
+        {
+            var meeting1Response = await _meetingUtil.ScheduleMeeting(appointmentType: MeetingAppointmentType.Appointment, repeatType: MeetingRepeatType.Daily, startDate: DateTimeOffset.Parse("2024-02-23T10:00:00"), endDate: DateTimeOffset.Parse("2024-02-23T11:00:00"));
+            var meeting2Response = await _meetingUtil.ScheduleMeeting(appointmentType: MeetingAppointmentType.Appointment, repeatType: MeetingRepeatType.Weekly, startDate: DateTimeOffset.Parse("2024-02-23T10:00:00"), endDate: DateTimeOffset.Parse("2024-02-23T11:00:00"));
+            var meeting3Response = await _meetingUtil.ScheduleMeeting(appointmentType: MeetingAppointmentType.Appointment, repeatType: MeetingRepeatType.BiWeekly, startDate: DateTimeOffset.Parse("2024-02-23T10:00:00"), endDate: DateTimeOffset.Parse("2024-02-23T11:00:00"));
+
+            meeting1Response.Data.Status.ShouldBe(MeetingStatus.Pending);
+            
+            var joinMeeting = await _meetingUtil.JoinMeeting(meeting1Response.Data.MeetingNumber);
+            joinMeeting.Status.ShouldBe(MeetingStatus.InProgress);
+
+            await meetingProcessJobService.UpdateRepeatMeetingAsync(new UpdateRepeatMeetingCommand(), CancellationToken.None);
+
+            var meetings = await repository.Query<Meeting>().ToListAsync(CancellationToken.None).ConfigureAwait(false);
+            meetings.Count.ShouldBe(3);
+
+            meetings.Count(x =>
+                x.MeetingNumber == meeting1Response.Data.MeetingNumber &&
+                x.Status == MeetingStatus.Pending &&
+                x.StartDate == DateTimeOffset.Parse("2024-02-24T10:00:00").ToUnixTimeSeconds()).ShouldBe(1);
+            
+            meetings.Count(x =>
+                x.MeetingNumber == meeting2Response.Data.MeetingNumber &&
+                x.Status == MeetingStatus.Pending &&
+                x.StartDate == DateTimeOffset.Parse("2024-03-01T10:00:00").ToUnixTimeSeconds()).ShouldBe(1);
+            
+            meetings.Count(x =>
+                x.MeetingNumber == meeting3Response.Data.MeetingNumber &&
+                x.Status == MeetingStatus.Pending &&
+                x.StartDate == DateTimeOffset.Parse("2024-03-08T10:00:00").ToUnixTimeSeconds()).ShouldBe(1);
+        }, builder =>
+        {
+            var openAiService = Substitute.For<IOpenAiService>();          
+            
+            builder.RegisterInstance(openAiService);
+            MockClock(builder, new DateTimeOffset(2024, 2, 24, 0, 1, 0, TimeSpan.Zero));
+        });
+    }
+    
+    
     private static void MockLiveKitService(ContainerBuilder builder)
     {
         var liveKitServerUtilService = Substitute.For<ILiveKitServerUtilService>();
@@ -872,5 +951,5 @@ public partial class MeetingServiceFixture : MeetingFixtureBase
 
         builder.RegisterInstance(antMediaServerUtilService);
         builder.RegisterInstance(openAiService);
-        }
+    }
 }

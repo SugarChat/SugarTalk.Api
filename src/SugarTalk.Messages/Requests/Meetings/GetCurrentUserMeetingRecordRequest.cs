@@ -16,7 +16,7 @@ public class GetCurrentUserMeetingRecordRequest : IRequest
 
     public string Creator { get; set; }
 
-    public PageSetting PageSetting { get; set; }
+    public PageSetting PageSetting { get; set; } = new();
 }
 
 public class GetCurrentUserMeetingRecordResponse : SugarTalkResponse<GetCurrentUserMeetingRecordResponseDto>

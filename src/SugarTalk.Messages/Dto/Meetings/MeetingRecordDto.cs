@@ -5,6 +5,8 @@ namespace SugarTalk.Messages.Dto.Meetings;
 
 public class MeetingRecordDto
 {
+    public Guid MeetingRecordId { get; set; }
+    
     public Guid MeetingId { get; set; }
 
     public string MeetingNumber { get; set; }

@@ -55,7 +55,7 @@ public partial class MeetingDataProvider
     {
         var meetingUserSetting = new MeetingUserSetting();
 
-        var userSettings= await _repository.QueryNoTracking<MeetingUserSetting>()
+        var userSettings = await _repository.QueryNoTracking<MeetingUserSetting>()
             .Where(x => x.MeetingId == meetingId)
             .ToListAsync(cancellationToken).ConfigureAwait(false);
         

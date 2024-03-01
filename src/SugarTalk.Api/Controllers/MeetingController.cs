@@ -106,12 +106,11 @@ public class MeetingController : ControllerBase
     }
     
     [Route("appointment/cancel"), HttpPost]
-    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(CancelAppointmentMeetingResponse))]
     public async Task<IActionResult> CancelAppointmentMeetingAsync([FromBody] CancelAppointmentMeetingCommand command)
     {
-        var response = await _mediator.SendAsync<CancelAppointmentMeetingCommand, CancelAppointmentMeetingResponse>(command).ConfigureAwait(false);
+        await _mediator.SendAsync(command).ConfigureAwait(false);
 
-        return Ok(response);
+        return Ok();
     }
 
     #endregion
@@ -128,12 +127,11 @@ public class MeetingController : ControllerBase
     }
     
     [Route("history/delete"), HttpPost]
-    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(DeleteMeetingHistoryResponse))]
     public async Task<IActionResult> DeleteMeetingHistoryAsync([FromBody] DeleteMeetingHistoryCommand command)
     {
-        var response = await _mediator.SendAsync<DeleteMeetingHistoryCommand, DeleteMeetingHistoryResponse>(command).ConfigureAwait(false);
+        await _mediator.SendAsync(command).ConfigureAwait(false);
 
-        return Ok(response);
+        return Ok();
     }
 
     #endregion
@@ -177,7 +175,7 @@ public class MeetingController : ControllerBase
     
     [Route("record/detail"), HttpGet]
     [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(GetMeetingRecordDetailsResponse))]
-    public async Task<IActionResult> GetMeetingRecordDetailsAsync([FromBody] GetMeetingRecordDetailsRequest request)
+    public async Task<IActionResult> GetMeetingRecordDetailsAsync([FromQuery] GetMeetingRecordDetailsRequest request)
     {
         var response = await _mediator.RequestAsync<GetMeetingRecordDetailsRequest, GetMeetingRecordDetailsResponse>(request).ConfigureAwait(false);
 
@@ -185,12 +183,11 @@ public class MeetingController : ControllerBase
     }
 
     [Route("record/delete"), HttpPost]
-    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(DeleteMeetingRecordResponse))]
     public async Task<IActionResult> DeleteMeetingRecordAsync([FromBody] DeleteMeetingRecordCommand command)
     {
-        var response = await _mediator.SendAsync<DeleteMeetingRecordCommand, DeleteMeetingRecordResponse>(command).ConfigureAwait(false);
+        await _mediator.SendAsync(command).ConfigureAwait(false);
 
-        return Ok(response);
+        return Ok();
     }
 
     [Route("recording/start"), HttpPost]
