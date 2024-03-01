@@ -153,18 +153,18 @@ public partial class MeetingService
             speakDetail.SpeakContent = await _openAiService.TranscriptionAsync(
                 recordFile, TranscriptionLanguage.Chinese, speakStartTimeVideo, speakEndTimeVideo,
                 TranscriptionFileType.Mp4, cancellationToken: cancellationToken).ConfigureAwait(false);
+
+            speakDetail.FileTranscriptionStatus = FileTranscriptionStatus.Completed;
         }
         catch (Exception ex)
         {
             speakDetail.FileTranscriptionStatus = FileTranscriptionStatus.Exception;
             
-            await _meetingDataProvider.UpdateMeetingSpeakDetailAsync(speakDetail, cancellationToken: cancellationToken).ConfigureAwait(false);
-            
             Log.Information("transcription error: {ErrorMessage}", ex.Message);
         }
-        
-        speakDetail.FileTranscriptionStatus = FileTranscriptionStatus.Completed;
-        
-        await _meetingDataProvider.UpdateMeetingSpeakDetailAsync(speakDetail, cancellationToken: cancellationToken).ConfigureAwait(false);
+        finally
+        {
+            await _meetingDataProvider.UpdateMeetingSpeakDetailAsync(speakDetail, cancellationToken: cancellationToken).ConfigureAwait(false);
+        }
     }
 }
