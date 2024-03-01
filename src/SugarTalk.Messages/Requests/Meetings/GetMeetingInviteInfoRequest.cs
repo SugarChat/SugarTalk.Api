@@ -23,5 +23,5 @@ public class GetMeetingInviteInfoResponseData
     
     public string Url { get; set; }
     
-    public string SecurityCode { get; set; }
+    public string Password { get; set; }
 }

@@ -941,7 +941,7 @@ public partial class MeetingServiceFixture : MeetingFixtureBase
             meetingInviteInfo.Data.Sender.ShouldBe("TEST_USER");
             meetingInviteInfo.Data.Title.ShouldBe(meeting.Title);
             meetingInviteInfo.Data.MeetingNumber.ShouldBe(meeting.MeetingNumber);
-            meetingInviteInfo.Data.SecurityCode.ShouldBe(meeting.Password);
+            meetingInviteInfo.Data.Password.ShouldBe(meeting.Password);
         });
     }
     
