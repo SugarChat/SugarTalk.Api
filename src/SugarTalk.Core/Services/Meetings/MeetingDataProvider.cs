@@ -322,6 +322,7 @@ namespace SugarTalk.Core.Services.Meetings
             int userId, string keyword, PageSetting pageSetting, CancellationToken cancellationToken)
         {
             var query = _repository.QueryNoTracking<MeetingHistory>()
+                .OrderByDescending(x => x.CreatedDate)
                 .Where(x => x.UserId == userId && !x.IsDeleted);
 
             if (!string.IsNullOrEmpty(keyword))
@@ -338,14 +339,13 @@ namespace SugarTalk.Core.Services.Meetings
             query = pageSetting != null
                 ? query.Skip((pageSetting.Page - 1) * pageSetting.PageSize).Take(pageSetting.PageSize) : query;
 
-            var meetingHistories = await query
-                .OrderByDescending(x => x.CreatedDate).ToListAsync(cancellationToken).ConfigureAwait(false);
+            var meetingHistories = await query.ToListAsync(cancellationToken).ConfigureAwait(false);
 
             var meetingHistoryList = _mapper.Map<List<MeetingHistoryDto>>(meetingHistories);
 
-            Log.Information("Meeting history response:{@meetingHistoryList}", JsonConvert.SerializeObject(meetingHistoryList));
-            
             await EnrichMeetingHistoriesAsync(meetingHistoryList, cancellationToken).ConfigureAwait(false);
+
+            Log.Information("Meeting history response:{@meetingHistoryList}, count: {totalCount}", JsonConvert.SerializeObject(meetingHistoryList), totalCount);
 
             return (meetingHistoryList, totalCount);
         }
