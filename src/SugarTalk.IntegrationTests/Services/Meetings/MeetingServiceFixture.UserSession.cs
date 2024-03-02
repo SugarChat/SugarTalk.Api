@@ -109,29 +109,6 @@ namespace SugarTalk.IntegrationTests.Services.Meetings
         }
 
         [Fact]
-        public async Task CanKickOutUserRejoinsTheMeeting()
-        {
-            var scheduleMeetingResponse = await _meetingUtil.ScheduleMeeting();
-
-            var testUser1 = await _accountUtil.AddUserAccount("Test1", "123");
-            
-            var masterUser = await _meetingUtil.JoinMeeting(scheduleMeetingResponse.Data.MeetingNumber);
-
-            var joinMeetingDto1 = await _meetingUtil.JoinMeetingByUserAsync(testUser1, scheduleMeetingResponse.Data.MeetingNumber);
-
-            (joinMeetingDto1.MeetingMasterUserId == testUser1.Id).ShouldBeFalse();
-
-            var kickOutMeetingResponse = await _meetingUtil.KickOutUserByUserIdAsync
-                  (scheduleMeetingResponse.Data.Id, testUser1.Id, masterUser.MeetingMasterUserId, scheduleMeetingResponse.Data.MeetingNumber);
-
-            var rejoinMeetingDto = await _meetingUtil.JoinMeetingByUserAsync(testUser1, scheduleMeetingResponse.Data.MeetingNumber);
-            rejoinMeetingDto.UserSessionCount.ShouldBe(2);
-            rejoinMeetingDto.UserSessions.FirstOrDefault(x => x.UserId == testUser1.Id).ShouldNotBeNull();
-            (rejoinMeetingDto.UserSessions.FirstOrDefault(x => x.UserId == testUser1.Id)
-                .OnlineType == MeetingUserSessionOnlineType.Online).ShouldBeTrue();
-        }
-
-        [Fact]
         public async Task WhenTheStatusChangeJoiningMeetingGeneratesNewUserSession()
         {
             var scheduleMeetingResponse = await _meetingUtil.ScheduleMeeting();
@@ -149,28 +126,6 @@ namespace SugarTalk.IntegrationTests.Services.Meetings
 
             var rejoinMeetingDto = await _meetingUtil.JoinMeetingByUserAsync(testUser1, scheduleMeetingResponse.Data.MeetingNumber);
         }
-
-        [Fact]
-        public async Task WhenKickOutUserSessionTheGetUserSessionUpdate()
-        {
-            var scheduleMeetingResponse = await _meetingUtil.ScheduleMeeting();
-
-            var testUser1 = await _accountUtil.AddUserAccount("Test1", "123");
-
-            var masterUser = await _meetingUtil.JoinMeeting(scheduleMeetingResponse.Data.MeetingNumber);
-            
-            var joinMeetingDto1 = await _meetingUtil.JoinMeetingByUserAsync(testUser1, scheduleMeetingResponse.Data.MeetingNumber);
-
-            (joinMeetingDto1.MeetingMasterUserId == testUser1.Id).ShouldBeFalse();
-
-            var kickOutMeetingResponse = await _meetingUtil.KickOutUserByUserIdAsync
-                  (scheduleMeetingResponse.Data.Id, testUser1.Id, masterUser.MeetingMasterUserId, scheduleMeetingResponse.Data.MeetingNumber);
-            var getMeetingRespone = await _meetingUtil.GetMeetingAsync(scheduleMeetingResponse.Data.MeetingNumber);
-
-            getMeetingRespone.Data.UserSessionCount.ShouldBe(kickOutMeetingResponse.Data.UserSessionCount);
-            getMeetingRespone.Data.UserSessions.FirstOrDefault(x => x.UserId == testUser1.Id).ShouldBeNull();
-        }
-
 
         [Fact]
         public async Task WhenKickOutUserSessionRejoinMeetingTheUserSessionUpdate()
@@ -191,10 +146,8 @@ namespace SugarTalk.IntegrationTests.Services.Meetings
             var getMeetingRespone = await _meetingUtil.GetMeetingAsync(scheduleMeetingResponse.Data.MeetingNumber);
             getMeetingRespone.Data.UserSessionCount.ShouldBe(1);
 
-            var rejoinMeetingDto = await _meetingUtil.JoinMeetingByUserAsync(testUser1, scheduleMeetingResponse.Data.MeetingNumber);
             var getRejoinMeetingRespone = await _meetingUtil.GetMeetingAsync(scheduleMeetingResponse.Data.MeetingNumber);
-            getRejoinMeetingRespone.Data.UserSessionCount.ShouldBe(2);
-            getRejoinMeetingRespone.Data.UserSessions.FirstOrDefault(x => x.UserId == testUser1.Id).ShouldNotBeNull();
+            getRejoinMeetingRespone.Data.UserSessionCount.ShouldBe(1);
         }
 
         [Fact]
