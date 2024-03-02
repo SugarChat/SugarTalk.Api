@@ -317,7 +317,6 @@ namespace SugarTalk.Core.Services.Meetings
 
             await _meetingDataProvider.PersistMeetingHistoryAsync(meeting, cancellationToken).ConfigureAwait(false);
             
-            // TODO: 更新会议结束时间, 会议时长，更新会议中的用户状态
             var updateMeeting = _mapper.Map<Meeting>(meeting);
             
             await _meetingDataProvider.MarkMeetingAsCompletedAsync(updateMeeting, cancellationToken).ConfigureAwait(false);

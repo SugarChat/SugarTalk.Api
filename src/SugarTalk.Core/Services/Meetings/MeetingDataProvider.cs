@@ -5,6 +5,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using AutoMapper;
 using Microsoft.EntityFrameworkCore;
+using Newtonsoft.Json;
+using Serilog;
 using SugarTalk.Core.Data;
 using SugarTalk.Core.Domain.Account;
 using SugarTalk.Core.Domain.Meeting;
@@ -340,6 +342,8 @@ namespace SugarTalk.Core.Services.Meetings
                 .OrderByDescending(x => x.CreatedDate).ToListAsync(cancellationToken).ConfigureAwait(false);
 
             var meetingHistoryList = _mapper.Map<List<MeetingHistoryDto>>(meetingHistories);
+
+            Log.Information("Meeting history response:{@meetingHistoryList}", JsonConvert.SerializeObject(meetingHistoryList));
             
             await EnrichMeetingHistoriesAsync(meetingHistoryList, cancellationToken).ConfigureAwait(false);
 
@@ -461,27 +465,28 @@ namespace SugarTalk.Core.Services.Meetings
                     EndDate = rules.RepeatType == MeetingRepeatType.None ? meeting.EndDate : subMeeting.EndTime,
                     Status = meeting.Status,
                     Title = meeting.Title,
-                    AppointmentType = meeting.AppointmentType
+                    AppointmentType = meeting.AppointmentType,
+                    CreatedDate = meeting.CreatedDate
                 };
 
-            var meetingsRecords = await query.ToListAsync(cancellationToken).ConfigureAwait(false);
+            var appointmentMeetingList = await query.ToListAsync(cancellationToken).ConfigureAwait(false);
 
-            var appointmentMeetingRecords = meetingsRecords
-                .GroupBy(record => record.MeetingId)
+            var filteredAppointmentMeetingList = appointmentMeetingList
+                .GroupBy(meeting => meeting.MeetingId)
                 .Select(g => g.MinBy(m => m.StartDate))
-                .OrderBy(record => record.StartDate)
-                .ToList();
+                .Where(x => x != null)
+                .OrderBy(meeting => meeting.StartDate).ToList();
 
-            var records = appointmentMeetingRecords.Skip((request.Page - 1) * request.PageSize)
-                .Take(request.PageSize)
-                .ToList();
+            var appointmentMeetingDtos = filteredAppointmentMeetingList
+                .Skip((request.Page - 1) * request.PageSize)
+                .Take(request.PageSize).ToList();
             
-            return (appointmentMeetingRecords.Count, records);
+            return (filteredAppointmentMeetingList.Count, appointmentMeetingDtos);
         }
         
         public async Task MarkMeetingAsCompletedAsync(Meeting meeting, CancellationToken cancellationToken)
         {
-            meeting.EndDate = _clock.Now.ToUnixTimeSeconds();
+            // meeting.EndDate = _clock.Now.ToUnixTimeSeconds();
             meeting.Status = MeetingStatus.Completed;
             
             await _repository.UpdateAsync(meeting, cancellationToken).ConfigureAwait(false);
@@ -579,6 +584,8 @@ namespace SugarTalk.Core.Services.Meetings
                     meeting.Status = MeetingStatus.Completed;
                 }
             }
+
+            await _repository.UpdateAsync(meeting, cancellationToken).ConfigureAwait(false);
 
             await _unitOfWork.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
         }
