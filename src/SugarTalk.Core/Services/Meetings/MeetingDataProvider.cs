@@ -92,6 +92,8 @@ namespace SugarTalk.Core.Services.Meetings
         Task<List<MeetingSubMeeting>> GetMeetingSubMeetingsAsync(IEnumerable<Guid> meetingIds, CancellationToken cancellationToken);
 
         Task<List<Meeting>> GetAllAppointmentMeetingWithPendingAndInProgressAsync(CancellationToken cancellationToken);
+        
+        Task CheckUserKickedFromMeetingAsync(string meetingNumber, int userId, CancellationToken cancellationToken);
     }
     
     public partial class MeetingDataProvider : IMeetingDataProvider
@@ -619,6 +621,21 @@ namespace SugarTalk.Core.Services.Meetings
             if (appointmentMeetings is not { Count: > 0 }) return new List<Meeting>();
             
             return await FilterAppointmentMeetingsWithoutAttendeesAsync(appointmentMeetings, cancellationToken).ConfigureAwait(false);;
+        }
+
+        public async Task CheckUserKickedFromMeetingAsync(string meetingNumber, int userId, CancellationToken cancellationToken)
+        {
+            var isKicked = await _repository.QueryNoTracking<Meeting>()
+                .Where(x => x.MeetingNumber == meetingNumber)
+                .Join(_repository.QueryNoTracking<MeetingUserSession>(),
+                    meeting => meeting.Id,
+                    session => session.MeetingId,
+                    (meeting, session) => new { meeting, session })
+                .Where(x => x.session.UserId == userId && x.session.OnlineType == MeetingUserSessionOnlineType.KickOutMeeting)
+                .AnyAsync(cancellationToken).ConfigureAwait(false);
+
+            if (isKicked)
+                throw new CannotJoinMeetingWhenKickedOutMeetingException(userId.ToString());
         }
 
         private async Task<List<Meeting>> FilterAppointmentMeetingsWithoutAttendeesAsync(List<Meeting> appointmentMeetings, CancellationToken cancellationToken)

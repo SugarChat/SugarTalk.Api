@@ -5,6 +5,9 @@ using SugarTalk.Messages.Enums.Meeting;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
+using Mediator.Net;
+using SugarTalk.Core.Data;
+using SugarTalk.Messages.Requests.Meetings;
 using Xunit;
 
 namespace SugarTalk.IntegrationTests.Services.Meetings
@@ -208,6 +211,37 @@ namespace SugarTalk.IntegrationTests.Services.Meetings
             var repeatJoinMeetingUserSession = repeatJoinMeetingDto.UserSessions.FirstOrDefault(x => x.UserId == testUser1.Id);
 
             joinMeetingUserSession.Id.ShouldBe(repeatJoinMeetingUserSession.Id);
+        }
+        
+        [Fact]
+        public async Task ShouldThrowWhenJoinMeetingFromKickedOutUser()
+        {
+            var scheduleMeetingResponse = await _meetingUtil.ScheduleMeeting();
+
+            var testUser1 = await _accountUtil.AddUserAccount("Test1", "123");
+            var testUser2 = await _accountUtil.AddUserAccount("Test2", "123");
+
+            var masterUser = await _meetingUtil.JoinMeeting(scheduleMeetingResponse.Data.MeetingNumber);
+            await _meetingUtil.JoinMeetingByUserAsync(testUser1, scheduleMeetingResponse.Data.MeetingNumber);
+            await _meetingUtil.JoinMeetingByUserAsync(testUser2, scheduleMeetingResponse.Data.MeetingNumber);
+
+            await _meetingUtil.KickOutUserByUserIdAsync
+                (scheduleMeetingResponse.Data.Id, testUser1.Id, masterUser.MeetingMasterUserId, scheduleMeetingResponse.Data.MeetingNumber);
+            
+            await Run<IMediator, IRepository>(async (mediator, repository) =>
+            {
+                var response = await mediator.RequestAsync<GetMeetingByNumberRequest, GetMeetingByNumberResponse>(new GetMeetingByNumberRequest
+                {
+                    MeetingNumber = scheduleMeetingResponse.Data.MeetingNumber
+                });
+                
+                response.Data.UserSessions.Count.ShouldBe(2);
+
+                await Assert.ThrowsAsync<CannotJoinMeetingWhenKickedOutMeetingException>(async () =>
+                {
+                    await _meetingUtil.JoinMeetingByUserAsync(testUser1, scheduleMeetingResponse.Data.MeetingNumber);
+                });
+            });
         }
     }
 }

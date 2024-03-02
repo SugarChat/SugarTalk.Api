@@ -241,6 +241,12 @@ namespace SugarTalk.Core.Services.Meetings
 
         public async Task<MeetingJoinedEvent> JoinMeetingAsync(JoinMeetingCommand command, CancellationToken cancellationToken)
         {
+            var user = await _accountDataProvider.GetUserAccountAsync(_currentUser?.Id.Value, cancellationToken: cancellationToken).ConfigureAwait(false);
+
+            if (user is null) throw new UnauthorizedAccessException();
+            
+            await _meetingDataProvider.CheckUserKickedFromMeetingAsync(command.MeetingNumber, user.Id, cancellationToken).ConfigureAwait(false);
+            
             var meeting = await _meetingDataProvider.GetMeetingAsync(command.MeetingNumber, cancellationToken).ConfigureAwait(false);
 
             if (meeting.IsPasswordEnabled)
@@ -248,10 +254,6 @@ namespace SugarTalk.Core.Services.Meetings
                 await _meetingDataProvider
                     .CheckMeetingSecurityCodeAsync(meeting.Id, command.SecurityCode, cancellationToken).ConfigureAwait(false);
             }
-
-            var user = await _accountDataProvider.GetUserAccountAsync(_currentUser?.Id.Value, cancellationToken: cancellationToken).ConfigureAwait(false);
-
-            if (user is null) throw new UnauthorizedAccessException();
 
             CheckJoinMeetingConditions(meeting, user);
             
