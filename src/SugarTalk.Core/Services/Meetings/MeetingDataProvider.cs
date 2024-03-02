@@ -575,6 +575,8 @@ namespace SugarTalk.Core.Services.Meetings
                     meeting.Status = MeetingStatus.Completed;
                 }
             }
+
+            await _unitOfWork.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
         }
 
         public async Task<List<Meeting>> GetAvailableRepeatMeetingAsync(CancellationToken cancellationToken)
