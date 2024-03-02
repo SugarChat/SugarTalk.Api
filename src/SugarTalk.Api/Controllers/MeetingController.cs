@@ -175,7 +175,7 @@ public class MeetingController : ControllerBase
     
     [Route("record/detail"), HttpGet]
     [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(GetMeetingRecordDetailsResponse))]
-    public async Task<IActionResult> GetMeetingRecordDetailsAsync([FromBody] GetMeetingRecordDetailsRequest request)
+    public async Task<IActionResult> GetMeetingRecordDetailsAsync([FromQuery] GetMeetingRecordDetailsRequest request)
     {
         var response = await _mediator.RequestAsync<GetMeetingRecordDetailsRequest, GetMeetingRecordDetailsResponse>(request).ConfigureAwait(false);
 
@@ -234,6 +234,8 @@ public class MeetingController : ControllerBase
 
     #endregion
     
+    #region invite
+
     [Route("invite/{meetingNumber}"), HttpPost]
     [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(JoinMeetingResponse))]
     public async Task<IActionResult> MeetingInviteAsync(string meetingNumber, [FromBody] MeetingInviteRequestDto requestData)
@@ -246,4 +248,15 @@ public class MeetingController : ControllerBase
 
         return Ok(response);
     }
+    
+    [Route("invite/info"), HttpGet]
+    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(GetMeetingInviteInfoResponse))]
+    public async Task<IActionResult> GetMeetingInviteInfoAsync([FromQuery] GetMeetingInviteInfoRequest request)
+    {
+        var response = await _mediator.RequestAsync<GetMeetingInviteInfoRequest, GetMeetingInviteInfoResponse>(request).ConfigureAwait(false);
+
+        return Ok(response);
+    }
+
+    #endregion
 }

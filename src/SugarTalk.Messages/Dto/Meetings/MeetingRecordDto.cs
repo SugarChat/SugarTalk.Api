@@ -1,9 +1,12 @@
 using System;
+using SugarTalk.Messages.Enums.Meeting;
 
 namespace SugarTalk.Messages.Dto.Meetings;
 
 public class MeetingRecordDto
 {
+    public Guid MeetingRecordId { get; set; }
+    
     public Guid MeetingId { get; set; }
 
     public string MeetingNumber { get; set; }
@@ -23,4 +26,6 @@ public class MeetingRecordDto
     public string MeetingCreator { get; set; }
 
     public string Url { get; set; }
+    
+    public MeetingRecordUrlStatus UrlStatus { get; set; }
 }

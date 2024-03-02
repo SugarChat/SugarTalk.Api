@@ -532,7 +532,7 @@ public partial class MeetingServiceFixture : MeetingFixtureBase
             
             meetingInfo.Data.IsPasswordEnabled.ShouldBeTrue();
 
-            await Assert.ThrowsAsync<MeetingSecurityCodeNotMatchException>(async () =>
+            await Assert.ThrowsAsync<MeetingSecurityCodeException>(async () =>
             {
                 await mediator.SendAsync<JoinMeetingCommand, JoinMeetingResponse>(new JoinMeetingCommand
                 {
@@ -879,7 +879,6 @@ public partial class MeetingServiceFixture : MeetingFixtureBase
         });
     }
     
-    
     [Fact]
     public async Task CanUpdateRepeatMeeting()
     {
@@ -922,6 +921,29 @@ public partial class MeetingServiceFixture : MeetingFixtureBase
         });
     }
     
+    [Fact]
+    public async Task CanGetMeetingInviteInfo()
+    {
+        await _meetingUtil.ScheduleMeeting("sugarTalk每周例会", securityCode: "123456");
+        
+        await Run<IMediator, IRepository>(async (mediator, repository) =>
+        {
+            var meeting = await repository.QueryNoTracking<Meeting>().FirstOrDefaultAsync();
+            meeting.ShouldNotBeNull();
+            
+            var meetingInviteInfo = await mediator.RequestAsync<GetMeetingInviteInfoRequest, GetMeetingInviteInfoResponse>(
+                new GetMeetingInviteInfoRequest
+                {
+                    MeetingId = meeting.Id
+                });
+
+            meetingInviteInfo.ShouldNotBeNull();
+            meetingInviteInfo.Data.Sender.ShouldBe("TEST_USER");
+            meetingInviteInfo.Data.Title.ShouldBe(meeting.Title);
+            meetingInviteInfo.Data.MeetingNumber.ShouldBe(meeting.MeetingNumber);
+            meetingInviteInfo.Data.Password.ShouldBe(meeting.Password);
+        });
+    }
     
     private static void MockLiveKitService(ContainerBuilder builder)
     {

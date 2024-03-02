@@ -79,6 +79,8 @@ namespace SugarTalk.Core.Services.Meetings
         Task DeleteMeetingHistoryAsync(DeleteMeetingHistoryCommand command, CancellationToken cancellationToken);
         
         Task CancelAppointmentMeetingAsync(CancelAppointmentMeetingCommand command, CancellationToken cancellationToken);
+        
+        Task<GetMeetingInviteInfoResponse> GetMeetingInviteInfoAsync(GetMeetingInviteInfoRequest request, CancellationToken cancellationToken);
     }
     
     public partial class MeetingService : IMeetingService
@@ -153,6 +155,7 @@ namespace SugarTalk.Core.Services.Meetings
             meeting.MeetingMasterUserId = _currentUser.Id.Value;
             meeting.MeetingStreamMode = MeetingStreamMode.LEGACY;
             meeting.SecurityCode = !string.IsNullOrEmpty(command.SecurityCode) ? command.SecurityCode.ToSha256() : null;
+            meeting.Password = command.SecurityCode;
 
             // 处理周期性预定会议生成的子会议
             if (command.AppointmentType == MeetingAppointmentType.Appointment)
@@ -252,16 +255,9 @@ namespace SugarTalk.Core.Services.Meetings
 
             CheckJoinMeetingConditions(meeting, user);
             
-            meeting.MeetingTokenFromLiveKit = user.Issuer switch
-            {
-                UserAccountIssuer.Guest => _liveKitServerUtilService.GenerateTokenForGuest(user, meeting.MeetingNumber),
-                UserAccountIssuer.Self or UserAccountIssuer.Wiltechs => _liveKitServerUtilService.GenerateTokenForJoinMeeting(user, meeting.MeetingNumber),
-                _ => throw new ArgumentOutOfRangeException()
-            };
+            await ConnectUserToMeetingAsync(user, meeting, command.IsMuted, cancellationToken).ConfigureAwait(false);
 
             await _meetingDataProvider.UpdateMeetingIfRequiredAsync(meeting.Id, user.Id, cancellationToken).ConfigureAwait(false);
-            
-            await ConnectUserToMeetingAsync(user, meeting, command.IsMuted, cancellationToken).ConfigureAwait(false);
 
             meeting.Status = MeetingStatus.InProgress;
             
@@ -355,10 +351,21 @@ namespace SugarTalk.Core.Services.Meetings
                 
                 await _meetingDataProvider.AddMeetingUserSessionAsync(userSession, cancellationToken).ConfigureAwait(false);
 
-                var updateUserSession = _mapper.Map<MeetingUserSessionDto>(userSession);
-                updateUserSession.UserName = user.UserName;
+                var addUserSession = _mapper.Map<MeetingUserSessionDto>(userSession);
+                addUserSession.UserName = user.UserName;
 
-                meeting.AddUserSession(updateUserSession);
+                var guestCount = meeting.UserSessions.Count(x => !string.IsNullOrEmpty(x.GuestName));
+
+                if (user.Issuer is UserAccountIssuer.Guest) addUserSession.GuestName = $"Anonymity{guestCount + 1}";
+
+                meeting.AddUserSession(addUserSession);
+                
+                meeting.MeetingTokenFromLiveKit = user.Issuer switch
+                {
+                    UserAccountIssuer.Guest => _liveKitServerUtilService.GenerateTokenForGuest(user.UserName, addUserSession.GuestName, meeting.MeetingNumber),
+                    UserAccountIssuer.Self or UserAccountIssuer.Wiltechs => _liveKitServerUtilService.GenerateTokenForJoinMeeting(user, meeting.MeetingNumber),
+                    _ => throw new ArgumentOutOfRangeException()
+                };
             }
             else
             {
@@ -382,6 +389,13 @@ namespace SugarTalk.Core.Services.Meetings
                     updateUserSession.IsMeetingMaster = true;
                 }
                 meeting.UpdateUserSession(updateUserSession);
+
+                meeting.MeetingTokenFromLiveKit = user.Issuer switch
+                {
+                    UserAccountIssuer.Guest => _liveKitServerUtilService.GenerateTokenForGuest(user.UserName, updateUserSession.GuestName, meeting.MeetingNumber),
+                    UserAccountIssuer.Self or UserAccountIssuer.Wiltechs => _liveKitServerUtilService.GenerateTokenForJoinMeeting(user, meeting.MeetingNumber),
+                    _ => throw new ArgumentOutOfRangeException()
+                };
             }
         }
 
@@ -404,6 +418,7 @@ namespace SugarTalk.Core.Services.Meetings
                 throw new CannotUpdateMeetingWhenMasterUserIdMismatchException();
 
             var updateMeeting = _mapper.Map(command, meeting);
+            updateMeeting.Password = command.SecurityCode;
 
             if (!string.IsNullOrEmpty(command.SecurityCode))
                 updateMeeting.SecurityCode = command.SecurityCode.ToSha256();
@@ -648,6 +663,28 @@ namespace SugarTalk.Core.Services.Meetings
             if (user is null) throw new UnauthorizedAccessException();
             
             await _meetingDataProvider.CancelAppointmentMeetingAsync(command.MeetingId, cancellationToken).ConfigureAwait(false);
+        }
+
+        public async Task<GetMeetingInviteInfoResponse> GetMeetingInviteInfoAsync(GetMeetingInviteInfoRequest request, CancellationToken cancellationToken)
+        {
+            var user = await _accountDataProvider
+                .GetUserAccountAsync(_currentUser?.Id, cancellationToken: cancellationToken).ConfigureAwait(false);
+
+            if (user is null) throw new UnauthorizedAccessException();
+
+            var meeting = await _meetingDataProvider.GetMeetingByIdAsync(request.MeetingId, cancellationToken).ConfigureAwait(false);
+
+            return new GetMeetingInviteInfoResponse
+            {
+                Data = new GetMeetingInviteInfoResponseData
+                {
+                    Sender = user.UserName,
+                    Title = meeting.Title,
+                    MeetingNumber = meeting.MeetingNumber,
+                    Url = string.Empty,
+                    Password = meeting.Password
+                }
+            };
         }
 
         public async Task DeleteMeetingRecordAsync(DeleteMeetingRecordCommand command, CancellationToken cancellationToken)
