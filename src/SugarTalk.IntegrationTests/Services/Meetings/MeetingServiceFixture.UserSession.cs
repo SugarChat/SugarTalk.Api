@@ -109,25 +109,6 @@ namespace SugarTalk.IntegrationTests.Services.Meetings
         }
 
         [Fact]
-        public async Task WhenTheStatusChangeJoiningMeetingGeneratesNewUserSession()
-        {
-            var scheduleMeetingResponse = await _meetingUtil.ScheduleMeeting();
-
-            var testUser1 = await _accountUtil.AddUserAccount("Test1", "123");
-            
-            var masterUser = await _meetingUtil.JoinMeeting(scheduleMeetingResponse.Data.MeetingNumber);
-
-            var joinMeetingDto1 = await _meetingUtil.JoinMeetingByUserAsync(testUser1, scheduleMeetingResponse.Data.MeetingNumber);
-
-            (joinMeetingDto1.MeetingMasterUserId == testUser1.Id).ShouldBeFalse();
-
-            var kickOutMeetingResponse = await _meetingUtil.KickOutUserByUserIdAsync
-                  (scheduleMeetingResponse.Data.Id, testUser1.Id, masterUser.MeetingMasterUserId, scheduleMeetingResponse.Data.MeetingNumber);
-
-            var rejoinMeetingDto = await _meetingUtil.JoinMeetingByUserAsync(testUser1, scheduleMeetingResponse.Data.MeetingNumber);
-        }
-
-        [Fact]
         public async Task WhenKickOutUserSessionRejoinMeetingTheUserSessionUpdate()
         {
             var scheduleMeetingResponse = await _meetingUtil.ScheduleMeeting();
