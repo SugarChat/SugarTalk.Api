@@ -566,7 +566,8 @@ namespace SugarTalk.Core.Services.Meetings
             if (meeting.AppointmentType == MeetingAppointmentType.Appointment)
             {
                 var attendingUserSessionsExceptCurrentUser = await _repository.QueryNoTracking<MeetingUserSession>()
-                    .Where(x => x.MeetingId == meetingId && x.MeetingSubId == meetingSubId && x.UserId != userId)
+                    .Where(x => x.MeetingId == meetingId && x.UserId != userId)
+                    .Where(x => x.MeetingSubId == null || x.MeetingSubId == meetingSubId)
                     .Where(x => x.Status == MeetingAttendeeStatus.Present && x.OnlineType == MeetingUserSessionOnlineType.Online)
                     .ToListAsync(cancellationToken).ConfigureAwait(false);
 
