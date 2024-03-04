@@ -1,6 +1,4 @@
-using System;
 using AutoMapper;
-using Newtonsoft.Json;
 using SugarTalk.Core.Domain.Meeting;
 using SugarTalk.Messages.Commands.Meetings;
 using SugarTalk.Messages.Dto.Meetings;
@@ -38,7 +36,7 @@ namespace SugarTalk.Core.Mapping
 
             CreateMap<MeetingSpeech, SpeechMappingDto>();
 
-            CreateMap<SpeechMappingDto, SpeechDto>();
+            CreateMap<SpeechMappingDto, MeetingSpeechDto>();
         }
     }
 }

@@ -7,11 +7,7 @@ using System.Threading.Tasks;
 using System.Collections.Generic;
 using SugarTalk.Core.Domain.Meeting;
 using System.Text.RegularExpressions;
-using MassTransit.Futures.Contracts;
 using Microsoft.IdentityModel.Tokens;
-using PostBoy.Messages.Extensions;
-using SugarTalk.Core.Extensions;
-using SugarTalk.Core.Services.Http.Clients;
 using SugarTalk.Messages.Enums.Speech;
 using SugarTalk.Messages.Commands.Speech;
 using SugarTalk.Messages.Requests.Speech;
@@ -29,7 +25,7 @@ public partial interface IMeetingService
     
     Task<MeetingSpeechUpdatedEvent> UpdateMeetingSpeechAsync(UpdateMeetingSpeechCommand command, CancellationToken cancellationToken);
 
-    Task<GetMeetingVoiceListResponse> GetMeetingVoiceListAsync(GetMeetingVoiceListRequest request, CancellationToken cancellationToken);
+    Task<GetMeetingAudioListResponse> GetMeetingVoiceListAsync(GetMeetingAudioListRequest request, CancellationToken cancellationToken);
 }
 
 public partial class MeetingService
@@ -67,7 +63,8 @@ public partial class MeetingService
         return new MeetingAudioSavedEvent();
     }
 
-    public async Task<GetMeetingAudioListResponse> GetMeetingAudioListAsync(GetMeetingAudioListRequest request, CancellationToken cancellationToken)
+    public async Task<GetMeetingAudioListResponse> GetMeetingAudioListAsync(GetMeetingAudioListRequest request
+        , CancellationToken cancellationToken)
     {
         var meetingSpeeches = await _meetingDataProvider
             .GetMeetingSpeechesAsync(request.MeetingId, cancellationToken, request.FilterHasCanceledAudio).ConfigureAwait(false);
@@ -149,7 +146,7 @@ public partial class MeetingService
         return new MeetingSpeechUpdatedEvent { Result = "success" };
     }
 
-    public async Task<GetMeetingVoiceListResponse> GetMeetingVoiceListAsync(GetMeetingVoiceListRequest request, CancellationToken cancellationToken)
+    public async Task<GetMeetingAudioListResponse> GetMeetingVoiceListAsync(GetMeetingAudioListRequest request, CancellationToken cancellationToken)
     {
         var meetingSpeeches = await _meetingDataProvider
             .GetMeetingSpeechesAsync(request.MeetingId, cancellationToken, request.FilterHasCanceledAudio).ConfigureAwait(false);
@@ -231,10 +228,8 @@ public partial class MeetingService
             _backgroundJobClient.Enqueue(() => GenerateProcessVoiceAsync(meetingSpeech, cancellationToken));
         }
         
-        return new GetMeetingVoiceListResponse { Data = new GetMeetingVoiceListDto
-        {
-            Speeches = _mapper.Map<List<SpeechDto>>(meetingSpeechesDto)
-        }};
+        return new GetMeetingAudioListResponse { Data = _mapper.Map<List<MeetingSpeechDto>>(meetingSpeechesDto)
+        };
     }
     
     private async Task GenerateProcessVoiceAsync(SpeechMappingDto meetingSpeech, CancellationToken cancellationToken)

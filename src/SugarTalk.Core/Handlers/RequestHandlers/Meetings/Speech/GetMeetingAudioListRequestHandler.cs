@@ -18,6 +18,6 @@ public class GetMeetingAudioListRequestHandler : IRequestHandler<GetMeetingAudio
     
     public async Task<GetMeetingAudioListResponse> Handle(IReceiveContext<GetMeetingAudioListRequest> context, CancellationToken cancellationToken)
     {
-        return await _meetingService.GetMeetingAudioListAsync(context.Message, cancellationToken).ConfigureAwait(false);
+        return await _meetingService.GetMeetingVoiceListAsync(context.Message, cancellationToken).ConfigureAwait(false);
     }
 }

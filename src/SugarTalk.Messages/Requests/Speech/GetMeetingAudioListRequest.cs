@@ -22,3 +22,30 @@ public class GetMeetingAudioListRequest : IRequest
 public class GetMeetingAudioListResponse : SugarTalkResponse<List<MeetingSpeechDto>>
 {
 }
+
+public class SpeechMappingDto
+{
+    public Guid Id { get; set; }
+
+    public Guid MeetingId { get; set; }
+
+    public string UserName { get; set; }
+
+    public string VoiceId { get; set; }
+    
+    public int UserId { get; set; }
+
+    public string OriginalText { get; set; }
+
+    public DateTimeOffset CreatedDate { get; set; }
+
+    public SpeechStatus Status { get; set; }
+    
+    public SpeechTargetLanguageType LanguageId { get; set; }
+
+    public string TranslateText { get; set; }
+
+    public string VoiceUrl { get; set; }
+
+    public SpeechAudioLoadStatus LoadStatus { get; set; }
+}
