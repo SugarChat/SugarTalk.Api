@@ -385,16 +385,14 @@ public class MeetingUtil : TestUtil
         });
     }
 
-    public async Task<bool> StorageMeetingRecordVideoAsync(StorageMeetingRecordVideoCommand command, string token = null)
+    public async Task StorageMeetingRecordVideoAsync(StorageMeetingRecordVideoCommand command, string token = null)
     {
         token = token ?? "11231312312312312313223";
         
-        return await Run<IMeetingService,SugarTalkDbContext, Task<bool>>(async (meetingService,dbContenxt) =>
+        await Run<IMeetingService,SugarTalkDbContext>(async (meetingService,dbContenxt) =>
         {
-            var res = await meetingService.StorageMeetingRecordVideoJobAsync(command, token, CancellationToken.None
-            );
+            await meetingService.DelayStorageMeetingRecordVideoJobAsync(command.EgressId, command.MeetingRecordId, token, CancellationToken.None);
            await dbContenxt.SaveChangesAsync();
-           return res;
         }, builder =>
         {
             var liveKitservices = Substitute.For<ILiveKitServerUtilService>();

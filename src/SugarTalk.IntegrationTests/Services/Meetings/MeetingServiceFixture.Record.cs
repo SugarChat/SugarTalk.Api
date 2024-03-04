@@ -688,24 +688,6 @@ public partial class MeetingServiceFixture
     }
 
     [Fact]
-    public async Task CanStorageMeetingRecordVideoShouldBeTrue()
-    {
-        var scheduleMeetingResponse = await _meetingUtil.ScheduleMeeting();
-        var meetingDto = await _meetingUtil.JoinMeeting(scheduleMeetingResponse.Data.MeetingNumber);
-        var meetingRecord = await _meetingUtil.GenerateMeetingRecordAsync(meetingDto);
-        
-        await _meetingUtil.AddMeetingRecordAsync(meetingRecord);
-        var boolRes = await _meetingUtil.StorageMeetingRecordVideoAsync(new StorageMeetingRecordVideoCommand
-        {
-            EgressId = "mock egressId",
-            MeetingId = meetingDto.Id,
-            MeetingRecordId = meetingRecord.Id
-        });
-        
-        boolRes.ShouldBe(true);
-    } 
-    
-    [Fact]
     public async Task CanStorageMeetingRecordVideoShouldBeValue()
     {
         var scheduleMeetingResponse = await _meetingUtil.ScheduleMeeting();
@@ -713,18 +695,85 @@ public partial class MeetingServiceFixture
         var meetingRecord = await _meetingUtil.GenerateMeetingRecordAsync(meetingDto);
         
         await _meetingUtil.AddMeetingRecordAsync(meetingRecord);
-        var boolRes = await _meetingUtil.StorageMeetingRecordVideoAsync(new StorageMeetingRecordVideoCommand
+        await _meetingUtil.StorageMeetingRecordVideoAsync(new StorageMeetingRecordVideoCommand
         {
             EgressId = "mock egressId",
             MeetingId = meetingDto.Id,
             MeetingRecordId = meetingRecord.Id
         });
-        boolRes.ShouldBe(true);
 
         var dbMeetingRecord = await _meetingUtil.GetMeetingRecordByMeetingIdAsync(meetingDto.Id);
         
         dbMeetingRecord.RecordType.ShouldBe(MeetingRecordType.EndRecord);
         dbMeetingRecord.MeetingId.ShouldBe(meetingDto.Id);
         dbMeetingRecord.Id.ShouldBe(meetingRecord.Id);
+    }
+    
+    [Fact]
+    public async Task CanDelayStorageRecordVideo()
+    {
+        var meetingRecordId = Guid.NewGuid();
+        var meetingId = Guid.NewGuid();
+
+        var meetingRecord = new MeetingRecord
+        {
+            Id = meetingRecordId,
+            RecordNumber = "6666",
+            RecordType = MeetingRecordType.OnRecord,
+            CreatedDate = DateTimeOffset.Now,
+            IsDeleted = false,
+            UrlStatus = MeetingRecordUrlStatus.Pending,
+            MeetingId = meetingId
+        };
+
+        await RunWithUnitOfWork<IRepository>(async repository =>
+        {
+            await repository.InsertAsync(meetingRecord).ConfigureAwait(false);
+        });
+        
+        await RunWithUnitOfWork<IMediator>(async mediator =>
+        {
+            await mediator.SendAsync(
+                new DelayedMeetingRecordingStorageCommand
+                {
+                    MeetingId = meetingId,
+                    MeetingRecordId = meetingRecordId,
+                    StartDate = DateTimeOffset.Now,
+                    EgressId = "5555",
+                    Token = "1111"
+                });
+
+        },builder =>
+        {
+            var liveKitClient = Substitute.For<ILiveKitClient>();
+            
+            liveKitClient.GetEgressInfoListAsync(Arg.Any<GetEgressRequestDto>(), Arg.Any<CancellationToken>())
+                .Returns(new GetEgressInfoListResponseDto()
+                {
+                    EgressItems = new List<EgressItemDto>
+                    {
+                        new EgressItemDto
+                        {
+                            EgressId = "5555",
+                            EndedAt = "mock endedAt",
+                            Status = "EGRESS_COMPLETE",
+                            File = new FileDetails { Location = "mock url" }
+                        }
+                    }
+                });
+            
+            builder.RegisterInstance(liveKitClient);
+        });
+        
+        await RunWithUnitOfWork<IRepository>(async repository =>
+        {
+            var afterGetUrl = await repository.Query<MeetingRecord>().ToListAsync().ConfigureAwait(false);
+
+            afterGetUrl.ShouldNotBeNull();
+            afterGetUrl.FirstOrDefault(x => x.Id == meetingRecordId)?.MeetingId.ShouldBe(meetingRecord.MeetingId);
+            afterGetUrl.FirstOrDefault(x => x.Id == meetingRecordId)?.Url.ShouldBe("mock url");
+            afterGetUrl.FirstOrDefault(x => x.Id == meetingRecordId)?.RecordType.ShouldBe(MeetingRecordType.EndRecord);
+            afterGetUrl.FirstOrDefault(x => x.Id == meetingRecordId)?.UrlStatus.ShouldBe(MeetingRecordUrlStatus.Completed);
+        });
     }
 }
