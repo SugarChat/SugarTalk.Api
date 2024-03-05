@@ -8,7 +8,7 @@ public enum SpeechAudioLoadStatus
     Pending = 10,
     
     [Description("处理中")]
-    Progress = 20,
+    Progress = 20, 
     
     [Description("已完成")]
     Completed = 30,
