@@ -4,6 +4,7 @@ using System;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Mediator.Net;
 using Serilog;
 using SugarTalk.Core.Services.Exceptions;
 using SugarTalk.Messages.Commands.Meetings.Summary;
@@ -114,18 +115,14 @@ public partial class MeetingService
         Log.Information("stop meeting recording response: {@stopResponse}", stopResponse);
         
         if (stopResponse == null) throw new Exception();
-
-        var storageCommand = new DelayedMeetingRecordingStorageCommand
-        {
-            StartDate = _clock.Now,
-            Token = recordMeetingToken,
-            MeetingRecordId = command.MeetingRecordId,
-            MeetingId = command.MeetingId,
-            EgressId = command.EgressId,
-        };
         
-        _sugarTalkBackgroundJobClient.AddOrUpdateRecurringJob<MeetingService>(nameof(ExecuteStorageMeetingRecordVideoDelayedJobAsync),
-            meetingService => meetingService.ExecuteStorageMeetingRecordVideoDelayedJobAsync(storageCommand, cancellationToken), "*/5 * * * * ?");
+        _sugarTalkBackgroundJobClient.Enqueue<IMediator>(x=>x.SendAsync(
+            new DelayedMeetingRecordingStorageCommand{ 
+                StartDate = _clock.Now, 
+                Token = recordMeetingToken, 
+                MeetingRecordId = command.MeetingRecordId, 
+                MeetingId = command.MeetingId, 
+                EgressId = command.EgressId}, cancellationToken));
 
         return new StorageMeetingRecordVideoResponse();
     }

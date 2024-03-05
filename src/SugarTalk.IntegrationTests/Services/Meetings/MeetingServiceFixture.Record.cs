@@ -711,6 +711,13 @@ public partial class MeetingServiceFixture
         var meetingRecordId = Guid.NewGuid();
         var meetingId = Guid.NewGuid();
 
+        var meeting = new Meeting()
+        {
+            Id = meetingId,
+            CreatedDate = DateTimeOffset.Now,
+            MeetingNumber = "123"
+        };
+        
         var meetingRecord = new MeetingRecord
         {
             Id = meetingRecordId,
@@ -725,24 +732,24 @@ public partial class MeetingServiceFixture
         await RunWithUnitOfWork<IRepository>(async repository =>
         {
             await repository.InsertAsync(meetingRecord).ConfigureAwait(false);
+            await repository.InsertAsync(meeting).ConfigureAwait(false);
         });
         
         await RunWithUnitOfWork<IMediator>(async mediator =>
         {
             await mediator.SendAsync(
-                new DelayedMeetingRecordingStorageCommand
+                new StorageMeetingRecordVideoCommand
                 {
                     MeetingId = meetingId,
                     MeetingRecordId = meetingRecordId,
-                    StartDate = DateTimeOffset.Now,
                     EgressId = "5555",
-                    Token = "1111"
                 });
 
         },builder =>
         {
             var liveKitClient = Substitute.For<ILiveKitClient>();
-            
+            var liveKitServerUtilService = Substitute.For<ILiveKitServerUtilService>();
+
             liveKitClient.GetEgressInfoListAsync(Arg.Any<GetEgressRequestDto>(), Arg.Any<CancellationToken>())
                 .Returns(new GetEgressInfoListResponseDto()
                 {
@@ -758,7 +765,21 @@ public partial class MeetingServiceFixture
                     }
                 });
             
+            liveKitServerUtilService.GenerateTokenForRecordMeeting(Arg.Any<UserAccountDto>(), Arg.Any<string>())
+                .Returns("117458");
+            
+            liveKitClient.StopEgressAsync(Arg.Any<StopEgressRequestDto>(), Arg.Any<CancellationToken>())
+                .Returns(new StopEgressResponseDto()
+                {
+                    EgressId = "mock egressId",
+                    EndedAt = "mock end at",
+                    File = new FileDetails { Location = "mock url" },
+                    Status = "mock status",
+                    Error = "mock error",
+                });
+            
             builder.RegisterInstance(liveKitClient);
+            builder.RegisterInstance(liveKitServerUtilService);
         });
         
         await RunWithUnitOfWork<IRepository>(async repository =>
