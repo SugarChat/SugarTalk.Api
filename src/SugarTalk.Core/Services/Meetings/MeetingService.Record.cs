@@ -172,6 +172,8 @@ public partial class MeetingService
         meetingRecord.RecordType = MeetingRecordType.EndRecord;
         meetingRecord.UrlStatus = MeetingRecordUrlStatus.Completed;
         
+        Log.Information("Complete storage meeting record url");
+        
         await _meetingDataProvider.UpdateMeetingRecordAsync(meetingRecord, cancellationToken).ConfigureAwait(false);
     }
 }
