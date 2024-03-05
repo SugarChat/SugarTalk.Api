@@ -133,8 +133,10 @@ public partial class MeetingService
     public async Task<DelayedMeetingRecordingStorageEvent> ExecuteStorageMeetingRecordVideoDelayedJobAsync(
         DelayedMeetingRecordingStorageCommand command, CancellationToken cancellationToken)
     {
+        Log.Information("Starting Execute Storage Meeting Record Video, staring time :{@StartTime}", command.StartDate );
+        
         var currentTime = _clock.Now;
-
+        
         var timeElapsedSinceStart = (currentTime - command.StartDate).TotalMinutes;
 
         if (timeElapsedSinceStart > 5)
