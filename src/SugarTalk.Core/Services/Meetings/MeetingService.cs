@@ -266,6 +266,8 @@ namespace SugarTalk.Core.Services.Meetings
             //接入音色接口后 弃用
             var userSetting = await _meetingDataProvider.DistributeLanguageForMeetingUserAsync(meeting.Id, cancellationToken).ConfigureAwait(false);
             
+            await _meetingDataProvider.DistributeVoiceToMeetingUser(meeting.Id, user.Id, cancellationToken).ConfigureAwait(false);
+            
             Log.Information("SugarTalk get userSetting from JoinMeetingAsync :{userSetting}", JsonConvert.SerializeObject(userSetting));
 
             return new MeetingJoinedEvent
@@ -304,6 +306,8 @@ namespace SugarTalk.Core.Services.Meetings
             EnrichMeetingUserSessionForOutMeeting(userSession);
             
             await _meetingDataProvider.UpdateMeetingUserSessionAsync(userSession, cancellationToken).ConfigureAwait(false);
+
+            await _meetingDataProvider.DistributeVoiceToMeetingUser(command.MeetingId, cancellationToken: cancellationToken).ConfigureAwait(false);
 
             await _meetingDataProvider.HandleMeetingStatusWhenOutMeetingAsync(
                 userSession.UserId, command.MeetingId, command.MeetingSubId, cancellationToken).ConfigureAwait(false);
@@ -693,7 +697,8 @@ namespace SugarTalk.Core.Services.Meetings
                 userSession.LastQuitTime ??
                 userSession.FirstJoinTime ??
                 userSession.CreatedDate.ToUnixTimeSeconds();
-            
+
+            userSession.MeetingSpeechSettingId = null;
             userSession.OnlineType = MeetingUserSessionOnlineType.OutMeeting;
             userSession.LastQuitTime = _clock.Now.ToUnixTimeSeconds();
             userSession.CumulativeTime = (userSession.CumulativeTime ?? 0) + (userSession.LastQuitTime - lastQuitTimeBeforeChange);

@@ -56,4 +56,7 @@ public class MeetingUserSession : IEntity
     
     [Column("online_type")]
     public MeetingUserSessionOnlineType OnlineType { get; set; }
+
+    [Column("meeting_speech_setting_id")]
+    public int? MeetingSpeechSettingId { get; set; }
 }

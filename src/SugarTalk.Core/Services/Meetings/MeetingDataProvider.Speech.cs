@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using SugarTalk.Core.Domain.Meeting;
+using SugarTalk.Messages.Enums.Meeting;
 using SugarTalk.Messages.Enums.Speech;
 
 namespace SugarTalk.Core.Services.Meetings;
@@ -18,6 +19,8 @@ public partial interface IMeetingDataProvider
     Task<MeetingSpeech> GetMeetingSpeechByIdAsync(Guid meetingSpeechId, CancellationToken cancellationToken);
     
     Task<MeetingUserSetting> DistributeLanguageForMeetingUserAsync(Guid meetingId, CancellationToken cancellationToken);
+
+    Task DistributeVoiceToMeetingUser(Guid meetingId, int? userId = null, CancellationToken cancellationToken = default);
 }
 
 public partial class MeetingDataProvider
@@ -78,6 +81,58 @@ public partial class MeetingDataProvider
         await _unitOfWork.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
 
         return meetingUserSetting;
+    }
+
+    public async Task DistributeVoiceToMeetingUser(Guid meetingId, int? userId = null, CancellationToken cancellationToken = default)
+    {
+        var allUserSession = await _repository.QueryNoTracking<MeetingUserSession>()
+            .Where(x => x.MeetingId == meetingId && x.Status == MeetingAttendeeStatus.Present && x.OnlineType == MeetingUserSessionOnlineType.Online)
+            .OrderBy(x => x.CreatedDate)
+            .ToListAsync(cancellationToken)
+            .ConfigureAwait(false);
+
+        var allUndistributedVoice = await _repository.QueryNoTracking<MeetingSpeechSetting>()
+            .Where(x => allUserSession.Select(s => s.MeetingSpeechSettingId).Contains(x.Id))
+            .ToListAsync(cancellationToken)
+            .ConfigureAwait(false);
+
+        if (allUserSession.Count == 0 || allUndistributedVoice.Count == 0)
+            return;
+
+        if (userId.HasValue)
+        {
+            var currentUserSession = allUserSession.FirstOrDefault(x => x.UserId == userId);
+
+            if (currentUserSession != null)
+            {
+                currentUserSession.MeetingSpeechSettingId = allUndistributedVoice.FirstOrDefault()?.Id;
+
+                await _repository.UpdateAsync(currentUserSession, cancellationToken).ConfigureAwait(false);
+            }
+        }
+        
+        if (userId == null)
+        {
+            var allUndistributedUserSession = allUserSession.Where(x => x.MeetingSpeechSettingId == null).ToList();
+
+            if (allUndistributedUserSession.Count > 0)
+            {
+                var count = allUndistributedVoice.Count;
+
+                allUndistributedUserSession = allUndistributedUserSession.Select(x =>
+                {
+                    if (count == 0) return x;
+                    
+                    x.MeetingSpeechSettingId = allUndistributedVoice[count - 1].Id;
+                        
+                    count--;
+
+                    return x;
+                }).ToList();
+                
+                await _repository.UpdateAllAsync(allUndistributedUserSession, cancellationToken).ConfigureAwait(false);
+            }
+        }
     }
     
     private void AssignTone<T>(
