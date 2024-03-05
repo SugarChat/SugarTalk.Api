@@ -14,4 +14,8 @@ public class DelayedMeetingRecordingStorageCommand : ICommand
     public Guid MeetingRecordId { get; set; } 
     
     public string Token { get; set; }
+
+    public int ReTryLimit { get; set; } = 5;
+
+    public int ReTryCount { get; set; }
 }

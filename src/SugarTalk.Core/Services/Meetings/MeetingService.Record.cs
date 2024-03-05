@@ -115,15 +115,18 @@ public partial class MeetingService
         Log.Information("stop meeting recording response: {@stopResponse}", stopResponse);
         
         if (stopResponse == null) throw new Exception();
-        
-        _sugarTalkBackgroundJobClient.Enqueue<IMediator>(x=>x.SendAsync(
-            new DelayedMeetingRecordingStorageCommand{ 
-                StartDate = _clock.Now, 
-                Token = recordMeetingToken, 
-                MeetingRecordId = command.MeetingRecordId, 
-                MeetingId = command.MeetingId, 
-                EgressId = command.EgressId}, cancellationToken));
 
+        var storageCommand = new DelayedMeetingRecordingStorageCommand 
+        { 
+            StartDate = _clock.Now, 
+            Token = recordMeetingToken, 
+            MeetingRecordId = command.MeetingRecordId,
+            MeetingId = command.MeetingId, 
+            EgressId = command.EgressId
+        }; 
+        
+        _backgroundJobClient.Schedule<IMediator>(m=>m.SendAsync(storageCommand, cancellationToken), TimeSpan.FromSeconds(10)); 
+      
         return new StorageMeetingRecordVideoResponse();
     }
 
@@ -131,6 +134,12 @@ public partial class MeetingService
         DelayedMeetingRecordingStorageCommand command, CancellationToken cancellationToken)
     {
         Log.Information("Starting Execute Storage Meeting Record Video, staring time :{@StartTime}", command.StartDate );
+        
+        if (command.ReTryCount < command.ReTryLimit)
+        {
+            command.ReTryLimit--;
+            _backgroundJobClient.Schedule(() => StorageMeetingRecordVideoAsync(new StorageMeetingRecordVideoCommand(), cancellationToken), TimeSpan.FromSeconds(10));
+        }
         
         var currentTime = _clock.Now;
         
