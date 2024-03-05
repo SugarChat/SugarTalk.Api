@@ -155,8 +155,7 @@ public class FfmpegService : IFfmpegService
         return audioDataList;
     }
 
-    public async Task<List<byte[]>> SpiltAudioAsync(byte[] audioBytes, long startTime, long endTime,
-        CancellationToken cancellationToken)
+    public async Task<List<byte[]>> SpiltAudioAsync(byte[] audioBytes, long startTime, long endTime, CancellationToken cancellationToken)
     {
         var audioDataList = new List<byte[]>();
         var baseFileName = Guid.NewGuid().ToString();

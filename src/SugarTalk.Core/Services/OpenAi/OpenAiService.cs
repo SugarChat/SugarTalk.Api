@@ -31,7 +31,7 @@ public interface IOpenAiService : IScopedDependency
         OpenAiModel model = OpenAiModel.Gpt35Turbo16K, int? maxTokens = null, double temperature = 0, bool shouldNotSendWhenTokenLimited = false, CancellationToken cancellationToken = default);
     
     Task<string> TranscriptionAsync(
-        byte[] file, TranscriptionLanguage? language, TranscriptionFileType fileType = TranscriptionFileType.Wav, 
+        byte[] file, TranscriptionLanguage? language, long speakStartTimeVideo, long speakEndTimeVideo, TranscriptionFileType fileType = TranscriptionFileType.Wav, 
         TranscriptionResponseFormat responseFormat = TranscriptionResponseFormat.Vtt, CancellationToken cancellationToken = default);
     
     Task<T> GetAsync<T>(string requestUrl, CancellationToken cancellationToken, 
@@ -75,14 +75,14 @@ public class OpenAiService : IOpenAiService
     }
     
     public async Task<string> TranscriptionAsync(
-        byte[] file, TranscriptionLanguage? language, TranscriptionFileType fileType = TranscriptionFileType.Wav, 
+        byte[] file, TranscriptionLanguage? language, long speakStartTimeVideo, long speakEndTimeVideo, TranscriptionFileType fileType = TranscriptionFileType.Wav, 
         TranscriptionResponseFormat responseFormat = TranscriptionResponseFormat.Vtt, CancellationToken cancellationToken = default)
     {
         if (file == null) return null;
         
         var audioBytes = await _ffmpegService.ConvertFileFormatAsync(file, fileType, cancellationToken).ConfigureAwait(false);
     
-        var splitAudios = await _ffmpegService.SplitAudioAsync(audioBytes, secondsPerAudio: 60 * 3, cancellationToken: cancellationToken).ConfigureAwait(false);
+        var splitAudios = await _ffmpegService.SpiltAudioAsync(audioBytes, speakStartTimeVideo, speakEndTimeVideo, cancellationToken).ConfigureAwait(false);
     
         var transcriptionResult = new StringBuilder();
     

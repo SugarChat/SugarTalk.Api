@@ -44,6 +44,12 @@ public class StartTrackCompositeEgressRequestDto : StartEgressBaseRequestDto
     public string VideoTrackId { get; set; }
 }
 
+public class StartTrackEgressRequestDto : StartEgressBaseRequestDto
+{
+    [JsonProperty("track_id")]
+    public string TrackId { get; set; }
+}
+
 public class StartEgressResponseDto : EgressItemDto
 {
 }
