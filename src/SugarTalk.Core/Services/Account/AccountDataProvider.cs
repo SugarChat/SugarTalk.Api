@@ -12,6 +12,7 @@ using SugarTalk.Core.Data;
 using SugarTalk.Core.Domain.Account;
 using SugarTalk.Core.Extensions;
 using SugarTalk.Core.Ioc;
+using SugarTalk.Core.Services.Identity;
 using SugarTalk.Messages.Dto.Users;
 using SugarTalk.Messages.Enums.Account;
 using Role = SugarTalk.Core.Domain.Account.Role;
@@ -41,6 +42,8 @@ namespace SugarTalk.Core.Services.Account
         Task<List<UserAccount>> GetUserAccountsAsync(List<int> userIds, CancellationToken cancellationToken);
         
         Task<List<UserAccount>> GetUserAccountsAsync(int userId, CancellationToken cancellationToken);
+        
+        Task<UserAccountDto> CheckCurrentLoggedInUser(CancellationToken cancellationToken);
     }
     
     public partial class AccountDataProvider : IAccountDataProvider
@@ -48,12 +51,14 @@ namespace SugarTalk.Core.Services.Account
         private readonly IMapper _mapper;
         private readonly IRepository _repository;
         private readonly IUnitOfWork _unitOfWork;
+        private readonly ICurrentUser _currentUser;
 
-        public AccountDataProvider(IRepository repository, IMapper mapper, IUnitOfWork unitOfWork)
+        public AccountDataProvider(IRepository repository, IMapper mapper, IUnitOfWork unitOfWork, ICurrentUser currentUser)
         {
             _mapper = mapper;
             _repository = repository;
             _unitOfWork = unitOfWork;
+            _currentUser = currentUser;
         }
 
         public async Task<UserAccount> GetUserByThirdPartyId(string thirdPartyId, CancellationToken cancellationToken)
@@ -181,6 +186,15 @@ namespace SugarTalk.Core.Services.Account
             return await _repository.QueryNoTracking<UserAccount>()
                 .Where(x => x.UserName.ToUpper().Contains(user.UserName.ToUpper()))
                 .ToListAsync(cancellationToken).ConfigureAwait(false);
+        }
+
+        public async Task<UserAccountDto> CheckCurrentLoggedInUser(CancellationToken cancellationToken)
+        {
+            var currentUser = await GetUserAccountAsync(_currentUser.Id.Value, cancellationToken: cancellationToken).ConfigureAwait(false);
+
+            if (currentUser is null) throw new UnauthorizedAccessException();
+
+            return currentUser;
         }
     }
 }
