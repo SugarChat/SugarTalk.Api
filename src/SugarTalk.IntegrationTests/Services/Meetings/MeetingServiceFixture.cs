@@ -945,6 +945,37 @@ public partial class MeetingServiceFixture : MeetingFixtureBase
         });
     }
     
+    [Fact]
+    public async Task ShouldThrowMeetingIsNoPendingWhenUpdateMeeting()
+    {
+        var meeting1Response = await _meetingUtil.ScheduleMeeting(appointmentType: MeetingAppointmentType.Appointment, repeatType: MeetingRepeatType.Daily, startDate: DateTimeOffset.Parse("2024-02-23T10:00:00"), endDate: DateTimeOffset.Parse("2024-02-23T11:00:00"));
+        
+        await _meetingUtil.JoinMeeting(meeting1Response.Data.MeetingNumber);
+        
+        await Run<IMediator, IRepository>(async (mediator, repository) =>
+        {
+            var meeting = await repository.QueryNoTracking<Meeting>().FirstOrDefaultAsync();
+            meeting.ShouldNotBeNull();
+            meeting.Status.ShouldBe(MeetingStatus.InProgress);
+
+            await Assert.ThrowsAsync<CannotUpdateMeetingWhenStatusNotPendingException>(async () =>
+            {
+                await mediator.SendAsync<UpdateMeetingCommand, UpdateMeetingResponse>(new UpdateMeetingCommand
+                {
+                    Id = meeting.Id,
+                    Title = "Greg Meeting",
+                    TimeZone = "Asia/Shanghai",
+                    SecurityCode = "777888",
+                    StartDate = DateTimeOffset.Parse("2024-02-23T10:00:00"),
+                    EndDate = DateTimeOffset.Parse("2024-02-23T11:00:00"),
+                    UtilDate = DateTimeOffset.Parse("2024-02-23T10:00:00"),
+                    RepeatType = MeetingRepeatType.Daily,
+                    AppointmentType = MeetingAppointmentType.Appointment
+                });
+            });
+        });
+    }
+
     private static void MockLiveKitService(ContainerBuilder builder)
     {
         var liveKitServerUtilService = Substitute.For<ILiveKitServerUtilService>();
