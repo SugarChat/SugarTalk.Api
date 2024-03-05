@@ -402,21 +402,11 @@ namespace SugarTalk.Core.Services.Meetings
 
         public async Task<UpdateMeetingResponse> UpdateMeetingAsync(UpdateMeetingCommand command, CancellationToken cancellationToken)
         {
-            var currentUser = await _accountDataProvider
-                .GetUserAccountAsync(_currentUser.Id.Value, cancellationToken: cancellationToken).ConfigureAwait(false);
+            var user = await _accountDataProvider.CheckCurrentLoggedInUser(cancellationToken).ConfigureAwait(false);
+            
+            var meeting = await _meetingDataProvider.GetMeetingByIdAsync(command.Id, cancellationToken).ConfigureAwait(false);
 
-            if (currentUser is null) throw new UnauthorizedAccessException();
-            
-            var meeting = await _meetingDataProvider
-                .GetMeetingByIdAsync(command.Id, cancellationToken).ConfigureAwait(false);
-
-            if (meeting is null) throw new MeetingNotFoundException();
-            
-            Log.Information("Meeting master userId:{masterId}, current userId{currentUserId}",
-                meeting.MeetingMasterUserId, _currentUser.Id.Value);
-            
-            if (meeting.MeetingMasterUserId != _currentUser.Id.Value)
-                throw new CannotUpdateMeetingWhenMasterUserIdMismatchException();
+            ValidateMeetingUpdateConditions(meeting, user);
 
             var updateMeeting = _mapper.Map(command, meeting);
             updateMeeting.Password = command.SecurityCode;
@@ -707,6 +697,20 @@ namespace SugarTalk.Core.Services.Meetings
             userSession.OnlineType = MeetingUserSessionOnlineType.OutMeeting;
             userSession.LastQuitTime = _clock.Now.ToUnixTimeSeconds();
             userSession.CumulativeTime = (userSession.CumulativeTime ?? 0) + (userSession.LastQuitTime - lastQuitTimeBeforeChange);
+        }
+        
+        private void ValidateMeetingUpdateConditions(Meeting meeting, UserAccountDto currentUser)
+        {
+            if (meeting is null) 
+                throw new MeetingNotFoundException();
+            
+            if (meeting.Status != MeetingStatus.Pending) 
+                throw new CannotUpdateMeetingWhenStatusNotPendingException();
+            
+            Log.Information("Meeting master userId:{masterId}, current userId{currentUserId}", meeting.MeetingMasterUserId, _currentUser.Id.Value);
+            
+            if (meeting.MeetingMasterUserId != currentUser.Id) 
+                throw new CannotUpdateMeetingWhenMasterUserIdMismatchException();
         }
     }
 }

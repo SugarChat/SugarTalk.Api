@@ -62,7 +62,7 @@ public partial class BaseFixture
         _currentUser.Id.Returns(1);
         _liveKitServerUtilService = Substitute.For<ILiveKitServerUtilService>();
         _sugarTalkBackgroundJobClient = Substitute.For<ISugarTalkBackgroundJobClient>();
-        _accountDataProvider = MockAccountDataProvider(_mapper, _repository, _unitOfWork);
+        _accountDataProvider = MockAccountDataProvider(_mapper, _repository, _unitOfWork, _currentUser);
         _meetingDataProvider = MockMeetingDataProvider(_clock, _mapper, _repository, _unitOfWork, _currentUser, _accountDataProvider);
         _meetingService = MockMeetingService(_clock, _mapper, _unitOfWork, _currentUser, _openAiService, _speechClient, _liveKitClient, _translationClient,
              _meetingUtilService, _meetingDataProvider, _accountDataProvider, _backgroundJobClient, _aliYunOssSetting, _liveKitServerSetting, _liveKitServerUtilService,
@@ -75,9 +75,9 @@ public partial class BaseFixture
         return new MeetingProcessJobService(clock, unitOfWork, meetingDataProvider);
     }
 
-    protected IAccountDataProvider MockAccountDataProvider(IMapper mapper, IRepository repository, IUnitOfWork unitOfWork)
+    protected IAccountDataProvider MockAccountDataProvider(IMapper mapper, IRepository repository, IUnitOfWork unitOfWork, ICurrentUser currentUser)
     {
-        return new AccountDataProvider(repository, mapper, unitOfWork);
+        return new AccountDataProvider(repository, mapper, unitOfWork, currentUser);
     }
 
     protected IMeetingService MockMeetingService(

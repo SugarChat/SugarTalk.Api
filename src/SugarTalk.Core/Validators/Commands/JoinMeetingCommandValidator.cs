@@ -1,6 +1,6 @@
 using FluentValidation;
-using SugarTalk.Core.Middlewares.FluentMessageValidator;
 using SugarTalk.Messages.Commands.Meetings;
+using SugarTalk.Core.Middlewares.FluentMessageValidator;
 
 namespace SugarTalk.Core.Validators.Commands;
 
