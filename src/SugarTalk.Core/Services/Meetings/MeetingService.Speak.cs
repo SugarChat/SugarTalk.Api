@@ -69,7 +69,6 @@ public partial class MeetingService
        var getEgressInfoListResponse = await _liveKitClient.GetEgressInfoListAsync(
            new GetEgressRequestDto
            {
-               EgressId = meetingSpeakDetail.EgressId,
                Token = _liveKitServerUtilService.GenerateTokenForRecordMeeting(new UserAccountDto {Id = 0, UserName = "user"}, meetingSpeakDetail.MeetingNumber)
            }, cancellationToken).ConfigureAwait(false);
        
@@ -132,7 +131,6 @@ public partial class MeetingService
             new GetEgressRequestDto
         {
             Token =  _liveKitServerUtilService.GenerateTokenForRecordMeeting(user, speakDetail.MeetingNumber),
-            EgressId = speakDetail.EgressId
         }, cancellationToken).ConfigureAwait(false);
 
         Log.Information("getEgressInfoList: {@GetEgressInfoList}", getEgressInfoList);

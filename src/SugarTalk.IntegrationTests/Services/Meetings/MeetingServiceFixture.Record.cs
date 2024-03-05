@@ -555,9 +555,7 @@ public partial class MeetingServiceFixture
                 SpeakStatus = SpeakStatus.Speaking,
                 CreatedDate = DateTimeOffset.Now,
                 TrackId = "1",
-                EgressId = "1",
                 MeetingNumber = meetingNumber,
-                FilePath = "http://localhost:5000/api/v1/meeting/record/download/1"
             },
             new MeetingSpeakDetail
             {
@@ -569,9 +567,7 @@ public partial class MeetingServiceFixture
                 SpeakStatus = SpeakStatus.Speaking,
                 CreatedDate = DateTimeOffset.Now,
                 TrackId = "2",
-                EgressId = "2",
                 MeetingNumber = meetingNumber,
-                FilePath = "http://localhost:5000/api/v1/meeting/record/download/2"
             }
         };
 
