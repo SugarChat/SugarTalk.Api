@@ -12,4 +12,4 @@ create table if not exists `meeting_voice_tone_chart`
     `voice_id` varchar(48) not null,
     `language_id` varchar(48) not null,
     `created_date` datetime(3) not null
-)
+)charset=utf8mb4;
