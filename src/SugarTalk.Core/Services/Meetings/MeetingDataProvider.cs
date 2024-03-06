@@ -178,16 +178,15 @@ namespace SugarTalk.Core.Services.Meetings
             if (includeUserSessions)
             {
                 var allUserSessions =
-                    await GetUserSessionsByMeetingIdAsync(meeting.Id, updateMeeting.MeetingSubId, cancellationToken)
-                        .ConfigureAwait(false);
+                    await GetUserSessionsByMeetingIdAsync(meeting.Id, updateMeeting.MeetingSubId, cancellationToken, true).ConfigureAwait(false);
 
-                updateMeeting.UserSessions = await EnrichMeetingUserSessionsAsync(allUserSessions, cancellationToken).ConfigureAwait(false);
+                updateMeeting.UserSessions = await EnrichMeetingUserSessionsByOnlineAsync(allUserSessions, cancellationToken).ConfigureAwait(false);
             }
             
             return updateMeeting;
         }
 
-        private async Task<List<MeetingUserSessionDto>> EnrichMeetingUserSessionsAsync(
+        private async Task<List<MeetingUserSessionDto>> EnrichMeetingUserSessionsByOnlineAsync(
             List<MeetingUserSessionDto> userSessions, CancellationToken cancellationToken)
         {
             var anonymityCounter = 1;
@@ -199,7 +198,7 @@ namespace SugarTalk.Core.Services.Meetings
 
             var userAccountsDict = userAccounts.ToDictionary(x => x.Id, x => x);
 
-            foreach (var session in userSessions.OrderBy(x => x.CreatedDate))
+            foreach (var session in userSessions.OrderBy(x => x.LastJoinTime))
             {
                 if (!userAccountsDict.TryGetValue(session.UserId, out var user)) continue;
 

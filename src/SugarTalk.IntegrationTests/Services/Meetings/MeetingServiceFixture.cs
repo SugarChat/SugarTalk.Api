@@ -26,6 +26,7 @@ using SugarTalk.Messages.Dto;
 using SugarTalk.Messages.Dto.LiveKit;
 using SugarTalk.Messages.Dto.Meetings;
 using SugarTalk.Messages.Dto.Users;
+using SugarTalk.Messages.Enums.Account;
 using SugarTalk.Messages.Enums.Meeting;
 using SugarTalk.Messages.Requests.Meetings;
 
@@ -138,10 +139,10 @@ public partial class MeetingServiceFixture : MeetingFixtureBase
                 .SingleAsync(x => x.MeetingId == meeting.Id);
             afterUserSession.OnlineType.ShouldBe(MeetingUserSessionOnlineType.OutMeeting);
             afterUserSession.LastQuitTime.ShouldNotBeNull();
-            afterUserSession.LastQuitTime.Value.ShouldBeGreaterThanOrEqualTo(beforeUserSession.First().FirstJoinTime.Value);
+            afterUserSession.LastQuitTime.Value.ShouldBeGreaterThanOrEqualTo(beforeUserSession.First().LastJoinTime.Value);
             afterUserSession.CumulativeTime.ShouldNotBeNull();
             afterUserSession.CumulativeTime.ShouldBe(afterUserSession.LastQuitTime.Value -
-                                                     beforeUserSession.First().FirstJoinTime.Value);
+                                                     beforeUserSession.First().LastJoinTime.Value);
         }, builder =>
         {
             var liveKitServerUtilService = Substitute.For<ILiveKitServerUtilService>();
@@ -153,8 +154,6 @@ public partial class MeetingServiceFixture : MeetingFixtureBase
             builder.RegisterInstance(openAiService);
             builder.RegisterInstance(liveKitServerUtilService);
         });
-        
-        
     }
 
     [Fact]
@@ -974,6 +973,76 @@ public partial class MeetingServiceFixture : MeetingFixtureBase
                 });
             });
         });
+    }
+    
+    [Fact]
+    public async Task CanGetMeetingGuestWhenJoinMeeting()
+    {
+        var meeting = await _meetingUtil.ScheduleMeeting();
+            
+        var testUser1 = await _accountUtil.AddUserAccount("guest1", "123456", issuer: UserAccountIssuer.Guest);
+        var testUser2 = await _accountUtil.AddUserAccount("guest2", "111222", issuer: UserAccountIssuer.Guest);
+        var testUser3 = await _accountUtil.AddUserAccount("guest3", "222244", issuer: UserAccountIssuer.Guest);
+        var testUser4 = await _accountUtil.AddUserAccount("guest4", "222666", issuer: UserAccountIssuer.Guest);
+
+        await _meetingUtil.JoinMeeting(meeting.Data.MeetingNumber);
+
+        await _meetingUtil.JoinMeetingByUserAsync(testUser1, meeting.Data.MeetingNumber);
+
+        await Task.Delay(50);
+            
+        await _meetingUtil.JoinMeetingByUserAsync(testUser2, meeting.Data.MeetingNumber);
+        
+        await Task.Delay(50);
+        
+        await _meetingUtil.JoinMeetingByUserAsync(testUser3, meeting.Data.MeetingNumber);
+        
+        await Run<IMediator>(async (mediator) =>
+        {
+            var response1 = await mediator.RequestAsync<GetMeetingByNumberRequest, GetMeetingByNumberResponse>(
+                new GetMeetingByNumberRequest
+                {
+                    MeetingNumber = meeting.Data.MeetingNumber
+                });
+            
+            response1.Data.UserSessions.Count.ShouldBe(4);
+            response1.Data.UserSessions.Single(x=>x.UserName == testUser1.UserName).GuestName.ShouldBe("Anonymity1");
+            response1.Data.UserSessions.Single(x=>x.UserName == testUser2.UserName).GuestName.ShouldBe("Anonymity2");
+            response1.Data.UserSessions.Single(x=>x.UserName == testUser3.UserName).GuestName.ShouldBe("Anonymity3");
+
+            await _meetingUtil.OutMeetingByUser(testUser2, meeting.Data.Id);
+            
+            var response2 = await mediator.RequestAsync<GetMeetingByNumberRequest, GetMeetingByNumberResponse>(
+                new GetMeetingByNumberRequest
+                {
+                    MeetingNumber = meeting.Data.MeetingNumber
+                });
+            
+            response2.Data.UserSessions.Count.ShouldBe(3);
+            response2.Data.UserSessions.Single(x => x.UserName == testUser3.UserName).GuestName.ShouldBe("Anonymity3");
+
+            await _meetingUtil.JoinMeetingByUserAsync(testUser4, meeting.Data.MeetingNumber);
+
+            var response3 = await mediator.RequestAsync<GetMeetingByNumberRequest, GetMeetingByNumberResponse>(
+                new GetMeetingByNumberRequest
+                {
+                    MeetingNumber = meeting.Data.MeetingNumber
+                });
+            
+            response3.Data.UserSessions.Count.ShouldBe(4);
+            response3.Data.UserSessions.Single(x => x.UserName == testUser4.UserName).GuestName.ShouldBe("Anonymity4");
+
+            await _meetingUtil.JoinMeetingByUserAsync(testUser2, meeting.Data.MeetingNumber);
+
+            var response4 = await mediator.RequestAsync<GetMeetingByNumberRequest, GetMeetingByNumberResponse>(
+                new GetMeetingByNumberRequest
+                {
+                    MeetingNumber = meeting.Data.MeetingNumber
+                });
+            
+            response4.Data.UserSessions.Count.ShouldBe(5);
+            response4.Data.UserSessions.Single(x => x.UserName == testUser2.UserName).GuestName.ShouldBe("Anonymity5");
+        }, MockLiveKitService);
     }
 
     private static void MockLiveKitService(ContainerBuilder builder)

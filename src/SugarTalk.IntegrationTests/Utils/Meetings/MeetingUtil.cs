@@ -26,6 +26,7 @@ using SugarTalk.Messages.Enums.Speech;
 using SugarTalk.Core.Services.Account;
 using SugarTalk.Core.Services.OpenAi;
 using SugarTalk.Core.Services.Http.Clients;
+using SugarTalk.Core.Services.Identity;
 using SugarTalk.Core.Services.Meetings;
 using SugarTalk.Core.Settings.Caching;
 using SugarTalk.Messages.Dto.LiveKit.Egress;

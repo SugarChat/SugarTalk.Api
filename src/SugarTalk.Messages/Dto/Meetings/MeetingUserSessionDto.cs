@@ -29,4 +29,6 @@ public class MeetingUserSessionDto
     public MeetingUserSessionOnlineType OnlineType { get; set; }
 
     public Guid? MeetingSubId { get; set; }
+    
+    public long? LastJoinTime { get; set; }
 }
