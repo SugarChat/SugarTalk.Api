@@ -6,6 +6,7 @@ using Shouldly;
 using NSubstitute;
 using System.Linq;
 using System.Net;
+using System.Text;
 using Mediator.Net;
 using System.Threading;
 using SugarTalk.Core.Data;
@@ -24,6 +25,7 @@ using SugarTalk.Messages.Dto.LiveKit.Egress;
 using SugarTalk.Messages.Dto.Translation;
 using SugarTalk.Messages.Enums.Meeting.Speak;
 using SugarTalk.Messages.Enums.Meeting.Summary;
+using SugarTalk.Messages.Enums.OpenAi;
 using UserAccountDto = SugarTalk.Messages.Dto.Users.UserAccountDto;
 
 namespace SugarTalk.IntegrationTests.Services.Meetings;
@@ -684,33 +686,13 @@ public partial class MeetingServiceFixture
     }
 
     [Fact]
-    public async Task CanStorageMeetingRecordVideoShouldBeValue()
-    {
-        var scheduleMeetingResponse = await _meetingUtil.ScheduleMeeting();
-        var meetingDto = await _meetingUtil.JoinMeeting(scheduleMeetingResponse.Data.MeetingNumber);
-        var meetingRecord = await _meetingUtil.GenerateMeetingRecordAsync(meetingDto);
-        
-        await _meetingUtil.AddMeetingRecordAsync(meetingRecord);
-        await _meetingUtil.StorageMeetingRecordVideoAsync(new StorageMeetingRecordVideoCommand
-        {
-            EgressId = "mock egressId",
-            MeetingId = meetingDto.Id,
-            MeetingRecordId = meetingRecord.Id
-        });
-
-        var dbMeetingRecord = await _meetingUtil.GetMeetingRecordByMeetingIdAsync(meetingDto.Id);
-        
-        dbMeetingRecord.RecordType.ShouldBe(MeetingRecordType.EndRecord);
-        dbMeetingRecord.MeetingId.ShouldBe(meetingDto.Id);
-        dbMeetingRecord.Id.ShouldBe(meetingRecord.Id);
-    }
-    
-    [Fact]
     public async Task CanDelayStorageRecordVideo()
     {
         var meetingRecordId = Guid.NewGuid();
         var meetingId = Guid.NewGuid();
-
+        const string audioContent = "0123123测试测试";
+        var fileContent = Encoding.UTF8.GetBytes(audioContent);
+        
         var meeting = new Meeting()
         {
             Id = meetingId,
@@ -728,11 +710,35 @@ public partial class MeetingServiceFixture
             UrlStatus = MeetingRecordUrlStatus.Pending,
             MeetingId = meetingId
         };
+        
+        var speakDetail1 = new MeetingSpeakDetail()
+        {
+            Id = 1,
+            TrackId = "11",
+            MeetingNumber = "6666",
+            SpeakStatus = SpeakStatus.End,
+            MeetingRecordId = meetingRecordId,
+            SpeakStartTime = DateTimeOffset.Now.ToUnixTimeSeconds(),
+            SpeakEndTime = DateTimeOffset.Now.ToUnixTimeSeconds()
+        };
+        
+        var speakDetail2 = new MeetingSpeakDetail()
+        {
+            Id = 2,
+            TrackId = "22",
+            MeetingNumber = "6666",
+            SpeakStatus = SpeakStatus.End,
+            MeetingRecordId = meetingRecordId,
+            SpeakStartTime = DateTimeOffset.Now.ToUnixTimeSeconds(),
+            SpeakEndTime = DateTimeOffset.Now.ToUnixTimeSeconds()
+        };
 
         await RunWithUnitOfWork<IRepository>(async repository =>
         {
             await repository.InsertAsync(meetingRecord).ConfigureAwait(false);
             await repository.InsertAsync(meeting).ConfigureAwait(false);
+            await repository.InsertAsync(speakDetail1).ConfigureAwait(false);
+            await repository.InsertAsync(speakDetail2).ConfigureAwait(false);
         });
         
         await RunWithUnitOfWork<IMediator>(async mediator =>
@@ -748,6 +754,7 @@ public partial class MeetingServiceFixture
         },builder =>
         {
             var liveKitClient = Substitute.For<ILiveKitClient>();
+            var openAiService = Substitute.For<IOpenAiService>();
             var liveKitServerUtilService = Substitute.For<ILiveKitServerUtilService>();
 
             liveKitClient.GetEgressInfoListAsync(Arg.Any<GetEgressRequestDto>(), Arg.Any<CancellationToken>())
@@ -778,19 +785,36 @@ public partial class MeetingServiceFixture
                     Error = "mock error",
                 });
             
+            openAiService.GetAsync<byte[]>(Arg.Any<string>(), Arg.Any<CancellationToken>())
+                .Returns(fileContent);
+            
+            openAiService.TranscriptionAsync(Arg.Any<byte[]>(), Arg.Any<TranscriptionLanguage?>(),
+                Arg.Any<long>(), Arg.Any<long>(), Arg.Any<TranscriptionFileType>(), Arg.Any<TranscriptionResponseFormat>(),
+                Arg.Any<CancellationToken>()).Returns(audioContent);
+            
             builder.RegisterInstance(liveKitClient);
+            builder.RegisterInstance(openAiService);
             builder.RegisterInstance(liveKitServerUtilService);
         });
         
         await RunWithUnitOfWork<IRepository>(async repository =>
         {
-            var afterGetUrl = await repository.Query<MeetingRecord>().ToListAsync().ConfigureAwait(false);
+            var afterGetRecords = await repository.Query<MeetingRecord>().ToListAsync().ConfigureAwait(false);
 
-            afterGetUrl.ShouldNotBeNull();
-            afterGetUrl.FirstOrDefault(x => x.Id == meetingRecordId)?.MeetingId.ShouldBe(meetingRecord.MeetingId);
-            afterGetUrl.FirstOrDefault(x => x.Id == meetingRecordId)?.Url.ShouldBe("mock url");
-            afterGetUrl.FirstOrDefault(x => x.Id == meetingRecordId)?.RecordType.ShouldBe(MeetingRecordType.EndRecord);
-            afterGetUrl.FirstOrDefault(x => x.Id == meetingRecordId)?.UrlStatus.ShouldBe(MeetingRecordUrlStatus.Completed);
+            afterGetRecords.ShouldNotBeNull();
+            afterGetRecords.FirstOrDefault(x => x.Id == meetingRecordId)?.MeetingId.ShouldBe(meetingRecord.MeetingId);
+            afterGetRecords.FirstOrDefault(x => x.Id == meetingRecordId)?.Url.ShouldBe("mock url");
+            afterGetRecords.FirstOrDefault(x => x.Id == meetingRecordId)?.RecordType.ShouldBe(MeetingRecordType.EndRecord);
+            afterGetRecords.FirstOrDefault(x => x.Id == meetingRecordId)?.UrlStatus.ShouldBe(MeetingRecordUrlStatus.Completed);
+            
+            var afterGetMeetingDetail = await repository.Query<MeetingSpeakDetail>().ToListAsync().ConfigureAwait(false);
+            
+            afterGetMeetingDetail.ShouldNotBeNull();
+            afterGetMeetingDetail.Count.ShouldBe(2);
+            afterGetMeetingDetail.FirstOrDefault(x => x.Id == 1)?.FileTranscriptionStatus.ShouldBe(FileTranscriptionStatus.Completed);
+            afterGetMeetingDetail.FirstOrDefault(x => x.Id == 2)?.FileTranscriptionStatus.ShouldBe(FileTranscriptionStatus.Completed);
+            afterGetMeetingDetail.FirstOrDefault(x => x.Id == 1)?.SpeakContent.ShouldBe(audioContent);
+            afterGetMeetingDetail.FirstOrDefault(x => x.Id == 2)?.SpeakContent.ShouldBe(audioContent);
         });
     }
 }

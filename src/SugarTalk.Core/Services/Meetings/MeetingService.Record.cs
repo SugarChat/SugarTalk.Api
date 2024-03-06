@@ -28,7 +28,7 @@ public partial interface IMeetingService
     
     Task<DelayedMeetingRecordingStorageEvent> ExecuteStorageMeetingRecordVideoDelayedJobAsync(DelayedMeetingRecordingStorageCommand command, CancellationToken cancellationToken);
 
-    Task DelayStorageMeetingRecordVideoJobAsync(string egressId, Guid meetingRecordId, string token, int reTryLimit, int reTryCount, CancellationToken cancellationToken);
+    Task DelayStorageMeetingRecordVideoJobAsync(string egressId, Guid meetingRecordId, string token, int reTryLimit, CancellationToken cancellationToken);
 }
 
 public partial class MeetingService
@@ -156,7 +156,7 @@ public partial class MeetingService
         };
     }
 
-    public async Task DelayStorageMeetingRecordVideoJobAsync(string egressId, Guid meetingRecordId, string token, int reTryLimit, int reTryCount, CancellationToken cancellationToken)
+    public async Task DelayStorageMeetingRecordVideoJobAsync(string egressId, Guid meetingRecordId, string token, int reTryLimit,CancellationToken cancellationToken)
     {
         var meetingRecord = await _meetingDataProvider.GetMeetingRecordByMeetingRecordIdAsync(meetingRecordId, cancellationToken).ConfigureAwait(false);
         if (meetingRecord == null) throw new MeetingRecordNotFoundException();
@@ -164,39 +164,36 @@ public partial class MeetingService
         var getEgressResponse = await _liveKitClient.GetEgressInfoListAsync(new GetEgressRequestDto { Token = token, EgressId = egressId }, cancellationToken).ConfigureAwait(false);
         
         Log.Information("get egress info list response: {@egressInfo}", getEgressResponse);
-
-        try
-        {
-            var egressItem = getEgressResponse?.EgressItems.FirstOrDefault(x => x.EgressId == egressId && x.Status == "EGRESS_COMPLETE");
-
-            if (egressItem == null) throw new DelayStorageMeetingRecordVideoEgressItemNotFoundException();
-
-            meetingRecord.Url = egressItem.File.Location;
-            meetingRecord.RecordType = MeetingRecordType.EndRecord;
-            meetingRecord.UrlStatus = MeetingRecordUrlStatus.Completed;
         
-            Log.Information("Complete storage meeting record url");
-        
-            await _meetingDataProvider.UpdateMeetingRecordAsync(meetingRecord, cancellationToken).ConfigureAwait(false);
-        }
-        catch (Exception e)
-        {
-            Log.Information("Error in DelayStorageMeetingRecordVideoJobAsync: {@e}", e);
-            
-            if (reTryCount < reTryLimit)
+        var egressItem = getEgressResponse?.EgressItems.FirstOrDefault(x => x.EgressId == egressId && x.Status == "EGRESS_COMPLETE");
+
+        if (egressItem == null)
+            switch (reTryLimit > 0)
             {
-                reTryLimit--;
-                _backgroundJobClient.Schedule(() => StorageMeetingRecordVideoAsync(
-                    new StorageMeetingRecordVideoCommand
-                    {
-                        EgressId = egressId, 
-                        MeetingRecordId = meetingRecordId, 
-                        MeetingId = meetingRecord.MeetingId,
-                        ReTryLimit = reTryLimit
-                    }, cancellationToken), TimeSpan.FromSeconds(10));
+                case true:
+                    reTryLimit--;
+                    _sugarTalkBackgroundJobClient.Enqueue<IMeetingService>(x =>
+                        x.DelayStorageMeetingRecordVideoJobAsync(egressId, meetingRecordId, token, reTryLimit, cancellationToken));
+                    return;
+                default:
+                    meetingRecord.UrlStatus = MeetingRecordUrlStatus.Failed;
+                    await _meetingDataProvider.UpdateMeetingRecordAsync(meetingRecord, cancellationToken).ConfigureAwait(false);
+                    return;
             }
-            
-            await _meetingDataProvider.UpdateMeetingRecordUrlStatusAsync(meetingRecordId, MeetingRecordUrlStatus.Failed, cancellationToken).ConfigureAwait(false);
+
+        meetingRecord.Url = egressItem.File.Location;
+        meetingRecord.RecordType = MeetingRecordType.EndRecord;
+        meetingRecord.UrlStatus = MeetingRecordUrlStatus.Completed;
+    
+        Log.Information("Complete storage meeting record url");
+    
+        await _meetingDataProvider.UpdateMeetingRecordAsync(meetingRecord, cancellationToken).ConfigureAwait(false);
+
+        var meetingDetails = await _meetingDataProvider.GetMeetingDetailsByRecordIdAsync(meetingRecordId, cancellationToken).ConfigureAwait(false);
+
+        foreach (var meetingDetail in meetingDetails)
+        {
+            await TranscriptionMeetingAsync(meetingDetail, meetingRecord, cancellationToken);
         }
     }
 }
