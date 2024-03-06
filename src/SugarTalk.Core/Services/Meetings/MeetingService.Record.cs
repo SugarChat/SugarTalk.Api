@@ -7,7 +7,6 @@ using System.Threading.Tasks;
 using Mediator.Net;
 using Serilog;
 using SugarTalk.Core.Services.Exceptions;
-using SugarTalk.Messages.Commands.Meetings.Summary;
 using SugarTalk.Messages.Dto.LiveKit.Egress;
 using SugarTalk.Messages.Enums.Meeting;
 using SugarTalk.Messages.Events.Meeting.Summary;
@@ -29,7 +28,7 @@ public partial interface IMeetingService
     
     Task<DelayedMeetingRecordingStorageEvent> ExecuteStorageMeetingRecordVideoDelayedJobAsync(DelayedMeetingRecordingStorageCommand command, CancellationToken cancellationToken);
 
-    Task DelayStorageMeetingRecordVideoJobAsync(string egressId, Guid meetingRecordId, string token, CancellationToken cancellationToken);
+    Task DelayStorageMeetingRecordVideoJobAsync(string egressId, Guid meetingRecordId, string token, int reTryLimit, int reTryCount, CancellationToken cancellationToken);
 }
 
 public partial class MeetingService
@@ -122,7 +121,8 @@ public partial class MeetingService
             Token = recordMeetingToken, 
             MeetingRecordId = command.MeetingRecordId,
             MeetingId = command.MeetingId, 
-            EgressId = command.EgressId
+            EgressId = command.EgressId,
+            ReTryLimit = command.ReTryLimit
         }; 
         
         _backgroundJobClient.Schedule<IMediator>(m=>m.SendAsync(storageCommand, cancellationToken), TimeSpan.FromSeconds(10)); 
@@ -134,12 +134,6 @@ public partial class MeetingService
         DelayedMeetingRecordingStorageCommand command, CancellationToken cancellationToken)
     {
         Log.Information("Starting Execute Storage Meeting Record Video, staring time :{@StartTime}", command.StartDate );
-        
-        if (command.ReTryCount < command.ReTryLimit)
-        {
-            command.ReTryLimit--;
-            _backgroundJobClient.Schedule(() => StorageMeetingRecordVideoAsync(new StorageMeetingRecordVideoCommand(), cancellationToken), TimeSpan.FromSeconds(10));
-        }
         
         var currentTime = _clock.Now;
         
@@ -157,11 +151,12 @@ public partial class MeetingService
             MeetingId = command.MeetingId,
             EgressId = command.EgressId,
             MeetingRecordId = command.MeetingRecordId,
-            Token = command.Token
+            Token = command.Token,
+            ReTryLimit = command.ReTryLimit
         };
     }
 
-    public async Task DelayStorageMeetingRecordVideoJobAsync(string egressId, Guid meetingRecordId, string token, CancellationToken cancellationToken)
+    public async Task DelayStorageMeetingRecordVideoJobAsync(string egressId, Guid meetingRecordId, string token, int reTryLimit, int reTryCount, CancellationToken cancellationToken)
     {
         var meetingRecord = await _meetingDataProvider.GetMeetingRecordByMeetingRecordIdAsync(meetingRecordId, cancellationToken).ConfigureAwait(false);
         if (meetingRecord == null) throw new MeetingRecordNotFoundException();
@@ -169,17 +164,39 @@ public partial class MeetingService
         var getEgressResponse = await _liveKitClient.GetEgressInfoListAsync(new GetEgressRequestDto { Token = token, EgressId = egressId }, cancellationToken).ConfigureAwait(false);
         
         Log.Information("get egress info list response: {@egressInfo}", getEgressResponse);
-        
-        var egressItemDto = getEgressResponse?.EgressItems.FirstOrDefault(x => x.EgressId == egressId && x.Status == "EGRESS_COMPLETE");
 
-        if (egressItemDto == null) throw new Exception();
+        try
+        {
+            var egressItem = getEgressResponse?.EgressItems.FirstOrDefault(x => x.EgressId == egressId && x.Status == "EGRESS_COMPLETE");
 
-        meetingRecord.Url = egressItemDto.File.Location;
-        meetingRecord.RecordType = MeetingRecordType.EndRecord;
-        meetingRecord.UrlStatus = MeetingRecordUrlStatus.Completed;
+            if (egressItem == null) throw new DelayStorageMeetingRecordVideoEgressItemNotFoundException();
+
+            meetingRecord.Url = egressItem.File.Location;
+            meetingRecord.RecordType = MeetingRecordType.EndRecord;
+            meetingRecord.UrlStatus = MeetingRecordUrlStatus.Completed;
         
-        Log.Information("Complete storage meeting record url");
+            Log.Information("Complete storage meeting record url");
         
-        await _meetingDataProvider.UpdateMeetingRecordAsync(meetingRecord, cancellationToken).ConfigureAwait(false);
+            await _meetingDataProvider.UpdateMeetingRecordAsync(meetingRecord, cancellationToken).ConfigureAwait(false);
+        }
+        catch (Exception e)
+        {
+            Log.Information("Error in DelayStorageMeetingRecordVideoJobAsync: {@e}", e);
+            
+            if (reTryCount < reTryLimit)
+            {
+                reTryLimit--;
+                _backgroundJobClient.Schedule(() => StorageMeetingRecordVideoAsync(
+                    new StorageMeetingRecordVideoCommand
+                    {
+                        EgressId = egressId, 
+                        MeetingRecordId = meetingRecordId, 
+                        MeetingId = meetingRecord.MeetingId,
+                        ReTryLimit = reTryLimit
+                    }, cancellationToken), TimeSpan.FromSeconds(10));
+            }
+            
+            await _meetingDataProvider.UpdateMeetingRecordUrlStatusAsync(meetingRecordId, MeetingRecordUrlStatus.Failed, cancellationToken).ConfigureAwait(false);
+        }
     }
 }

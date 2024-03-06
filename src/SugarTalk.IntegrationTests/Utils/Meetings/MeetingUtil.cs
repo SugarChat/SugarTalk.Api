@@ -391,7 +391,7 @@ public class MeetingUtil : TestUtil
         
         await Run<IMeetingService,SugarTalkDbContext>(async (meetingService,dbContenxt) =>
         {
-            await meetingService.DelayStorageMeetingRecordVideoJobAsync(command.EgressId, command.MeetingRecordId, token, CancellationToken.None);
+            await meetingService.DelayStorageMeetingRecordVideoJobAsync(command.EgressId, command.MeetingRecordId, token, command.ReTryLimit, command.ReTryCount, CancellationToken.None);
            await dbContenxt.SaveChangesAsync();
         }, builder =>
         {

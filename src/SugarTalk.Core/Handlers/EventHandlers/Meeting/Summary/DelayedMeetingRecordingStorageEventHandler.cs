@@ -23,7 +23,8 @@ public class DelayedMeetingRecordingStorageEventHandler : IEventHandler<DelayedM
         Log.Information("Start storage meeting record url");
         
         _sugarTalkBackgroundJobClient.Enqueue<IMeetingService>(x =>
-            x.DelayStorageMeetingRecordVideoJobAsync(context.Message.EgressId, context.Message.MeetingRecordId, context.Message.Token, cancellationToken));
+            x.DelayStorageMeetingRecordVideoJobAsync(
+                context.Message.EgressId, context.Message.MeetingRecordId, context.Message.Token, context.Message.ReTryLimit, context.Message.ReTryCount, cancellationToken));
 
         return Task.CompletedTask;
     }
