@@ -340,6 +340,8 @@ namespace SugarTalk.Core.Services.Meetings
         public async Task ConnectUserToMeetingAsync(
             UserAccountDto user, MeetingDto meeting, bool? isMuted = null, CancellationToken cancellationToken = default)
         {
+            meeting.UserSessions = meeting.UserSessions.Where(x => x.OnlineType == MeetingUserSessionOnlineType.Online).ToList();
+            
             var userSession = meeting.UserSessions
                 .Where(x => x.UserId == user.Id)
                 .OrderByDescending(x => x.CreatedDate)
@@ -355,9 +357,9 @@ namespace SugarTalk.Core.Services.Meetings
                 var addUserSession = _mapper.Map<MeetingUserSessionDto>(userSession);
                 addUserSession.UserName = user.UserName;
 
-                var guestCount = meeting.UserSessions.Count(x => !string.IsNullOrEmpty(x.GuestName));
+                if (user.Issuer == UserAccountIssuer.Guest) HandleGuestNameForUserSession(meeting, addUserSession);
 
-                if (user.Issuer is UserAccountIssuer.Guest) addUserSession.GuestName = $"Anonymity{guestCount + 1}";
+                Log.Information("ConnectUserToMeetingAsync: addUserSession:{addUserSession}", addUserSession);
 
                 meeting.AddUserSession(addUserSession);
                 
@@ -374,7 +376,7 @@ namespace SugarTalk.Core.Services.Meetings
                     userSession.IsMuted = isMuted.Value;
 
                 userSession.Status = MeetingAttendeeStatus.Present;
-                userSession.FirstJoinTime = _clock.Now.ToUnixTimeSeconds();
+                userSession.LastJoinTime = _clock.Now.ToUnixTimeSeconds();
                 userSession.TotalJoinCount += 1;
                 userSession.MeetingSubId = meeting.MeetingSubId;
                 userSession.OnlineType = MeetingUserSessionOnlineType.Online;
@@ -389,6 +391,9 @@ namespace SugarTalk.Core.Services.Meetings
                 {
                     updateUserSession.IsMeetingMaster = true;
                 }
+                
+                if (user.Issuer == UserAccountIssuer.Guest) HandleGuestNameForUserSession(meeting, updateUserSession);
+                
                 meeting.UpdateUserSession(updateUserSession);
 
                 meeting.MeetingTokenFromLiveKit = user.Issuer switch
@@ -614,7 +619,7 @@ namespace SugarTalk.Core.Services.Meetings
                 IsMuted = isMuted,
                 MeetingId = meetingId,
                 Status = MeetingAttendeeStatus.Present,
-                FirstJoinTime = _clock.Now.ToUnixTimeSeconds(),
+                LastJoinTime = _clock.Now.ToUnixTimeSeconds(),
                 TotalJoinCount = 1,
                 MeetingSubId = meetingSubId
             };
@@ -691,7 +696,7 @@ namespace SugarTalk.Core.Services.Meetings
         {
             var lastQuitTimeBeforeChange =
                 userSession.LastQuitTime ??
-                userSession.FirstJoinTime ??
+                userSession.LastJoinTime ??
                 userSession.CreatedDate.ToUnixTimeSeconds();
             
             userSession.OnlineType = MeetingUserSessionOnlineType.OutMeeting;
@@ -711,6 +716,13 @@ namespace SugarTalk.Core.Services.Meetings
             
             if (meeting.MeetingMasterUserId != currentUser.Id) 
                 throw new CannotUpdateMeetingWhenMasterUserIdMismatchException();
+        }
+        
+        private void HandleGuestNameForUserSession(MeetingDto meeting, MeetingUserSessionDto userSession)
+        {
+            var guestCount = meeting.UserSessions.Count(x => !string.IsNullOrEmpty(x.GuestName)) + 1;
+            
+            userSession.GuestName = $"Anonymity{guestCount}";
         }
     }
 }

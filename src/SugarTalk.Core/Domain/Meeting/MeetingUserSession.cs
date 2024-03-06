@@ -30,8 +30,8 @@ public class MeetingUserSession : IEntity
     [Column("status")]
     public MeetingAttendeeStatus Status { get; set; }
 
-    [Column("first_join_time")]
-    public long? FirstJoinTime { get; set; }
+    [Column("last_join_time")]
+    public long? LastJoinTime { get; set; }
 
     [Column("last_quit_time")]
     public long? LastQuitTime { get; set; }
