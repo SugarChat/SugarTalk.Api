@@ -385,4 +385,39 @@ public class MeetingUtil : TestUtil
             builder.RegisterInstance(meetingService);
         });
     }
+    
+    public async Task OutMeetingByUser(UserAccount user, Guid meetingId, Guid? meetingSubId = null)
+    {
+        await Run<IMediator>(async (mediator) =>
+        {
+            await mediator.SendAsync<OutMeetingCommand, OutMeetingResponse>(new OutMeetingCommand
+            {
+                MeetingId = meetingId,
+                MeetingSubId = meetingSubId
+            });
+        }, builder =>
+        {
+            var liveKitServerUtilService = Substitute.For<ILiveKitServerUtilService>();
+            var accountDataProvider = Substitute.For<IAccountDataProvider>();
+            var openAiService = Substitute.For<IOpenAiService>();
+            var currentUser = Substitute.For<ICurrentUser>();
+            currentUser.Id.Returns(user.Id);
+
+            accountDataProvider.GetUserAccountAsync(Arg.Any<int>()).Returns(new UserAccountDto()
+            {
+                Id = user.Id,
+                UserName = user.UserName,
+                Uuid = user.Uuid,
+                IsActive = user.IsActive,
+                Issuer = user.Issuer,
+                ThirdPartyUserId = user.ThirdPartyUserId,
+                CreatedOn = user.CreatedOn,
+                ModifiedOn = user.ModifiedOn,
+            });
+            builder.RegisterInstance(liveKitServerUtilService);
+            builder.RegisterInstance(accountDataProvider);
+            builder.RegisterInstance(openAiService);
+            builder.RegisterInstance(currentUser);
+        });
+    }
 }
