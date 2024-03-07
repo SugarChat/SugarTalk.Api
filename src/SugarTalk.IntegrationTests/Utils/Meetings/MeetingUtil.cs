@@ -385,55 +385,7 @@ public class MeetingUtil : TestUtil
             builder.RegisterInstance(meetingService);
         });
     }
-
-    public async Task<bool> StorageMeetingRecordVideoAsync(StorageMeetingRecordVideoCommand command, string token = null)
-    {
-        token = token ?? "11231312312312312313223";
-        
-        return await Run<IMeetingService,SugarTalkDbContext, Task<bool>>(async (meetingService,dbContenxt) =>
-        {
-            var res = await meetingService.StorageMeetingRecordVideoJobAsync(command, token, CancellationToken.None
-            );
-           await dbContenxt.SaveChangesAsync();
-           return res;
-        }, builder =>
-        {
-            var liveKitservices = Substitute.For<ILiveKitServerUtilService>();
-            var liveKitClient = Substitute.For<ILiveKitClient>();
-            
-            liveKitservices.GenerateTokenForJoinMeeting(Arg.Any<UserAccountDto>(), Arg.Any<string>())
-                .Returns(token);
-            
-            liveKitClient.StopEgressAsync(Arg.Any<StopEgressRequestDto>(), Arg.Any<CancellationToken>())
-                .Returns(new StopEgressResponseDto()
-                {
-                    EgressId = "mock egressId",
-                    EndedAt = "mock endedat",
-                    File = new FileDetails { Location = "mock url" },
-                    Status = "mock status",
-                    Error = "mock error",
-                });
-
-            liveKitClient.GetEgressInfoListAsync(Arg.Any<GetEgressRequestDto>(), Arg.Any<CancellationToken>())
-                .Returns(new GetEgressInfoListResponseDto()
-                {
-                    EgressItems = new List<EgressItemDto>
-                    {
-                        new EgressItemDto
-                        {
-                            EgressId = "mock egressId",
-                            EndedAt = "mock endedAt",
-                            Status = "EGRESS_COMPLETE",
-                            File = new FileDetails { Location = "mock url" }
-                        }
-                    }
-                });
-            
-            builder.RegisterInstance(liveKitservices);
-            builder.RegisterInstance(liveKitClient);
-        });
-    }
-
+    
     public async Task OutMeetingByUser(UserAccount user, Guid meetingId, Guid? meetingSubId = null)
     {
         await Run<IMediator>(async (mediator) =>

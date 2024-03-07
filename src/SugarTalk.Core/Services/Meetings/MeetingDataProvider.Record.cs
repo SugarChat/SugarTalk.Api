@@ -33,6 +33,8 @@ public partial interface IMeetingDataProvider
     Task<MeetingRecord> GetMeetingRecordByRecordIdAsync(Guid meetingRecordId, CancellationToken cancellationToken);
     
     Task UpdateMeetingRecordUrlStatusAsync(Guid meetingRecordId, MeetingRecordUrlStatus urlStatus, CancellationToken cancellationToken);
+    
+    Task<List<MeetingSpeakDetail>> GetMeetingDetailsByRecordIdAsync(Guid meetingRecordId, CancellationToken cancellationToken);
 }
 
 public partial class MeetingDataProvider
@@ -226,5 +228,10 @@ public partial class MeetingDataProvider
         meetingRecord.UrlStatus = urlStatus;
 
         await _unitOfWork.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+    }
+
+    public async Task<List<MeetingSpeakDetail>> GetMeetingDetailsByRecordIdAsync(Guid meetingRecordId, CancellationToken cancellationToken)
+    {
+        return await _repository.Query<MeetingSpeakDetail>().Where(x=>x.MeetingRecordId == meetingRecordId).ToListAsync(cancellationToken).ConfigureAwait(false);
     }
 }

@@ -4,10 +4,12 @@ using System;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Mediator.Net;
 using Serilog;
 using SugarTalk.Core.Services.Exceptions;
 using SugarTalk.Messages.Dto.LiveKit.Egress;
 using SugarTalk.Messages.Enums.Meeting;
+using SugarTalk.Messages.Events.Meeting.Summary;
 using SugarTalk.Messages.Requests.Meetings;
 
 namespace SugarTalk.Core.Services.Meetings;
@@ -23,8 +25,10 @@ public partial interface IMeetingService
     Task<GetMeetingRecordDetailsResponse> GetMeetingRecordDetailsAsync(GetMeetingRecordDetailsRequest request, CancellationToken cancellationToken);
     
     Task<StorageMeetingRecordVideoResponse> StorageMeetingRecordVideoAsync(StorageMeetingRecordVideoCommand command, CancellationToken cancellationToken);
+    
+    Task<DelayedMeetingRecordingStorageEvent> ExecuteStorageMeetingRecordVideoDelayedJobAsync(DelayedMeetingRecordingStorageCommand command, CancellationToken cancellationToken);
 
-    Task<bool> StorageMeetingRecordVideoJobAsync(StorageMeetingRecordVideoCommand command, string token, CancellationToken cancellationToken);
+    Task DelayStorageMeetingRecordVideoJobAsync(string egressId, Guid meetingRecordId, string token, int reTryLimit, CancellationToken cancellationToken);
 }
 
 public partial class MeetingService
@@ -94,8 +98,7 @@ public partial class MeetingService
         return await _meetingDataProvider.GetMeetingRecordDetailsAsync(request.Id, cancellationToken).ConfigureAwait(false);
     }
 
-    public async Task<StorageMeetingRecordVideoResponse> StorageMeetingRecordVideoAsync(StorageMeetingRecordVideoCommand command,
-        CancellationToken cancellationToken)
+    public async Task<StorageMeetingRecordVideoResponse> StorageMeetingRecordVideoAsync(StorageMeetingRecordVideoCommand command, CancellationToken cancellationToken)
     {
         var meeting = await _meetingDataProvider.GetMeetingByIdAsync(command.MeetingId, cancellationToken).ConfigureAwait(false);
 
@@ -112,21 +115,29 @@ public partial class MeetingService
         
         if (stopResponse == null) throw new Exception();
 
-        var startDate = _clock.Now;
-        _sugarTalkBackgroundJobClient.AddOrUpdateRecurringJob<MeetingService>(nameof(ExecuteStorageMeetingRecordVideoDelayedJobAsync),
-            meetingService =>
-                meetingService.ExecuteStorageMeetingRecordVideoDelayedJobAsync(startDate, command, recordMeetingToken, cancellationToken),
-            "*/5 * * * * ?");
-
+        var storageCommand = new DelayedMeetingRecordingStorageCommand 
+        { 
+            StartDate = _clock.Now, 
+            Token = recordMeetingToken, 
+            MeetingRecordId = command.MeetingRecordId,
+            MeetingId = command.MeetingId, 
+            EgressId = command.EgressId,
+            ReTryLimit = command.ReTryLimit
+        }; 
+        
+        _backgroundJobClient.Schedule<IMediator>(m=>m.SendAsync(storageCommand, cancellationToken), TimeSpan.FromSeconds(10)); 
+      
         return new StorageMeetingRecordVideoResponse();
     }
 
-    public async Task ExecuteStorageMeetingRecordVideoDelayedJobAsync(
-        DateTimeOffset startDate, StorageMeetingRecordVideoCommand command, string token, CancellationToken cancellationToken)
+    public async Task<DelayedMeetingRecordingStorageEvent> ExecuteStorageMeetingRecordVideoDelayedJobAsync(
+        DelayedMeetingRecordingStorageCommand command, CancellationToken cancellationToken)
     {
+        Log.Information("Starting Execute Storage Meeting Record Video, staring time :{@StartTime}", command.StartDate );
+        
         var currentTime = _clock.Now;
-
-        var timeElapsedSinceStart = (currentTime - startDate).TotalMinutes;
+        
+        var timeElapsedSinceStart = (currentTime - command.StartDate).TotalMinutes;
 
         if (timeElapsedSinceStart > 5)
         {
@@ -135,29 +146,54 @@ public partial class MeetingService
             _sugarTalkBackgroundJobClient.RemoveRecurringJobIfExists(nameof(ExecuteStorageMeetingRecordVideoDelayedJobAsync));
         }
 
-        var res = await StorageMeetingRecordVideoJobAsync(command, token, cancellationToken).ConfigureAwait(false);
-        
-        if (res) _sugarTalkBackgroundJobClient.RemoveRecurringJobIfExists(nameof(ExecuteStorageMeetingRecordVideoDelayedJobAsync));
+        return new DelayedMeetingRecordingStorageEvent
+        {
+            MeetingId = command.MeetingId,
+            EgressId = command.EgressId,
+            MeetingRecordId = command.MeetingRecordId,
+            Token = command.Token,
+            ReTryLimit = command.ReTryLimit
+        };
     }
 
-    public async Task<bool> StorageMeetingRecordVideoJobAsync(StorageMeetingRecordVideoCommand command, string token, CancellationToken cancellationToken)
+    public async Task DelayStorageMeetingRecordVideoJobAsync(string egressId, Guid meetingRecordId, string token, int reTryLimit, CancellationToken cancellationToken)
     {
-        var meetingRecord = await _meetingDataProvider.GetMeetingRecordByMeetingRecordIdAsync(command.MeetingRecordId, cancellationToken).ConfigureAwait(false);
-        if (meetingRecord == null) return false;
+        var meetingRecord = await _meetingDataProvider.GetMeetingRecordByMeetingRecordIdAsync(meetingRecordId, cancellationToken).ConfigureAwait(false);
+        if (meetingRecord == null) throw new MeetingRecordNotFoundException();
 
-        var getResponse = await _liveKitClient.GetEgressInfoListAsync(new GetEgressRequestDto { Token = token, EgressId = command.EgressId }, cancellationToken).ConfigureAwait(false);
+        var getEgressResponse = await _liveKitClient.GetEgressInfoListAsync(new GetEgressRequestDto { Token = token, EgressId = egressId }, cancellationToken).ConfigureAwait(false);
         
-        Log.Information("get egress info list response: {@egressInfo}", getResponse);
+        Log.Information("get egress info list response: {@egressInfo}", getEgressResponse);
         
-        var egressItemDto = getResponse?.EgressItems.FirstOrDefault(x => x.EgressId == command.EgressId && x.Status == "EGRESS_COMPLETE");
+        var egressItem = getEgressResponse?.EgressItems.FirstOrDefault(x => x.EgressId == egressId && x.Status == "EGRESS_COMPLETE");
 
-        if (egressItemDto == null) return false;
+        if (egressItem == null)
+            switch (reTryLimit > 0)
+            {
+                case true:
+                    reTryLimit--;
+                    _sugarTalkBackgroundJobClient.Enqueue<IMeetingService>(x =>
+                        x.DelayStorageMeetingRecordVideoJobAsync(egressId, meetingRecordId, token, reTryLimit, cancellationToken));
+                    return;
+                default:
+                    meetingRecord.UrlStatus = MeetingRecordUrlStatus.Failed;
+                    await _meetingDataProvider.UpdateMeetingRecordAsync(meetingRecord, cancellationToken).ConfigureAwait(false);
+                    return;
+            }
 
-        meetingRecord.Url = egressItemDto.File.Location;
+        meetingRecord.Url = egressItem.File.Location;
         meetingRecord.RecordType = MeetingRecordType.EndRecord;
         meetingRecord.UrlStatus = MeetingRecordUrlStatus.Completed;
+    
+        Log.Information("Complete storage meeting record url");
+    
         await _meetingDataProvider.UpdateMeetingRecordAsync(meetingRecord, cancellationToken).ConfigureAwait(false);
 
-        return true;
+        var meetingDetails = await _meetingDataProvider.GetMeetingDetailsByRecordIdAsync(meetingRecordId, cancellationToken).ConfigureAwait(false);
+
+        foreach (var meetingDetail in meetingDetails)
+        {
+            await TranscriptionMeetingAsync(meetingDetail, meetingRecord, cancellationToken);
+        }
     }
 }
