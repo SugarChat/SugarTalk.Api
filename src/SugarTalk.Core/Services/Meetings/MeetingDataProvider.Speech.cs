@@ -62,8 +62,6 @@ public partial class MeetingDataProvider
         var existMeetingUserSetting = userSettings.FirstOrDefault(x => x.UserId == _currentUser.Id.Value);
 
         if (existMeetingUserSetting != null) return existMeetingUserSetting;
-
-        if (userSettings.Count > 10) return null;
         
         AssignTone(userSettings, x => x.SpanishToneType, meetingUserSetting);
         AssignTone(userSettings, x => x.EnglishToneType, meetingUserSetting);
@@ -84,15 +82,26 @@ public partial class MeetingDataProvider
         List<MeetingUserSetting> userSettings, Func<MeetingUserSetting, T> toneSelector, MeetingUserSetting meetingUserSetting) where T : Enum
     {
         var usedTones = userSettings.Select(toneSelector).Distinct().ToList();
-        var allTones = Enum.GetValues(typeof(T)).Cast<T>();
+        var allTones = Enum.GetValues(typeof(T)).Cast<T>().ToList();
         var availableTones = allTones.Except(usedTones).ToList();
 
         if (availableTones.Any())
         {
-            var property = typeof(MeetingUserSetting).GetProperty($"{typeof(T).Name}");
+            SetProperty(meetingUserSetting, availableTones.First());
+        }else
+        {
+            var random = new Random();
             
-            property?.SetValue(meetingUserSetting, availableTones.First());
+            var randomTone = allTones[random.Next(0, allTones.Count)];
+
+            SetProperty(meetingUserSetting, randomTone);
         }
+    }
+    
+    private void SetProperty<T>(MeetingUserSetting meetingUserSetting, T tone)
+    {
+        var property = typeof(MeetingUserSetting).GetProperty($"{typeof(T).Name}");
+        property?.SetValue(meetingUserSetting, tone);
     }
     
     private void AssignCantoneseTone(MeetingUserSetting meetingUserSetting)
