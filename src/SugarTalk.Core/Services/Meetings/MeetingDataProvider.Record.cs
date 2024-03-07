@@ -58,12 +58,16 @@ public partial class MeetingDataProvider
         }
 
         var query = _repository.QueryNoTracking<MeetingRecord>()
-            .Join(_repository.QueryNoTracking<Meeting>(), record => record.MeetingId, meeting => meeting.Id,
+            .Join(_repository.QueryNoTracking<Meeting>(), 
+                record => record.MeetingId, 
+                meeting => meeting.Id,
                 (Record, Meeting) => new { Record, Meeting })
-            .Join(_repository.QueryNoTracking<MeetingUserSession>(), rm => rm.Meeting.Id,
+            .Join(_repository.QueryNoTracking<MeetingUserSession>(), 
+                rm => rm.Meeting.Id,
                 session => session.MeetingId,
                 (rm, session) => new { rm.Record, rm.Meeting, session })
-            .Join(_repository.QueryNoTracking<UserAccount>(), rms => rms.Meeting.MeetingMasterUserId,
+            .Join(_repository.QueryNoTracking<UserAccount>(), 
+                rms => rms.Meeting.MeetingMasterUserId,
                 user => user.Id,
                 (rms, User) => new { rms.Record, rms.Meeting, rms.session, User })
             .Where(x => x.session.UserId == currentUserId && !x.Record.IsDeleted);
@@ -98,7 +102,9 @@ public partial class MeetingDataProvider
                 UrlStatus = x.Record.UrlStatus
             }).ToListAsync(cancellationToken);
 
-        return (total, joinResult);
+        var items = joinResult.GroupBy(x => x.MeetingRecordId).Select(g => g.First()).ToList();
+
+        return (total, items);
     }
 
     public async Task DeleteMeetingRecordAsync(List<Guid> meetingRecordIds, CancellationToken cancellationToken)
