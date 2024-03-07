@@ -56,6 +56,7 @@ public partial class MeetingDataProvider
         {
             return (0, new List<MeetingRecordDto>());
         }
+
         var query = _repository.QueryNoTracking<MeetingRecord>()
             .Join(_repository.QueryNoTracking<Meeting>(), record => record.MeetingId, meeting => meeting.Id,
                 (record, meeting) => new
@@ -80,7 +81,8 @@ public partial class MeetingDataProvider
                     result.Session,
                     User = user
                 })
-            .Where(x => x.Session.UserId == currentUserId && !x.Record.IsDeleted).Distinct();
+            .Where(x => x.Session.UserId == currentUserId && !x.Record.IsDeleted)
+            .DistinctBy(x => x.Record.MeetingId);
 
         query = string.IsNullOrEmpty(request.Keyword) ? query : query.Where(x =>
                 x.Meeting.Title.Contains(request.Keyword) ||
