@@ -13,8 +13,7 @@ public class StorageMeetingRecordVideoCommand : ICommand
     public Guid MeetingRecordId { get; set; }
     
     public int ReTryLimit { get; set; } = 5;
-
-    public int ReTryCount { get; set; }
+    
 }
     
 public class StorageMeetingRecordVideoResponse : SugarTalkResponse

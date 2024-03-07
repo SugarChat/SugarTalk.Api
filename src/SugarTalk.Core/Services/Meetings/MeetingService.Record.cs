@@ -156,7 +156,7 @@ public partial class MeetingService
         };
     }
 
-    public async Task DelayStorageMeetingRecordVideoJobAsync(string egressId, Guid meetingRecordId, string token, int reTryLimit,CancellationToken cancellationToken)
+    public async Task DelayStorageMeetingRecordVideoJobAsync(string egressId, Guid meetingRecordId, string token, int reTryLimit, CancellationToken cancellationToken)
     {
         var meetingRecord = await _meetingDataProvider.GetMeetingRecordByMeetingRecordIdAsync(meetingRecordId, cancellationToken).ConfigureAwait(false);
         if (meetingRecord == null) throw new MeetingRecordNotFoundException();
