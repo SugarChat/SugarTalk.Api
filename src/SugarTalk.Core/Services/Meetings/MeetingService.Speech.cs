@@ -14,6 +14,7 @@ using SugarTalk.Messages.Dto.Meetings.Speech;
 using SugarTalk.Messages.Enums.Account;
 using SugarTalk.Messages.Enums.Speech;
 using SugarTalk.Messages.Events.Meeting.Speech;
+using SugarTalk.Messages.Requests.Meetings;
 
 namespace SugarTalk.Core.Services.Meetings;
 
@@ -66,6 +67,8 @@ public partial class MeetingService
         var meetingSpeeches = await _meetingDataProvider
             .GetMeetingSpeechesAsync(request.MeetingId, cancellationToken, request.FilterHasCanceledAudio).ConfigureAwait(false);
 
+        if (meetingSpeeches is not { Count: > 0 }) return new GetMeetingAudioListResponse();
+
         var meetingSpeechesDto = _mapper.Map<List<MeetingSpeechDto>>(meetingSpeeches);
         
         var userIds = meetingSpeeches.Select(x => x.UserId).ToList();
@@ -75,26 +78,27 @@ public partial class MeetingService
 
         var userIdsFromGuest = users.Where(x => x.Issuer == UserAccountIssuer.Guest).Select(x => x.Id).ToList();
 
-        var userSessionsByGuest = await _meetingDataProvider.GetMeetingUserSessionByUserIdsAsync(userIdsFromGuest, request.MeetingSubId, cancellationToken).ConfigureAwait(false);
-
-        userSessionsByGuest = userSessionsByGuest.DistinctBy(x => x.UserId).ToList();
-        
         meetingSpeechesDto = meetingSpeechesDto.OrderBy(x => x.CreatedDate).ToList();
 
-        var userDictionary = users.ToDictionary(user => user.Id, user => user);
+        var meeting = await _meetingDataProvider.GetMeetingByIdAsync(request.MeetingId, cancellationToken).ConfigureAwait(false);
 
-        const int guestCount = 1;
+        var userSessions = (await GetMeetingByNumberAsync(new GetMeetingByNumberRequest
+        {
+            MeetingNumber = meeting.MeetingNumber,
+            IncludeUserSession = true
+        }, cancellationToken).ConfigureAwait(false)).Data?.UserSessions;
 
-        var guestDic = userSessionsByGuest.OrderBy(x => x.CreatedDate)
-            .ToDictionary(x => x.UserId, _ => $"Anonymity{guestCount + 1}");
+        var userSessionDicByUserId = userSessions.ToDictionary(x => x.UserId, x => x);
         
         foreach (var meetingSpeech in meetingSpeechesDto)
         {
-            if (!userDictionary.TryGetValue(meetingSpeech.UserId, out var userAccount)) continue;
+            userSessionDicByUserId.TryGetValue(meetingSpeech.UserId, out var session);
 
-            var guest = guestDic.TryGetValue(meetingSpeech.UserId, out var guestName) ? guestName : null;
+            if (session is null) continue;
 
-            meetingSpeech.UserName = guest is null ? userAccount.UserName : guestName;
+            meetingSpeech.UserName = userIdsFromGuest.Contains(session.UserId)
+                ? session.GuestName
+                : session.UserName;
         }
 
         await GenerateTextByTranslateAsync(request.LanguageType, meetingSpeechesDto, cancellationToken).ConfigureAwait(false);

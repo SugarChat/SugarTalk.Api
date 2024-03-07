@@ -17,6 +17,7 @@ using SugarTalk.Messages.Commands.Meetings;
 using SugarTalk.Messages.Commands.Speech;
 using SugarTalk.Messages.Dto.Meetings.Speech;
 using SugarTalk.Messages.Dto.Users;
+using SugarTalk.Messages.Enums.Account;
 using SugarTalk.Messages.Enums.Speech;
 using SugarTalk.Messages.Requests.Meetings.User;
 using SugarTalk.Messages.Requests.Speech;
@@ -72,12 +73,18 @@ public partial class MeetingServiceFixture
     [Fact]
     public async Task ShouldGetMeetingSpeechList()
     {
-        var meetingId = Guid.NewGuid();
-
         var now = DateTimeOffset.Now;
         
-        var user1 = await _accountUtil.AddUserAccount("greg", "123456").ConfigureAwait(false);
-        var user2 = await _accountUtil.AddUserAccount("mars", "123456").ConfigureAwait(false);
+        const string guestName = "Anonymity1";
+        
+        var user1 = await _accountUtil.AddUserAccount("greg", "123456", issuer: UserAccountIssuer.Guest).ConfigureAwait(false);
+        var user2 = await _accountUtil.AddUserAccount("mars", "123456", issuer: UserAccountIssuer.Guest).ConfigureAwait(false);
+
+        var meeting = await _meetingUtil.ScheduleMeeting();
+
+        await _meetingUtil.JoinMeeting(meeting.Data.MeetingNumber);
+        await _meetingUtil.JoinMeetingByUserAsync(user1, meeting.Data.MeetingNumber);
+        await _meetingUtil.JoinMeetingByUserAsync(user2, meeting.Data.MeetingNumber);
 
         await RunWithUnitOfWork<IMediator, IRepository>(async (mediator, repository) =>
         {
@@ -86,7 +93,7 @@ public partial class MeetingServiceFixture
                 new()
                 {
                     Id = Guid.NewGuid(),
-                    MeetingId = meetingId,
+                    MeetingId = meeting.Data.Id,
                     OriginalText = "text",
                     CreatedDate = now,
                     UserId = user1.Id
@@ -94,7 +101,7 @@ public partial class MeetingServiceFixture
                 new()
                 {
                     Id = Guid.NewGuid(),
-                    MeetingId = meetingId,
+                    MeetingId = meeting.Data.Id,
                     OriginalText = "text2",
                     CreatedDate = now.AddHours(1),
                     UserId = user1.Id
@@ -102,15 +109,12 @@ public partial class MeetingServiceFixture
                 new()
                 {
                     Id = Guid.NewGuid(),
-                    MeetingId = meetingId,
+                    MeetingId = meeting.Data.Id,
                     OriginalText = "text3",
                     UserId = user2.Id,
                     Status = SpeechStatus.Cancelled
                 }
             }, CancellationToken.None);
-
-            await _meetingUtil.AddMeetingUserSetting(Guid.NewGuid(), user1.Id, meetingId,
-                SpeechTargetLanguageType.Cantonese, CantoneseToneType.WanLungNeural);
         }, builder =>
         {
             var openAiService = Substitute.For<IOpenAiService>();
@@ -123,7 +127,7 @@ public partial class MeetingServiceFixture
             var response = await mediator.RequestAsync<GetMeetingAudioListRequest, GetMeetingAudioListResponse>(
                 new GetMeetingAudioListRequest
                 {
-                    MeetingId = meetingId, 
+                    MeetingId = meeting.Data.Id, 
                     LanguageType = SpeechTargetLanguageType.Cantonese,
                     FilterHasCanceledAudio = true
                 });
@@ -131,8 +135,8 @@ public partial class MeetingServiceFixture
             response.Data.Count.ShouldBe(2);
             
             response.Data.First().UserId.ShouldBe(user1.Id);
-            response.Data.First().UserName.ShouldBe(user1.UserName);
-            response.Data.First().MeetingId.ShouldBe(meetingId);
+            response.Data.First().UserName.ShouldBe(guestName);
+            response.Data.First().MeetingId.ShouldBe(meeting.Data.Id);
             response.Data.First().OriginalText.ShouldBe("text");
             response.Data.First().VoiceUrl.ShouldBe("test.url");
             response.Data.First().TranslatedText.ShouldBe("translated_text");
