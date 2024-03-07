@@ -88,7 +88,8 @@ public partial class MeetingDataProvider
         if (availableTones.Any())
         {
             SetProperty(meetingUserSetting, availableTones.First());
-        }else
+        }
+        else
         {
             var random = new Random();
             
