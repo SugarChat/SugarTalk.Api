@@ -142,7 +142,7 @@ public partial class MeetingDataProvider
             Id = meetingRecordId,
             MeetingId = meetingId,
             EgressId = egressId,
-            RecordNumber = GenerateRecordNumber(meetingRecordTotal + 1)
+            RecordNumber = GenerateRecordNumber(++meetingRecordTotal)
         }, cancellationToken).ConfigureAwait(false);
     }
     
