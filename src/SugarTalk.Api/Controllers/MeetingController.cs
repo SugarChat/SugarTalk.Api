@@ -106,11 +106,12 @@ public class MeetingController : ControllerBase
     }
     
     [Route("appointment/cancel"), HttpPost]
+    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(CancelAppointmentMeetingResponse))]
     public async Task<IActionResult> CancelAppointmentMeetingAsync([FromBody] CancelAppointmentMeetingCommand command)
     {
-        await _mediator.SendAsync(command).ConfigureAwait(false);
+        var response = await _mediator.SendAsync<CancelAppointmentMeetingCommand, CancelAppointmentMeetingResponse>(command).ConfigureAwait(false);
 
-        return Ok();
+        return Ok(response);
     }
 
     #endregion
@@ -183,11 +184,12 @@ public class MeetingController : ControllerBase
     }
 
     [Route("record/delete"), HttpPost]
+    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(DeleteMeetingRecordResponse))]
     public async Task<IActionResult> DeleteMeetingRecordAsync([FromBody] DeleteMeetingRecordCommand command)
     {
-        await _mediator.SendAsync(command).ConfigureAwait(false);
+        var response = await _mediator.SendAsync<DeleteMeetingRecordCommand, DeleteMeetingRecordResponse>(command).ConfigureAwait(false);
 
-        return Ok();
+        return Ok(response);
     }
 
     [Route("recording/start"), HttpPost]

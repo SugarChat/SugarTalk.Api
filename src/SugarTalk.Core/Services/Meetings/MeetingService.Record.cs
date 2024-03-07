@@ -9,6 +9,7 @@ using Serilog;
 using SugarTalk.Core.Services.Exceptions;
 using SugarTalk.Messages.Dto.LiveKit.Egress;
 using SugarTalk.Messages.Enums.Meeting;
+using SugarTalk.Messages.Events.Meeting;
 using SugarTalk.Messages.Events.Meeting.Summary;
 using SugarTalk.Messages.Requests.Meetings;
 
@@ -18,7 +19,7 @@ public partial interface IMeetingService
 {
     Task<GetCurrentUserMeetingRecordResponse> GetCurrentUserMeetingRecordsAsync(GetCurrentUserMeetingRecordRequest request, CancellationToken cancellationToken);
     
-    Task DeleteMeetingRecordAsync(DeleteMeetingRecordCommand command, CancellationToken cancellationToken);
+    Task<MeetingRecordDeletedEvent> DeleteMeetingRecordAsync(DeleteMeetingRecordCommand command, CancellationToken cancellationToken);
 
     Task<MeetingRecordingStartedEvent> StartMeetingRecordingAsync(StartMeetingRecordingCommand command, CancellationToken cancellationToken);
     
