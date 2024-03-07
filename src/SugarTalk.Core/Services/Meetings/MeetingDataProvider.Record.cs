@@ -80,7 +80,7 @@ public partial class MeetingDataProvider
                     result.Session,
                     User = user
                 })
-            .Where(x => x.Session.UserId == currentUserId && !x.Record.IsDeleted);
+            .Where(x => x.Session.UserId == currentUserId && !x.Record.IsDeleted).Distinct();
 
         query = string.IsNullOrEmpty(request.Keyword) ? query : query.Where(x =>
                 x.Meeting.Title.Contains(request.Keyword) ||
