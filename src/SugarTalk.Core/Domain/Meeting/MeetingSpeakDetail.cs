@@ -36,16 +36,7 @@ public class MeetingSpeakDetail : IEntity
     
     [Column("speak_content")]
     public string SpeakContent { get; set; }
-    
-    [Column("egress_id"), StringLength(128)]
-    public string EgressId { get; set; }
-    
-    [Column("file_path"), StringLength(256)]
-    public string FilePath { get; set; }
-    
-    [Column("file_url"), StringLength(256)]
-    public string FileUrl { get; set; }
-    
+
     [Column("file_transcription_status")] 
     public FileTranscriptionStatus FileTranscriptionStatus { get; set; } = FileTranscriptionStatus.Pending;
 
