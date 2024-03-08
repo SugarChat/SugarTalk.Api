@@ -91,6 +91,7 @@
         <EmbeddedResource Include="DbUp\Scripts_2024\Script0013_add_password_for_meeting_table.sql" />
         <EmbeddedResource Include="DbUp\Scripts_2024\Script0014_modify_meeting_speak_detail_table.sql" />
         <EmbeddedResource Include="DbUp\Scripts_2024\Script0015_modify_join_time_for_meeting_user_session_table.sql" />
+        <EmbeddedResource Include="DbUp\Scripts_2024\Script0016_add_smart_content_for_meeting_speak_detail_table.sql" />
     </ItemGroup>
     
     <ItemGroup>
