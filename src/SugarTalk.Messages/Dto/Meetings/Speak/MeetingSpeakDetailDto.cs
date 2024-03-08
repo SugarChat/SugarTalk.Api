@@ -23,5 +23,7 @@ public class MeetingSpeakDetailDto
     
     public string SpeakContent { get; set; }
     
+    public FileTranscriptionStatus FileTranscriptionStatus { get; set; }
+    
     public DateTimeOffset CreatedDate { get; set; }
 }
