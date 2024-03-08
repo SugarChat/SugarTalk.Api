@@ -34,8 +34,11 @@ public class MeetingSpeakDetail : IEntity
     [Column("speak_status")] 
     public SpeakStatus SpeakStatus { get; set; } = SpeakStatus.Speaking;
     
-    [Column("speak_content")]
-    public string SpeakContent { get; set; }
+    [Column("original_content")]
+    public string OriginalContent { get; set; }
+    
+    [Column("smart_content")]
+    public string SmartContent { get; set; }
 
     [Column("file_transcription_status")] 
     public FileTranscriptionStatus FileTranscriptionStatus { get; set; } = FileTranscriptionStatus.Pending;

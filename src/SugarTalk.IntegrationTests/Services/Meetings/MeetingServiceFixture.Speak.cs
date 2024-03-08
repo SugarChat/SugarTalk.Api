@@ -94,10 +94,10 @@ public partial class MeetingServiceFixture
                 switch (speakDetails.First().FileTranscriptionStatus)
                 {
                     case FileTranscriptionStatus.Completed:
-                        speakDetails.First().SpeakContent.ShouldBe(audioContent);
+                        speakDetails.First().OriginalContent.ShouldBe(audioContent);
                         break;
                     case FileTranscriptionStatus.Pending:
-                        speakDetails.First().SpeakContent.ShouldBeNull();
+                        speakDetails.First().OriginalContent.ShouldBeNull();
                         break;
                     default:
                         throw new ArgumentOutOfRangeException();

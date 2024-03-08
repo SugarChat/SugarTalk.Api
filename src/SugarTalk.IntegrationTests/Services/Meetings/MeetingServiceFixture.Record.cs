@@ -22,10 +22,13 @@ using SugarTalk.Messages.Commands.Meetings;
 using SugarTalk.Messages.Enums.Meeting;
 using SugarTalk.Messages.Requests.Meetings;
 using SugarTalk.Messages.Dto.LiveKit.Egress;
+using SugarTalk.Messages.Dto.OpenAi;
 using SugarTalk.Messages.Dto.Translation;
 using SugarTalk.Messages.Enums.Meeting.Speak;
 using SugarTalk.Messages.Enums.Meeting.Summary;
 using SugarTalk.Messages.Enums.OpenAi;
+using CompletionsRequestFunctionDto = Smarties.Messages.DTO.OpenAi.CompletionsRequestFunctionDto;
+using CompletionsRequestMessageDto = Smarties.Messages.DTO.OpenAi.CompletionsRequestMessageDto;
 using UserAccountDto = SugarTalk.Messages.Dto.Users.UserAccountDto;
 
 namespace SugarTalk.IntegrationTests.Services.Meetings;
@@ -553,7 +556,7 @@ public partial class MeetingServiceFixture
                 MeetingRecordId = Guid.Parse(recordId),
                 UserId = 1,
                 SpeakStartTime = new DateTimeOffset(2024, 1, 1, 0, 0, 0, TimeSpan.Zero).ToUnixTimeSeconds(),
-                SpeakContent = meetingContent1,
+                OriginalContent = meetingContent1,
                 SpeakStatus = SpeakStatus.Speaking,
                 CreatedDate = DateTimeOffset.Now,
                 TrackId = "1",
@@ -565,7 +568,7 @@ public partial class MeetingServiceFixture
                 MeetingRecordId = Guid.Parse(recordId),
                 UserId = 2,
                 SpeakStartTime = new DateTimeOffset(2024, 1, 1, 0, 0, 0, TimeSpan.Zero).ToUnixTimeSeconds(),
-                SpeakContent = meetingContent2,
+                OriginalContent = meetingContent2,
                 SpeakStatus = SpeakStatus.Speaking,
                 CreatedDate = DateTimeOffset.Now,
                 TrackId = "2",
@@ -813,8 +816,8 @@ public partial class MeetingServiceFixture
             afterGetMeetingDetail.Count.ShouldBe(2);
             afterGetMeetingDetail.FirstOrDefault(x => x.Id == 1)?.FileTranscriptionStatus.ShouldBe(FileTranscriptionStatus.Completed);
             afterGetMeetingDetail.FirstOrDefault(x => x.Id == 2)?.FileTranscriptionStatus.ShouldBe(FileTranscriptionStatus.Completed);
-            afterGetMeetingDetail.FirstOrDefault(x => x.Id == 1)?.SpeakContent.ShouldBe(audioContent);
-            afterGetMeetingDetail.FirstOrDefault(x => x.Id == 2)?.SpeakContent.ShouldBe(audioContent);
+            afterGetMeetingDetail.FirstOrDefault(x => x.Id == 1)?.OriginalContent.ShouldBe(audioContent);
+            afterGetMeetingDetail.FirstOrDefault(x => x.Id == 2)?.OriginalContent.ShouldBe(audioContent);
         });
     }
 }
