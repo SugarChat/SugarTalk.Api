@@ -519,6 +519,8 @@ public partial class MeetingServiceFixture : MeetingFixtureBase
     public async Task ShouldCannotJoinMeetingWhenInputIncorrectMeetingPassword()
     {
         var scheduleMeetingResponse = await _meetingUtil.ScheduleMeeting(securityCode: "123456");
+
+        var testUser1 = await _accountUtil.AddUserAccount("testMan", "123456");
         
         await Run<IMediator>(async (mediator) =>
         {
@@ -533,11 +535,7 @@ public partial class MeetingServiceFixture : MeetingFixtureBase
 
             await Assert.ThrowsAsync<MeetingSecurityCodeException>(async () =>
             {
-                await mediator.SendAsync<JoinMeetingCommand, JoinMeetingResponse>(new JoinMeetingCommand
-                {
-                    MeetingNumber = scheduleMeetingResponse.Data.MeetingNumber,
-                    SecurityCode = "666"
-                });
+                await _meetingUtil.JoinMeetingByUserAsync(testUser1, scheduleMeetingResponse.Data.MeetingNumber, securityCode: "666");
             });
         }, builder =>
         {
@@ -547,7 +545,6 @@ public partial class MeetingServiceFixture : MeetingFixtureBase
             liveKitServerUtilService.GenerateTokenForJoinMeeting(Arg.Any<UserAccountDto>(), Arg.Any<string>())
                 .Returns("token123");
             
-    
             builder.RegisterInstance(openAiService);
             builder.RegisterInstance(liveKitServerUtilService);
         });

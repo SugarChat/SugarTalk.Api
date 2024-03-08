@@ -241,14 +241,15 @@ public class MeetingUtil : TestUtil
         });
     }
     
-    public async Task<MeetingDto> JoinMeetingByUserAsync(UserAccount user, string meetingNumber, bool isMuted = false)
+    public async Task<MeetingDto> JoinMeetingByUserAsync(UserAccount user, string meetingNumber, bool isMuted = false, string securityCode = null)
     {
         return await Run<IMediator, MeetingDto>(async (mediator) =>
         {
             var response = await mediator.SendAsync<JoinMeetingCommand, JoinMeetingResponse>(new JoinMeetingCommand
             {
                 MeetingNumber = meetingNumber,
-                IsMuted = isMuted
+                IsMuted = isMuted,
+                SecurityCode = securityCode
             });
             return response.Data.Meeting;
         }, async builder =>
