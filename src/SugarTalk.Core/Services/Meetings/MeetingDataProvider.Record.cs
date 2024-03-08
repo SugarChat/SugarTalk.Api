@@ -56,31 +56,21 @@ public partial class MeetingDataProvider
         {
             return (0, new List<MeetingRecordDto>());
         }
+
         var query = _repository.QueryNoTracking<MeetingRecord>()
-            .Join(_repository.QueryNoTracking<Meeting>(), record => record.MeetingId, meeting => meeting.Id,
-                (record, meeting) => new
-                {
-                    Record = record,
-                    Meeting = meeting
-                })
-            .Join(_repository.QueryNoTracking<MeetingUserSession>(), result => result.Meeting.Id,
+            .Join(_repository.QueryNoTracking<Meeting>(), 
+                record => record.MeetingId, 
+                meeting => meeting.Id,
+                (Record, Meeting) => new { Record, Meeting })
+            .Join(_repository.QueryNoTracking<MeetingUserSession>(), 
+                rm => rm.Meeting.Id,
                 session => session.MeetingId,
-                (result, session) => new
-                {
-                    result.Meeting,
-                    result.Record,
-                    Session = session
-                })
-            .Join(_repository.QueryNoTracking<UserAccount>(), result => result.Meeting.MeetingMasterUserId,
+                (rm, session) => new { rm.Record, rm.Meeting, session })
+            .Join(_repository.QueryNoTracking<UserAccount>(), 
+                rms => rms.Meeting.MeetingMasterUserId,
                 user => user.Id,
-                (result, user) => new
-                {
-                    result.Meeting,
-                    result.Record,
-                    result.Session,
-                    User = user
-                })
-            .Where(x => x.Session.UserId == currentUserId && !x.Record.IsDeleted);
+                (rms, User) => new { rms.Record, rms.Meeting, rms.session, User })
+            .Where(x => x.session.UserId == currentUserId && !x.Record.IsDeleted);
 
         query = string.IsNullOrEmpty(request.Keyword) ? query : query.Where(x =>
                 x.Meeting.Title.Contains(request.Keyword) ||
@@ -96,10 +86,7 @@ public partial class MeetingDataProvider
             .OrderByDescending(x => x.Record.CreatedDate)
             .Skip((request.PageSetting.Page - 1) * request.PageSetting.PageSize)
             .Take(request.PageSetting.PageSize)
-            .ToListAsync(cancellationToken)
-            .ConfigureAwait(false);
-
-        var items = joinResult.Select(x => new MeetingRecordDto
+            .Select(x => new MeetingRecordDto
             {
                 MeetingRecordId = x.Record.Id,
                 MeetingId = x.Meeting.Id,
@@ -113,8 +100,9 @@ public partial class MeetingDataProvider
                 Duration = CalculateMeetingDuration(x.Meeting.StartDate, x.Meeting.EndDate),
                 Url = x.Record.Url,
                 UrlStatus = x.Record.UrlStatus
-            })
-            .ToList();
+            }).ToListAsync(cancellationToken);
+
+        var items = joinResult.GroupBy(x => x.MeetingRecordId).Select(g => g.First()).ToList();
 
         return (total, items);
     }
@@ -142,7 +130,7 @@ public partial class MeetingDataProvider
             Id = meetingRecordId,
             MeetingId = meetingId,
             EgressId = egressId,
-            RecordNumber = GenerateRecordNumber(meetingRecordTotal + 1)
+            RecordNumber = GenerateRecordNumber(++meetingRecordTotal)
         }, cancellationToken).ConfigureAwait(false);
     }
     
