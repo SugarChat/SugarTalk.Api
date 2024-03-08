@@ -21,10 +21,6 @@ public class MeetingSpeakDetailDto
     
     public SpeakStatus SpeakStatus { get; set; }
     
-    public string EgressId { get; set; }
-    
-    public string FilePath { get; set; }
-    
     public string SpeakContent { get; set; }
     
     public DateTimeOffset CreatedDate { get; set; }
