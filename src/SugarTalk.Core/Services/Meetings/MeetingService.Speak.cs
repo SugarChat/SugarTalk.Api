@@ -90,7 +90,7 @@ public partial class MeetingService
         {
             speakDetail.SpeakContent = await _openAiService.TranscriptionAsync(
                 recordFile, TranscriptionLanguage.Chinese, speakStartTimeVideo, speakEndTimeVideo,
-                TranscriptionFileType.Mp4, cancellationToken: cancellationToken).ConfigureAwait(false);
+                TranscriptionFileType.Mp4, TranscriptionResponseFormat.Text, cancellationToken: cancellationToken).ConfigureAwait(false);
 
             speakDetail.FileTranscriptionStatus = FileTranscriptionStatus.Completed;
         }
