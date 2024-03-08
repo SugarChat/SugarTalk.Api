@@ -249,7 +249,7 @@ namespace SugarTalk.Core.Services.Meetings
             
             var meeting = await _meetingDataProvider.GetMeetingAsync(command.MeetingNumber, cancellationToken).ConfigureAwait(false);
 
-            if (meeting.IsPasswordEnabled)
+            if (meeting.MeetingMasterUserId != user.Id && meeting.IsPasswordEnabled)
             {
                 await _meetingDataProvider
                     .CheckMeetingSecurityCodeAsync(meeting.Id, command.SecurityCode, cancellationToken).ConfigureAwait(false);
