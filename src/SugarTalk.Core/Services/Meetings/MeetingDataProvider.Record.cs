@@ -7,6 +7,7 @@ using Microsoft.EntityFrameworkCore;
 using SugarTalk.Core.Domain.Meeting;
 using SugarTalk.Core.Domain.Account;
 using SugarTalk.Messages.Dto.Meetings;
+using SugarTalk.Messages.Dto.Meetings.Speak;
 using SugarTalk.Messages.Enums.Meeting;
 using SugarTalk.Messages.Requests.Meetings;
 
@@ -160,7 +161,7 @@ public partial class MeetingDataProvider
                 MeetingEndDate = meeting.EndDate,
                 Url = meetingRecord.Url,
                 Summary = meetingSummary == null? null : meetingSummary.Summary,
-                MeetingRecordDetail = meetingRecordDetails.Select(x => _mapper.Map<MeetingRecordDetail>(x)).ToList()
+                MeetingRecordDetail = meetingRecordDetails.Select(x => _mapper.Map<MeetingSpeakDetailDto>(x)).ToList()
             }
         ).FirstOrDefaultAsync(cancellationToken).ConfigureAwait(false);
 
