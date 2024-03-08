@@ -90,7 +90,10 @@ public partial class MeetingService
 
         if (userSessions is not { Count: > 0 }) return new GetMeetingAudioListResponse();
 
-        var userSessionDicByUserId = userSessions.ToDictionary(x => x.UserId, x => x);
+        var userSessionDicByUserId = userSessions
+            .GroupBy(x => x.UserId)
+            .Select(g => g.First())
+            .ToDictionary(x => x.UserId, x => x);
         
         foreach (var meetingSpeech in meetingSpeechesDto)
         {
