@@ -83,12 +83,14 @@ public class OpenAiService : IOpenAiService
         var audioBytes = await _ffmpegService.ConvertFileFormatAsync(file, fileType, cancellationToken).ConfigureAwait(false);
     
         var splitAudios = await _ffmpegService.SpiltAudioAsync(audioBytes, speakStartTimeVideo, speakEndTimeVideo, cancellationToken).ConfigureAwait(false);
-    
+
+        var reSplitAudios = await _ffmpegService.SplitAudioAsync(splitAudios.FirstOrDefault(), secondsPerAudio: 60 * 2, cancellationToken: cancellationToken).ConfigureAwait(false);
+        
         var transcriptionResult = new StringBuilder();
     
-        foreach (var audio in splitAudios)
+        foreach (var reSplitAudio in reSplitAudios)
         {
-            var transcriptionResponse = await CreateTranscriptionAsync(audio, language, fileType, responseFormat, cancellationToken).ConfigureAwait(false);
+            var transcriptionResponse = await CreateTranscriptionAsync(reSplitAudio, language, fileType, responseFormat, cancellationToken).ConfigureAwait(false);
             
             transcriptionResult.Append(transcriptionResponse?.Text);
         }
