@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using SugarTalk.Messages.Dto.Meetings.Speak;
 
 namespace SugarTalk.Messages.Dto.Meetings;
 
@@ -17,16 +18,7 @@ public class GetMeetingRecordDetailsDto
     
     public string Url { get; set; }
 
-    public List<MeetingRecordDetail> MeetingRecordDetail { get; set; }
+    public List<MeetingSpeakDetailDto> MeetingRecordDetail { get; set; }
    
     public string Summary { get; set; }
-}
-
-public class MeetingRecordDetail
-{
-    public int UserId { get; set; }
-   
-    public long SpeakStartTime { get; set; }
-   
-    public string SpeakContent { get; set; }
 }

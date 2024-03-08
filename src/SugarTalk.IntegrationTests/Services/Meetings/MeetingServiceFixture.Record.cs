@@ -558,6 +558,7 @@ public partial class MeetingServiceFixture
                 CreatedDate = DateTimeOffset.Now,
                 TrackId = "1",
                 MeetingNumber = meetingNumber,
+                FileTranscriptionStatus = FileTranscriptionStatus.Pending
             },
             new MeetingSpeakDetail
             {
@@ -565,11 +566,13 @@ public partial class MeetingServiceFixture
                 MeetingRecordId = Guid.Parse(recordId),
                 UserId = 2,
                 SpeakStartTime = new DateTimeOffset(2024, 1, 1, 0, 0, 0, TimeSpan.Zero).ToUnixTimeSeconds(),
+                SpeakEndTime = new DateTimeOffset(2024, 1, 1, 0, 0, 0, TimeSpan.Zero).ToUnixTimeSeconds(),
                 SpeakContent = meetingContent2,
                 SpeakStatus = SpeakStatus.Speaking,
                 CreatedDate = DateTimeOffset.Now,
                 TrackId = "2",
                 MeetingNumber = meetingNumber,
+                FileTranscriptionStatus = FileTranscriptionStatus.Completed
             }
         };
 
@@ -612,11 +615,22 @@ public partial class MeetingServiceFixture
             
             result.Data.MeetingRecordDetail.FirstOrDefault(x => x.UserId == 1).ShouldNotBeNull();
             result.Data.MeetingRecordDetail.FirstOrDefault(x => x.UserId == 1)?.SpeakContent.ShouldBe(meetingContent1);
+            result.Data.MeetingRecordDetail.FirstOrDefault(x=>x.UserId == 1).MeetingNumber.ShouldBe(meetingNumber);
+            result.Data.MeetingRecordDetail.FirstOrDefault(x=>x.UserId == 1).SpeakStatus.ShouldBe(SpeakStatus.Speaking);
+            result.Data.MeetingRecordDetail.FirstOrDefault(x=>x.UserId == 1).TrackId.ShouldBe("1");
+            result.Data.MeetingRecordDetail.FirstOrDefault(x=>x.UserId == 1).SpeakEndTime.ShouldBeNull();
+            result.Data.MeetingRecordDetail.FirstOrDefault(x => x.UserId == 1)?.FileTranscriptionStatus.ShouldBe(FileTranscriptionStatus.Pending);
             result.Data.MeetingRecordDetail.FirstOrDefault(x => x.UserId == 1)?.SpeakStartTime
                 .ShouldBe(new DateTimeOffset(2024, 1, 1, 0, 0, 0, TimeSpan.Zero).ToUnixTimeSeconds());
             
             result.Data.MeetingRecordDetail.FirstOrDefault(x => x.UserId == 2).ShouldNotBeNull();
             result.Data.MeetingRecordDetail.FirstOrDefault(x => x.UserId == 2)?.SpeakContent.ShouldBe(meetingContent2);
+            result.Data.MeetingRecordDetail.FirstOrDefault(x=>x.UserId == 2).MeetingNumber.ShouldBe(meetingNumber);
+            result.Data.MeetingRecordDetail.FirstOrDefault(x=>x.UserId == 2).SpeakStatus.ShouldBe(SpeakStatus.Speaking);
+            result.Data.MeetingRecordDetail.FirstOrDefault(x=>x.UserId == 2).TrackId.ShouldBe("2");
+            result.Data.MeetingRecordDetail.FirstOrDefault(x=>x.UserId == 2).FileTranscriptionStatus.ShouldBe(FileTranscriptionStatus.Completed);
+            result.Data.MeetingRecordDetail.FirstOrDefault(x=>x.UserId == 2).SpeakEndTime
+                .ShouldBe(new DateTimeOffset(2024, 1, 1, 0, 0, 0, TimeSpan.Zero).ToUnixTimeSeconds());
             result.Data.MeetingRecordDetail.FirstOrDefault(x => x.UserId == 2)?.SpeakStartTime
                 .ShouldBe(new DateTimeOffset(2024, 1, 1, 0, 0, 0, TimeSpan.Zero).ToUnixTimeSeconds());
         }, builder =>
@@ -626,7 +640,7 @@ public partial class MeetingServiceFixture
             builder.RegisterInstance(openAiService);
         });
     }
-    
+     
     [Theory]
     [InlineData("mock url", "mock url1", "mock url2" )]
     public async Task CanGetNewMeetingRecordByMeetingRecordId(string url, string url2, string url3)
