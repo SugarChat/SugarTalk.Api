@@ -209,6 +209,15 @@ public class MeetingController : ControllerBase
         
         return Ok(response);
     }
+
+    [Route("recording/translation"), HttpGet]
+    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(GetMeetingSpeakTranslationResponse))]
+    public async Task<IActionResult> GetMeetingSpeakTranslationAsync(GetMeetingSpeakTranslationRequest request, CancellationToken cancellationToken)
+    {
+        var response = await _mediator.RequestAsync<GetMeetingSpeakTranslationRequest, GetMeetingSpeakTranslationResponse>(request, cancellationToken).ConfigureAwait(false);
+
+        return Ok(response);
+    }
     
     #endregion
     
