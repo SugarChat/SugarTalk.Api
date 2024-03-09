@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
 using Serilog;
 using System.Linq;
 using System.Threading;
@@ -11,14 +10,17 @@ using SugarTalk.Messages.Enums.Meeting.Speak;
 using SugarTalk.Messages.Events.Meeting.Speak;
 using SugarTalk.Messages.Commands.Meetings.Speak;
 using SugarTalk.Core.Services.Meetings.Exceptions;
-using SugarTalk.Messages.Dto.LiveKit.Egress;
 using SugarTalk.Messages.Enums.OpenAi;
+using CompletionsRequestMessageDto = SugarTalk.Messages.Dto.OpenAi.CompletionsRequestMessageDto;
+using OpenAiModel = SugarTalk.Messages.Enums.OpenAi.OpenAiModel;
 
 namespace SugarTalk.Core.Services.Meetings;
 
 public partial interface IMeetingService
 {
     Task<MeetingSpeakRecordedEvent> RecordMeetingSpeakAsync(RecordMeetingSpeakCommand command, CancellationToken cancellationToken);
+
+    Task OptimizeTranscribedContent(MeetingSpeakDetail speakDetail, CancellationToken cancellationToken);
 }
 
 public partial class MeetingService
@@ -88,11 +90,16 @@ public partial class MeetingService
         
         try
         {
-            speakDetail.SpeakContent = await _openAiService.TranscriptionAsync(
+            speakDetail.OriginalContent = await _openAiService.TranscriptionAsync(
                 recordFile, TranscriptionLanguage.Chinese, speakStartTimeVideo, speakEndTimeVideo,
                 TranscriptionFileType.Mp4, TranscriptionResponseFormat.Text, cancellationToken: cancellationToken).ConfigureAwait(false);
+            
+            _backgroundJobClient.Enqueue<IMeetingService>(x => x.OptimizeTranscribedContent(speakDetail, cancellationToken));
 
+            Log.Information("Complete transcribed content optimization" );
+            
             speakDetail.FileTranscriptionStatus = FileTranscriptionStatus.Completed;
+            
         }
         catch (Exception ex)
         {
@@ -104,5 +111,28 @@ public partial class MeetingService
         {
             await _meetingDataProvider.UpdateMeetingSpeakDetailAsync(speakDetail, cancellationToken: cancellationToken).ConfigureAwait(false);
         }
+    }
+
+    public async Task OptimizeTranscribedContent (MeetingSpeakDetail speakDetail, CancellationToken cancellationToken)
+    {
+        var message = new List<CompletionsRequestMessageDto>()
+        {
+            new ()
+            {
+                Role = "system",
+                Content = "你是一个会议智能助手，你可以概括含糊其辞的内容转化简单通俗易懂的句子." +
+                          "你的目标是根据所获取到的内容提供更加清晰和易于理解的内容，同时尽可能保持原有意思的准确性," +
+                          "请根据上下文和语句进行智能优化，进行纠正语句的语法，以至于段落信息变的更加通顺合理，但是请记住不要在你获取的段落中任何额外信息"
+            },
+            new() { Role = "user", Content = $"输入: {speakDetail.OriginalContent}, 返回: "}
+        };
+        
+        var smartContent = await _openAiService.ChatCompletionsAsync(message, model: OpenAiModel.Gpt35Turbo, cancellationToken: cancellationToken).ConfigureAwait(false);
+        
+        Log.Information("OriginalContent: {OriginalContent},\n SmartContent: {SmartContent}", speakDetail.OriginalContent, smartContent);
+
+        speakDetail.SmartContent = smartContent.Response;
+        
+        await _meetingDataProvider.UpdateMeetingSpeakDetailAsync(speakDetail, true, cancellationToken).ConfigureAwait(false);
     }
 }

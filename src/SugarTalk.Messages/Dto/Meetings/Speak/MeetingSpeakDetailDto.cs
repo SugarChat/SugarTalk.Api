@@ -21,7 +21,9 @@ public class MeetingSpeakDetailDto
     
     public SpeakStatus SpeakStatus { get; set; }
     
-    public string SpeakContent { get; set; }
+    public string OriginalContent { get; set; }
+    
+    public string SmartContent { get; set; }
     
     public FileTranscriptionStatus FileTranscriptionStatus { get; set; }
     

@@ -22,6 +22,7 @@ using SugarTalk.Messages.Commands.Meetings;
 using SugarTalk.Messages.Enums.Meeting;
 using SugarTalk.Messages.Requests.Meetings;
 using SugarTalk.Messages.Dto.LiveKit.Egress;
+using SugarTalk.Messages.Dto.OpenAi;
 using SugarTalk.Messages.Dto.Translation;
 using SugarTalk.Messages.Enums.Meeting.Speak;
 using SugarTalk.Messages.Enums.Meeting.Summary;
@@ -553,7 +554,7 @@ public partial class MeetingServiceFixture
                 MeetingRecordId = Guid.Parse(recordId),
                 UserId = 1,
                 SpeakStartTime = new DateTimeOffset(2024, 1, 1, 0, 0, 0, TimeSpan.Zero).ToUnixTimeSeconds(),
-                SpeakContent = meetingContent1,
+                OriginalContent = meetingContent1,
                 SpeakStatus = SpeakStatus.Speaking,
                 CreatedDate = DateTimeOffset.Now,
                 TrackId = "1",
@@ -566,8 +567,9 @@ public partial class MeetingServiceFixture
                 MeetingRecordId = Guid.Parse(recordId),
                 UserId = 2,
                 SpeakStartTime = new DateTimeOffset(2024, 1, 1, 0, 0, 0, TimeSpan.Zero).ToUnixTimeSeconds(),
+                OriginalContent = meetingContent2, 
+                SmartContent = "I am a test smart content.",
                 SpeakEndTime = new DateTimeOffset(2024, 1, 1, 0, 0, 0, TimeSpan.Zero).ToUnixTimeSeconds(),
-                SpeakContent = meetingContent2,
                 SpeakStatus = SpeakStatus.Speaking,
                 CreatedDate = DateTimeOffset.Now,
                 TrackId = "2",
@@ -614,7 +616,7 @@ public partial class MeetingServiceFixture
             result.Data.MeetingRecordDetail.ShouldNotBeNull();
             
             result.Data.MeetingRecordDetail.FirstOrDefault(x => x.UserId == 1).ShouldNotBeNull();
-            result.Data.MeetingRecordDetail.FirstOrDefault(x => x.UserId == 1)?.SpeakContent.ShouldBe(meetingContent1);
+            result.Data.MeetingRecordDetail.FirstOrDefault(x => x.UserId == 1)?.OriginalContent.ShouldBe(meetingContent1);
             result.Data.MeetingRecordDetail.FirstOrDefault(x=>x.UserId == 1).MeetingNumber.ShouldBe(meetingNumber);
             result.Data.MeetingRecordDetail.FirstOrDefault(x=>x.UserId == 1).SpeakStatus.ShouldBe(SpeakStatus.Speaking);
             result.Data.MeetingRecordDetail.FirstOrDefault(x=>x.UserId == 1).TrackId.ShouldBe("1");
@@ -624,7 +626,8 @@ public partial class MeetingServiceFixture
                 .ShouldBe(new DateTimeOffset(2024, 1, 1, 0, 0, 0, TimeSpan.Zero).ToUnixTimeSeconds());
             
             result.Data.MeetingRecordDetail.FirstOrDefault(x => x.UserId == 2).ShouldNotBeNull();
-            result.Data.MeetingRecordDetail.FirstOrDefault(x => x.UserId == 2)?.SpeakContent.ShouldBe(meetingContent2);
+            result.Data.MeetingRecordDetail.FirstOrDefault(x => x.UserId == 2)?.OriginalContent.ShouldBe(meetingContent2);
+            result.Data.MeetingRecordDetail.FirstOrDefault(x=>x.UserId == 2).SmartContent.ShouldBe("I am a test smart content.");
             result.Data.MeetingRecordDetail.FirstOrDefault(x=>x.UserId == 2).MeetingNumber.ShouldBe(meetingNumber);
             result.Data.MeetingRecordDetail.FirstOrDefault(x=>x.UserId == 2).SpeakStatus.ShouldBe(SpeakStatus.Speaking);
             result.Data.MeetingRecordDetail.FirstOrDefault(x=>x.UserId == 2).TrackId.ShouldBe("2");
@@ -801,6 +804,26 @@ public partial class MeetingServiceFixture
             
             openAiService.GetAsync<byte[]>(Arg.Any<string>(), Arg.Any<CancellationToken>())
                 .Returns(fileContent);
+
+            openAiService.ChatCompletionsAsync(
+                    Arg.Any<List<CompletionsRequestMessageDto>>(), 
+                    Arg.Any<List<CompletionsRequestFunctionDto>>(), 
+                    Arg.Any<CompletionsRequestFunctionCallDto>(), 
+                    Arg.Any<OpenAiModel>(), null, Arg.Any<double>(),
+                    Arg.Any<bool>(),  Arg.Any<CancellationToken>())
+                .Returns(new CompletionsResponseDto
+                {
+                    Choices = new List<CompletionsChoiceDto>
+                    {
+                        new()
+                        {
+                            Message = new CompletionsChoiceMessageDto
+                            {
+                                Content = "I'm smart content"
+                            }
+                        }
+                    }
+                });
             
             openAiService.TranscriptionAsync(Arg.Any<byte[]>(), Arg.Any<TranscriptionLanguage?>(),
                 Arg.Any<long>(), Arg.Any<long>(), Arg.Any<TranscriptionFileType>(), Arg.Any<TranscriptionResponseFormat>(),
@@ -827,8 +850,9 @@ public partial class MeetingServiceFixture
             afterGetMeetingDetail.Count.ShouldBe(2);
             afterGetMeetingDetail.FirstOrDefault(x => x.Id == 1)?.FileTranscriptionStatus.ShouldBe(FileTranscriptionStatus.Completed);
             afterGetMeetingDetail.FirstOrDefault(x => x.Id == 2)?.FileTranscriptionStatus.ShouldBe(FileTranscriptionStatus.Completed);
-            afterGetMeetingDetail.FirstOrDefault(x => x.Id == 1)?.SpeakContent.ShouldBe(audioContent);
-            afterGetMeetingDetail.FirstOrDefault(x => x.Id == 2)?.SpeakContent.ShouldBe(audioContent);
+            afterGetMeetingDetail.FirstOrDefault(x => x.Id == 1)?.OriginalContent.ShouldBe(audioContent);
+            afterGetMeetingDetail.FirstOrDefault(x => x.Id == 2)?.OriginalContent.ShouldBe(audioContent);
+            afterGetMeetingDetail.FirstOrDefault(x => x.Id == 1)?.SmartContent.ShouldBe("I'm smart content");
         });
     }
 }
