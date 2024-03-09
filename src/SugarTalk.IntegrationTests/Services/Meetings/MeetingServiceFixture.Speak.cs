@@ -1,7 +1,5 @@
 using Xunit;
 using System;
-using System.Collections.Generic;
-using System.IO;
 using Autofac;
 using Shouldly;
 using System.Linq;
@@ -11,6 +9,7 @@ using Mediator.Net;
 using System.Threading;
 using SugarTalk.Core.Data;
 using System.Threading.Tasks;
+using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
 using SugarTalk.Core.Domain.Meeting;
 using SugarTalk.Core.Services.Identity;
@@ -18,12 +17,11 @@ using SugarTalk.Core.Validators.Commands;
 using SugarTalk.Core.Services.Http.Clients;
 using SugarTalk.Core.Services.LiveKit;
 using SugarTalk.Core.Services.OpenAi;
-using SugarTalk.Messages.Commands.Meetings;
 using SugarTalk.Messages.Enums.Meeting.Speak;
 using SugarTalk.Messages.Commands.Meetings.Speak;
 using SugarTalk.Messages.Dto.LiveKit.Egress;
+using SugarTalk.Messages.Dto.OpenAi;
 using SugarTalk.Messages.Dto.Users;
-using SugarTalk.Messages.Enums.Meeting;
 using SugarTalk.Messages.Enums.OpenAi;
 
 namespace SugarTalk.IntegrationTests.Services.Meetings;
@@ -153,6 +151,23 @@ public partial class MeetingServiceFixture
             openAiService.GetAsync<byte[]>(Arg.Any<string>(), Arg.Any<CancellationToken>())
                 .Returns(fileContent);
             
+            openAiService.ChatCompletionsAsync(
+                    Arg.Any<List<CompletionsRequestMessageDto>>(), 
+                    Arg.Any<List<CompletionsRequestFunctionDto>>(), 
+                    Arg.Any<CompletionsRequestFunctionCallDto>(), 
+                    Arg.Any<OpenAiModel>(), Arg.Any<int>(), Arg.Any<double>(), 
+                    Arg.Any<bool>(), Arg.Any<CancellationToken>())
+                .Returns(new CompletionsResponseDto
+                {
+                    Choices = new List<CompletionsChoiceDto>
+                    {
+                        new()
+                        {
+                            Text = "I'm smart content"
+                        }
+                    }
+                });
+           
             liveKitServerUtilService.GenerateTokenForRecordMeeting(Arg.Any<UserAccountDto>(), Arg.Any<string>())
                 .Returns("token123");
             
