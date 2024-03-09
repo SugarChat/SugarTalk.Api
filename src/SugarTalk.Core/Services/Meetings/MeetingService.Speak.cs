@@ -94,7 +94,7 @@ public partial class MeetingService
                 recordFile, TranscriptionLanguage.Chinese, speakStartTimeVideo, speakEndTimeVideo,
                 TranscriptionFileType.Mp4, TranscriptionResponseFormat.Text, cancellationToken: cancellationToken).ConfigureAwait(false);
             
-            _backgroundJobClient.Enqueue<IMeetingService>(x=>x.OptimizeTranscribedContent(speakDetail, cancellationToken));
+            _backgroundJobClient.Enqueue<IMeetingService>(x => x.OptimizeTranscribedContent(speakDetail, cancellationToken));
 
             Log.Information("Complete transcribed content optimization" );
             
