@@ -3,6 +3,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using AutoMapper.QueryableExtensions;
 using Microsoft.EntityFrameworkCore;
 using SugarTalk.Messages.Dto.Translation;
 using SugarTalk.Core.Domain.Meeting;
@@ -25,7 +26,7 @@ public partial interface IMeetingDataProvider
     
     Task PersistMeetingRecordAsync(Guid meetingId, Guid meetingRecordId, string egressId, CancellationToken cancellationToken);
     
-    Task<GetMeetingRecordDetailsResponse> GetMeetingRecordDetailsAsync(Guid recordId, TranslationLanguage language, CancellationToken cancellationToken);
+    Task<GetMeetingRecordDetailsResponse> GetMeetingRecordDetailsAsync(Guid recordId, TranslationLanguage? language, CancellationToken cancellationToken);
     
     Task UpdateMeetingRecordAsync(MeetingRecord record, CancellationToken cancellationToken);
     
@@ -142,17 +143,17 @@ public partial class MeetingDataProvider
         }, cancellationToken).ConfigureAwait(false);
     }
     
-    public async Task<GetMeetingRecordDetailsResponse> GetMeetingRecordDetailsAsync(Guid recordId, TranslationLanguage language, CancellationToken cancellationToken)
+    public async Task<GetMeetingRecordDetailsResponse> GetMeetingRecordDetailsAsync(Guid recordId, TranslationLanguage? language, CancellationToken cancellationToken)
     {
         var currentUser = await _accountDataProvider
             .GetUserAccountAsync(_currentUser.Id.Value, cancellationToken: cancellationToken).ConfigureAwait(false);
 
         if (currentUser is null) throw new UnauthorizedAccessException();
-
+   
         var meetingRecordDetails = await (from speak in _repository.QueryNoTracking<MeetingSpeakDetail>()
             join translation in _repository.QueryNoTracking<MeetingSpeakDetailTranslationRecord>() on speak.Id equals translation.MeetingSpeakDetailId into translations
             from translation in translations.DefaultIfEmpty()
-            where speak.MeetingRecordId == recordId && translation.Language == language 
+            where speak.MeetingRecordId == recordId && translation.Language == language
             select new MeetingSpeakDetailDto
             {
                 Id = speak.Id,
@@ -166,8 +167,8 @@ public partial class MeetingDataProvider
                 SpeakStartTime = speak.SpeakStartTime,
                 OriginalContent = speak.OriginalContent,
                 MeetingRecordId = speak.MeetingRecordId,
-                OriginalTranslationContent = translation.OriginalTranslationContent,
-                SmartTranslationContent = translation.SmartTranslationContent,
+                OriginalTranslationContent = translation != null ? translation.OriginalTranslationContent : null,
+                SmartTranslationContent = translation != null ? translation.SmartTranslationContent : null,
                 FileTranscriptionStatus = speak.FileTranscriptionStatus,
                 CreatedDate = speak.CreatedDate
             }).ToListAsync(cancellationToken).ConfigureAwait(false);

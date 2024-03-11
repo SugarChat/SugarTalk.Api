@@ -10,7 +10,7 @@ public class GetMeetingRecordDetailsRequest : IRequest
 {
     public Guid Id { get; set; }
 
-    public TranslationLanguage Language { get; set; }
+    public TranslationLanguage? Language { get; set; }
 }
 
 public class GetMeetingRecordDetailsResponse : SugarTalkResponse<GetMeetingRecordDetailsDto>
