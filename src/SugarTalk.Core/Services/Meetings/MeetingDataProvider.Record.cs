@@ -112,7 +112,9 @@ public partial class MeetingDataProvider
                 UrlStatus = x.Record.UrlStatus
             }).ToListAsync(cancellationToken);
         
-        return (total, joinResult);
+        var items = joinResult.GroupBy(x => x.MeetingRecordId).Select(g => g.First()).ToList();
+        
+        return (total, items);
     }
 
     public async Task DeleteMeetingRecordAsync(List<Guid> meetingRecordIds, CancellationToken cancellationToken)
