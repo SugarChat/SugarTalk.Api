@@ -231,8 +231,7 @@ public partial class MeetingService
             {
                 Language = request.Language,
                 MeetingRecordId = request.Id,
-                MeetingSpeakDetailId = speak.Id,
-                Status = MeetingBackLoadingStatus.Pending
+                MeetingSpeakDetailId = speak.Id
             });
             
             _backgroundJobClient.Enqueue(() => GenerateProcessSpeakTranslationAsync(speak, request.Language, cancellationToken));
