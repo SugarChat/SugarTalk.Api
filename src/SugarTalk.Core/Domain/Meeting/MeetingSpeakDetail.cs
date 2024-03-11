@@ -25,6 +25,9 @@ public class MeetingSpeakDetail : IEntity
     [Column("user_id")]
     public int UserId { get; set; }
     
+    [Column("username"), StringLength(128)]
+    public string Username { get; set; }
+    
     [Column("speak_start_time")]
     public long SpeakStartTime { get; set; }
     

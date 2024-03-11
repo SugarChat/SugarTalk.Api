@@ -49,6 +49,7 @@ public partial class MeetingService
         var speakDetail = new MeetingSpeakDetail
         {
             TrackId = command.TrackId,
+            Username = _currentUser.Name,
             UserId = _currentUser.Id.Value,
             MeetingNumber = command.MeetingNumber,
             MeetingRecordId = command.MeetingRecordId,
