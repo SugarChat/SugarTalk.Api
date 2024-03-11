@@ -1,4 +1,5 @@
 using System;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using SugarTalk.Messages.Enums.Speech;
 using SugarTalk.Messages.Dto.Translation;
@@ -10,10 +11,13 @@ public class MeetingSpeakDetailTranslationRecord : IEntity
 {
     public MeetingSpeakDetailTranslationRecord()
     {
+        SmartTranslationContent = null;
         CreatedDate = DateTimeOffset.Now;
+        OriginalTranslationContent = null;
         Status = MeetingBackLoadingStatus.Pending;
     }
 
+    [Key]
     [Column("id")]
     public int Id { get; set; }
 

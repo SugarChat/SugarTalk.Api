@@ -244,8 +244,8 @@ public partial class MeetingDataProvider
         var query = _repository.QueryNoTracking<MeetingSpeakDetailTranslationRecord>()
             .Where(x => x.MeetingRecordId == meetingRecordId && x.Language == language && x.Status == MeetingBackLoadingStatus.Completed);
 
-        if (meetingSpeakDetailId != null)
-            query = query.Where(x => x.MeetingSpeakDetailId == meetingSpeakDetailId);
+        if (meetingSpeakDetailId.HasValue)
+            query = query.Where(x => x.MeetingSpeakDetailId == meetingSpeakDetailId.Value);
 
         return await query.ToListAsync(cancellationToken).ConfigureAwait(false);
     }
