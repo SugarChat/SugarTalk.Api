@@ -222,7 +222,7 @@ public partial class MeetingService
         };
     }
     
-    private async Task GenerateProcessSpeakTranslationAsync(List<MeetingSpeakDetail> meetingSpeeches, TranslationLanguage language, CancellationToken cancellationToken)
+    public async Task GenerateProcessSpeakTranslationAsync(List<MeetingSpeakDetail> meetingSpeeches, TranslationLanguage language, CancellationToken cancellationToken)
     {
         var addTranslationRecords = new List<MeetingSpeakDetailTranslationRecord>();
 
