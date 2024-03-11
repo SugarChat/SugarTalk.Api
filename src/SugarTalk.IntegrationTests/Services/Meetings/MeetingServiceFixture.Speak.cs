@@ -155,7 +155,7 @@ public partial class MeetingServiceFixture
                     Arg.Any<List<CompletionsRequestMessageDto>>(), 
                     Arg.Any<List<CompletionsRequestFunctionDto>>(), 
                     Arg.Any<CompletionsRequestFunctionCallDto>(), 
-                    Arg.Any<OpenAiModel>(), Arg.Any<int>(), Arg.Any<double>(), 
+                    Arg.Any<OpenAiModel>(), Arg.Any<CompletionResponseFormatDto>(), Arg.Any<int>(), Arg.Any<double>(), 
                     Arg.Any<bool>(), Arg.Any<CancellationToken>())
                 .Returns(new CompletionsResponseDto
                 {
