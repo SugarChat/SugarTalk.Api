@@ -37,7 +37,7 @@ public partial interface IMeetingDataProvider
     
     Task UpdateMeetingRecordUrlStatusAsync(Guid meetingRecordId, MeetingRecordUrlStatus urlStatus, CancellationToken cancellationToken);
     
-    Task<List<MeetingSpeakDetail>> GetMeetingDetailsByRecordIdAsync(Guid meetingRecordId, CancellationToken cancellationToken = default);
+    Task<List<MeetingSpeakDetail>> GetMeetingDetailsByRecordIdAsync(Guid meetingRecordId, CancellationToken cancellationToken);
     
     Task<List<MeetingSpeakDetailTranslationRecord>> GetMeetingDetailsTranslationRecordAsync(Guid meetingRecordId, TranslationLanguage language, int? meetingSpeakDetailId = null, CancellationToken cancellationToken = default);
     
@@ -153,6 +153,9 @@ public partial class MeetingDataProvider
         var meetingRecordDetails = await _repository.QueryNoTracking<MeetingSpeakDetail>()
             .Where(x => x.MeetingRecordId == recordId).ToListAsync(cancellationToken).ConfigureAwait(false);
 
+        var meetingRecordTranslationDetails = await _repository.QueryNoTracking<MeetingSpeakDetailTranslationRecord>()
+            .Where(x => x.MeetingRecordId == recordId).ToListAsync(cancellationToken).ConfigureAwait(false);
+
         var meetingInfo = await (
             from meetingRecord in _repository.QueryNoTracking<MeetingRecord>()
             join meeting in _repository.QueryNoTracking<Meeting>() on meetingRecord.MeetingId equals meeting.Id
@@ -169,7 +172,9 @@ public partial class MeetingDataProvider
                 MeetingEndDate = meeting.EndDate,
                 Url = meetingRecord.Url,
                 Summary = meetingSummary == null? null : meetingSummary.Summary,
-                MeetingRecordDetail = meetingRecordDetails.Select(x => _mapper.Map<MeetingSpeakDetailDto>(x)).ToList()
+                MeetingRecordDetail = meetingRecordDetails.Select(x => _mapper.Map<MeetingSpeakDetailDto>(x)).ToList(),
+                MeetingSpeakTranslationDetail = meetingRecordTranslationDetails.Count != 0 
+                    ? meetingRecordTranslationDetails.Select(x => _mapper.Map<MeetingSpeakTranslationDetailDto>(x)).ToList() : null
             }
         ).FirstOrDefaultAsync(cancellationToken).ConfigureAwait(false);
 
@@ -227,7 +232,7 @@ public partial class MeetingDataProvider
         await _unitOfWork.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
     }
 
-    public async Task<List<MeetingSpeakDetail>> GetMeetingDetailsByRecordIdAsync(Guid meetingRecordId, CancellationToken cancellationToken = default)
+    public async Task<List<MeetingSpeakDetail>> GetMeetingDetailsByRecordIdAsync(Guid meetingRecordId, CancellationToken cancellationToken)
     {
         return await _repository.Query<MeetingSpeakDetail>().Where(x=>x.MeetingRecordId == meetingRecordId).ToListAsync(cancellationToken).ConfigureAwait(false);
     }
