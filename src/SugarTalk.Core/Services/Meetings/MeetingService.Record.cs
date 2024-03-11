@@ -1,16 +1,22 @@
 using SugarTalk.Messages.Commands.Meetings;
 using SugarTalk.Messages.Dto.Meetings;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Mediator.Net;
 using Serilog;
+using SugarTalk.Core.Domain.Meeting;
 using SugarTalk.Core.Services.Exceptions;
 using SugarTalk.Messages.Dto.LiveKit.Egress;
+using SugarTalk.Messages.Dto.Meetings.Speak;
+using SugarTalk.Messages.Dto.Translation;
 using SugarTalk.Messages.Enums.Meeting;
+using SugarTalk.Messages.Enums.Speech;
 using SugarTalk.Messages.Events.Meeting;
 using SugarTalk.Messages.Events.Meeting.Summary;
+using SugarTalk.Messages.Extensions;
 using SugarTalk.Messages.Requests.Meetings;
 
 namespace SugarTalk.Core.Services.Meetings;
@@ -30,6 +36,8 @@ public partial interface IMeetingService
     Task<DelayedMeetingRecordingStorageEvent> ExecuteStorageMeetingRecordVideoDelayedJobAsync(DelayedMeetingRecordingStorageCommand command, CancellationToken cancellationToken);
 
     Task DelayStorageMeetingRecordVideoJobAsync(string egressId, Guid meetingRecordId, string token, int reTryLimit, CancellationToken cancellationToken);
+    
+    Task<GetMeetingSpeakTranslationResponse> GetMeetingSpeakTranslationAsync(GetMeetingSpeakTranslationRequest request, CancellationToken cancellationToken);
 }
 
 public partial class MeetingService
@@ -196,5 +204,70 @@ public partial class MeetingService
         {
             await TranscriptionMeetingAsync(meetingDetail, meetingRecord, cancellationToken);
         }
+    }
+
+    public async Task<GetMeetingSpeakTranslationResponse> GetMeetingSpeakTranslationAsync(
+        GetMeetingSpeakTranslationRequest request, CancellationToken cancellationToken)
+    {
+        var meetingRecordDetails = await _meetingDataProvider.GetMeetingDetailsByRecordIdAsync(request.Id, cancellationToken).ConfigureAwait(false);
+        
+        var meetingTranslationRecordDetails = await _meetingDataProvider.GetMeetingDetailsTranslationRecordAsync(request.Id, request.Language, cancellationToken: cancellationToken).ConfigureAwait(false);
+        
+        if (meetingTranslationRecordDetails is { Count: > 0 })
+            return new GetMeetingSpeakTranslationResponse
+            {
+               Data = new GetMeetingSpeakTranslationDto
+               {
+                   MeetingSpeakDetail = meetingRecordDetails.Select(x => _mapper.Map<MeetingSpeakDetailDto>(x)).ToList(),
+                   MeetingSpeakTranslationDetail = meetingTranslationRecordDetails.Select(x => _mapper.Map<MeetingSpeakTranslationDetailDto>(x)).ToList()
+               }
+            };
+        
+        var addTranslationRecords = new List<MeetingSpeakDetailTranslationRecord>();
+
+        foreach (var speak in meetingRecordDetails)
+        {
+            addTranslationRecords.Add(new MeetingSpeakDetailTranslationRecord
+            {
+                Language = request.Language,
+                MeetingRecordId = request.Id,
+                MeetingSpeakDetailId = speak.Id,
+                Status = MeetingBackLoadingStatus.Pending
+            });
+            
+            _backgroundJobClient.Enqueue(() => GenerateProcessSpeakTranslationAsync(speak, request.Language, cancellationToken));
+        }
+        
+        await _meetingDataProvider.AddMeetingDetailsTranslationRecordAsync(addTranslationRecords, cancellationToken).ConfigureAwait(false);
+        
+        var againMeetingTranslationRecordDetails = await _meetingDataProvider.GetMeetingDetailsTranslationRecordAsync(request.Id, request.Language, cancellationToken: cancellationToken).ConfigureAwait(false);
+        
+        return new GetMeetingSpeakTranslationResponse
+        {
+            Data = new GetMeetingSpeakTranslationDto
+            {
+                MeetingSpeakDetail = meetingRecordDetails.Select(x => _mapper.Map<MeetingSpeakDetailDto>(x)).ToList(),
+                MeetingSpeakTranslationDetail = againMeetingTranslationRecordDetails.Select(x => _mapper.Map<MeetingSpeakTranslationDetailDto>(x)).ToList()
+            }
+        };
+    }
+    
+    private async Task GenerateProcessSpeakTranslationAsync(MeetingSpeakDetail meetingSpeech, TranslationLanguage language, CancellationToken cancellationToken)
+    {
+        var originalTranslationContent =  (await _translationClient.TranslateTextAsync(meetingSpeech.OriginalContent, language.GetDescription(), cancellationToken: cancellationToken).ConfigureAwait(false)).TranslatedText;
+            
+        var smartTranslationContent = (await _translationClient.TranslateTextAsync(meetingSpeech.SmartContent, language.GetDescription(), cancellationToken: cancellationToken).ConfigureAwait(false)).TranslatedText;
+
+        var meetingSpeakDetailTranslation = (await _meetingDataProvider.GetMeetingDetailsTranslationRecordAsync(
+        meetingSpeech.MeetingRecordId, language, meetingSpeech.Id, cancellationToken).ConfigureAwait(false)).FirstOrDefault();
+
+        if (meetingSpeakDetailTranslation != null)
+        {
+            meetingSpeakDetailTranslation.Status = MeetingBackLoadingStatus.Completed;
+            meetingSpeakDetailTranslation.OriginalTranslationContent = originalTranslationContent;
+            meetingSpeakDetailTranslation.SmartTranslationContent = smartTranslationContent;
+        }
+
+        await _meetingDataProvider.UpdateMeetingDetailsTranslationRecordAsync(meetingSpeakDetailTranslation, cancellationToken).ConfigureAwait(false);
     }
 }

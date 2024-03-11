@@ -4,11 +4,13 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
+using SugarTalk.Messages.Dto.Translation;
 using SugarTalk.Core.Domain.Meeting;
 using SugarTalk.Core.Domain.Account;
 using SugarTalk.Messages.Dto.Meetings;
 using SugarTalk.Messages.Dto.Meetings.Speak;
 using SugarTalk.Messages.Enums.Meeting;
+using SugarTalk.Messages.Enums.Speech;
 using SugarTalk.Messages.Requests.Meetings;
 
 namespace SugarTalk.Core.Services.Meetings;
@@ -35,7 +37,13 @@ public partial interface IMeetingDataProvider
     
     Task UpdateMeetingRecordUrlStatusAsync(Guid meetingRecordId, MeetingRecordUrlStatus urlStatus, CancellationToken cancellationToken);
     
-    Task<List<MeetingSpeakDetail>> GetMeetingDetailsByRecordIdAsync(Guid meetingRecordId, CancellationToken cancellationToken);
+    Task<List<MeetingSpeakDetail>> GetMeetingDetailsByRecordIdAsync(Guid meetingRecordId, CancellationToken cancellationToken = default);
+    
+    Task<List<MeetingSpeakDetailTranslationRecord>> GetMeetingDetailsTranslationRecordAsync(Guid meetingRecordId, TranslationLanguage language, int? meetingSpeakDetailId = null, CancellationToken cancellationToken = default);
+    
+    Task AddMeetingDetailsTranslationRecordAsync(List<MeetingSpeakDetailTranslationRecord> meetingSpeakDetails, CancellationToken cancellationToken);
+    
+    Task UpdateMeetingDetailsTranslationRecordAsync(MeetingSpeakDetailTranslationRecord translationRecord, CancellationToken cancellationToken);
 }
 
 public partial class MeetingDataProvider
@@ -219,8 +227,34 @@ public partial class MeetingDataProvider
         await _unitOfWork.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
     }
 
-    public async Task<List<MeetingSpeakDetail>> GetMeetingDetailsByRecordIdAsync(Guid meetingRecordId, CancellationToken cancellationToken)
+    public async Task<List<MeetingSpeakDetail>> GetMeetingDetailsByRecordIdAsync(Guid meetingRecordId, CancellationToken cancellationToken = default)
     {
         return await _repository.Query<MeetingSpeakDetail>().Where(x=>x.MeetingRecordId == meetingRecordId).ToListAsync(cancellationToken).ConfigureAwait(false);
+    }
+    
+    public async Task<List<MeetingSpeakDetailTranslationRecord>> GetMeetingDetailsTranslationRecordAsync(
+        Guid meetingRecordId, TranslationLanguage language, int? meetingSpeakDetailId = null, CancellationToken cancellationToken = default)
+    {
+        var query = _repository.QueryNoTracking<MeetingSpeakDetailTranslationRecord>()
+            .Where(x => x.MeetingRecordId == meetingRecordId && x.Language == language && x.Status == MeetingBackLoadingStatus.Completed);
+
+        if (meetingSpeakDetailId != null)
+            query = query.Where(x => x.MeetingSpeakDetailId == meetingSpeakDetailId);
+
+        return await query.ToListAsync(cancellationToken).ConfigureAwait(false);
+    }
+
+    public async Task AddMeetingDetailsTranslationRecordAsync(List<MeetingSpeakDetailTranslationRecord> meetingSpeakDetails, CancellationToken cancellationToken)
+    {
+        await _repository.InsertAllAsync(meetingSpeakDetails, cancellationToken).ConfigureAwait(false);
+
+        await _unitOfWork.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+    }
+
+    public async Task UpdateMeetingDetailsTranslationRecordAsync(MeetingSpeakDetailTranslationRecord translationRecord, CancellationToken cancellationToken)
+    {
+        await _repository.UpdateAsync(translationRecord, cancellationToken).ConfigureAwait(false);
+
+        await _unitOfWork.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
     }
 }

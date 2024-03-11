@@ -10,7 +10,7 @@ public class MeetingSpeechVoiceTable : IEntity
 {
     public MeetingSpeechVoiceTable()
     {
-        Status = SpeechAudioLoadStatus.Pending;
+        Status = MeetingBackLoadingStatus.Pending;
         CreatedDate = DateTimeOffset.Now;
     }
 
@@ -34,7 +34,7 @@ public class MeetingSpeechVoiceTable : IEntity
     public string VoiceUrl { get; set; }
 
     [Column("status")]
-    public SpeechAudioLoadStatus Status { get; set; }
+    public MeetingBackLoadingStatus Status { get; set; }
     
     [Column("created_date")]
     public DateTimeOffset CreatedDate { get; set; }
