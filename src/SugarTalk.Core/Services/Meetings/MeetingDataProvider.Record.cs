@@ -44,6 +44,8 @@ public partial interface IMeetingDataProvider
         Guid meetingRecordId, TranslationLanguage language, int? meetingSpeakDetailId = null, CancellationToken cancellationToken = default);
     
     Task AddMeetingDetailsTranslationRecordAsync(List<MeetingSpeakDetailTranslationRecord> meetingSpeakDetails, CancellationToken cancellationToken);
+    
+    Task UpdateMeetingDetailsTranslationRecordAsync(List<MeetingSpeakDetailTranslationRecord> meetingSpeakDetails, CancellationToken cancellationToken);
 }
 
 public partial class MeetingDataProvider
@@ -269,6 +271,14 @@ public partial class MeetingDataProvider
     public async Task AddMeetingDetailsTranslationRecordAsync(List<MeetingSpeakDetailTranslationRecord> meetingSpeakDetails, CancellationToken cancellationToken)
     {
         await _repository.InsertAllAsync(meetingSpeakDetails, cancellationToken).ConfigureAwait(false);
+
+        await _unitOfWork.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+    }
+
+    public async Task UpdateMeetingDetailsTranslationRecordAsync(
+        List<MeetingSpeakDetailTranslationRecord> meetingSpeakDetails, CancellationToken cancellationToken)
+    {
+        await _repository.UpdateAllAsync(meetingSpeakDetails, cancellationToken).ConfigureAwait(false);
 
         await _unitOfWork.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
     }

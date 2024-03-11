@@ -12,4 +12,7 @@ public enum MeetingBackLoadingStatus
     
     [Description("已完成")]
     Completed = 30,
+    
+    [Description("生成失败")]
+    Exception = 40
 }

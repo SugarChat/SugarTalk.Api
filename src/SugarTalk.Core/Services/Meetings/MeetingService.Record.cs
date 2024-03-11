@@ -6,11 +6,11 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Mediator.Net;
+using Microsoft.IdentityModel.Tokens;
 using Serilog;
 using SugarTalk.Core.Domain.Meeting;
 using SugarTalk.Core.Services.Exceptions;
 using SugarTalk.Messages.Dto.LiveKit.Egress;
-using SugarTalk.Messages.Dto.Meetings.Speak;
 using SugarTalk.Messages.Dto.Translation;
 using SugarTalk.Messages.Enums.Meeting;
 using SugarTalk.Messages.Enums.Speech;
@@ -213,8 +213,19 @@ public partial class MeetingService
         
         var meetingTranslationRecordDetails = await _meetingDataProvider.GetMeetingDetailsTranslationRecordAsync(command.MeetingRecordId, command.Language, cancellationToken: cancellationToken).ConfigureAwait(false);
 
-        if (meetingTranslationRecordDetails is {Count: 0})
-            _backgroundJobClient.Enqueue(() => GenerateProcessSpeakTranslationAsync(meetingRecordDetails, command.Language, cancellationToken));
+        if (meetingTranslationRecordDetails is { Count: 0 })
+        {
+            var addTranslationRecords = meetingRecordDetails.Select(x => new MeetingSpeakDetailTranslationRecord
+            {
+                Language = command.Language,
+                MeetingSpeakDetailId = x.Id,
+                MeetingRecordId = x.MeetingRecordId
+            }).ToList();
+            
+            await _meetingDataProvider.AddMeetingDetailsTranslationRecordAsync(addTranslationRecords, cancellationToken).ConfigureAwait(false);
+            
+            _backgroundJobClient.Enqueue(() => GenerateProcessSpeakTranslationAsync(addTranslationRecords, meetingRecordDetails, command.Language, cancellationToken));
+        }
         
         return new TranslatingMeetingSpeakResponse
         {
@@ -222,27 +233,32 @@ public partial class MeetingService
         };
     }
     
-    private async Task GenerateProcessSpeakTranslationAsync(List<MeetingSpeakDetail> meetingSpeeches, TranslationLanguage language, CancellationToken cancellationToken)
+    private async Task GenerateProcessSpeakTranslationAsync(List<MeetingSpeakDetailTranslationRecord> meetingSpeeches, List<MeetingSpeakDetail> meetingRecordDetails, TranslationLanguage language, CancellationToken cancellationToken)
     {
-        var addTranslationRecords = new List<MeetingSpeakDetailTranslationRecord>();
+        meetingSpeeches = meetingSpeeches.Select(x =>
+        {
+            x.Status = MeetingBackLoadingStatus.Progress;
 
-        foreach (var speak in meetingSpeeches)
+            return x;
+        }).ToList();
+        
+        await _meetingDataProvider.UpdateMeetingDetailsTranslationRecordAsync(meetingSpeeches, cancellationToken).ConfigureAwait(false);
+        
+        foreach (var speak in meetingRecordDetails)
         {
             var originalTranslationContent =  (await _translationClient.TranslateTextAsync(speak.OriginalContent, language.GetDescription(), cancellationToken: cancellationToken).ConfigureAwait(false)).TranslatedText;
             
             var smartTranslationContent = (await _translationClient.TranslateTextAsync(speak.SmartContent, language.GetDescription(), cancellationToken: cancellationToken).ConfigureAwait(false)).TranslatedText;
-            
-            addTranslationRecords.Add(new MeetingSpeakDetailTranslationRecord
-            {
-                Language = language,
-                MeetingSpeakDetailId = speak.Id,
-                MeetingRecordId = speak.MeetingRecordId,
-                Status = MeetingBackLoadingStatus.Completed,
-                SmartTranslationContent = smartTranslationContent,
-                OriginalTranslationContent = originalTranslationContent
-            });
+
+            if (originalTranslationContent.IsNullOrEmpty() || smartTranslationContent.IsNullOrEmpty())
+                meetingSpeeches = meetingSpeeches.Where(x => x.MeetingSpeakDetailId == speak.Id).Select(x =>
+                {
+                    x.Status = MeetingBackLoadingStatus.Exception;
+
+                    return x;
+                }).ToList();
         }
         
-        await _meetingDataProvider.AddMeetingDetailsTranslationRecordAsync(addTranslationRecords, cancellationToken).ConfigureAwait(false);
+        await _meetingDataProvider.UpdateMeetingDetailsTranslationRecordAsync(meetingSpeeches, cancellationToken).ConfigureAwait(false);
     }
 }
