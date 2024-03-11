@@ -15,6 +15,8 @@ public class MeetingSpeakDetailDto
     
     public int UserId { get; set; }
     
+    public string Username { get; set; }
+    
     public long SpeakStartTime { get; set; }
     
     public long? SpeakEndTime { get; set; }
