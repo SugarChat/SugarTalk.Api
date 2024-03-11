@@ -104,7 +104,7 @@ public partial class MeetingService
     
     public async Task<GetMeetingRecordDetailsResponse> GetMeetingRecordDetailsAsync(GetMeetingRecordDetailsRequest request, CancellationToken cancellationToken)
     {
-        return await _meetingDataProvider.GetMeetingRecordDetailsAsync(request.Id, cancellationToken).ConfigureAwait(false);
+        return await _meetingDataProvider.GetMeetingRecordDetailsAsync(request.Id, request.Language, cancellationToken).ConfigureAwait(false);
     }
 
     public async Task<StorageMeetingRecordVideoResponse> StorageMeetingRecordVideoAsync(StorageMeetingRecordVideoCommand command, CancellationToken cancellationToken)
@@ -218,7 +218,7 @@ public partial class MeetingService
         
         return new TranslatingMeetingSpeakResponse
         {
-            Data = (await _meetingDataProvider.GetMeetingRecordDetailsAsync(command.MeetingRecordId, cancellationToken).ConfigureAwait(false)).Data
+            Data = (await _meetingDataProvider.GetMeetingRecordDetailsAsync(command.MeetingRecordId, command.Language, cancellationToken).ConfigureAwait(false)).Data
         };
     }
     

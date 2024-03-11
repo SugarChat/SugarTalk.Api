@@ -27,6 +27,10 @@ public class MeetingSpeakDetailDto
     
     public string SmartContent { get; set; }
     
+    public string OriginalTranslationContent { get; set; }
+
+    public string SmartTranslationContent { get; set; }
+    
     public FileTranscriptionStatus FileTranscriptionStatus { get; set; }
     
     public DateTimeOffset CreatedDate { get; set; }

@@ -3,6 +3,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using AutoMapper.QueryableExtensions;
 using Microsoft.EntityFrameworkCore;
 using SugarTalk.Messages.Dto.Translation;
 using SugarTalk.Core.Domain.Meeting;
@@ -25,7 +26,7 @@ public partial interface IMeetingDataProvider
     
     Task PersistMeetingRecordAsync(Guid meetingId, Guid meetingRecordId, string egressId, CancellationToken cancellationToken);
     
-    Task<GetMeetingRecordDetailsResponse> GetMeetingRecordDetailsAsync(Guid recordId, CancellationToken cancellationToken);
+    Task<GetMeetingRecordDetailsResponse> GetMeetingRecordDetailsAsync(Guid recordId, TranslationLanguage? language, CancellationToken cancellationToken);
     
     Task UpdateMeetingRecordAsync(MeetingRecord record, CancellationToken cancellationToken);
     
@@ -142,19 +143,36 @@ public partial class MeetingDataProvider
         }, cancellationToken).ConfigureAwait(false);
     }
     
-    public async Task<GetMeetingRecordDetailsResponse> GetMeetingRecordDetailsAsync(Guid recordId, CancellationToken cancellationToken)
+    public async Task<GetMeetingRecordDetailsResponse> GetMeetingRecordDetailsAsync(Guid recordId, TranslationLanguage? language, CancellationToken cancellationToken)
     {
         var currentUser = await _accountDataProvider
             .GetUserAccountAsync(_currentUser.Id.Value, cancellationToken: cancellationToken).ConfigureAwait(false);
 
         if (currentUser is null) throw new UnauthorizedAccessException();
+   
+        var meetingRecordDetails = await (from speak in _repository.QueryNoTracking<MeetingSpeakDetail>()
+            join translation in _repository.QueryNoTracking<MeetingSpeakDetailTranslationRecord>() on speak.Id equals translation.MeetingSpeakDetailId into translations
+            from translation in translations.DefaultIfEmpty()
+            where speak.MeetingRecordId == recordId && translation.Language == language
+            select new MeetingSpeakDetailDto
+            {
+                Id = speak.Id,
+                UserId = speak.UserId,
+                TrackId = speak.TrackId,
+                Username = speak.Username,
+                SpeakStatus = speak.SpeakStatus,
+                SpeakEndTime = speak.SpeakEndTime,
+                SmartContent = speak.SmartContent,
+                MeetingNumber = speak.MeetingNumber,
+                SpeakStartTime = speak.SpeakStartTime,
+                OriginalContent = speak.OriginalContent,
+                MeetingRecordId = speak.MeetingRecordId,
+                OriginalTranslationContent = translation != null ? translation.OriginalTranslationContent : null,
+                SmartTranslationContent = translation != null ? translation.SmartTranslationContent : null,
+                FileTranscriptionStatus = speak.FileTranscriptionStatus,
+                CreatedDate = speak.CreatedDate
+            }).ToListAsync(cancellationToken).ConfigureAwait(false);
         
-        var meetingRecordDetails = await _repository.QueryNoTracking<MeetingSpeakDetail>()
-            .Where(x => x.MeetingRecordId == recordId).ToListAsync(cancellationToken).ConfigureAwait(false);
-
-        var meetingRecordTranslationDetails = await _repository.QueryNoTracking<MeetingSpeakDetailTranslationRecord>()
-            .Where(x => x.MeetingRecordId == recordId).ToListAsync(cancellationToken).ConfigureAwait(false);
-
         var meetingInfo = await (
             from meetingRecord in _repository.QueryNoTracking<MeetingRecord>()
             join meeting in _repository.QueryNoTracking<Meeting>() on meetingRecord.MeetingId equals meeting.Id
@@ -171,9 +189,7 @@ public partial class MeetingDataProvider
                 MeetingEndDate = meeting.EndDate,
                 Url = meetingRecord.Url,
                 Summary = meetingSummary == null? null : meetingSummary.Summary,
-                MeetingRecordDetail = meetingRecordDetails.Select(x => _mapper.Map<MeetingSpeakDetailDto>(x)).ToList(),
-                MeetingSpeakTranslationDetail = meetingRecordTranslationDetails.Count != 0 
-                    ? meetingRecordTranslationDetails.Select(x => _mapper.Map<MeetingSpeakTranslationDetailDto>(x)).ToList() : null
+                MeetingRecordDetail = meetingRecordDetails
             }
         ).FirstOrDefaultAsync(cancellationToken).ConfigureAwait(false);
 
