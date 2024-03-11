@@ -37,7 +37,7 @@ public partial interface IMeetingService
 
     Task DelayStorageMeetingRecordVideoJobAsync(string egressId, Guid meetingRecordId, string token, int reTryLimit, CancellationToken cancellationToken);
     
-    Task<GetMeetingSpeakTranslationResponse> GetMeetingSpeakTranslationAsync(GetMeetingSpeakTranslationRequest request, CancellationToken cancellationToken);
+    Task<TranslatingMeetingSpeakResponse> TranslatingMeetingSpeakAsync(TranslatingMeetingSpeakCommand command, CancellationToken cancellationToken);
 }
 
 public partial class MeetingService
@@ -206,65 +206,43 @@ public partial class MeetingService
         }
     }
 
-    public async Task<GetMeetingSpeakTranslationResponse> GetMeetingSpeakTranslationAsync(
-        GetMeetingSpeakTranslationRequest request, CancellationToken cancellationToken)
+    public async Task<TranslatingMeetingSpeakResponse> TranslatingMeetingSpeakAsync(
+        TranslatingMeetingSpeakCommand command, CancellationToken cancellationToken)
     {
-        var meetingRecordDetails = await _meetingDataProvider.GetMeetingDetailsByRecordIdAsync(request.Id, cancellationToken).ConfigureAwait(false);
+        var meetingRecordDetails = await _meetingDataProvider.GetMeetingDetailsByRecordIdAsync(command.MeetingRecordId, cancellationToken).ConfigureAwait(false);
         
-        var meetingTranslationRecordDetails = await _meetingDataProvider.GetMeetingDetailsTranslationRecordAsync(request.Id, request.Language, cancellationToken: cancellationToken).ConfigureAwait(false);
-        
-        if (meetingTranslationRecordDetails is { Count: > 0 })
-            return new GetMeetingSpeakTranslationResponse
-            {
-               Data = new GetMeetingSpeakTranslationDto
-               {
-                   MeetingSpeakDetail = meetingRecordDetails.Select(x => _mapper.Map<MeetingSpeakDetailDto>(x)).ToList(),
-                   MeetingSpeakTranslationDetail = meetingTranslationRecordDetails.Select(x => _mapper.Map<MeetingSpeakTranslationDetailDto>(x)).ToList()
-               }
-            };
-        
-        var addTranslationRecords = new List<MeetingSpeakDetailTranslationRecord>();
+        var meetingTranslationRecordDetails = await _meetingDataProvider.GetMeetingDetailsTranslationRecordAsync(command.MeetingRecordId, command.Language, cancellationToken: cancellationToken).ConfigureAwait(false);
 
-        foreach (var speak in meetingRecordDetails)
-        {
-            addTranslationRecords.Add(new MeetingSpeakDetailTranslationRecord
-            {
-                Language = request.Language,
-                MeetingRecordId = request.Id,
-                MeetingSpeakDetailId = speak.Id
-            });
-            
-            _backgroundJobClient.Enqueue(() => GenerateProcessSpeakTranslationAsync(speak, request.Language, cancellationToken));
-        }
+        if (meetingTranslationRecordDetails is {Count: 0})
+            _backgroundJobClient.Enqueue(() => GenerateProcessSpeakTranslationAsync(meetingRecordDetails, command.Language, cancellationToken));
         
-        await _meetingDataProvider.AddMeetingDetailsTranslationRecordAsync(addTranslationRecords, cancellationToken).ConfigureAwait(false);
-        
-        return new GetMeetingSpeakTranslationResponse
+        return new TranslatingMeetingSpeakResponse
         {
-            Data = new GetMeetingSpeakTranslationDto
-            {
-                MeetingSpeakDetail = meetingRecordDetails.Select(x => _mapper.Map<MeetingSpeakDetailDto>(x)).ToList(),
-                MeetingSpeakTranslationDetail = addTranslationRecords.Select(x => _mapper.Map<MeetingSpeakTranslationDetailDto>(x)).ToList()
-            }
+            Data = (await _meetingDataProvider.GetMeetingRecordDetailsAsync(command.MeetingRecordId, cancellationToken).ConfigureAwait(false)).Data
         };
     }
     
-    private async Task GenerateProcessSpeakTranslationAsync(MeetingSpeakDetail meetingSpeech, TranslationLanguage language, CancellationToken cancellationToken)
+    private async Task GenerateProcessSpeakTranslationAsync(List<MeetingSpeakDetail> meetingSpeeches, TranslationLanguage language, CancellationToken cancellationToken)
     {
-        var originalTranslationContent =  (await _translationClient.TranslateTextAsync(meetingSpeech.OriginalContent, language.GetDescription(), cancellationToken: cancellationToken).ConfigureAwait(false)).TranslatedText;
-            
-        var smartTranslationContent = (await _translationClient.TranslateTextAsync(meetingSpeech.SmartContent, language.GetDescription(), cancellationToken: cancellationToken).ConfigureAwait(false)).TranslatedText;
+        var addTranslationRecords = new List<MeetingSpeakDetailTranslationRecord>();
 
-        var meetingSpeakDetailTranslation = (await _meetingDataProvider.GetMeetingDetailsTranslationRecordAsync(
-        meetingSpeech.MeetingRecordId, language, meetingSpeech.Id, cancellationToken).ConfigureAwait(false)).FirstOrDefault();
-
-        if (meetingSpeakDetailTranslation != null)
+        foreach (var speak in meetingSpeeches)
         {
-            meetingSpeakDetailTranslation.Status = MeetingBackLoadingStatus.Completed;
-            meetingSpeakDetailTranslation.OriginalTranslationContent = originalTranslationContent;
-            meetingSpeakDetailTranslation.SmartTranslationContent = smartTranslationContent;
+            var originalTranslationContent =  (await _translationClient.TranslateTextAsync(speak.OriginalContent, language.GetDescription(), cancellationToken: cancellationToken).ConfigureAwait(false)).TranslatedText;
+            
+            var smartTranslationContent = (await _translationClient.TranslateTextAsync(speak.SmartContent, language.GetDescription(), cancellationToken: cancellationToken).ConfigureAwait(false)).TranslatedText;
+            
+            addTranslationRecords.Add(new MeetingSpeakDetailTranslationRecord
+            {
+                Language = language,
+                MeetingSpeakDetailId = speak.Id,
+                MeetingRecordId = speak.MeetingRecordId,
+                Status = MeetingBackLoadingStatus.Completed,
+                SmartTranslationContent = smartTranslationContent,
+                OriginalTranslationContent = originalTranslationContent
+            });
         }
-
-        await _meetingDataProvider.UpdateMeetingDetailsTranslationRecordAsync(meetingSpeakDetailTranslation, cancellationToken).ConfigureAwait(false);
+        
+        await _meetingDataProvider.AddMeetingDetailsTranslationRecordAsync(addTranslationRecords, cancellationToken).ConfigureAwait(false);
     }
 }

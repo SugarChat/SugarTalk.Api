@@ -6,13 +6,13 @@ using SugarTalk.Messages.Dto.Translation;
 
 namespace SugarTalk.Messages.Requests.Meetings;
 
-public class GetMeetingSpeakTranslationRequest : IRequest
+public class TranslatingMeetingSpeakCommand : ICommand
 {
-    public Guid Id { get; set; }
+    public Guid MeetingRecordId { get; set; }
 
     public TranslationLanguage Language { get; set; }
 }
 
-public class GetMeetingSpeakTranslationResponse : SugarTalkResponse<GetMeetingSpeakTranslationDto>
+public class TranslatingMeetingSpeakResponse : SugarTalkResponse<GetMeetingRecordDetailsDto>
 {
 }

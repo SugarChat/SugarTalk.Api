@@ -210,11 +210,11 @@ public class MeetingController : ControllerBase
         return Ok(response);
     }
 
-    [Route("recording/translation"), HttpGet]
-    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(GetMeetingSpeakTranslationResponse))]
-    public async Task<IActionResult> GetMeetingSpeakTranslationAsync(GetMeetingSpeakTranslationRequest request, CancellationToken cancellationToken)
+    [Route("recording/translation"), HttpPost]
+    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(TranslatingMeetingSpeakResponse))]
+    public async Task<IActionResult> TranslatingMeetingSpeakAsync([FromBody] TranslatingMeetingSpeakCommand command, CancellationToken cancellationToken)
     {
-        var response = await _mediator.RequestAsync<GetMeetingSpeakTranslationRequest, GetMeetingSpeakTranslationResponse>(request, cancellationToken).ConfigureAwait(false);
+        var response = await _mediator.SendAsync<TranslatingMeetingSpeakCommand, TranslatingMeetingSpeakResponse>(command, cancellationToken).ConfigureAwait(false);
 
         return Ok(response);
     }
