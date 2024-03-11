@@ -239,14 +239,12 @@ public partial class MeetingService
         
         await _meetingDataProvider.AddMeetingDetailsTranslationRecordAsync(addTranslationRecords, cancellationToken).ConfigureAwait(false);
         
-        var againMeetingTranslationRecordDetails = await _meetingDataProvider.GetMeetingDetailsTranslationRecordAsync(request.Id, request.Language, cancellationToken: cancellationToken).ConfigureAwait(false);
-        
         return new GetMeetingSpeakTranslationResponse
         {
             Data = new GetMeetingSpeakTranslationDto
             {
                 MeetingSpeakDetail = meetingRecordDetails.Select(x => _mapper.Map<MeetingSpeakDetailDto>(x)).ToList(),
-                MeetingSpeakTranslationDetail = againMeetingTranslationRecordDetails.Select(x => _mapper.Map<MeetingSpeakTranslationDetailDto>(x)).ToList()
+                MeetingSpeakTranslationDetail = addTranslationRecords.Select(x => _mapper.Map<MeetingSpeakTranslationDetailDto>(x)).ToList()
             }
         };
     }

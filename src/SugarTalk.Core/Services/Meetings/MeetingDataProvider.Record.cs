@@ -39,7 +39,8 @@ public partial interface IMeetingDataProvider
     
     Task<List<MeetingSpeakDetail>> GetMeetingDetailsByRecordIdAsync(Guid meetingRecordId, CancellationToken cancellationToken);
     
-    Task<List<MeetingSpeakDetailTranslationRecord>> GetMeetingDetailsTranslationRecordAsync(Guid meetingRecordId, TranslationLanguage language, int? meetingSpeakDetailId = null, CancellationToken cancellationToken = default);
+    Task<List<MeetingSpeakDetailTranslationRecord>> GetMeetingDetailsTranslationRecordAsync(
+        Guid meetingRecordId, TranslationLanguage language, int? meetingSpeakDetailId = null, CancellationToken cancellationToken = default);
     
     Task AddMeetingDetailsTranslationRecordAsync(List<MeetingSpeakDetailTranslationRecord> meetingSpeakDetails, CancellationToken cancellationToken);
     
