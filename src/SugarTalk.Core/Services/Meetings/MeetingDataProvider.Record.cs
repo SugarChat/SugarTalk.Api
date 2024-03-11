@@ -89,6 +89,8 @@ public partial class MeetingDataProvider
         query = string.IsNullOrEmpty(request.MeetingNumber) ? query : query.Where(x => x.Meeting.MeetingNumber.Contains(request.MeetingNumber));
         query = string.IsNullOrEmpty(request.Creator) ? query : query.Where(x => x.User.UserName.Contains(request.Creator));
 
+        query = query.GroupBy(x => x.Record.Id).Select(g => g.First());
+        
         var total = await query.CountAsync(cancellationToken).ConfigureAwait(false);
         var joinResult = await query
             .OrderByDescending(x => x.Record.CreatedDate)
@@ -109,10 +111,8 @@ public partial class MeetingDataProvider
                 Url = x.Record.Url,
                 UrlStatus = x.Record.UrlStatus
             }).ToListAsync(cancellationToken);
-
-        var items = joinResult.GroupBy(x => x.MeetingRecordId).Select(g => g.First()).ToList();
-
-        return (total, items);
+        
+        return (total, joinResult);
     }
 
     public async Task DeleteMeetingRecordAsync(List<Guid> meetingRecordIds, CancellationToken cancellationToken)
