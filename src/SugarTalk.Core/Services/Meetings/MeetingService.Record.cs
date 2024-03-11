@@ -1,16 +1,22 @@
 using SugarTalk.Messages.Commands.Meetings;
 using SugarTalk.Messages.Dto.Meetings;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Mediator.Net;
 using Serilog;
+using SugarTalk.Core.Domain.Meeting;
 using SugarTalk.Core.Services.Exceptions;
 using SugarTalk.Messages.Dto.LiveKit.Egress;
+using SugarTalk.Messages.Dto.Meetings.Speak;
+using SugarTalk.Messages.Dto.Translation;
 using SugarTalk.Messages.Enums.Meeting;
+using SugarTalk.Messages.Enums.Speech;
 using SugarTalk.Messages.Events.Meeting;
 using SugarTalk.Messages.Events.Meeting.Summary;
+using SugarTalk.Messages.Extensions;
 using SugarTalk.Messages.Requests.Meetings;
 
 namespace SugarTalk.Core.Services.Meetings;
@@ -30,6 +36,8 @@ public partial interface IMeetingService
     Task<DelayedMeetingRecordingStorageEvent> ExecuteStorageMeetingRecordVideoDelayedJobAsync(DelayedMeetingRecordingStorageCommand command, CancellationToken cancellationToken);
 
     Task DelayStorageMeetingRecordVideoJobAsync(string egressId, Guid meetingRecordId, string token, int reTryLimit, CancellationToken cancellationToken);
+    
+    Task<TranslatingMeetingSpeakResponse> TranslatingMeetingSpeakAsync(TranslatingMeetingSpeakCommand command, CancellationToken cancellationToken);
 }
 
 public partial class MeetingService
@@ -196,5 +204,45 @@ public partial class MeetingService
         {
             await TranscriptionMeetingAsync(meetingDetail, meetingRecord, cancellationToken);
         }
+    }
+
+    public async Task<TranslatingMeetingSpeakResponse> TranslatingMeetingSpeakAsync(
+        TranslatingMeetingSpeakCommand command, CancellationToken cancellationToken)
+    {
+        var meetingRecordDetails = await _meetingDataProvider.GetMeetingDetailsByRecordIdAsync(command.MeetingRecordId, cancellationToken).ConfigureAwait(false);
+        
+        var meetingTranslationRecordDetails = await _meetingDataProvider.GetMeetingDetailsTranslationRecordAsync(command.MeetingRecordId, command.Language, cancellationToken: cancellationToken).ConfigureAwait(false);
+
+        if (meetingTranslationRecordDetails is {Count: 0})
+            _backgroundJobClient.Enqueue(() => GenerateProcessSpeakTranslationAsync(meetingRecordDetails, command.Language, cancellationToken));
+        
+        return new TranslatingMeetingSpeakResponse
+        {
+            Data = (await _meetingDataProvider.GetMeetingRecordDetailsAsync(command.MeetingRecordId, cancellationToken).ConfigureAwait(false)).Data
+        };
+    }
+    
+    private async Task GenerateProcessSpeakTranslationAsync(List<MeetingSpeakDetail> meetingSpeeches, TranslationLanguage language, CancellationToken cancellationToken)
+    {
+        var addTranslationRecords = new List<MeetingSpeakDetailTranslationRecord>();
+
+        foreach (var speak in meetingSpeeches)
+        {
+            var originalTranslationContent =  (await _translationClient.TranslateTextAsync(speak.OriginalContent, language.GetDescription(), cancellationToken: cancellationToken).ConfigureAwait(false)).TranslatedText;
+            
+            var smartTranslationContent = (await _translationClient.TranslateTextAsync(speak.SmartContent, language.GetDescription(), cancellationToken: cancellationToken).ConfigureAwait(false)).TranslatedText;
+            
+            addTranslationRecords.Add(new MeetingSpeakDetailTranslationRecord
+            {
+                Language = language,
+                MeetingSpeakDetailId = speak.Id,
+                MeetingRecordId = speak.MeetingRecordId,
+                Status = MeetingBackLoadingStatus.Completed,
+                SmartTranslationContent = smartTranslationContent,
+                OriginalTranslationContent = originalTranslationContent
+            });
+        }
+        
+        await _meetingDataProvider.AddMeetingDetailsTranslationRecordAsync(addTranslationRecords, cancellationToken).ConfigureAwait(false);
     }
 }

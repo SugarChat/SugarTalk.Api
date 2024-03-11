@@ -2,7 +2,7 @@ using System.ComponentModel;
 
 namespace SugarTalk.Messages.Enums.Speech;
 
-public enum SpeechAudioLoadStatus
+public enum MeetingBackLoadingStatus
 {
     [Description("等待中")]
     Pending = 10,

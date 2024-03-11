@@ -19,6 +19,8 @@ public class GetMeetingRecordDetailsDto
     public string Url { get; set; }
 
     public List<MeetingSpeakDetailDto> MeetingRecordDetail { get; set; }
-   
+
+    public List<MeetingSpeakTranslationDetailDto> MeetingSpeakTranslationDetail { get; set; }
+
     public string Summary { get; set; }
 }
