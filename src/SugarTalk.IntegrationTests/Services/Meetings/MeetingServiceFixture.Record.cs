@@ -809,7 +809,7 @@ public partial class MeetingServiceFixture
                     Arg.Any<List<CompletionsRequestMessageDto>>(), 
                     Arg.Any<List<CompletionsRequestFunctionDto>>(), 
                     Arg.Any<CompletionsRequestFunctionCallDto>(), 
-                    Arg.Any<OpenAiModel>(), null, Arg.Any<double>(),
+                    Arg.Any<OpenAiModel>(), Arg.Any<CompletionResponseFormatDto>(), null, Arg.Any<double>(),
                     Arg.Any<bool>(),  Arg.Any<CancellationToken>())
                 .Returns(new CompletionsResponseDto
                 {
@@ -819,7 +819,7 @@ public partial class MeetingServiceFixture
                         {
                             Message = new CompletionsChoiceMessageDto
                             {
-                                Content = "I'm smart content"
+                                Content =  "{\"optimized_text\": \"I'm smart content\"}"
                             }
                         }
                     }
