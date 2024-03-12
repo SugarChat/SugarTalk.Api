@@ -64,9 +64,9 @@ public partial class BaseFixture
         _sugarTalkBackgroundJobClient = Substitute.For<ISugarTalkBackgroundJobClient>();
         _accountDataProvider = MockAccountDataProvider(_mapper, _repository, _unitOfWork, _currentUser);
         _meetingDataProvider = MockMeetingDataProvider(_clock, _mapper, _repository, _unitOfWork, _currentUser, _accountDataProvider);
-        _meetingService = MockMeetingService(_clock, _mapper, _unitOfWork, _currentUser, _openAiService, _speechClient, _liveKitClient, _aliYunOssSetting,
-             _translationClient, _meetingUtilService, _meetingDataProvider, _accountDataProvider, _liveKitServerSetting, _httpClientFactory, _backgroundJobClient,_liveKitServerUtilService,
-            _antMediaServerUtilService, _sugarTalkBackgroundJobClient );
+        _meetingService = MockMeetingService(_clock, _mapper, _unitOfWork, _currentUser, _openAiService, _speechClient,
+            _liveKitClient, _aliYunOssSetting, _translationClient, _meetingUtilService, _meetingDataProvider, _accountDataProvider, _liveKitServerSetting,
+            _httpClientFactory, _backgroundJobClient, _liveKitServerUtilService, _antMediaServerUtilService, _sugarTalkBackgroundJobClient);
         _meetingProcessJobService = MockMeetingProcessJobService(_clock, _unitOfWork, _meetingDataProvider);
     }
 
@@ -101,9 +101,9 @@ public partial class BaseFixture
         ISugarTalkBackgroundJobClient sugarTalkBackgroundJobClient)
     {
         return new MeetingService(
-            clock, mapper, unitOfWork, currentUser,openAiService, speechClient, liveKitClient, aliYunOssSetting, translationClient ,meetingUtilService, meetingDataProvider,
-            accountDataProvider, liveKitServerSetting, httpClientFactory, backgroundJobClient, liveKitServerUtilService, 
-            antMediaServerUtilService,sugarTalkBackgroundJobClient);
+            clock, mapper, unitOfWork, currentUser, openAiService, speechClient, liveKitClient, aliYunOssSetting,
+            translationClient, meetingUtilService, meetingDataProvider, accountDataProvider, liveKitServerSetting, 
+            httpClientFactory, backgroundJobClient, liveKitServerUtilService, antMediaServerUtilService, sugarTalkBackgroundJobClient);
     }
     
     protected IMeetingDataProvider MockMeetingDataProvider(
