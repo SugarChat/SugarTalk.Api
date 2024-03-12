@@ -19,7 +19,7 @@ public class GetMeetingRecordDetailsDto
     
     public string Url { get; set; }
 
-    public List<MeetingSpeakDetailDto> MeetingRecordDetail { get; set; }
+    public List<MeetingSpeakDetailDto> MeetingRecordDetails { get; set; }
 
     public MeetingSummaryDto Summary { get; set; }
 }

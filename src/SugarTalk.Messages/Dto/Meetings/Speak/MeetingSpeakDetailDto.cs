@@ -1,5 +1,6 @@
 using System;
 using SugarTalk.Messages.Enums.Meeting.Speak;
+using SugarTalk.Messages.Enums.Speech;
 
 namespace SugarTalk.Messages.Dto.Meetings.Speak;
 
@@ -30,7 +31,9 @@ public class MeetingSpeakDetailDto
     public string OriginalTranslationContent { get; set; }
 
     public string SmartTranslationContent { get; set; }
-    
+
+    public MeetingBackLoadingStatus TranslationStatus { get; set; }
+
     public FileTranscriptionStatus FileTranscriptionStatus { get; set; }
     
     public DateTimeOffset CreatedDate { get; set; }
