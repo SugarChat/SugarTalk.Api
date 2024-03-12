@@ -154,9 +154,7 @@ public partial class MeetingDataProvider
         if (currentUser is null) throw new UnauthorizedAccessException();
 
         var meetingRecordDetails = await (from speak in _repository.QueryNoTracking<MeetingSpeakDetail>()
-            join translation in _repository.QueryNoTracking<MeetingSpeakDetailTranslationRecord>() on speak.Id equals translation.MeetingSpeakDetailId into translations
-            from translation in translations.DefaultIfEmpty()
-            where speak.MeetingRecordId == recordId && (!language.HasValue || language.Value == translation.Language)
+            where speak.MeetingRecordId == recordId
             select new MeetingSpeakDetailDto
             {
                 Id = speak.Id,
@@ -170,11 +168,27 @@ public partial class MeetingDataProvider
                 SpeakStartTime = speak.SpeakStartTime,
                 OriginalContent = speak.OriginalContent,
                 MeetingRecordId = speak.MeetingRecordId,
-                OriginalTranslationContent = translation != null ? translation.OriginalTranslationContent : null,
-                SmartTranslationContent = translation != null ? translation.SmartTranslationContent : null,
                 FileTranscriptionStatus = speak.FileTranscriptionStatus,
                 CreatedDate = speak.CreatedDate
             }).ToListAsync(cancellationToken).ConfigureAwait(false);
+
+        var recordDetailIds = meetingRecordDetails.Select(x => x.Id).ToList();
+
+        if (language.HasValue)
+        {
+            var translationRecords = await _repository.Query<MeetingSpeakDetailTranslationRecord>()
+                .Where(x => recordDetailIds.Contains(x.MeetingSpeakDetailId) && x.Status == MeetingBackLoadingStatus.Completed).ToListAsync(cancellationToken).ConfigureAwait(false);
+
+            meetingRecordDetails = meetingRecordDetails.Select(x =>
+            {
+                var translation = translationRecords.FirstOrDefault(s => s.MeetingSpeakDetailId == x.Id);
+
+                x.OriginalTranslationContent = translation?.OriginalTranslationContent;
+                x.SmartTranslationContent = translation?.SmartTranslationContent;
+
+                return x;
+            }).ToList();
+        }
 
         var meetingInfo = await (
             from meetingRecord in _repository.QueryNoTracking<MeetingRecord>()
