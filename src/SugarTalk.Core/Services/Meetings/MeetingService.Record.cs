@@ -219,7 +219,8 @@ public partial class MeetingService
             {
                 Language = command.Language,
                 MeetingSpeakDetailId = x.Id,
-                MeetingRecordId = x.MeetingRecordId
+                MeetingRecordId = x.MeetingRecordId,
+                Status = MeetingBackLoadingStatus.Progress
             }).ToList();
             
             await _meetingDataProvider.AddMeetingDetailsTranslationRecordAsync(addTranslationRecords, cancellationToken).ConfigureAwait(false);
@@ -235,28 +236,21 @@ public partial class MeetingService
     
     private async Task GenerateProcessSpeakTranslationAsync(List<MeetingSpeakDetailTranslationRecord> meetingSpeeches, List<MeetingSpeakDetail> meetingRecordDetails, TranslationLanguage language, CancellationToken cancellationToken)
     {
-        meetingSpeeches = meetingSpeeches.Select(x =>
-        {
-            x.Status = MeetingBackLoadingStatus.Progress;
-
-            return x;
-        }).ToList();
-        
-        await _meetingDataProvider.UpdateMeetingDetailsTranslationRecordAsync(meetingSpeeches, cancellationToken).ConfigureAwait(false);
-        
         foreach (var speak in meetingRecordDetails)
         {
             var originalTranslationContent =  (await _translationClient.TranslateTextAsync(speak.OriginalContent, language.GetDescription(), cancellationToken: cancellationToken).ConfigureAwait(false)).TranslatedText;
             
             var smartTranslationContent = (await _translationClient.TranslateTextAsync(speak.SmartContent, language.GetDescription(), cancellationToken: cancellationToken).ConfigureAwait(false)).TranslatedText;
 
-            if (originalTranslationContent.IsNullOrEmpty() || smartTranslationContent.IsNullOrEmpty())
-                meetingSpeeches = meetingSpeeches.Where(x => x.MeetingSpeakDetailId == speak.Id).Select(x =>
-                {
+            meetingSpeeches = meetingSpeeches.Where(x => x.MeetingSpeakDetailId == speak.Id).Select(x =>
+            {
+                if (originalTranslationContent.IsNullOrEmpty() || smartTranslationContent.IsNullOrEmpty())
                     x.Status = MeetingBackLoadingStatus.Exception;
 
-                    return x;
-                }).ToList();
+                x.Status = MeetingBackLoadingStatus.Completed;
+
+                return x;
+            }).ToList();
         }
         
         await _meetingDataProvider.UpdateMeetingDetailsTranslationRecordAsync(meetingSpeeches, cancellationToken).ConfigureAwait(false);
