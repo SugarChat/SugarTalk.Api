@@ -30,6 +30,7 @@ using SugarTalk.Messages.Dto.Users;
 using SugarTalk.Messages.Enums.Account;
 using SugarTalk.Core.Domain.Meeting;
 using SugarTalk.Core.Services.OpenAi;
+using SugarTalk.Messages.Commands.Meetings.Speak;
 using SugarTalk.Messages.Enums.Meeting;
 using SugarTalk.Messages.Events.Meeting;
 using SugarTalk.Messages.Requests.Meetings;
@@ -62,6 +63,9 @@ namespace SugarTalk.Core.Services.Meetings
         
         Task<MeetingUserSettingAddOrUpdatedEvent> AddOrUpdateMeetingUserSettingAsync(
             AddOrUpdateMeetingUserSettingCommand command, CancellationToken cancellationToken);
+        
+        Task<ChatRoomSettingAddOrUpdateEvent> AddOrUpdateChatRoomSettingAsync(
+            AddOrUpdateChatRoomSettingCommand command, CancellationToken cancellationToken);
 
         Task<GetMeetingUserSettingResponse> GetMeetingUserSettingAsync(GetMeetingUserSettingRequest request, CancellationToken cancellationToken);
 
@@ -463,6 +467,37 @@ namespace SugarTalk.Core.Services.Meetings
             }
             
             return response;
+        }
+
+        public async Task<ChatRoomSettingAddOrUpdateEvent> AddOrUpdateChatRoomSettingAsync(AddOrUpdateChatRoomSettingCommand command, CancellationToken cancellationToken)
+        {
+            if (!_currentUser.Id.HasValue) throw new UnauthorizedAccessException();
+
+            var roomSetting = await _meetingDataProvider
+                .GetMeetingChatRoomSettingByMeetingIdAsync(_currentUser.Id.Value, command.MeetingId, cancellationToken).ConfigureAwait(false);
+
+            if (roomSetting == null)
+            {
+                await _meetingDataProvider.AddMeetingChatRoomSettingAsync(new MeetingChatRoomSetting
+                {
+                    UserId = _currentUser.Id.Value,
+                    MeetingId = command.MeetingId,
+                    SelfLanguage = command.SelfLanguage,
+                    ListeningLanguage = command.ListeningLanguage,
+                    VoiceType = command.VoiceType
+                }, true, cancellationToken).ConfigureAwait(false);
+            }
+            else
+            {
+                roomSetting.LastModifiedDate = DateTimeOffset.Now;
+                roomSetting.SelfLanguage = command.SelfLanguage;
+                roomSetting.ListeningLanguage = command.ListeningLanguage;
+                roomSetting.VoiceType = command.VoiceType;
+                
+                await _meetingDataProvider.UpdateMeetingChatRoomSettingAsync(roomSetting, cancellationToken).ConfigureAwait(false);
+            }
+
+            return new ChatRoomSettingAddOrUpdateEvent();
         }
 
         public async Task<GetMeetingUserSettingResponse> GetMeetingUserSettingAsync(GetMeetingUserSettingRequest request, CancellationToken cancellationToken)
