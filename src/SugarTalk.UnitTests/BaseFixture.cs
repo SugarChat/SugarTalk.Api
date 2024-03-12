@@ -22,7 +22,7 @@ namespace SugarTalk.UnitTests;
 
 public partial class BaseFixture
 {
-    protected IRepository _repository;
+     protected IRepository _repository;
     protected SugarTalkDbContext _dbContext;
     protected readonly IMeetingService _meetingService;
     protected readonly IMeetingDataProvider _meetingDataProvider;
@@ -64,8 +64,8 @@ public partial class BaseFixture
         _sugarTalkBackgroundJobClient = Substitute.For<ISugarTalkBackgroundJobClient>();
         _accountDataProvider = MockAccountDataProvider(_mapper, _repository, _unitOfWork, _currentUser);
         _meetingDataProvider = MockMeetingDataProvider(_clock, _mapper, _repository, _unitOfWork, _currentUser, _accountDataProvider);
-        _meetingService = MockMeetingService(_clock, _mapper, _unitOfWork, _currentUser, _openAiService, _speechClient, _liveKitClient, _translationClient,
-             _meetingUtilService, _meetingDataProvider, _accountDataProvider, _backgroundJobClient, _aliYunOssSetting, _liveKitServerSetting, _liveKitServerUtilService,
+        _meetingService = MockMeetingService(_clock, _mapper, _unitOfWork, _currentUser, _openAiService, _speechClient, _liveKitClient, _aliYunOssSetting, _translationClient,
+            _meetingUtilService, _meetingDataProvider, _accountDataProvider,  _liveKitServerSetting, _httpClientFactory, _backgroundJobClient, _liveKitServerUtilService,
             _antMediaServerUtilService,_sugarTalkBackgroundJobClient);
         _meetingProcessJobService = MockMeetingProcessJobService(_clock, _unitOfWork, _meetingDataProvider);
     }
@@ -82,26 +82,27 @@ public partial class BaseFixture
 
     protected IMeetingService MockMeetingService(
         IClock clock,
-        IMapper mapper, 
+        IMapper mapper,
         IUnitOfWork unitOfWork,
         ICurrentUser currentUser,
         IOpenAiService openAiService,
         ISpeechClient speechClient,
         ILiveKitClient liveKitClient,
+        AliYunOssSettings aliYunOssSetting,
         TranslationClient translationClient,
         IMeetingUtilService meetingUtilService,
         IMeetingDataProvider meetingDataProvider,
         IAccountDataProvider accountDataProvider,
+        LiveKitServerSetting liveKitServerSetting,
+        ISugarTalkHttpClientFactory httpClientFactory,
         ISugarTalkBackgroundJobClient backgroundJobClient,
-        AliYunOssSettings aliYunOssSetting,
-        LiveKitServerSetting liveKitServerSetting, 
         ILiveKitServerUtilService liveKitServerUtilService,
         IAntMediaServerUtilService antMediaServerUtilService,
         ISugarTalkBackgroundJobClient sugarTalkBackgroundJobClient)
     {
         return new MeetingService(
-            clock, mapper, unitOfWork, currentUser,openAiService, speechClient, liveKitClient, translationClient ,meetingUtilService, meetingDataProvider,
-            accountDataProvider, aliYunOssSetting, liveKitServerSetting, backgroundJobClient, liveKitServerUtilService, 
+            clock, mapper, unitOfWork, currentUser,openAiService, speechClient, liveKitClient, aliYunOssSetting, translationClient ,meetingUtilService, meetingDataProvider,
+            accountDataProvider, liveKitServerSetting, httpClientFactory, backgroundJobClient, liveKitServerUtilService, 
             antMediaServerUtilService,sugarTalkBackgroundJobClient);
     }
     
