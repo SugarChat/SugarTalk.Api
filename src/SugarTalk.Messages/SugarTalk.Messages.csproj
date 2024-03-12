@@ -22,5 +22,10 @@
       <PackageReference Include="System.ComponentModel.Annotations" Version="5.0.0" />
     </ItemGroup>
 
-
+    <ItemGroup>
+      <Reference Include="SugarTalk.Core">
+        <HintPath>..\SugarTalk.IntegrationTests\bin\Debug\net7.0\SugarTalk.Core.dll</HintPath>
+      </Reference>
+    </ItemGroup>
+    
 </Project>
