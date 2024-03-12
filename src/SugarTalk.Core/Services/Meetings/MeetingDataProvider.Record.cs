@@ -178,11 +178,11 @@ public partial class MeetingDataProvider
         var meetingInfo = await (
             from meetingRecord in _repository.QueryNoTracking<MeetingRecord>()
             join meeting in _repository.QueryNoTracking<Meeting>() on meetingRecord.MeetingId equals meeting.Id
-            join meetingSummary in _repository.QueryNoTracking<MeetingSummary>() on meetingRecord.Id equals meetingSummary.RecordId
-            into meetingSummaryLeft
+            join meetingSummary in _repository.QueryNoTracking<MeetingSummary>() on meetingRecord.Id equals meetingSummary.RecordId into meetingSummaryLeft
             from meetingSummary in  meetingSummaryLeft.DefaultIfEmpty()
             where meetingRecord.Id == recordId
-            select new GetMeetingRecordDetailsDto
+            orderby meetingSummary.CreatedDate descending
+            select new GetMeetingRecordDetailsMappingDto
             {
                 Id = recordId,
                 MeetingTitle = meeting.Title,
@@ -190,14 +190,13 @@ public partial class MeetingDataProvider
                 MeetingStartDate = meeting.StartDate,
                 MeetingEndDate = meeting.EndDate,
                 Url = meetingRecord.Url,
-                Summary = meetingSummary == null? null : meetingSummary.Summary,
+                Summary = meetingSummary,
                 MeetingRecordDetail = meetingRecordDetails
-            }
-        ).FirstOrDefaultAsync(cancellationToken).ConfigureAwait(false);
+            }).FirstOrDefaultAsync(cancellationToken).ConfigureAwait(false);
 
         return new GetMeetingRecordDetailsResponse
         {
-            Data = meetingInfo
+            Data = _mapper.Map<GetMeetingRecordDetailsDto>(meetingInfo)
         };
     }
 
