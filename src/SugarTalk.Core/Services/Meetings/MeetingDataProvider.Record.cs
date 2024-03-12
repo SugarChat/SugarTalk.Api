@@ -152,45 +152,7 @@ public partial class MeetingDataProvider
             .GetUserAccountAsync(_currentUser.Id.Value, cancellationToken: cancellationToken).ConfigureAwait(false);
 
         if (currentUser is null) throw new UnauthorizedAccessException();
-
-        var meetingRecordDetails = await (from speak in _repository.QueryNoTracking<MeetingSpeakDetail>()
-            where speak.MeetingRecordId == recordId
-            select new MeetingSpeakDetailDto
-            {
-                Id = speak.Id,
-                UserId = speak.UserId,
-                TrackId = speak.TrackId,
-                Username = speak.Username,
-                SpeakStatus = speak.SpeakStatus,
-                SpeakEndTime = speak.SpeakEndTime,
-                SmartContent = speak.SmartContent,
-                MeetingNumber = speak.MeetingNumber,
-                SpeakStartTime = speak.SpeakStartTime,
-                OriginalContent = speak.OriginalContent,
-                MeetingRecordId = speak.MeetingRecordId,
-                FileTranscriptionStatus = speak.FileTranscriptionStatus,
-                CreatedDate = speak.CreatedDate
-            }).ToListAsync(cancellationToken).ConfigureAwait(false);
-
-        var recordDetailIds = meetingRecordDetails.Select(x => x.Id).ToList();
-
-        if (language.HasValue)
-        {
-            var translationRecords = await _repository.Query<MeetingSpeakDetailTranslationRecord>()
-                .Where(x => recordDetailIds.Contains(x.MeetingSpeakDetailId) && x.Status == MeetingBackLoadingStatus.Completed && x.Language == language)
-                .ToListAsync(cancellationToken).ConfigureAwait(false);
-
-            meetingRecordDetails = meetingRecordDetails.Select(x =>
-            {
-                var translation = translationRecords.FirstOrDefault(s => s.MeetingSpeakDetailId == x.Id);
-
-                x.OriginalTranslationContent = translation?.OriginalTranslationContent;
-                x.SmartTranslationContent = translation?.SmartTranslationContent;
-
-                return x;
-            }).ToList();
-        }
-
+        
         var meetingInfo = await (
             from meetingRecord in _repository.QueryNoTracking<MeetingRecord>()
             join meeting in _repository.QueryNoTracking<Meeting>() on meetingRecord.MeetingId equals meeting.Id
@@ -202,19 +164,12 @@ public partial class MeetingDataProvider
                 MeetingNumber = meeting.MeetingNumber,
                 MeetingStartDate = meeting.StartDate,
                 MeetingEndDate = meeting.EndDate,
-                Url = meetingRecord.Url,
-                MeetingRecordDetail = meetingRecordDetails
+                Url = meetingRecord.Url
             }).FirstOrDefaultAsync(cancellationToken).ConfigureAwait(false);
+        
+        meetingInfo.MeetingRecordDetails = await GetMeetingRecordDetailsTranslationAsync(recordId, language, cancellationToken).ConfigureAwait(false);
 
-        var summary = await _repository.QueryNoTracking<MeetingSummary>()
-            .Where(x => x.MeetingNumber == meetingInfo.MeetingNumber && x.RecordId == meetingInfo.Id)
-            .OrderByDescending(x => x.CreatedDate)
-            .ProjectTo<MeetingSummaryDto>(_mapper.ConfigurationProvider)
-            .FirstOrDefaultAsync(cancellationToken)
-            .ConfigureAwait(false);
-
-        if (summary != null)
-            meetingInfo.Summary = summary;
+        meetingInfo.Summary = await GetMeetingSummaryAsync(meetingInfo, cancellationToken).ConfigureAwait(false);
         
         return new GetMeetingRecordDetailsResponse
         {
@@ -292,5 +247,50 @@ public partial class MeetingDataProvider
         await _repository.InsertAllAsync(meetingSpeakDetails, cancellationToken).ConfigureAwait(false);
 
         await _unitOfWork.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+    }
+
+    private async Task<List<MeetingSpeakDetailDto>> GetMeetingRecordDetailsTranslationAsync(Guid recordId, TranslationLanguage? language, CancellationToken cancellationToken)
+    {
+        var meetingRecordDetailQuery =  _repository.QueryNoTracking<MeetingSpeakDetail>()
+            .Where(x => x.MeetingRecordId == recordId)
+            .ProjectTo<MeetingSpeakDetailDto>(_mapper.ConfigurationProvider);
+
+        if (language.HasValue)
+        {
+            meetingRecordDetailQuery = from speak in meetingRecordDetailQuery
+                join translation in _repository.QueryNoTracking<MeetingSpeakDetailTranslationRecord>() on speak.Id equals translation.MeetingSpeakDetailId
+                where translation.Language == language
+                select new MeetingSpeakDetailDto
+                {
+                    Id = speak.Id,
+                    UserId = speak.UserId,
+                    TrackId = speak.TrackId,
+                    Username = speak.Username,
+                    SpeakStatus = speak.SpeakStatus,
+                    SpeakEndTime = speak.SpeakEndTime,
+                    SmartContent = speak.SmartContent,
+                    MeetingNumber = speak.MeetingNumber,
+                    SpeakStartTime = speak.SpeakStartTime,
+                    TranslationStatus = translation.Status,
+                    OriginalContent = speak.OriginalContent,
+                    MeetingRecordId = speak.MeetingRecordId,
+                    FileTranscriptionStatus = speak.FileTranscriptionStatus,
+                    SmartTranslationContent = translation.SmartTranslationContent,
+                    OriginalTranslationContent = translation.OriginalTranslationContent,
+                    CreatedDate = speak.CreatedDate
+                };
+        }
+
+        return await meetingRecordDetailQuery.ToListAsync(cancellationToken).ConfigureAwait(false);
+    }
+
+    private async Task<MeetingSummaryDto> GetMeetingSummaryAsync(GetMeetingRecordDetailsDto meetingInfo, CancellationToken cancellationToken)
+    {
+        return await _repository.QueryNoTracking<MeetingSummary>()
+            .Where(x => x.MeetingNumber == meetingInfo.MeetingNumber && x.RecordId == meetingInfo.Id)
+            .OrderByDescending(x => x.CreatedDate)
+            .ProjectTo<MeetingSummaryDto>(_mapper.ConfigurationProvider)
+            .FirstOrDefaultAsync(cancellationToken)
+            .ConfigureAwait(false);
     }
 }
