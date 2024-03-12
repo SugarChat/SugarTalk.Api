@@ -3,6 +3,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using AutoMapper.QueryableExtensions;
 using Microsoft.EntityFrameworkCore;
 using SugarTalk.Messages.Dto.Translation;
 using SugarTalk.Core.Domain.Meeting;
@@ -193,11 +194,12 @@ public partial class MeetingDataProvider
         var summary = await _repository.QueryNoTracking<MeetingSummary>()
             .Where(x => x.MeetingNumber == meetingInfo.MeetingNumber && x.RecordId == meetingInfo.Id)
             .OrderByDescending(x => x.CreatedDate)
+            .ProjectTo<MeetingSummaryDto>(_mapper.ConfigurationProvider)
             .FirstOrDefaultAsync(cancellationToken)
             .ConfigureAwait(false);
 
         if (summary != null)
-            meetingInfo.Summary = _mapper.Map<MeetingSummaryDto>(summary);
+            meetingInfo.Summary = summary;
         
         return new GetMeetingRecordDetailsResponse
         {
