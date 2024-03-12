@@ -15,6 +15,7 @@ using System.Threading.Tasks;
 using AutoMapper.Configuration.Annotations;
 using Microsoft.EntityFrameworkCore;
 using SugarTalk.Core.Domain.Meeting;
+using SugarTalk.Core.Services.Http;
 using SugarTalk.Core.Services.Utils;
 using SugarTalk.Core.Services.Http.Clients;
 using SugarTalk.Core.Services.LiveKit;
@@ -774,6 +775,7 @@ public partial class MeetingServiceFixture
             var liveKitClient = Substitute.For<ILiveKitClient>();
             var openAiService = Substitute.For<IOpenAiService>();
             var liveKitServerUtilService = Substitute.For<ILiveKitServerUtilService>();
+            var sugarTalkHttpClientFactory = Substitute.For<ISugarTalkHttpClientFactory>();
 
             liveKitClient.GetEgressInfoListAsync(Arg.Any<GetEgressRequestDto>(), Arg.Any<CancellationToken>())
                 .Returns(new GetEgressInfoListResponseDto()
@@ -803,7 +805,7 @@ public partial class MeetingServiceFixture
                     Error = "mock error",
                 });
             
-            openAiService.GetAsync<byte[]>(Arg.Any<string>(), Arg.Any<CancellationToken>())
+            sugarTalkHttpClientFactory.GetAsync<byte[]>(Arg.Any<string>(), Arg.Any<CancellationToken>())
                 .Returns(fileContent);
 
             openAiService.ChatCompletionsAsync(
@@ -833,6 +835,7 @@ public partial class MeetingServiceFixture
             builder.RegisterInstance(liveKitClient);
             builder.RegisterInstance(openAiService);
             builder.RegisterInstance(liveKitServerUtilService);
+            builder.RegisterInstance(sugarTalkHttpClientFactory);
         });
         
         await RunWithUnitOfWork<IRepository>(async repository =>
