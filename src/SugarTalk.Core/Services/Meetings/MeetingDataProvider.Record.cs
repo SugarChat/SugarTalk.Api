@@ -177,7 +177,7 @@ public partial class MeetingDataProvider
         if (language.HasValue)
         {
             var translationRecords = await _repository.Query<MeetingSpeakDetailTranslationRecord>()
-                .Where(x => recordDetailIds.Contains(x.MeetingSpeakDetailId) && x.Status == MeetingBackLoadingStatus.Completed).ToListAsync(cancellationToken).ConfigureAwait(false);
+                .Where(x => recordDetailIds.Contains(x.MeetingSpeakDetailId) && x.Status == MeetingBackLoadingStatus.Completed && x.Language == language).ToListAsync(cancellationToken).ConfigureAwait(false);
 
             meetingRecordDetails = meetingRecordDetails.Select(x =>
             {
