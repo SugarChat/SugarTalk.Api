@@ -32,7 +32,7 @@ public class MeetingSpeakDetailDto
 
     public string SmartTranslationContent { get; set; }
 
-    public MeetingBackLoadingStatus TranslationStatus { get; set; }
+    public MeetingSpeakTranslatingStatus TranslationStatus { get; set; }
 
     public FileTranscriptionStatus FileTranscriptionStatus { get; set; }
     
