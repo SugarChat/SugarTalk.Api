@@ -266,7 +266,7 @@ public partial class MeetingDataProvider
         Guid meetingRecordId, TranslationLanguage language, int? meetingSpeakDetailId = null, CancellationToken cancellationToken = default)
     {
         var query = _repository.QueryNoTracking<MeetingSpeakDetailTranslationRecord>()
-            .Where(x => x.MeetingRecordId == meetingRecordId && x.Language == language && x.Status == MeetingBackLoadingStatus.Completed);
+            .Where(x => x.MeetingRecordId == meetingRecordId && x.Language == language && x.Status == MeetingSpeakTranslatingStatus.Completed);
 
         if (meetingSpeakDetailId.HasValue)
             query = query.Where(x => x.MeetingSpeakDetailId == meetingSpeakDetailId.Value);

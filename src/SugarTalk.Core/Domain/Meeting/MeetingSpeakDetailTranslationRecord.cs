@@ -14,7 +14,7 @@ public class MeetingSpeakDetailTranslationRecord : IEntity
         SmartTranslationContent = null;
         CreatedDate = DateTimeOffset.Now;
         OriginalTranslationContent = null;
-        Status = MeetingBackLoadingStatus.Pending;
+        Status = MeetingSpeakTranslatingStatus.Pending;
     }
 
     [Key]
@@ -28,7 +28,7 @@ public class MeetingSpeakDetailTranslationRecord : IEntity
     public int MeetingSpeakDetailId { get; set; }
 
     [Column("status")]
-    public MeetingBackLoadingStatus Status { get; set; }
+    public MeetingSpeakTranslatingStatus Status { get; set; }
 
     [Column("language")]
     public TranslationLanguage Language{ get; set; }

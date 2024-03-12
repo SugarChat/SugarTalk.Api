@@ -220,7 +220,7 @@ public partial class MeetingService
                 Language = command.Language,
                 MeetingSpeakDetailId = x.Id,
                 MeetingRecordId = x.MeetingRecordId,
-                Status = MeetingBackLoadingStatus.Progress
+                Status = MeetingSpeakTranslatingStatus.Progress
             }).ToList();
             
             await _meetingDataProvider.AddMeetingDetailsTranslationRecordAsync(addTranslationRecords, cancellationToken).ConfigureAwait(false);
@@ -236,23 +236,41 @@ public partial class MeetingService
     
     private async Task GenerateProcessSpeakTranslationAsync(List<MeetingSpeakDetailTranslationRecord> meetingSpeeches, List<MeetingSpeakDetail> meetingRecordDetails, TranslationLanguage language, CancellationToken cancellationToken)
     {
+        var updateMeetingSpeakTranslations = new List<MeetingSpeakDetailTranslationRecord>();
+        
         foreach (var speak in meetingRecordDetails)
         {
-            var originalTranslationContent =  (await _translationClient.TranslateTextAsync(speak.OriginalContent, language.GetDescription(), cancellationToken: cancellationToken).ConfigureAwait(false)).TranslatedText;
-            
-            var smartTranslationContent = (await _translationClient.TranslateTextAsync(speak.SmartContent, language.GetDescription(), cancellationToken: cancellationToken).ConfigureAwait(false)).TranslatedText;
-
-            meetingSpeeches = meetingSpeeches.Where(x => x.MeetingSpeakDetailId == speak.Id).Select(x =>
+            try
             {
-                if (originalTranslationContent.IsNullOrEmpty() || smartTranslationContent.IsNullOrEmpty())
-                    x.Status = MeetingBackLoadingStatus.Exception;
+                var originalTranslationContent = (await _translationClient.TranslateTextAsync(
+                        speak.OriginalContent, language.GetDescription(), cancellationToken: cancellationToken)
+                    .ConfigureAwait(false)).TranslatedText;
 
-                x.Status = MeetingBackLoadingStatus.Completed;
+                var smartTranslationContent = (await _translationClient.TranslateTextAsync(
+                        speak.SmartContent, language.GetDescription(), cancellationToken: cancellationToken)
+                    .ConfigureAwait(false)).TranslatedText;
 
-                return x;
-            }).ToList();
+                updateMeetingSpeakTranslations.AddRange(meetingSpeeches.Where(x => x.MeetingSpeakDetailId == speak.Id).Select(x =>
+               {
+                   x.Status = MeetingSpeakTranslatingStatus.Completed;
+                   x.SmartTranslationContent = smartTranslationContent;
+                   x.OriginalTranslationContent = originalTranslationContent;
+
+                   return x;
+               }).ToList());
+            }
+            catch (Exception e)
+            {
+                updateMeetingSpeakTranslations.AddRange(meetingSpeeches.Where(x => x.MeetingSpeakDetailId == speak.Id).Select(x =>
+                    {
+                        x.Status = MeetingSpeakTranslatingStatus.Exception;
+
+                        return x;
+                    }).ToList()
+                );
+            }
         }
         
-        await _meetingDataProvider.UpdateMeetingDetailsTranslationRecordAsync(meetingSpeeches, cancellationToken).ConfigureAwait(false);
+        await _meetingDataProvider.UpdateMeetingDetailsTranslationRecordAsync(updateMeetingSpeakTranslations, cancellationToken).ConfigureAwait(false);
     }
 }
