@@ -29,10 +29,10 @@ public class MeetingChatRoomSetting : IEntity
     [Column("ea_voice_id", TypeName = "char(36)")]
     public Guid EaVoiceId { get; set; }
     
-    [Column("original_language_type")]
+    [Column("self_language")]
     public SpeechTargetLanguageType SelfLanguage { get; set; }
     
-    [Column("target_language_type")]
+    [Column("listening_language")]
     public SpeechTargetLanguageType ListeningLanguage { get; set; }
     
     [Column("voice_type")]
