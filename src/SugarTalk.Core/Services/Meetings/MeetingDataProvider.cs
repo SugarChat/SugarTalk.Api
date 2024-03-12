@@ -299,7 +299,7 @@ namespace SugarTalk.Core.Services.Meetings
         public async Task<MeetingChatRoomSetting> GetMeetingChatRoomSettingByMeetingIdAsync(int userId, Guid meetingId, CancellationToken cancellationToken)
         {
             return await _repository.Query<MeetingChatRoomSetting>()
-                .Where(x=>x.UserId == userId && x.MeetingId == meetingId)
+                .Where(x => x.UserId == userId && x.MeetingId == meetingId)
                 .FirstOrDefaultAsync(cancellationToken).ConfigureAwait(false);
         }
 
