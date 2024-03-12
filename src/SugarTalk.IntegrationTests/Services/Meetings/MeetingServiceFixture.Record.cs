@@ -607,7 +607,7 @@ public partial class MeetingServiceFixture
             result.Data.Url.ShouldBe(meetingUrl);
             if (isInsertMeetingRecordSummary)
             {
-                // result.Data.Summary.ShouldBe(meetingSummary);
+                result.Data.Summary.Summary.ShouldBe(meetingSummary);
             }
             else
             {
