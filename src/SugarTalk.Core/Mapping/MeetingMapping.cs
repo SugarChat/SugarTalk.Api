@@ -30,7 +30,5 @@ public class MeetingMapping: Profile
         CreateMap<MeetingSpeakDetail, MeetingSpeakDetailDto>().ReverseMap();
 
         CreateMap<MeetingSummary, MeetingSummaryDto>().ReverseMap();
-
-        CreateMap<GetMeetingRecordDetailsMappingDto, GetMeetingRecordDetailsDto>();
     }
 }
