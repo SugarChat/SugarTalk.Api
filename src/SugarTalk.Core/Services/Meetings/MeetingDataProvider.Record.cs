@@ -151,11 +151,11 @@ public partial class MeetingDataProvider
             .GetUserAccountAsync(_currentUser.Id.Value, cancellationToken: cancellationToken).ConfigureAwait(false);
 
         if (currentUser is null) throw new UnauthorizedAccessException();
-   
+
         var meetingRecordDetails = await (from speak in _repository.QueryNoTracking<MeetingSpeakDetail>()
             join translation in _repository.QueryNoTracking<MeetingSpeakDetailTranslationRecord>() on speak.Id equals translation.MeetingSpeakDetailId into translations
             from translation in translations.DefaultIfEmpty()
-            where speak.MeetingRecordId == recordId && translation.Language == language
+            where speak.MeetingRecordId == recordId && (!language.HasValue || language.Value == translation.Language)
             select new MeetingSpeakDetailDto
             {
                 Id = speak.Id,
@@ -174,7 +174,7 @@ public partial class MeetingDataProvider
                 FileTranscriptionStatus = speak.FileTranscriptionStatus,
                 CreatedDate = speak.CreatedDate
             }).ToListAsync(cancellationToken).ConfigureAwait(false);
-        
+
         var meetingInfo = await (
             from meetingRecord in _repository.QueryNoTracking<MeetingRecord>()
             join meeting in _repository.QueryNoTracking<Meeting>() on meetingRecord.MeetingId equals meeting.Id
