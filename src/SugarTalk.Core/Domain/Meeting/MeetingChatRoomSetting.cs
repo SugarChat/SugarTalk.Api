@@ -13,7 +13,6 @@ public class MeetingChatRoomSetting : IEntity
         LastModifiedDate = DateTimeOffset.Now;
         SelfLanguage = SpeechTargetLanguageType.Cantonese;
         ListeningLanguage = SpeechTargetLanguageType.Cantonese;
-        VoiceType = ChatRoomVoiceType.XiaochenNeural;
     }
     
     [Key]
@@ -26,18 +25,15 @@ public class MeetingChatRoomSetting : IEntity
     [Column("user_id")] 
     public int UserId { get; set; }
     
-    [Column("ea_voice_id", TypeName = "char(36)")]
-    public Guid EaVoiceId { get; set; }
+    [Column("voice_id")]
+    public string VoiceId { get; set; }
     
     [Column("self_language")]
     public SpeechTargetLanguageType SelfLanguage { get; set; }
     
     [Column("listening_language")]
     public SpeechTargetLanguageType ListeningLanguage { get; set; }
-    
-    [Column("voice_type")]
-    public ChatRoomVoiceType VoiceType { get; set; }
-    
+
     [Column("last_modified_date")]
     public DateTimeOffset LastModifiedDate { get; set; }
 }

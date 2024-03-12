@@ -33,7 +33,7 @@ public class MeetingUserController : ControllerBase
     [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(AddOrUpdateChatRoomSettingResponse))]
     public async Task<IActionResult> AddOrUpdateChatRoomSettingAsync(AddOrUpdateChatRoomSettingCommand command)
     {
-        var response = await _mediator.SendAsync<AddOrUpdateChatRoomSettingCommand, AddOrUpdateChatRoomSettingResponse>(command);
+        var response = await _mediator.SendAsync<AddOrUpdateChatRoomSettingCommand, AddOrUpdateChatRoomSettingResponse>(command).ConfigureAwait(false);
         
         return Ok(response);
     }

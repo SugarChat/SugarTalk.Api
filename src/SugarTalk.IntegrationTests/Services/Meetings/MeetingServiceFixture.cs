@@ -1076,21 +1076,18 @@ public partial class MeetingServiceFixture : MeetingFixtureBase
     }
 
     [Theory]
-    [InlineData("8b9c631a-3c76-4b24-b90d-5a25d6b2f4f9", SpeechTargetLanguageType.Cantonese, SpeechTargetLanguageType.Cantonese, ChatRoomVoiceType.XiaochenNeural)]
-    [InlineData("af0e2598-7d9d-493e-bf77-6f33db8f5c3c", SpeechTargetLanguageType.English, SpeechTargetLanguageType.Spanish, ChatRoomVoiceType.YunjianNeural)]
+    [InlineData("8b9c631a-3c76-4b24-b90d-5a25d6b2f4f9", SpeechTargetLanguageType.Cantonese, SpeechTargetLanguageType.Cantonese)]
+    [InlineData("af0e2598-7d9d-493e-bf77-6f33db8f5c3c", SpeechTargetLanguageType.English, SpeechTargetLanguageType.Spanish)]
     public async Task CanAndOrUpdateMeetingChatRoom(
-        Guid meetingId, SpeechTargetLanguageType listeninglanguage, SpeechTargetLanguageType selfLanguage, ChatRoomVoiceType voiceType)
+        Guid meetingId, SpeechTargetLanguageType listeningLanguage, SpeechTargetLanguageType selfLanguage)
     {
-        var eaVoiceId = Guid.NewGuid();
-
         var meetingChatRoomSetting = new MeetingChatRoomSetting()
         {
             UserId = 1,
             MeetingId = Guid.Parse("8b9c631a-3c76-4b24-b90d-5a25d6b2f4f9"),
-            EaVoiceId = eaVoiceId,
+            VoiceId = "123",
             SelfLanguage = SpeechTargetLanguageType.French,
             ListeningLanguage = SpeechTargetLanguageType.Mandarin,
-            VoiceType = ChatRoomVoiceType.XiaochenNeural,
             LastModifiedDate = DateTimeOffset.Now
         };
         
@@ -1106,8 +1103,7 @@ public partial class MeetingServiceFixture : MeetingFixtureBase
             {
                 MeetingId = meetingId,
                 SelfLanguage = selfLanguage,
-                ListeningLanguage = listeninglanguage,
-                VoiceType = voiceType
+                ListeningLanguage = listeningLanguage,
             }).ConfigureAwait(false);
 
             var meetingChatRoom = await repository.QueryNoTracking<MeetingChatRoomSetting>(
@@ -1115,8 +1111,7 @@ public partial class MeetingServiceFixture : MeetingFixtureBase
             
             meetingChatRoom.ShouldNotBeNull();
             meetingChatRoom.SelfLanguage.ShouldBe(selfLanguage);
-            meetingChatRoom.ListeningLanguage.ShouldBe(listeninglanguage);
-            meetingChatRoom.VoiceType.ShouldBe(voiceType);
+            meetingChatRoom.ListeningLanguage.ShouldBe(listeningLanguage);
         });
     }
 }

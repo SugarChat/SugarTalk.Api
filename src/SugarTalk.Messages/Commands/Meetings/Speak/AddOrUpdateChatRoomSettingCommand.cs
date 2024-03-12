@@ -11,9 +11,7 @@ public class AddOrUpdateChatRoomSettingCommand : ICommand
     
     public SpeechTargetLanguageType SelfLanguage { get; set; }
     
-    public SpeechTargetLanguageType ListeningLanguage { get; set; } 
-    
-    public ChatRoomVoiceType VoiceType { get; set; }
+    public SpeechTargetLanguageType ListeningLanguage { get; set; }
 }
 
 public class AddOrUpdateChatRoomSettingResponse : SugarTalkResponse

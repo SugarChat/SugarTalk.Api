@@ -484,17 +484,11 @@ namespace SugarTalk.Core.Services.Meetings
                     MeetingId = command.MeetingId,
                     SelfLanguage = command.SelfLanguage,
                     ListeningLanguage = command.ListeningLanguage,
-                    VoiceType = command.VoiceType
                 }, true, cancellationToken).ConfigureAwait(false);
             }
             else
             {
-                roomSetting.LastModifiedDate = DateTimeOffset.Now;
-                roomSetting.SelfLanguage = command.SelfLanguage;
-                roomSetting.ListeningLanguage = command.ListeningLanguage;
-                roomSetting.VoiceType = command.VoiceType;
-                
-                await _meetingDataProvider.UpdateMeetingChatRoomSettingAsync(roomSetting, cancellationToken).ConfigureAwait(false);
+                await _meetingDataProvider.UpdateMeetingChatRoomSettingAsync(_mapper.Map(command, roomSetting), cancellationToken).ConfigureAwait(false);
             }
 
             return new ChatRoomSettingAddOrUpdateEvent();
