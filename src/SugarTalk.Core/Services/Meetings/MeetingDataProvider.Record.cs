@@ -10,6 +10,7 @@ using SugarTalk.Core.Domain.Meeting;
 using SugarTalk.Core.Domain.Account;
 using SugarTalk.Messages.Dto.Meetings;
 using SugarTalk.Messages.Dto.Meetings.Speak;
+using SugarTalk.Messages.Dto.Meetings.Summary;
 using SugarTalk.Messages.Enums.Meeting;
 using SugarTalk.Messages.Enums.Speech;
 using SugarTalk.Messages.Requests.Meetings;
@@ -178,9 +179,6 @@ public partial class MeetingDataProvider
         var meetingInfo = await (
             from meetingRecord in _repository.QueryNoTracking<MeetingRecord>()
             join meeting in _repository.QueryNoTracking<Meeting>() on meetingRecord.MeetingId equals meeting.Id
-            join meetingSummary in _repository.QueryNoTracking<MeetingSummary>() on meetingRecord.Id equals meetingSummary.RecordId
-            into meetingSummaryLeft
-            from meetingSummary in  meetingSummaryLeft.DefaultIfEmpty()
             where meetingRecord.Id == recordId
             select new GetMeetingRecordDetailsDto
             {
@@ -190,11 +188,19 @@ public partial class MeetingDataProvider
                 MeetingStartDate = meeting.StartDate,
                 MeetingEndDate = meeting.EndDate,
                 Url = meetingRecord.Url,
-                Summary = meetingSummary == null? null : meetingSummary.Summary,
                 MeetingRecordDetail = meetingRecordDetails
-            }
-        ).FirstOrDefaultAsync(cancellationToken).ConfigureAwait(false);
+            }).FirstOrDefaultAsync(cancellationToken).ConfigureAwait(false);
 
+        var summary = await _repository.QueryNoTracking<MeetingSummary>()
+            .Where(x => x.MeetingNumber == meetingInfo.MeetingNumber && x.RecordId == meetingInfo.Id)
+            .OrderByDescending(x => x.CreatedDate)
+            .ProjectTo<MeetingSummaryDto>(_mapper.ConfigurationProvider)
+            .FirstOrDefaultAsync(cancellationToken)
+            .ConfigureAwait(false);
+
+        if (summary != null)
+            meetingInfo.Summary = summary;
+        
         return new GetMeetingRecordDetailsResponse
         {
             Data = meetingInfo
