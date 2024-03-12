@@ -46,7 +46,7 @@ public partial interface IMeetingDataProvider
     
     Task AddMeetingDetailsTranslationRecordAsync(List<MeetingSpeakDetailTranslationRecord> meetingSpeakDetails, CancellationToken cancellationToken);
     
-    Task UpdateMeetingDetailsTranslationRecordAsync(List<MeetingSpeakDetailTranslationRecord> meetingSpeakDetails, CancellationToken cancellationToken);
+    Task UpdateMeetingDetailTranslationRecordAsync(MeetingSpeakDetailTranslationRecord meetingSpeakDetail, CancellationToken cancellationToken);
 }
 
 public partial class MeetingDataProvider
@@ -236,7 +236,7 @@ public partial class MeetingDataProvider
         Guid meetingRecordId, TranslationLanguage language, int? meetingSpeakDetailId = null, CancellationToken cancellationToken = default)
     {
         var query = _repository.QueryNoTracking<MeetingSpeakDetailTranslationRecord>()
-            .Where(x => x.MeetingRecordId == meetingRecordId && x.Language == language && x.Status == MeetingSpeakTranslatingStatus.Completed);
+            .Where(x => x.MeetingRecordId == meetingRecordId && x.Language == language);
 
         if (meetingSpeakDetailId.HasValue)
             query = query.Where(x => x.MeetingSpeakDetailId == meetingSpeakDetailId.Value);
@@ -251,10 +251,9 @@ public partial class MeetingDataProvider
         await _unitOfWork.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
     }
 
-    public async Task UpdateMeetingDetailsTranslationRecordAsync(
-        List<MeetingSpeakDetailTranslationRecord> meetingSpeakDetails, CancellationToken cancellationToken)
+    public async Task UpdateMeetingDetailTranslationRecordAsync(MeetingSpeakDetailTranslationRecord meetingSpeakDetail, CancellationToken cancellationToken)
     {
-        await _repository.UpdateAllAsync(meetingSpeakDetails, cancellationToken).ConfigureAwait(false);
+        await _repository.UpdateAsync(meetingSpeakDetail, cancellationToken).ConfigureAwait(false);
 
         await _unitOfWork.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
     }
