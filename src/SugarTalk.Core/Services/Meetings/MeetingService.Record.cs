@@ -13,6 +13,7 @@ using SugarTalk.Messages.Dto.LiveKit.Egress;
 using SugarTalk.Messages.Dto.Meetings.Speak;
 using SugarTalk.Messages.Dto.Translation;
 using SugarTalk.Messages.Enums.Meeting;
+using SugarTalk.Messages.Enums.Meeting.Speak;
 using SugarTalk.Messages.Enums.Speech;
 using SugarTalk.Messages.Events.Meeting;
 using SugarTalk.Messages.Events.Meeting.Summary;
@@ -134,7 +135,7 @@ public partial class MeetingService
             ReTryLimit = command.ReTryLimit
         }; 
         
-        _backgroundJobClient.Schedule<IMediator>(m=>m.SendAsync(storageCommand, cancellationToken), TimeSpan.FromSeconds(10)); 
+        _backgroundJobClient.Schedule<IMediator>(m => m.SendAsync(storageCommand, cancellationToken), TimeSpan.FromSeconds(10)); 
       
         return new StorageMeetingRecordVideoResponse();
     }
@@ -199,10 +200,12 @@ public partial class MeetingService
         await _meetingDataProvider.UpdateMeetingRecordAsync(meetingRecord, cancellationToken).ConfigureAwait(false);
 
         var meetingDetails = await _meetingDataProvider.GetMeetingDetailsByRecordIdAsync(meetingRecordId, cancellationToken).ConfigureAwait(false);
+        
+        if (!string.IsNullOrEmpty(meetingRecord.Url))
+        {   
+            await MarkSpeakTranscriptAsSpecifiedStatusAsync(meetingDetails, FileTranscriptionStatus.InProcess, cancellationToken).ConfigureAwait(false);
 
-        foreach (var meetingDetail in meetingDetails)
-        {
-            await TranscriptionMeetingAsync(meetingDetail, meetingRecord, cancellationToken);
+             await TranscriptionMeetingAsync(meetingDetails, meetingRecord, cancellationToken);
         }
     }
 
