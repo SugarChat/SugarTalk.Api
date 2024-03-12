@@ -2,6 +2,7 @@ using Mediator.Net;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SugarTalk.Messages.Commands.Meetings;
+using SugarTalk.Messages.Commands.Meetings.Speak;
 using SugarTalk.Messages.Commands.Speech;
 using SugarTalk.Messages.Requests.Meetings.User;
 
@@ -24,6 +25,16 @@ public class MeetingUserController : ControllerBase
     public async Task<IActionResult> AddOrUpdateMeetingUserSettingAsync(AddOrUpdateMeetingUserSettingCommand command)
     {
         var response = await _mediator.SendAsync<AddOrUpdateMeetingUserSettingCommand, AddOrUpdateMeetingUserSettingResponse>(command);
+        
+        return Ok(response);
+    }
+    
+    [Route("setting/chatRoom/addOrUpdate"), HttpPost]
+    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(AddOrUpdateChatRoomSettingResponse))]
+    public async Task<IActionResult> AddOrUpdateChatRoomSettingAsync(AddOrUpdateChatRoomSettingCommand command)
+    {
+        var response = await _mediator.SendAsync<AddOrUpdateChatRoomSettingCommand, AddOrUpdateChatRoomSettingResponse>(command).ConfigureAwait(false);
+        
         return Ok(response);
     }
 
@@ -32,6 +43,7 @@ public class MeetingUserController : ControllerBase
     public async Task<IActionResult> GetMeetingUserSettingAsync([FromQuery] GetMeetingUserSettingRequest request)
     {
         var response = await _mediator.RequestAsync<GetMeetingUserSettingRequest, GetMeetingUserSettingResponse>(request);
+        
         return Ok(response);
     }
 
@@ -45,6 +57,7 @@ public class MeetingUserController : ControllerBase
     public async Task<IActionResult> VerifyMeetingUserPermissionsAsync(VerifyMeetingUserPermissionCommand command)
     {
         var response = await _mediator.SendAsync<VerifyMeetingUserPermissionCommand, VerifyMeetingUserPermissionResponse>(command).ConfigureAwait(false);
+        
         return Ok(response);
     }
 
@@ -58,6 +71,7 @@ public class MeetingUserController : ControllerBase
     public async Task<IActionResult> KickOutMeetingAsync(KickOutMeetingByUserIdCommand command)
     {
         var response = await _mediator.SendAsync<KickOutMeetingByUserIdCommand, KickOutMeetingByUserIdResponse>(command).ConfigureAwait(false);
+        
         return Ok(response);
     }
 }

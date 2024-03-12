@@ -1,6 +1,7 @@
 using AutoMapper;
 using SugarTalk.Core.Domain.Meeting;
 using SugarTalk.Messages.Commands.Meetings;
+using SugarTalk.Messages.Commands.Meetings.Speak;
 using SugarTalk.Messages.Dto.Meetings;
 using SugarTalk.Messages.Dto.Meetings.Speak;
 using SugarTalk.Messages.Dto.Meetings.Speech;
@@ -30,5 +31,9 @@ public class MeetingMapping: Profile
         CreateMap<MeetingSpeakDetail, MeetingSpeakDetailDto>().ReverseMap();
 
         CreateMap<MeetingSummary, MeetingSummaryDto>().ReverseMap();
+
+        CreateMap<AddOrUpdateChatRoomSettingCommand, MeetingChatRoomSetting>()
+            .ForMember(dest => dest.SelfLanguage, source => source.MapFrom(x => x.SelfLanguage))
+            .ForMember(dest => dest.ListeningLanguage, source => source.MapFrom(x => x.ListeningLanguage));
     }
 }

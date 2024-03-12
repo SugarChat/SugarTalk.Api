@@ -22,12 +22,15 @@ using SugarTalk.IntegrationTests.TestBaseClasses;
 using SugarTalk.IntegrationTests.Utils.Account;
 using SugarTalk.IntegrationTests.Utils.Meetings;
 using SugarTalk.Messages.Commands.Meetings;
+using SugarTalk.Messages.Commands.Meetings.Speak;
+using SugarTalk.Messages.Commands.Speech;
 using SugarTalk.Messages.Dto;
 using SugarTalk.Messages.Dto.LiveKit;
 using SugarTalk.Messages.Dto.Meetings;
 using SugarTalk.Messages.Dto.Users;
 using SugarTalk.Messages.Enums.Account;
 using SugarTalk.Messages.Enums.Meeting;
+using SugarTalk.Messages.Enums.Speech;
 using SugarTalk.Messages.Requests.Meetings;
 
 using Xunit;
@@ -1070,5 +1073,45 @@ public partial class MeetingServiceFixture : MeetingFixtureBase
 
         builder.RegisterInstance(antMediaServerUtilService);
         builder.RegisterInstance(openAiService);
+    }
+
+    [Theory]
+    [InlineData("8b9c631a-3c76-4b24-b90d-5a25d6b2f4f9", SpeechTargetLanguageType.Cantonese, SpeechTargetLanguageType.Cantonese)]
+    [InlineData("af0e2598-7d9d-493e-bf77-6f33db8f5c3c", SpeechTargetLanguageType.English, SpeechTargetLanguageType.Spanish)]
+    public async Task CanAndOrUpdateMeetingChatRoom(
+        Guid meetingId, SpeechTargetLanguageType listeningLanguage, SpeechTargetLanguageType selfLanguage)
+    {
+        var meetingChatRoomSetting = new MeetingChatRoomSetting()
+        {
+            UserId = 1,
+            MeetingId = Guid.Parse("8b9c631a-3c76-4b24-b90d-5a25d6b2f4f9"),
+            VoiceId = "123",
+            SelfLanguage = SpeechTargetLanguageType.French,
+            ListeningLanguage = SpeechTargetLanguageType.Mandarin,
+            LastModifiedDate = DateTimeOffset.Now
+        };
+        
+        await RunWithUnitOfWork<IRepository>(async repository =>
+        {
+            await repository.InsertAsync(meetingChatRoomSetting).ConfigureAwait(false);
+            
+        }).ConfigureAwait(false);
+
+        await Run<IMediator, IRepository>(async (mediator, repository) =>
+        {
+            await mediator.SendAsync(new AddOrUpdateChatRoomSettingCommand
+            {
+                MeetingId = meetingId,
+                SelfLanguage = selfLanguage,
+                ListeningLanguage = listeningLanguage,
+            }).ConfigureAwait(false);
+
+            var meetingChatRoom = await repository.QueryNoTracking<MeetingChatRoomSetting>(
+                x => x.UserId == 1 && x.MeetingId == meetingId).FirstOrDefaultAsync().ConfigureAwait(false);
+            
+            meetingChatRoom.ShouldNotBeNull();
+            meetingChatRoom.SelfLanguage.ShouldBe(selfLanguage);
+            meetingChatRoom.ListeningLanguage.ShouldBe(listeningLanguage);
+        });
     }
 }
