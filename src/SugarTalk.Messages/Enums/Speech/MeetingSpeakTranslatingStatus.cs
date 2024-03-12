@@ -2,7 +2,7 @@ using System.ComponentModel;
 
 namespace SugarTalk.Messages.Enums.Speech;
 
-public enum MeetingBackLoadingStatus
+public enum MeetingSpeakTranslatingStatus
 {
     [Description("等待中")]
     Pending = 10,
@@ -11,5 +11,8 @@ public enum MeetingBackLoadingStatus
     Progress = 20,
     
     [Description("已完成")]
-    Completed = 30
+    Completed = 30,
+    
+    [Description("生成失败")]
+    Exception = 40
 }
