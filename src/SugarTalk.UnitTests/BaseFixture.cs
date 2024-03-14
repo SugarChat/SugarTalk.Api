@@ -102,7 +102,7 @@ public partial class BaseFixture
         return new MeetingService(
             clock, mapper, unitOfWork, currentUser,openAiService, speechClient, liveKitClient, translationClient ,meetingUtilService, meetingDataProvider,
             accountDataProvider, aliYunOssSetting, liveKitServerSetting, backgroundJobClient, liveKitServerUtilService, 
-            antMediaServerUtilService,sugarTalkBackgroundJobClient);
+            antMediaServerUtilService,sugarTalkBackgroundJobClient, null);
     }
     
     protected IMeetingDataProvider MockMeetingDataProvider(

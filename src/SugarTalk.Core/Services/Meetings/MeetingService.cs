@@ -30,6 +30,7 @@ using SugarTalk.Messages.Dto.Users;
 using SugarTalk.Messages.Enums.Account;
 using SugarTalk.Core.Domain.Meeting;
 using SugarTalk.Core.Services.OpenAi;
+using SugarTalk.Core.Settings.Meeting;
 using SugarTalk.Messages.Enums.Meeting;
 using SugarTalk.Messages.Events.Meeting;
 using SugarTalk.Messages.Requests.Meetings;
@@ -105,6 +106,7 @@ namespace SugarTalk.Core.Services.Meetings
 
         private readonly AliYunOssSettings _aliYunOssSetting;
         private readonly LiveKitServerSetting _liveKitServerSetting;
+        private readonly MeetingInfoSettings _meetingInfoSettings;
         
         public MeetingService(
             IClock clock,
@@ -123,7 +125,8 @@ namespace SugarTalk.Core.Services.Meetings
             ISugarTalkBackgroundJobClient backgroundJobClient,
             ILiveKitServerUtilService liveKitServerUtilService,
             IAntMediaServerUtilService antMediaServerUtilService,
-            ISugarTalkBackgroundJobClient sugarTalkBackgroundJobClient)
+            ISugarTalkBackgroundJobClient sugarTalkBackgroundJobClient, 
+            MeetingInfoSettings meetingInfoSettings)
         {
             _clock = clock;
             _mapper = mapper;
@@ -142,6 +145,7 @@ namespace SugarTalk.Core.Services.Meetings
             _liveKitServerUtilService = liveKitServerUtilService;
             _antMediaServerUtilService = antMediaServerUtilService;
             _sugarTalkBackgroundJobClient = sugarTalkBackgroundJobClient;
+            _meetingInfoSettings = meetingInfoSettings;
         }
         
         public async Task<MeetingScheduledEvent> ScheduleMeetingAsync(ScheduleMeetingCommand command, CancellationToken cancellationToken)
@@ -679,7 +683,7 @@ namespace SugarTalk.Core.Services.Meetings
                     Sender = user.UserName,
                     Title = meeting.Title,
                     MeetingNumber = meeting.MeetingNumber,
-                    Url = string.Empty,
+                    Url = _meetingInfoSettings.InviteBaseUrl + $"/#/?meetingNumber={meeting.MeetingNumber}",
                     Password = meeting.Password
                 }
             };
