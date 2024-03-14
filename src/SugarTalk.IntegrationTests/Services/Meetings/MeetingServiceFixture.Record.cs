@@ -12,8 +12,10 @@ using System.Threading;
 using SugarTalk.Core.Data;
 using SugarTalk.Messages.Dto;
 using System.Threading.Tasks;
+using AutoMapper.Configuration.Annotations;
 using Microsoft.EntityFrameworkCore;
 using SugarTalk.Core.Domain.Meeting;
+using SugarTalk.Core.Services.Http;
 using SugarTalk.Core.Services.Utils;
 using SugarTalk.Core.Services.Http.Clients;
 using SugarTalk.Core.Services.LiveKit;
@@ -606,35 +608,35 @@ public partial class MeetingServiceFixture
             result.Data.Url.ShouldBe(meetingUrl);
             if (isInsertMeetingRecordSummary)
             {
-                result.Data.Summary.ShouldBe(meetingSummary);
+                result.Data.Summary.Summary.ShouldBe(meetingSummary);
             }
             else
             {
                 result.Data.Summary.ShouldBeNull();
             }
 
-            result.Data.MeetingRecordDetail.ShouldNotBeNull();
+            result.Data.MeetingRecordDetails.ShouldNotBeNull();
             
-            result.Data.MeetingRecordDetail.FirstOrDefault(x => x.UserId == 1).ShouldNotBeNull();
-            result.Data.MeetingRecordDetail.FirstOrDefault(x => x.UserId == 1)?.OriginalContent.ShouldBe(meetingContent1);
-            result.Data.MeetingRecordDetail.FirstOrDefault(x=>x.UserId == 1).MeetingNumber.ShouldBe(meetingNumber);
-            result.Data.MeetingRecordDetail.FirstOrDefault(x=>x.UserId == 1).SpeakStatus.ShouldBe(SpeakStatus.Speaking);
-            result.Data.MeetingRecordDetail.FirstOrDefault(x=>x.UserId == 1).TrackId.ShouldBe("1");
-            result.Data.MeetingRecordDetail.FirstOrDefault(x=>x.UserId == 1).SpeakEndTime.ShouldBeNull();
-            result.Data.MeetingRecordDetail.FirstOrDefault(x => x.UserId == 1)?.FileTranscriptionStatus.ShouldBe(FileTranscriptionStatus.Pending);
-            result.Data.MeetingRecordDetail.FirstOrDefault(x => x.UserId == 1)?.SpeakStartTime
+            result.Data.MeetingRecordDetails.FirstOrDefault(x => x.UserId == 1).ShouldNotBeNull();
+            result.Data.MeetingRecordDetails.FirstOrDefault(x => x.UserId == 1)?.OriginalContent.ShouldBe(meetingContent1);
+            result.Data.MeetingRecordDetails.FirstOrDefault(x=>x.UserId == 1).MeetingNumber.ShouldBe(meetingNumber);
+            result.Data.MeetingRecordDetails.FirstOrDefault(x=>x.UserId == 1).SpeakStatus.ShouldBe(SpeakStatus.Speaking);
+            result.Data.MeetingRecordDetails.FirstOrDefault(x=>x.UserId == 1).TrackId.ShouldBe("1");
+            result.Data.MeetingRecordDetails.FirstOrDefault(x=>x.UserId == 1).SpeakEndTime.ShouldBeNull();
+            result.Data.MeetingRecordDetails.FirstOrDefault(x => x.UserId == 1)?.FileTranscriptionStatus.ShouldBe(FileTranscriptionStatus.Pending);
+            result.Data.MeetingRecordDetails.FirstOrDefault(x => x.UserId == 1)?.SpeakStartTime
                 .ShouldBe(new DateTimeOffset(2024, 1, 1, 0, 0, 0, TimeSpan.Zero).ToUnixTimeSeconds());
             
-            result.Data.MeetingRecordDetail.FirstOrDefault(x => x.UserId == 2).ShouldNotBeNull();
-            result.Data.MeetingRecordDetail.FirstOrDefault(x => x.UserId == 2)?.OriginalContent.ShouldBe(meetingContent2);
-            result.Data.MeetingRecordDetail.FirstOrDefault(x=>x.UserId == 2).SmartContent.ShouldBe("I am a test smart content.");
-            result.Data.MeetingRecordDetail.FirstOrDefault(x=>x.UserId == 2).MeetingNumber.ShouldBe(meetingNumber);
-            result.Data.MeetingRecordDetail.FirstOrDefault(x=>x.UserId == 2).SpeakStatus.ShouldBe(SpeakStatus.Speaking);
-            result.Data.MeetingRecordDetail.FirstOrDefault(x=>x.UserId == 2).TrackId.ShouldBe("2");
-            result.Data.MeetingRecordDetail.FirstOrDefault(x=>x.UserId == 2).FileTranscriptionStatus.ShouldBe(FileTranscriptionStatus.Completed);
-            result.Data.MeetingRecordDetail.FirstOrDefault(x=>x.UserId == 2).SpeakEndTime
+            result.Data.MeetingRecordDetails.FirstOrDefault(x => x.UserId == 2).ShouldNotBeNull();
+            result.Data.MeetingRecordDetails.FirstOrDefault(x => x.UserId == 2)?.OriginalContent.ShouldBe(meetingContent2);
+            result.Data.MeetingRecordDetails.FirstOrDefault(x=>x.UserId == 2).SmartContent.ShouldBe("I am a test smart content.");
+            result.Data.MeetingRecordDetails.FirstOrDefault(x=>x.UserId == 2).MeetingNumber.ShouldBe(meetingNumber);
+            result.Data.MeetingRecordDetails.FirstOrDefault(x=>x.UserId == 2).SpeakStatus.ShouldBe(SpeakStatus.Speaking);
+            result.Data.MeetingRecordDetails.FirstOrDefault(x=>x.UserId == 2).TrackId.ShouldBe("2");
+            result.Data.MeetingRecordDetails.FirstOrDefault(x=>x.UserId == 2).FileTranscriptionStatus.ShouldBe(FileTranscriptionStatus.Completed);
+            result.Data.MeetingRecordDetails.FirstOrDefault(x=>x.UserId == 2).SpeakEndTime
                 .ShouldBe(new DateTimeOffset(2024, 1, 1, 0, 0, 0, TimeSpan.Zero).ToUnixTimeSeconds());
-            result.Data.MeetingRecordDetail.FirstOrDefault(x => x.UserId == 2)?.SpeakStartTime
+            result.Data.MeetingRecordDetails.FirstOrDefault(x => x.UserId == 2)?.SpeakStartTime
                 .ShouldBe(new DateTimeOffset(2024, 1, 1, 0, 0, 0, TimeSpan.Zero).ToUnixTimeSeconds());
         }, builder =>
         {
@@ -773,6 +775,7 @@ public partial class MeetingServiceFixture
             var liveKitClient = Substitute.For<ILiveKitClient>();
             var openAiService = Substitute.For<IOpenAiService>();
             var liveKitServerUtilService = Substitute.For<ILiveKitServerUtilService>();
+            var sugarTalkHttpClientFactory = Substitute.For<ISugarTalkHttpClientFactory>();
 
             liveKitClient.GetEgressInfoListAsync(Arg.Any<GetEgressRequestDto>(), Arg.Any<CancellationToken>())
                 .Returns(new GetEgressInfoListResponseDto()
@@ -802,14 +805,14 @@ public partial class MeetingServiceFixture
                     Error = "mock error",
                 });
             
-            openAiService.GetAsync<byte[]>(Arg.Any<string>(), Arg.Any<CancellationToken>())
+            sugarTalkHttpClientFactory.GetAsync<byte[]>(Arg.Any<string>(), Arg.Any<CancellationToken>())
                 .Returns(fileContent);
 
             openAiService.ChatCompletionsAsync(
                     Arg.Any<List<CompletionsRequestMessageDto>>(), 
                     Arg.Any<List<CompletionsRequestFunctionDto>>(), 
                     Arg.Any<CompletionsRequestFunctionCallDto>(), 
-                    Arg.Any<OpenAiModel>(), null, Arg.Any<double>(),
+                    Arg.Any<OpenAiModel>(), Arg.Any<CompletionResponseFormatDto>(), null, Arg.Any<double>(),
                     Arg.Any<bool>(),  Arg.Any<CancellationToken>())
                 .Returns(new CompletionsResponseDto
                 {
@@ -819,7 +822,7 @@ public partial class MeetingServiceFixture
                         {
                             Message = new CompletionsChoiceMessageDto
                             {
-                                Content = "I'm smart content"
+                                Content =  "{\"optimized_text\": \"I'm smart content\"}"
                             }
                         }
                     }
@@ -832,6 +835,7 @@ public partial class MeetingServiceFixture
             builder.RegisterInstance(liveKitClient);
             builder.RegisterInstance(openAiService);
             builder.RegisterInstance(liveKitServerUtilService);
+            builder.RegisterInstance(sugarTalkHttpClientFactory);
         });
         
         await RunWithUnitOfWork<IRepository>(async repository =>

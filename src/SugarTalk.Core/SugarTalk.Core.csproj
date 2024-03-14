@@ -81,6 +81,7 @@
         <EmbeddedResource Include="DbUp\Scripts_2024\Script0007_modify_columns_for_meeting_speak_detail_table.sql" />
         <EmbeddedResource Include="DbUp\Scripts_2024\Script0008_add_meeting_summary_relate_tables.sql" />
         <EmbeddedResource Include="DbUp\Scripts_2024\Script0007_add_meeting_record_table.sql" />
+        <EmbeddedResource Include="DbUp\Scripts_2024\Script0017_add_username_for_speak_detail_table.sql" />
         <None Remove="DbUp\Scripts_2024\Script0009_alter_meeting_record_table.sql" />
         <None Remove="DbUp\Scripts_2024\Script0008_modify_meeting_record_column.sql" />
         <EmbeddedResource Include="DbUp\Scripts_2024\Script0008_modify_meeting_record_column.sql" />
@@ -92,6 +93,8 @@
         <EmbeddedResource Include="DbUp\Scripts_2024\Script0014_modify_meeting_speak_detail_table.sql" />
         <EmbeddedResource Include="DbUp\Scripts_2024\Script0015_modify_join_time_for_meeting_user_session_table.sql" />
         <EmbeddedResource Include="DbUp\Scripts_2024\Script0016_add_smart_content_for_meeting_speak_detail_table.sql" />
+        <EmbeddedResource Include="DbUp\Scripts_2024\Script0017_add_meeting_speak_detail_translation_record.sql" />
+        <EmbeddedResource Include="DbUp\Scripts_2024\Script0018_add_meeting_chat_room_setting_table.sql" />
     </ItemGroup>
     
     <ItemGroup>

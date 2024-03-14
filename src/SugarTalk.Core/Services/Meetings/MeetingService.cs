@@ -29,8 +29,10 @@ using SugarTalk.Messages.Dto.Meetings.User;
 using SugarTalk.Messages.Dto.Users;
 using SugarTalk.Messages.Enums.Account;
 using SugarTalk.Core.Domain.Meeting;
+using SugarTalk.Core.Services.Http;
 using SugarTalk.Core.Services.OpenAi;
 using SugarTalk.Core.Settings.Meeting;
+using SugarTalk.Messages.Commands.Meetings.Speak;
 using SugarTalk.Messages.Enums.Meeting;
 using SugarTalk.Messages.Events.Meeting;
 using SugarTalk.Messages.Requests.Meetings;
@@ -63,6 +65,9 @@ namespace SugarTalk.Core.Services.Meetings
         
         Task<MeetingUserSettingAddOrUpdatedEvent> AddOrUpdateMeetingUserSettingAsync(
             AddOrUpdateMeetingUserSettingCommand command, CancellationToken cancellationToken);
+        
+        Task<ChatRoomSettingAddOrUpdateEvent> AddOrUpdateChatRoomSettingAsync(
+            AddOrUpdateChatRoomSettingCommand command, CancellationToken cancellationToken);
 
         Task<GetMeetingUserSettingResponse> GetMeetingUserSettingAsync(GetMeetingUserSettingRequest request, CancellationToken cancellationToken);
 
@@ -99,6 +104,7 @@ namespace SugarTalk.Core.Services.Meetings
         private readonly IMeetingUtilService _meetingUtilService;
         private readonly IAccountDataProvider _accountDataProvider;
         private readonly IMeetingDataProvider _meetingDataProvider;
+        private readonly ISugarTalkHttpClientFactory _httpClientFactory;
         private readonly ISugarTalkBackgroundJobClient _backgroundJobClient;
         private readonly ILiveKitServerUtilService _liveKitServerUtilService;
         private readonly IAntMediaServerUtilService _antMediaServerUtilService;
@@ -116,12 +122,13 @@ namespace SugarTalk.Core.Services.Meetings
             IOpenAiService openAiService,
             ISpeechClient speechClient,
             ILiveKitClient liveKitClient,
+            AliYunOssSettings aliYunOssSetting,
             TranslationClient translationClient,
             IMeetingUtilService meetingUtilService,
             IMeetingDataProvider meetingDataProvider,
             IAccountDataProvider accountDataProvider,
-            AliYunOssSettings aliYunOssSetting,
             LiveKitServerSetting liveKitServerSetting,
+            ISugarTalkHttpClientFactory httpClientFactory,
             ISugarTalkBackgroundJobClient backgroundJobClient,
             ILiveKitServerUtilService liveKitServerUtilService,
             IAntMediaServerUtilService antMediaServerUtilService,
@@ -135,12 +142,13 @@ namespace SugarTalk.Core.Services.Meetings
             _openAiService = openAiService;
             _speechClient = speechClient;
             _liveKitClient = liveKitClient;
+            _aliYunOssSetting = aliYunOssSetting;
+            _httpClientFactory = httpClientFactory;
             _translationClient = translationClient;
             _meetingUtilService = meetingUtilService;
             _accountDataProvider = accountDataProvider;
             _meetingDataProvider = meetingDataProvider;
             _backgroundJobClient = backgroundJobClient;
-            _aliYunOssSetting = aliYunOssSetting;
             _liveKitServerSetting = liveKitServerSetting;
             _liveKitServerUtilService = liveKitServerUtilService;
             _antMediaServerUtilService = antMediaServerUtilService;
@@ -467,6 +475,31 @@ namespace SugarTalk.Core.Services.Meetings
             }
             
             return response;
+        }
+
+        public async Task<ChatRoomSettingAddOrUpdateEvent> AddOrUpdateChatRoomSettingAsync(AddOrUpdateChatRoomSettingCommand command, CancellationToken cancellationToken)
+        {
+            if (!_currentUser.Id.HasValue) throw new UnauthorizedAccessException();
+
+            var roomSetting = await _meetingDataProvider
+                .GetMeetingChatRoomSettingByMeetingIdAsync(_currentUser.Id.Value, command.MeetingId, cancellationToken).ConfigureAwait(false);
+
+            if (roomSetting == null)
+            {
+                await _meetingDataProvider.AddMeetingChatRoomSettingAsync(new MeetingChatRoomSetting
+                {
+                    UserId = _currentUser.Id.Value,
+                    MeetingId = command.MeetingId,
+                    SelfLanguage = command.SelfLanguage,
+                    ListeningLanguage = command.ListeningLanguage,
+                }, true, cancellationToken).ConfigureAwait(false);
+            }
+            else
+            {
+                await _meetingDataProvider.UpdateMeetingChatRoomSettingAsync(_mapper.Map(command, roomSetting), cancellationToken).ConfigureAwait(false);
+            }
+
+            return new ChatRoomSettingAddOrUpdateEvent();
         }
 
         public async Task<GetMeetingUserSettingResponse> GetMeetingUserSettingAsync(GetMeetingUserSettingRequest request, CancellationToken cancellationToken)

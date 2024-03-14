@@ -12,6 +12,7 @@ using System.Threading.Tasks;
 using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
 using SugarTalk.Core.Domain.Meeting;
+using SugarTalk.Core.Services.Http;
 using SugarTalk.Core.Services.Identity;
 using SugarTalk.Core.Validators.Commands;
 using SugarTalk.Core.Services.Http.Clients;
@@ -110,8 +111,9 @@ public partial class MeetingServiceFixture
         }, builder =>
         {
             var liveKitClient = Substitute.For<ILiveKitClient>();
-            var liveKitServerUtilService = Substitute.For<ILiveKitServerUtilService>();
             var openAiService = Substitute.For<IOpenAiService>();
+            var liveKitServerUtilService = Substitute.For<ILiveKitServerUtilService>();
+            var sugarTalkHttpClientFactory = Substitute.For<ISugarTalkHttpClientFactory>();
 
             liveKitClient.StartTrackCompositeEgressAsync(Arg.Any<StartTrackCompositeEgressRequestDto>(), Arg.Any<CancellationToken>())
                 .Returns(new StartEgressResponseDto
@@ -148,14 +150,14 @@ public partial class MeetingServiceFixture
                 Arg.Any<long>(), Arg.Any<long>(), Arg.Any<TranscriptionFileType>(), Arg.Any<TranscriptionResponseFormat>(),
                 Arg.Any<CancellationToken>()).Returns(audioContent);
 
-            openAiService.GetAsync<byte[]>(Arg.Any<string>(), Arg.Any<CancellationToken>())
+            sugarTalkHttpClientFactory.GetAsync<byte[]>(Arg.Any<string>(), Arg.Any<CancellationToken>())
                 .Returns(fileContent);
             
             openAiService.ChatCompletionsAsync(
                     Arg.Any<List<CompletionsRequestMessageDto>>(), 
                     Arg.Any<List<CompletionsRequestFunctionDto>>(), 
                     Arg.Any<CompletionsRequestFunctionCallDto>(), 
-                    Arg.Any<OpenAiModel>(), Arg.Any<int>(), Arg.Any<double>(), 
+                    Arg.Any<OpenAiModel>(), Arg.Any<CompletionResponseFormatDto>(), Arg.Any<int>(), Arg.Any<double>(), 
                     Arg.Any<bool>(), Arg.Any<CancellationToken>())
                 .Returns(new CompletionsResponseDto
                 {
@@ -174,6 +176,7 @@ public partial class MeetingServiceFixture
             builder.RegisterInstance(liveKitClient);
             builder.RegisterInstance(openAiService);
             builder.RegisterInstance(liveKitServerUtilService);
+            builder.RegisterInstance(sugarTalkHttpClientFactory);
         });
     }
     

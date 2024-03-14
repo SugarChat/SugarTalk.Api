@@ -28,14 +28,11 @@ public interface IOpenAiService : IScopedDependency
 {
     Task<CompletionsResponseDto> ChatCompletionsAsync(
         List<CompletionsRequestMessageDto> messages, List<CompletionsRequestFunctionDto> functions = null, object functionCall = null,
-        OpenAiModel model = OpenAiModel.Gpt35Turbo16K, int? maxTokens = null, double temperature = 0, bool shouldNotSendWhenTokenLimited = false, CancellationToken cancellationToken = default);
+        OpenAiModel model = OpenAiModel.Gpt35Turbo16K, CompletionResponseFormatDto responseFormat =null, int? maxTokens = null, double temperature = 0, bool shouldNotSendWhenTokenLimited = false, CancellationToken cancellationToken = default);
     
     Task<string> TranscriptionAsync(
         byte[] file, TranscriptionLanguage? language, long speakStartTimeVideo, long speakEndTimeVideo, TranscriptionFileType fileType = TranscriptionFileType.Wav, 
         TranscriptionResponseFormat responseFormat = TranscriptionResponseFormat.Vtt, CancellationToken cancellationToken = default);
-    
-    Task<T> GetAsync<T>(string requestUrl, CancellationToken cancellationToken, 
-        TimeSpan? timeout = null, bool beginScope = false, Dictionary<string, string> headers = null, HttpClient innerClient = null, bool shouldThrow = false);
 }
 
 public class OpenAiService : IOpenAiService
@@ -59,10 +56,10 @@ public class OpenAiService : IOpenAiService
 
     public async Task<CompletionsResponseDto> ChatCompletionsAsync(
         List<CompletionsRequestMessageDto> messages, List<CompletionsRequestFunctionDto> functions = null, object functionCall = null,
-        OpenAiModel model = OpenAiModel.Gpt35Turbo16K, int? maxTokens = null, double temperature = 0.5, bool shouldNotSendWhenTokenLimited = false, CancellationToken cancellationToken = default) 
+        OpenAiModel model = OpenAiModel.Gpt35Turbo16K, CompletionResponseFormatDto responseFormat = null, int? maxTokens = null, double temperature = 0.5, bool shouldNotSendWhenTokenLimited = false, CancellationToken cancellationToken = default) 
     {
         var (request, limitedResponse) =
-            ConfigureChatCompletions(messages, functions, functionCall, model, maxTokens, temperature, shouldNotSendWhenTokenLimited);
+            ConfigureChatCompletions(messages, functions, functionCall, model, responseFormat, maxTokens, temperature, shouldNotSendWhenTokenLimited);
         
         if (limitedResponse != null) return limitedResponse;
 
@@ -147,71 +144,10 @@ public class OpenAiService : IOpenAiService
             return default;
         }
     }
-    
-    public async Task<T> GetAsync<T>(string requestUrl, CancellationToken cancellationToken,
-        TimeSpan? timeout = null, bool beginScope = false, Dictionary<string, string> headers = null, HttpClient innerClient = null, bool shouldThrow = false)
-    {
-        return await SafelyProcessRequestAsync(requestUrl, async () =>
-        {
-            var response = await CreateClient(timeout: timeout, beginScope: beginScope, headers: headers, innerClient)
-                .GetAsync(requestUrl, cancellationToken).ConfigureAwait(false);
-            
-            return await ReadAndLogResponseAsync<T>(requestUrl, HttpMethod.Get, response, cancellationToken).ConfigureAwait(false);
-            
-        }, cancellationToken, shouldThrow).ConfigureAwait(false);
-    }
-    
-    public HttpClient CreateClient(TimeSpan? timeout = null, bool beginScope = false, Dictionary<string, string> headers = null, HttpClient innerClient = null)
-    {
-        if (innerClient != null) return innerClient;
-        
-        var scope = beginScope ? _scope.BeginLifetimeScope() : _scope;
-        
-        var canResolve = scope.TryResolve(out IHttpClientFactory httpClientFactory);
-        
-        var client = canResolve ? httpClientFactory.CreateClient() : new HttpClient();
-        
-        if (timeout != null)
-            client.Timeout = timeout.Value;
-
-        if (headers == null) return client;
-        
-        foreach (var header in headers)
-        {
-            client.DefaultRequestHeaders.Add(header.Key, header.Value);
-        }
-
-        return client;
-    }
-    
-    private static async Task<T> ReadAndLogResponseAsync<T>(string requestUrl, HttpMethod httpMethod, HttpResponseMessage response, CancellationToken cancellationToken)
-    {
-        if (response.IsSuccessStatusCode)
-            return await ReadResponseContentAs<T>(response, cancellationToken).ConfigureAwait(false);
-        
-        LogHttpError(requestUrl, httpMethod, response);
-
-        return default;
-    }
-    
-    private static async Task<T> ReadResponseContentAs<T>(HttpResponseMessage response, CancellationToken cancellationToken)
-    {
-        if (typeof(T) == typeof(string))
-            return (T)(object) await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
-        if (typeof(T) == typeof(byte[]))
-            return (T)(object) await response.Content.ReadAsByteArrayAsync(cancellationToken).ConfigureAwait(false);
-        return await response.Content.ReadAsAsync<T>(cancellationToken: cancellationToken).ConfigureAwait(false);
-    }
-    
-    private static void LogHttpError(string requestUrl, HttpMethod httpMethod, HttpResponseMessage response)
-    {
-        Log.Error("PostBoy http {Method} {Url} error, The response: {ResponseJson}", 
-            httpMethod.ToString(), requestUrl, JsonConvert.SerializeObject(response));
-    }
 
     private (ChatCompletionsRequestDto Request, CompletionsResponseDto LimitedResponse) ConfigureChatCompletions(
         List<CompletionsRequestMessageDto> messages, List<CompletionsRequestFunctionDto> functions = null, object functionCall = null,
-        OpenAiModel model = OpenAiModel.Gpt35Turbo16K, int? maxTokens = null, double temperature = 0.5, bool shouldNotSendWhenTokenLimited = false, bool? stream = false)
+        OpenAiModel model = OpenAiModel.Gpt35Turbo16K, CompletionResponseFormatDto responseFormat = null,  int? maxTokens = null, double temperature = 0.5, bool shouldNotSendWhenTokenLimited = false, bool? stream = false)
     {
         var limitedResponse = BuildTokenLimitedResponseIfRequired(messages, model, maxTokens, shouldNotSendWhenTokenLimited);
 
@@ -219,7 +155,7 @@ public class OpenAiService : IOpenAiService
         
         var request = new ChatCompletionsRequestDto
         {
-            Messages = messages, Functions = functions, FunctionCall = functionCall, MaxTokens = maxTokens, Temperature = temperature, Stream = stream
+            Messages = messages, Functions = functions, FunctionCall = functionCall, MaxTokens = maxTokens, Temperature = temperature, Stream = stream, ResponseFormat = responseFormat
         };
         
         return (request, null);

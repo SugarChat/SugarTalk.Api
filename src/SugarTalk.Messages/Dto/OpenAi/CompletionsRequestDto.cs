@@ -1,6 +1,4 @@
-using System;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 using System.Collections.Generic;
 
 namespace SugarTalk.Messages.Dto.OpenAi;
@@ -33,6 +31,9 @@ public class ChatCompletionsRequestDto : CompletionsRequestBaseDto
     
     [JsonProperty("stream", NullValueHandling = NullValueHandling.Ignore)]
     public bool? Stream { get; set; }
+    
+    [JsonProperty("response_format", NullValueHandling = NullValueHandling.Ignore)]
+    public CompletionResponseFormatDto ResponseFormat { get; set; }
 }
 
 public class CompletionsRequestMessageDto
@@ -87,4 +88,10 @@ public class CompletionsRequestFunctionCallDto
     
     [JsonProperty("arguments")]
     public string Arguments { get; set; }
+}
+
+public class CompletionResponseFormatDto
+{
+    [JsonProperty("type")]
+    public string Type { get; set; }
 }
