@@ -32,6 +32,7 @@ using SugarTalk.Core.Domain.Meeting;
 using SugarTalk.Core.Services.Http;
 using SugarTalk.Core.Services.OpenAi;
 using SugarTalk.Messages.Commands.Meetings.Speak;
+using SugarTalk.Messages.Dto.LiveKit.Egress;
 using SugarTalk.Messages.Enums.Meeting;
 using SugarTalk.Messages.Events.Meeting;
 using SugarTalk.Messages.Requests.Meetings;
@@ -264,6 +265,8 @@ namespace SugarTalk.Core.Services.Meetings
             }
 
             CheckJoinMeetingConditions(meeting, user);
+
+            await CheckLiveKitExistedUser(meeting, user, cancellationToken).ConfigureAwait(false);
             
             await ConnectUserToMeetingAsync(user, meeting, command.IsMuted, cancellationToken).ConfigureAwait(false);
 
@@ -300,6 +303,23 @@ namespace SugarTalk.Core.Services.Meetings
             }
     
             throw new CannotJoinMeetingWhenMeetingClosedException();
+        }
+
+        private async Task CheckLiveKitExistedUser(MeetingDto meeting, UserAccountDto user, CancellationToken cancellationToken)
+        {
+            var token = _liveKitServerUtilService.GenerateTokenForCreateMeeting(user, meeting.MeetingNumber);
+            
+            var meetingExistUser = await _liveKitClient.ListParticipantsAsync(
+                new ListParticipantsRequestDto{Room = meeting.MeetingNumber, Token = token}, cancellationToken).ConfigureAwait(false);
+            
+            if (meetingExistUser != null)
+            {
+                var existUser = meetingExistUser.Participants.FirstOrDefault(x => x.Name == user.UserName);
+                
+                if(existUser != null)
+                    await _liveKitClient.RemoveParticipantAsync(
+                        new RemoverParticipantRequestDto{Room = meeting.MeetingNumber, Identity = existUser.Identity, Token = token}, cancellationToken).ConfigureAwait(false);
+            }
         }
 
         public async Task<MeetingOutedEvent> OutMeetingAsync(OutMeetingCommand command, CancellationToken cancellationToken)
