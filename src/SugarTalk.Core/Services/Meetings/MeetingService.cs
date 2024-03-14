@@ -307,7 +307,7 @@ namespace SugarTalk.Core.Services.Meetings
 
         private async Task CheckLiveKitExistedUser(MeetingDto meeting, UserAccountDto user, CancellationToken cancellationToken)
         {
-            var token = _liveKitServerUtilService.GenerateTokenForCreateMeeting(user, meeting.MeetingNumber);
+            var token = _liveKitServerUtilService.GetMeetingInfoPermission(meeting.MeetingNumber);
             
             var meetingExistUser = await _liveKitClient.ListParticipantsAsync(
                 new ListParticipantsRequestDto{Room = meeting.MeetingNumber, Token = token}, cancellationToken).ConfigureAwait(false);
