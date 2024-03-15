@@ -82,7 +82,7 @@ public partial class BaseFixture
 
     protected IMeetingService MockMeetingService(
         IClock clock,
-        IMapper mapper,
+        IMapper mapper, 
         IUnitOfWork unitOfWork,
         ICurrentUser currentUser,
         IOpenAiService openAiService,
@@ -101,9 +101,10 @@ public partial class BaseFixture
         ISugarTalkBackgroundJobClient sugarTalkBackgroundJobClient)
     {
         return new MeetingService(
+
             clock, mapper, unitOfWork, currentUser, openAiService, speechClient, liveKitClient, aliYunOssSetting,
             translationClient, meetingUtilService, meetingDataProvider, accountDataProvider, liveKitServerSetting, 
-            httpClientFactory, backgroundJobClient, liveKitServerUtilService, antMediaServerUtilService, sugarTalkBackgroundJobClient);
+            httpClientFactory, backgroundJobClient, liveKitServerUtilService, antMediaServerUtilService, sugarTalkBackgroundJobClient, null);
     }
     
     protected IMeetingDataProvider MockMeetingDataProvider(
