@@ -141,6 +141,6 @@ public class LiveKitClient : ILiveKitClient
         };
         
         return await _httpClientFactory
-            .PostAsJsonAsync<ListParticipantsResponseDto>($"{_liveKitServerSetting.BaseUrl}/twirp/livekit.RoomService/ListParticipants", request, cancellationToken, headers: headers);
+            .PostAsJsonAsync<ListParticipantsResponseDto>($"{_liveKitServerSetting.BaseUrl}/twirp/livekit.RoomService/ListParticipants", request, cancellationToken, headers: headers).ConfigureAwait(false);
     }
 }
