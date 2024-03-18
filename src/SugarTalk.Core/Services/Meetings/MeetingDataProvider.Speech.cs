@@ -17,6 +17,8 @@ public partial interface IMeetingDataProvider
     
     Task<MeetingSpeech> GetMeetingSpeechByIdAsync(Guid meetingSpeechId, CancellationToken cancellationToken);
     
+    Task<List<MeetingChatVoiceRecord>> GetMeetingChatVoiceRecordAsync(Guid meetingSpeechId, CancellationToken cancellationToken);
+
     Task<MeetingUserSetting> DistributeLanguageForMeetingUserAsync(Guid meetingId, CancellationToken cancellationToken);
 }
 
@@ -49,6 +51,12 @@ public partial class MeetingDataProvider
         return await _repository.Query<MeetingSpeech>()
             .Where(x => x.Id == meetingSpeechId)
             .FirstOrDefaultAsync(cancellationToken).ConfigureAwait(false);
+    }
+
+    public async Task<List<MeetingChatVoiceRecord>> GetMeetingChatVoiceRecordAsync(Guid meetingSpeechId, CancellationToken cancellationToken)
+    {
+        return await _repository.Query<MeetingChatVoiceRecord>().Where(x=>x.SpeechId == meetingSpeechId)
+            .ToListAsync(cancellationToken).ConfigureAwait(false);
     }
 
     public async Task<MeetingUserSetting> DistributeLanguageForMeetingUserAsync(Guid meetingId, CancellationToken cancellationToken)

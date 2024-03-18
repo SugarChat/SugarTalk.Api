@@ -38,6 +38,15 @@ public class MeetingUserController : ControllerBase
         return Ok(response);
     }
 
+    [Route("generate/chat/record"), HttpPost]
+    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(GenerateChatRecordResponse))]
+    public async Task<IActionResult> SaveChatRecordAsync(GenerateChatRecordCommand command)
+    {
+        var response = await _mediator.SendAsync<GenerateChatRecordCommand, GenerateChatRecordResponse>(command).ConfigureAwait(false);
+        
+        return Ok(response);
+    }
+    
     [Route("setting"), HttpGet]
     [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(GetMeetingUserSettingResponse))]
     public async Task<IActionResult> GetMeetingUserSettingAsync([FromQuery] GetMeetingUserSettingRequest request)
