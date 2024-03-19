@@ -518,6 +518,7 @@ namespace SugarTalk.Core.Services.Meetings
                 {
                     UserId = _currentUser.Id.Value,
                     MeetingId = command.MeetingId,
+                    VoiceId = command.VoiceId,
                     SelfLanguage = command.SelfLanguage,
                     ListeningLanguage = command.ListeningLanguage,
                 }, true, cancellationToken).ConfigureAwait(false);
