@@ -43,7 +43,7 @@ public partial class MeetingServiceFixture
             SpeechTargetLanguageType.Cantonese, CantoneseToneType.WanLungNeural);
         
         await _meetingUtil.AddMeetingChatRoomSetting(1, meetingId, currentUser.Id.Value, 
-            "1111", SpeechTargetLanguageType.Cantonese, SpeechTargetLanguageType.Cantonese);
+            "1111", SpeechTargetLanguageType.Cantonese, SpeechTargetLanguageType.Mandarin);
         
         await Run<IMediator, IRepository>(async (mediator, repository) =>
         {

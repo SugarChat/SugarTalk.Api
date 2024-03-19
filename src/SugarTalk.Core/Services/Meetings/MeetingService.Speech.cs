@@ -200,21 +200,15 @@ public partial class MeetingService
             _ => throw new NotSupportedException(nameof(roomSetting.ListeningLanguage))
         };
 
-        if (voiceUrl != null)
-        {
-            meetingChatVoiceRecord.VoiceUrl = voiceUrl;
-            meetingChatVoiceRecord.GenerationStatus = ChatRecordGenerationStatus.Completed;
-        }
-        else
-        {
-            await MarkChatVoiceRecordSpecifiedStatusAsync(
-                new List<MeetingChatVoiceRecord> { meetingChatVoiceRecord }, ChatRecordGenerationStatus.Pending, cancellationToken).ConfigureAwait(false);
-        }
-
+        meetingChatVoiceRecord.VoiceUrl = voiceUrl; 
+        
+        meetingChatVoiceRecord.GenerationStatus = !string.IsNullOrEmpty(voiceUrl)
+            ? ChatRecordGenerationStatus.Completed 
+            : ChatRecordGenerationStatus.InProgress;
+        
         await _meetingDataProvider
             .UpdateMeetingChatVoiceRecordAsync(new List<MeetingChatVoiceRecord> { meetingChatVoiceRecord }, cancellationToken).ConfigureAwait(false);
     }
-
     
     private async Task<string> GenerateSpeechToInferenceCantonAsync(
         MeetingChatVoiceRecord meetingChatVoiceRecord, MeetingChatRoomSetting roomSetting, MeetingSpeech meetingSpeech, CancellationToken cancellationToken)
@@ -245,15 +239,7 @@ public partial class MeetingService
         
         return response?.Result?.Url?.UrlValue;
     }
-    
-    private async Task MarkChatVoiceRecordSpecifiedStatusAsync(
-        List<MeetingChatVoiceRecord> chatVoiceRecords, ChatRecordGenerationStatus status, CancellationToken cancellationToken)
-    {
-        chatVoiceRecords.ForEach(x => x.GenerationStatus = status);
-        
-        await _meetingDataProvider.UpdateMeetingChatVoiceRecordAsync(chatVoiceRecords, cancellationToken: cancellationToken).ConfigureAwait(false);
-    }
-    
+
     private static string HandleToBase64(string base64)
     {
         return Regex.Replace(base64, @"^data:[^;]+;[^,]+,", "");
