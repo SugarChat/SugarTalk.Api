@@ -42,6 +42,9 @@ public partial class MeetingServiceFixture
         await _meetingUtil.AddMeetingUserSetting(Guid.NewGuid(), currentUser.Id.Value, meetingId: meetingId, 
             SpeechTargetLanguageType.Cantonese, CantoneseToneType.WanLungNeural);
         
+        await _meetingUtil.AddMeetingChatRoomSetting(1, meetingId, currentUser.Id.Value, 
+            "1111", SpeechTargetLanguageType.Cantonese, SpeechTargetLanguageType.Cantonese);
+        
         await Run<IMediator, IRepository>(async (mediator, repository) =>
         {
             await mediator.SendAsync(command);
@@ -51,6 +54,11 @@ public partial class MeetingServiceFixture
             meetingSpeech.MeetingId.ShouldBe(command.MeetingId);
             meetingSpeech.OriginalText.ShouldBe("text");
             meetingSpeech.UserId.ShouldBe(currentUser.Id.Value);
+            
+            var meetingChatVoiceRecord = await repository.QueryNoTracking<MeetingChatVoiceRecord>().SingleAsync(CancellationToken.None);
+            
+            meetingChatVoiceRecord.VoiceUrl.ShouldBe("hhhhh");
+            meetingChatVoiceRecord.GenerationStatus.ShouldBe(ChatRecordGenerationStatus.Completed);
         }, builder =>
         {
             var openAiService = Substitute.For<IOpenAiService>();
@@ -64,6 +72,12 @@ public partial class MeetingServiceFixture
             
             speechClient.GetAudioFromTextAsync(Arg.Any<TextToSpeechDto>(), CancellationToken.None)
                 .Returns(new SpeechResponseDto { Result = "text.url" });
+            
+            speechClient.SpeechToInferenceMandarinAsync(Arg.Any<SpeechToInferenceMandarinDto>(), CancellationToken.None)
+                .Returns(new SpeechToInferenceMandarinResponseDto
+                {
+                    Result = new SpeechToInferenceResultDto { Url = new SpeechToInferenceResultDto.InferredUrlObject{UrlValue = "hhhhh"}}
+                });
 
             builder.RegisterInstance(speechClient);
             builder.RegisterInstance(openAiService);

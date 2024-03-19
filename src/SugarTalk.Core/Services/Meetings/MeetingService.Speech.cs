@@ -174,7 +174,7 @@ public partial class MeetingService
         var roomSetting = await _meetingDataProvider.GetMeetingChatRoomSettingByMeetingIdAsync(
             _currentUser.Id.Value, meetingId, cancellationToken).ConfigureAwait(false);
     
-        var meetingRecord = new MeetingChatVoiceRecord()
+        var meetingRecord = new MeetingChatVoiceRecord
         {
             SpeechId = meetingSpeech.Id,
             IsSelf = true,
