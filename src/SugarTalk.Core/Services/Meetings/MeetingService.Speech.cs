@@ -185,22 +185,24 @@ public partial class MeetingService
 
         await _meetingDataProvider.AddMeetingChatVoiceRecordAsync(meetingRecord, true, cancellationToken).ConfigureAwait(false);
         
-        _backgroundJobClient.Enqueue(() => GenerateChatRecordProcessAsync(meetingRecord, roomSetting.VoiceName, meetingSpeech, cancellationToken));
+        _backgroundJobClient.Enqueue(() => GenerateChatRecordProcessAsync(meetingRecord, roomSetting, meetingSpeech, cancellationToken));
     }
 
     public async Task GenerateChatRecordProcessAsync(
-        MeetingChatVoiceRecord meetingChatVoiceRecord, string voiceName, MeetingSpeech meetingSpeech, CancellationToken cancellationToken)
+        MeetingChatVoiceRecord meetingChatVoiceRecord, MeetingChatRoomSetting roomSetting, MeetingSpeech meetingSpeech, CancellationToken cancellationToken)
     {
-        var textToVoice = (await _speechClient.SpeechToInferenceMandarinAsync(new SpeechToInferenceMandarinDto
+        var voiceUrl = roomSetting.ListeningLanguage switch
         {
-            Text = meetingSpeech.OriginalText,
-            UserName = voiceName,
-            VoiceId = meetingChatVoiceRecord.VoiceId
-        }, cancellationToken).ConfigureAwait(false)).Result;
-        
-        if (textToVoice != null)
+            SpeechTargetLanguageType.Cantonese or SpeechTargetLanguageType.Korean or SpeechTargetLanguageType.Spanish =>
+                GenerateCantoneseOrKoreanOrSpanishVoiceUrlAsync(meetingChatVoiceRecord, roomSetting, meetingSpeech, cancellationToken).Result,
+            SpeechTargetLanguageType.Mandarin or SpeechTargetLanguageType.English =>
+                GenerateMandarinOrEnglishVoiceUrlAsync(meetingChatVoiceRecord, roomSetting, meetingSpeech, cancellationToken).Result,
+            _ => throw new NotSupportedException(nameof(roomSetting.ListeningLanguage))
+        };
+
+        if (voiceUrl != null)
         {
-            meetingChatVoiceRecord.VoiceUrl = textToVoice.Url.UrlValue; 
+            meetingChatVoiceRecord.VoiceUrl = voiceUrl;
             meetingChatVoiceRecord.GenerationStatus = ChatRecordGenerationStatus.Completed;
         }
         else
@@ -208,10 +210,38 @@ public partial class MeetingService
             await MarkChatVoiceRecordSpecifiedStatusAsync(
                 new List<MeetingChatVoiceRecord> { meetingChatVoiceRecord }, ChatRecordGenerationStatus.Pending, cancellationToken).ConfigureAwait(false);
         }
-        
-        await _meetingDataProvider.UpdateMeetingChatVoiceRecordAsync(new List<MeetingChatVoiceRecord> { meetingChatVoiceRecord }, cancellationToken).ConfigureAwait(false);
+
+        await _meetingDataProvider
+            .UpdateMeetingChatVoiceRecordAsync(new List<MeetingChatVoiceRecord> { meetingChatVoiceRecord }, cancellationToken).ConfigureAwait(false);
     }
 
+    
+    private async Task<string> GenerateCantoneseOrKoreanOrSpanishVoiceUrlAsync(
+        MeetingChatVoiceRecord meetingChatVoiceRecord, MeetingChatRoomSetting roomSetting, MeetingSpeech meetingSpeech, CancellationToken cancellationToken)
+    {
+        var response = await _speechClient.SpeechToInferenceCantonAsync(new SpeechToInferenceCantonDto
+        {
+            Text = meetingSpeech.OriginalText,
+            Name = roomSetting.VoiceName,
+            VoiceId = meetingChatVoiceRecord.VoiceId
+        }, cancellationToken).ConfigureAwait(false);
+
+        return response?.Result?.Url;
+    }
+
+    private async Task<string> GenerateMandarinOrEnglishVoiceUrlAsync(
+        MeetingChatVoiceRecord meetingChatVoiceRecord, MeetingChatRoomSetting roomSetting, MeetingSpeech meetingSpeech, CancellationToken cancellationToken)
+    {
+        var response = await _speechClient.SpeechToInferenceMandarinAsync(new SpeechToInferenceMandarinDto
+        {
+            Text = meetingSpeech.OriginalText,
+            UserName = roomSetting.VoiceName,
+            VoiceId = meetingChatVoiceRecord.VoiceId
+        }, cancellationToken).ConfigureAwait(false);
+
+        return response?.Result?.Url?.UrlValue;
+    }
+    
     private async Task MarkChatVoiceRecordSpecifiedStatusAsync(
         List<MeetingChatVoiceRecord> chatVoiceRecords, ChatRecordGenerationStatus status, CancellationToken cancellationToken)
     {
