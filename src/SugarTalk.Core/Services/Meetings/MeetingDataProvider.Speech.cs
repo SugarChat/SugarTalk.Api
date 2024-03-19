@@ -16,7 +16,7 @@ public partial interface IMeetingDataProvider
     Task<List<MeetingSpeech>> GetMeetingSpeechesAsync(Guid meetingId, CancellationToken cancellationToken, bool filterHasCanceledAudio = false);
     
     Task<MeetingSpeech> GetMeetingSpeechByIdAsync(Guid meetingSpeechId, CancellationToken cancellationToken);
-
+    
     Task<MeetingUserSetting> DistributeLanguageForMeetingUserAsync(Guid meetingId, CancellationToken cancellationToken);
 }
 
@@ -50,7 +50,7 @@ public partial class MeetingDataProvider
             .Where(x => x.Id == meetingSpeechId)
             .FirstOrDefaultAsync(cancellationToken).ConfigureAwait(false);
     }
-    
+
     public async Task<MeetingUserSetting> DistributeLanguageForMeetingUserAsync(Guid meetingId, CancellationToken cancellationToken)
     {
         var meetingUserSetting = new MeetingUserSetting();
