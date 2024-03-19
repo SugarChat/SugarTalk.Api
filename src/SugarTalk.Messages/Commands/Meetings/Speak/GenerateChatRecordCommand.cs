@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Mediator.Net.Contracts;
 using SugarTalk.Messages.Dto.Meetings.Speech;
 using SugarTalk.Messages.Responses;
@@ -10,6 +11,6 @@ public class GenerateChatRecordCommand : ICommand
     public Guid MeetingId { get; set; }
 }
 
-public class GenerateChatRecordResponse : SugarTalkResponse<MeetingSpeechDto>
+public class GenerateChatRecordResponse : SugarTalkResponse<List<MeetingSpeechDto>>
 {
 }

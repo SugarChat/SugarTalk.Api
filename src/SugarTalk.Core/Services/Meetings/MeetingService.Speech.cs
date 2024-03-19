@@ -28,7 +28,7 @@ public partial interface IMeetingService
 
     Task<GenerateChatRecordResponse> GenerateChatRecordAsync(GenerateChatRecordCommand command, CancellationToken cancellationToken);
 
-    Task GenerateChatRecordProcessAsync(Guid meetingId, MeetingChatRoomSetting roomSetting, CancellationToken cancellationToken);
+    Task GenerateChatRecordProcessAsync(MeetingChatVoiceRecord meetingChatVoiceRecord, MeetingChatRoomSetting roomSetting, CancellationToken cancellationToken);
 }
 
 public partial class MeetingService
@@ -188,18 +188,18 @@ public partial class MeetingService
         
         await _meetingDataProvider.AddMeetingChatVoiceRecordAsync(meetingChatVoiceRecords, true, cancellationToken).ConfigureAwait(false);
 
-        var parentJobId = _backgroundJobClient.Enqueue<IMeetingService>(x => x.GenerateChatRecordProcessAsync(
-            meetingChatVoiceRecords.First().Id, roomSetting, cancellationToken));
+        var parentJobId = _backgroundJobClient.Enqueue(() => GenerateChatRecordProcessAsync(
+            meetingChatVoiceRecords.First(), roomSetting, cancellationToken));
 
         meetingChatVoiceRecords.Skip(1).Aggregate(parentJobId, (current, meetingChatVoiceRecord) =>
-            _backgroundJobClient.ContinueJobWith(current, () => GenerateChatRecordProcessAsync(meetingChatVoiceRecord.Id, roomSetting, cancellationToken)));
+            _backgroundJobClient.ContinueJobWith(current, () => GenerateChatRecordProcessAsync(meetingChatVoiceRecord, roomSetting, cancellationToken)));
 
-        return new GenerateChatRecordResponse();
+        return new GenerateChatRecordResponse { Data = _mapper.Map<List<MeetingSpeechDto>>(speeches) };
     }
 
-    public async Task GenerateChatRecordProcessAsync(Guid chatVoiceRecordId, MeetingChatRoomSetting roomSetting, CancellationToken cancellationToken)
+    public async Task GenerateChatRecordProcessAsync(MeetingChatVoiceRecord meetingChatVoiceRecord, MeetingChatRoomSetting roomSetting, CancellationToken cancellationToken)
     {
-        var speech = await _meetingDataProvider.GetSpeechByChatVoiceRecordIdAsync(chatVoiceRecordId, cancellationToken).ConfigureAwait(false);
+        var speech = await _meetingDataProvider.GetSpeechByChatVoiceRecordIdAsync(meetingChatVoiceRecord.Id, cancellationToken).ConfigureAwait(false);
         
         var textToVoice = (await _speechClient.SpeechToInferenceMandarinAsync(new SpeechToInferenceMandarinDto
         {
@@ -208,18 +208,16 @@ public partial class MeetingService
             VoiceId = roomSetting.VoiceId
         }, cancellationToken).ConfigureAwait(false)).Result;
         
-        var voiceRecord = await _meetingDataProvider.GetMeetingChatVoiceRecordAsync(chatVoiceRecordId, cancellationToken).ConfigureAwait(false); 
-        
         if (textToVoice != null)
         {
-            voiceRecord.VoiceUrl = textToVoice.Url.UrlValue; 
-            voiceRecord.GenerationStatus = ChatRecordGenerationStatus.Completed;
+            meetingChatVoiceRecord.VoiceUrl = textToVoice.Url.UrlValue; 
+            meetingChatVoiceRecord.GenerationStatus = ChatRecordGenerationStatus.Completed;
 
-            await _meetingDataProvider.UpdateMeetingChatVoiceRecordAsync(new List<MeetingChatVoiceRecord> { voiceRecord }, cancellationToken).ConfigureAwait(false);
+            await _meetingDataProvider.UpdateMeetingChatVoiceRecordAsync(new List<MeetingChatVoiceRecord> { meetingChatVoiceRecord }, cancellationToken).ConfigureAwait(false);
         }
         else
         {
-            await MarkChatVoiceRecordSpecifiedStatusAsync(new List<MeetingChatVoiceRecord> { voiceRecord }, ChatRecordGenerationStatus.InProgress, cancellationToken).ConfigureAwait(false);
+            await MarkChatVoiceRecordSpecifiedStatusAsync(new List<MeetingChatVoiceRecord> { meetingChatVoiceRecord }, ChatRecordGenerationStatus.InProgress, cancellationToken).ConfigureAwait(false);
         }
     }
 
