@@ -191,7 +191,7 @@ public partial class MeetingService
         var parentJobId = _backgroundJobClient.Enqueue<IMeetingService>(x => x.GenerateChatRecordProcessAsync(
             meetingChatVoiceRecords.First().Id, speeches.First().OriginalText, roomSetting, cancellationToken));
 
-        foreach (var speech in speeches)
+        foreach (var speech in speeches.Skip(1))
         {
             meetingChatVoiceRecords.Skip(1).Aggregate(parentJobId, (current, meetingChatVoiceRecord) =>
                 _backgroundJobClient.ContinueJobWith(current, () => GenerateChatRecordProcessAsync(
