@@ -28,7 +28,7 @@ public partial interface IMeetingService
 
     Task<GenerateChatRecordResponse> GenerateChatRecordAsync(GenerateChatRecordCommand command, CancellationToken cancellationToken);
 
-    Task GenerateChatRecordProcessAsync(Guid meetingId, string text, MeetingChatRoomSetting roomSetting, CancellationToken cancellationToken);
+    Task GenerateChatRecordProcessAsync(Guid meetingId, MeetingChatRoomSetting roomSetting, CancellationToken cancellationToken);
 }
 
 public partial class MeetingService
@@ -185,46 +185,41 @@ public partial class MeetingService
             VoiceLanguage = roomSetting.ListeningLanguage,
             GenerationStatus = ChatRecordGenerationStatus.InProgress
         }).ToList();
-    
+        
         await _meetingDataProvider.AddMeetingChatVoiceRecordAsync(meetingChatVoiceRecords, true, cancellationToken).ConfigureAwait(false);
 
         var parentJobId = _backgroundJobClient.Enqueue<IMeetingService>(x => x.GenerateChatRecordProcessAsync(
-            meetingChatVoiceRecords.First().Id, speeches.First().OriginalText, roomSetting, cancellationToken));
+            meetingChatVoiceRecords.First().Id, roomSetting, cancellationToken));
 
-        foreach (var speech in speeches.Skip(1))
-        {
-            meetingChatVoiceRecords.Skip(1).Aggregate(parentJobId, (current, meetingChatVoiceRecord) =>
-                _backgroundJobClient.ContinueJobWith(current, () => GenerateChatRecordProcessAsync(
-                    meetingChatVoiceRecord.Id, speech.OriginalText, roomSetting, cancellationToken)));
-        }
+        meetingChatVoiceRecords.Skip(1).Aggregate(parentJobId, (current, meetingChatVoiceRecord) =>
+            _backgroundJobClient.ContinueJobWith(current, () => GenerateChatRecordProcessAsync(meetingChatVoiceRecord.Id, roomSetting, cancellationToken)));
 
         return new GenerateChatRecordResponse();
     }
 
-    public async Task GenerateChatRecordProcessAsync(Guid chatVoiceRecordId, string text, MeetingChatRoomSetting roomSetting, CancellationToken cancellationToken)
+    public async Task GenerateChatRecordProcessAsync(Guid chatVoiceRecordId, MeetingChatRoomSetting roomSetting, CancellationToken cancellationToken)
     {
+        var speech = await _meetingDataProvider.GetSpeechByChatVoiceRecordIdAsync(chatVoiceRecordId, cancellationToken).ConfigureAwait(false);
+        
         var textToVoice = (await _speechClient.SpeechToInferenceMandarinAsync(new SpeechToInferenceMandarinDto
         {
-            Text = text,
+            Text = speech.OriginalText,
             UserName = _currentUser.Name,
             VoiceId = roomSetting.VoiceId
         }, cancellationToken).ConfigureAwait(false)).Result;
         
-        var voiceRecords = await _meetingDataProvider.GetMeetingChatVoiceRecordAsync(chatVoiceRecordId, cancellationToken).ConfigureAwait(false);
-
+        var voiceRecord = await _meetingDataProvider.GetMeetingChatVoiceRecordAsync(chatVoiceRecordId, cancellationToken).ConfigureAwait(false); 
+        
         if (textToVoice != null)
         {
-            foreach (var voiceRecord in voiceRecords)
-            {
-                voiceRecord.VoiceUrl = textToVoice.Url.UrlValue;
-                voiceRecord.GenerationStatus = ChatRecordGenerationStatus.Completed;
-            }
-            
-            await _meetingDataProvider.UpdateMeetingChatVoiceRecordAsync(voiceRecords, cancellationToken).ConfigureAwait(false);
+            voiceRecord.VoiceUrl = textToVoice.Url.UrlValue; 
+            voiceRecord.GenerationStatus = ChatRecordGenerationStatus.Completed;
+
+            await _meetingDataProvider.UpdateMeetingChatVoiceRecordAsync(new List<MeetingChatVoiceRecord> { voiceRecord }, cancellationToken).ConfigureAwait(false);
         }
         else
         {
-            await MarkChatVoiceRecordSpecifiedStatusAsync(voiceRecords, ChatRecordGenerationStatus.InProgress, cancellationToken).ConfigureAwait(false);
+            await MarkChatVoiceRecordSpecifiedStatusAsync(new List<MeetingChatVoiceRecord> { voiceRecord }, ChatRecordGenerationStatus.InProgress, cancellationToken).ConfigureAwait(false);
         }
     }
 

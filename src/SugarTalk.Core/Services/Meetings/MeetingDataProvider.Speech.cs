@@ -17,9 +17,11 @@ public partial interface IMeetingDataProvider
     
     Task<MeetingSpeech> GetMeetingSpeechByIdAsync(Guid meetingSpeechId, CancellationToken cancellationToken);
     
-    Task<List<MeetingChatVoiceRecord>> GetMeetingChatVoiceRecordAsync(Guid meetingSpeechId, CancellationToken cancellationToken);
+    Task<MeetingChatVoiceRecord> GetMeetingChatVoiceRecordAsync(Guid meetingChatVoiceId, CancellationToken cancellationToken);
 
     Task<MeetingUserSetting> DistributeLanguageForMeetingUserAsync(Guid meetingId, CancellationToken cancellationToken);
+
+    Task<MeetingSpeech> GetSpeechByChatVoiceRecordIdAsync(Guid chatVoiceRecordId, CancellationToken cancellationToken);
 }
 
 public partial class MeetingDataProvider
@@ -53,10 +55,22 @@ public partial class MeetingDataProvider
             .FirstOrDefaultAsync(cancellationToken).ConfigureAwait(false);
     }
 
-    public async Task<List<MeetingChatVoiceRecord>> GetMeetingChatVoiceRecordAsync(Guid meetingSpeechId, CancellationToken cancellationToken)
+    public async Task<MeetingChatVoiceRecord> GetMeetingChatVoiceRecordAsync(Guid meetingChatVoiceId, CancellationToken cancellationToken)
     {
-        return await _repository.Query<MeetingChatVoiceRecord>().Where(x=>x.SpeechId == meetingSpeechId)
-            .ToListAsync(cancellationToken).ConfigureAwait(false);
+        return await _repository.Query<MeetingChatVoiceRecord>()
+            .Where(x=>x.Id == meetingChatVoiceId)
+            .FirstOrDefaultAsync(cancellationToken).ConfigureAwait(false);
+    }
+    
+    public async Task<MeetingSpeech> GetSpeechByChatVoiceRecordIdAsync(Guid chatVoiceRecordId, CancellationToken cancellationToken)
+    {
+        var query = from chatVoiceRecord in _repository.Query<MeetingChatVoiceRecord>()
+            join speech in _repository.Query<MeetingSpeech>()
+                on chatVoiceRecord.SpeechId equals speech.Id
+            where chatVoiceRecord.Id == chatVoiceRecordId
+            select speech;
+
+        return await query.FirstOrDefaultAsync(cancellationToken).ConfigureAwait(false);
     }
 
     public async Task<MeetingUserSetting> DistributeLanguageForMeetingUserAsync(Guid meetingId, CancellationToken cancellationToken)
