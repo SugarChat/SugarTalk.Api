@@ -114,8 +114,6 @@ public partial class MeetingService
 
         await GenerateVoiceByLanguageTypeAsync(request.LanguageType, request.MeetingId, meetingSpeechesDto, cancellationToken).ConfigureAwait(false);
 
-        await GenerateChatRecordAsync(new GenerateChatRecordCommand(), cancellationToken);
-            
         return new GetMeetingAudioListResponse { Data = meetingSpeechesDto };
     }
 
@@ -182,6 +180,7 @@ public partial class MeetingService
         var meetingChatVoiceRecords = speeches.Select(x => new MeetingChatVoiceRecord
         {
             SpeechId = x.Id,
+            IsSelf = true,
             VoiceLanguage = roomSetting.ListeningLanguage,
             GenerationStatus = ChatRecordGenerationStatus.InProgress
         }).ToList();
@@ -212,14 +211,14 @@ public partial class MeetingService
         {
             meetingChatVoiceRecord.VoiceUrl = textToVoice.Url.UrlValue; 
             meetingChatVoiceRecord.GenerationStatus = ChatRecordGenerationStatus.Completed;
-
-            await _meetingDataProvider.UpdateMeetingChatVoiceRecordAsync(new List<MeetingChatVoiceRecord> { meetingChatVoiceRecord }, cancellationToken).ConfigureAwait(false);
         }
         else
         {
             await MarkChatVoiceRecordSpecifiedStatusAsync(
-                new List<MeetingChatVoiceRecord> { meetingChatVoiceRecord }, ChatRecordGenerationStatus.InProgress, cancellationToken).ConfigureAwait(false);
+                new List<MeetingChatVoiceRecord> { meetingChatVoiceRecord }, ChatRecordGenerationStatus.Pending, cancellationToken).ConfigureAwait(false);
         }
+        
+        await _meetingDataProvider.UpdateMeetingChatVoiceRecordAsync(new List<MeetingChatVoiceRecord> { meetingChatVoiceRecord }, cancellationToken).ConfigureAwait(false);
     }
 
     private async Task MarkChatVoiceRecordSpecifiedStatusAsync(

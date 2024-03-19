@@ -11,6 +11,8 @@ public class MeetingChatVoiceRecord : IEntity
     public MeetingChatVoiceRecord()
     {
         CreatedDate = DateTimeOffset.Now;
+        VoiceLanguage = SpeechTargetLanguageType.Cantonese;
+        GenerationStatus = ChatRecordGenerationStatus.Pending;
     }
     
     [Key]
@@ -34,6 +36,9 @@ public class MeetingChatVoiceRecord : IEntity
     
     [Column("voice_url")]
     public string VoiceUrl { get; set; }
+    
+    [Column("is_self", TypeName = "tinyint(1)")]
+    public bool IsSelf { get; set; }
     
     [Column("generation_status")]
     public ChatRecordGenerationStatus GenerationStatus { get; set; }
