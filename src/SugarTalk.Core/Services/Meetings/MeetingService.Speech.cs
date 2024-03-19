@@ -60,7 +60,7 @@ public partial class MeetingService
         
         await _meetingDataProvider.PersistMeetingSpeechAsync(meetingSpeech, cancellationToken).ConfigureAwait(false);
         
-        await GenerateChatRecordAsync(command.MeetingId, meetingSpeech, cancellationToken).ConfigureAwait(false);
+        await GenerateChatRecordAsync(command.MeetingId, command.UserName, meetingSpeech, cancellationToken).ConfigureAwait(false);
         
         return new MeetingAudioSavedEvent();
     }
@@ -167,7 +167,7 @@ public partial class MeetingService
         return new MeetingSpeechUpdatedEvent { Result = "success" };
     }
 
-    public async Task GenerateChatRecordAsync(Guid meetingId, MeetingSpeech meetingSpeech, CancellationToken cancellationToken)
+    public async Task GenerateChatRecordAsync(Guid meetingId, string userName, MeetingSpeech meetingSpeech, CancellationToken cancellationToken)
     {
         if (!_currentUser.Id.HasValue) throw new UnauthorizedAccessException();
         
@@ -185,7 +185,7 @@ public partial class MeetingService
 
         await _meetingDataProvider.AddMeetingChatVoiceRecordAsync(meetingRecord, true, cancellationToken).ConfigureAwait(false);
         
-        _backgroundJobClient.Enqueue(() => GenerateChatRecordProcessAsync(meetingRecord, _currentUser.Name, meetingSpeech, cancellationToken));
+        _backgroundJobClient.Enqueue(() => GenerateChatRecordProcessAsync(meetingRecord, userName, meetingSpeech, cancellationToken));
     }
 
     public async Task GenerateChatRecordProcessAsync(
