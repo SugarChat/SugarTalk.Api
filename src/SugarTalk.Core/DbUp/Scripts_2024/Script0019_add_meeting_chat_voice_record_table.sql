@@ -7,5 +7,5 @@ create table if not exists `meeting_chat_voice_record`(
     is_system_voice tinyint(1) not null default 0,
     voice_url varchar(512) null,
     is_self tinyint(1) not null default 0,
-    generation_status int not null default 0,
+    generation_status int not null default 0
 ) charset=utf8mb4;

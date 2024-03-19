@@ -7,7 +7,6 @@ using System.Collections.Generic;
 using SugarTalk.Core.Domain.Meeting;
 using System.Text.RegularExpressions;
 using Newtonsoft.Json;
-using SugarTalk.Messages.Commands.Meetings.Speak;
 using SugarTalk.Messages.Commands.Speech;
 using SugarTalk.Messages.Requests.Speech;
 using SugarTalk.Messages.Dto.Meetings.Speech;
@@ -25,10 +24,6 @@ public partial interface IMeetingService
     Task<GetMeetingAudioListResponse> GetMeetingAudioListAsync(GetMeetingAudioListRequest request, CancellationToken cancellationToken);
     
     Task<MeetingSpeechUpdatedEvent> UpdateMeetingSpeechAsync(UpdateMeetingSpeechCommand command, CancellationToken cancellationToken);
-
-    Task<GenerateChatRecordResponse> GenerateChatRecordAsync(GenerateChatRecordCommand command, CancellationToken cancellationToken);
-
-    Task GenerateChatRecordProcessAsync(MeetingChatVoiceRecord meetingChatVoiceRecord, MeetingChatRoomSetting roomSetting, CancellationToken cancellationToken);
 }
 
 public partial class MeetingService
@@ -56,12 +51,16 @@ public partial class MeetingService
 
         if (responseToText is null) return new MeetingAudioSavedEvent { Result = "Ai does not recognize the audio content" };
 
-        await _meetingDataProvider.PersistMeetingSpeechAsync(new MeetingSpeech
+        var meetingSpeech = new MeetingSpeech
         {
             MeetingId = command.MeetingId,
             UserId = _currentUser.Id.Value,
             OriginalText = responseToText.Result
-        }, cancellationToken).ConfigureAwait(false);
+        };
+        
+        await _meetingDataProvider.PersistMeetingSpeechAsync(meetingSpeech, cancellationToken).ConfigureAwait(false);
+        
+        await GenerateChatRecordAsync(command.MeetingId, meetingSpeech.Id, cancellationToken).ConfigureAwait(false);
         
         return new MeetingAudioSavedEvent();
     }
@@ -168,43 +167,37 @@ public partial class MeetingService
         return new MeetingSpeechUpdatedEvent { Result = "success" };
     }
 
-    public async Task<GenerateChatRecordResponse> GenerateChatRecordAsync(GenerateChatRecordCommand command, CancellationToken cancellationToken)
+    public async Task GenerateChatRecordAsync(Guid meetingId, Guid speechId, CancellationToken cancellationToken)
     {
-        var speeches = await _meetingDataProvider.GetMeetingSpeechesAsync(command.MeetingId, cancellationToken).ConfigureAwait(false);
-        
         if (!_currentUser.Id.HasValue) throw new UnauthorizedAccessException();
         
         var roomSetting = await _meetingDataProvider.GetMeetingChatRoomSettingByMeetingIdAsync(
-            _currentUser.Id.Value, command.MeetingId, cancellationToken).ConfigureAwait(false);
+            _currentUser.Id.Value, meetingId, cancellationToken).ConfigureAwait(false);
     
-        var meetingChatVoiceRecords = speeches.Select(x => new MeetingChatVoiceRecord
+        var meetingRecord = new MeetingChatVoiceRecord()
         {
-            SpeechId = x.Id,
+            SpeechId = speechId,
             IsSelf = true,
+            VoiceId = roomSetting.VoiceId,
             VoiceLanguage = roomSetting.ListeningLanguage,
             GenerationStatus = ChatRecordGenerationStatus.InProgress
-        }).ToList();
+        };
+
+        await _meetingDataProvider.AddMeetingChatVoiceRecordAsync(meetingRecord, true, cancellationToken).ConfigureAwait(false);
         
-        await _meetingDataProvider.AddMeetingChatVoiceRecordAsync(meetingChatVoiceRecords, true, cancellationToken).ConfigureAwait(false);
-
-        var parentJobId = _backgroundJobClient.Enqueue(() => GenerateChatRecordProcessAsync(
-            meetingChatVoiceRecords.First(), roomSetting, cancellationToken));
-
-        meetingChatVoiceRecords.Skip(1).Aggregate(parentJobId, (current, meetingChatVoiceRecord) =>
-            _backgroundJobClient.ContinueJobWith(current, () => GenerateChatRecordProcessAsync(meetingChatVoiceRecord, roomSetting, cancellationToken)));
-
-        return new GenerateChatRecordResponse { Data = _mapper.Map<List<MeetingSpeechDto>>(speeches) };
+        _backgroundJobClient.Enqueue(() => GenerateChatRecordProcessAsync(meetingRecord, speechId, cancellationToken));
     }
 
-    public async Task GenerateChatRecordProcessAsync(MeetingChatVoiceRecord meetingChatVoiceRecord, MeetingChatRoomSetting roomSetting, CancellationToken cancellationToken)
+    private async Task GenerateChatRecordProcessAsync(
+        MeetingChatVoiceRecord meetingChatVoiceRecord, Guid speechId, CancellationToken cancellationToken)
     {
-        var speech = await _meetingDataProvider.GetSpeechByChatVoiceRecordIdAsync(meetingChatVoiceRecord.Id, cancellationToken).ConfigureAwait(false);
+        var speech = await _meetingDataProvider.GetMeetingSpeechByIdAsync(speechId, cancellationToken).ConfigureAwait(false);
         
         var textToVoice = (await _speechClient.SpeechToInferenceMandarinAsync(new SpeechToInferenceMandarinDto
         {
             Text = speech.OriginalText,
             UserName = _currentUser.Name,
-            VoiceId = roomSetting.VoiceId
+            VoiceId = meetingChatVoiceRecord.VoiceId
         }, cancellationToken).ConfigureAwait(false)).Result;
         
         if (textToVoice != null)

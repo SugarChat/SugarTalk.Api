@@ -18,8 +18,6 @@ public partial interface IMeetingDataProvider
     Task<MeetingSpeech> GetMeetingSpeechByIdAsync(Guid meetingSpeechId, CancellationToken cancellationToken);
 
     Task<MeetingUserSetting> DistributeLanguageForMeetingUserAsync(Guid meetingId, CancellationToken cancellationToken);
-
-    Task<MeetingSpeech> GetSpeechByChatVoiceRecordIdAsync(Guid chatVoiceRecordId, CancellationToken cancellationToken);
 }
 
 public partial class MeetingDataProvider
@@ -52,17 +50,7 @@ public partial class MeetingDataProvider
             .Where(x => x.Id == meetingSpeechId)
             .FirstOrDefaultAsync(cancellationToken).ConfigureAwait(false);
     }
-
-    public async Task<MeetingSpeech> GetSpeechByChatVoiceRecordIdAsync(Guid chatVoiceRecordId, CancellationToken cancellationToken)
-    {
-        var query = from chatVoiceRecord in _repository.Query<MeetingChatVoiceRecord>() 
-            join speech in _repository.Query<MeetingSpeech>() on chatVoiceRecord.SpeechId equals speech.Id 
-            where chatVoiceRecord.Id == chatVoiceRecordId
-            select speech;
-
-        return await query.FirstOrDefaultAsync(cancellationToken).ConfigureAwait(false);
-    }
-
+    
     public async Task<MeetingUserSetting> DistributeLanguageForMeetingUserAsync(Guid meetingId, CancellationToken cancellationToken)
     {
         var meetingUserSetting = new MeetingUserSetting();
