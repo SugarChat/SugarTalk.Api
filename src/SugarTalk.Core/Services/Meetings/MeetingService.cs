@@ -784,21 +784,18 @@ namespace SugarTalk.Core.Services.Meetings
             if (meeting.MeetingMasterUserId != currentUser.Id) 
                 throw new CannotUpdateMeetingWhenMasterUserIdMismatchException();
         }
-        
+
         private void HandleGuestNameForUserSession(MeetingDto meeting, MeetingUserSessionDto userSession)
         {
-            var guestCount = meeting.UserSessions
-                .Where(x => !string.IsNullOrEmpty(x.GuestName))
-                .Select(x => x.GuestName.Substring("Anonymity".Length))
-                .Select(x => int.TryParse(x, out int result) ? result : 0)
-                .Max() + 1;
-
-            var numCount = meeting.UserSessions.Count(x => !string.IsNullOrEmpty(x.GuestName));
-
-            if (guestCount == 1 && (guestCount - 1) == numCount)
-                guestCount = 1;
+            var guestCount = meeting.UserSessions.Count(x => !string.IsNullOrEmpty(x.GuestName));
             
-            userSession.GuestName = $"Anonymity{guestCount}";
+            var index = guestCount > 0 ? meeting.UserSessions
+                    .Where(x => !string.IsNullOrEmpty(x.GuestName))
+                    .Select(x => x.GuestName.Substring("Anonymity".Length))
+                    .Select(x => int.TryParse(x, out int result) ? result : 0)
+                    .Max() + 1 : 1;
+
+            userSession.GuestName = $"Anonymity{index}";
         }
     }
 }
