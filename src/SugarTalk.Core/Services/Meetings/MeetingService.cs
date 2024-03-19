@@ -12,6 +12,7 @@ using SugarTalk.Core.Data;
 using SugarTalk.Core.Extensions;
 using System.Collections.Generic;
 using Google.Cloud.Translation.V2;
+using Microsoft.AspNetCore.Http;
 using SugarTalk.Core.Services.Jobs;
 using SugarTalk.Core.Services.Account;
 using SugarTalk.Core.Services.AntMediaServer;
@@ -33,6 +34,7 @@ using SugarTalk.Core.Services.Http;
 using SugarTalk.Core.Services.OpenAi;
 using SugarTalk.Core.Settings.Meeting;
 using SugarTalk.Messages.Commands.Meetings.Speak;
+using SugarTalk.Messages.Dto.LiveKit.Egress;
 using SugarTalk.Messages.Enums.Meeting;
 using SugarTalk.Messages.Events.Meeting;
 using SugarTalk.Messages.Requests.Meetings;
@@ -268,6 +270,8 @@ namespace SugarTalk.Core.Services.Meetings
             }
 
             CheckJoinMeetingConditions(meeting, user);
+
+            await OutLiveKitExistedUserAsync(meetingNumber: meeting.MeetingNumber, userName: user.UserName, cancellationToken: cancellationToken).ConfigureAwait(false);
             
             await ConnectUserToMeetingAsync(user, meeting, command.IsMuted, cancellationToken).ConfigureAwait(false);
 
@@ -306,6 +310,28 @@ namespace SugarTalk.Core.Services.Meetings
             throw new CannotJoinMeetingWhenMeetingClosedException();
         }
 
+        private async Task OutLiveKitExistedUserAsync(string meetingNumber = null, string userName = null, Guid? meetingId = null, CancellationToken cancellationToken = default)
+        {
+            if (meetingId.HasValue)
+                meetingNumber = _mapper.Map<MeetingDto>(await _meetingDataProvider.GetMeetingByIdAsync(meetingId.Value, cancellationToken).ConfigureAwait(false)).MeetingNumber;
+            
+            var token = _liveKitServerUtilService.GetMeetingInfoPermission(meetingNumber);
+            
+            var meetingExistUser = await _liveKitClient.ListParticipantsAsync(
+                new ListParticipantsRequestDto{Room = meetingNumber, Token = token}, cancellationToken).ConfigureAwait(false);
+            
+            if (meetingExistUser != null)
+            {
+                var existUser = meetingExistUser.Participants.FirstOrDefault(x => x.Name == userName);
+
+                if (existUser != null)
+                {
+                    await _liveKitClient.RemoveParticipantAsync(
+                        new RemoverParticipantRequestDto{Room = meetingNumber, Identity = existUser.Identity, Token = token}, cancellationToken).ConfigureAwait(false);
+                }
+            }
+        }
+
         public async Task<MeetingOutedEvent> OutMeetingAsync(OutMeetingCommand command, CancellationToken cancellationToken)
         {
             var userSession = await _meetingDataProvider.GetMeetingUserSessionByMeetingIdAsync(
@@ -316,6 +342,8 @@ namespace SugarTalk.Core.Services.Meetings
             EnrichMeetingUserSessionForOutMeeting(userSession);
             
             await _meetingDataProvider.UpdateMeetingUserSessionAsync(userSession, cancellationToken).ConfigureAwait(false);
+            
+            await OutLiveKitExistedUserAsync(userName: _currentUser?.Name, meetingId: command.MeetingId, cancellationToken: cancellationToken).ConfigureAwait(false);
 
             await _meetingDataProvider.HandleMeetingStatusWhenOutMeetingAsync(
                 userSession.UserId, command.MeetingId, command.MeetingSubId, cancellationToken).ConfigureAwait(false);
@@ -758,12 +786,18 @@ namespace SugarTalk.Core.Services.Meetings
             if (meeting.MeetingMasterUserId != currentUser.Id) 
                 throw new CannotUpdateMeetingWhenMasterUserIdMismatchException();
         }
-        
+
         private void HandleGuestNameForUserSession(MeetingDto meeting, MeetingUserSessionDto userSession)
         {
-            var guestCount = meeting.UserSessions.Count(x => !string.IsNullOrEmpty(x.GuestName)) + 1;
+            var guestCount = meeting.UserSessions.Count(x => !string.IsNullOrEmpty(x.GuestName));
             
-            userSession.GuestName = $"Anonymity{guestCount}";
+            var index = guestCount > 0 ? meeting.UserSessions
+                    .Where(x => !string.IsNullOrEmpty(x.GuestName))
+                    .Select(x => x.GuestName.Substring("Anonymity".Length))
+                    .Select(x => int.TryParse(x, out int result) ? result : 0)
+                    .Max() + 1 : 1;
+
+            userSession.GuestName = $"Anonymity{index}";
         }
     }
 }

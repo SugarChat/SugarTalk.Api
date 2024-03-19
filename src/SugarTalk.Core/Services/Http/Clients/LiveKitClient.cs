@@ -23,6 +23,10 @@ public interface ILiveKitClient : IScopedDependency
     Task<StopEgressResponseDto> StopEgressAsync(StopEgressRequestDto request, CancellationToken cancellationToken);
     
     Task<GetEgressInfoListResponseDto> GetEgressInfoListAsync(GetEgressRequestDto request, CancellationToken cancellationToken);
+
+    Task<RemoverParticipantResponseDto> RemoveParticipantAsync(RemoverParticipantRequestDto request, CancellationToken cancellationToken);
+
+    Task<ListParticipantsResponseDto> ListParticipantsAsync(ListParticipantsRequestDto request, CancellationToken cancellationToken);
 }
 
 public class LiveKitClient : ILiveKitClient
@@ -116,5 +120,27 @@ public class LiveKitClient : ILiveKitClient
         
         return await _httpClientFactory
             .PostAsJsonAsync<GetEgressInfoListResponseDto>($"{_liveKitServerSetting.BaseUrl}/twirp/livekit.Egress/ListEgress", request, cancellationToken, headers: headers).ConfigureAwait(false);
+    }
+
+    public async Task<RemoverParticipantResponseDto> RemoveParticipantAsync(RemoverParticipantRequestDto request, CancellationToken cancellationToken)
+    {
+        var headers = new Dictionary<string, string>
+        {
+            {"Authorization", $"Bearer {request.Token}"}
+        };
+
+        return await _httpClientFactory
+            .PostAsJsonAsync<RemoverParticipantResponseDto>($"{_liveKitServerSetting.BaseUrl}/twirp/livekit.RoomService/RemoveParticipant", request, cancellationToken, headers: headers).ConfigureAwait(false);
+    }
+
+    public async Task<ListParticipantsResponseDto> ListParticipantsAsync(ListParticipantsRequestDto request, CancellationToken cancellationToken)
+    {
+        var headers = new Dictionary<string, string>
+        {
+            {"Authorization", $"Bearer {request.Token}"}
+        };
+        
+        return await _httpClientFactory
+            .PostAsJsonAsync<ListParticipantsResponseDto>($"{_liveKitServerSetting.BaseUrl}/twirp/livekit.RoomService/ListParticipants", request, cancellationToken, headers: headers).ConfigureAwait(false);
     }
 }
