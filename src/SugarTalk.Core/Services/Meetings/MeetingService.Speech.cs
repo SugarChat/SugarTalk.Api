@@ -217,7 +217,8 @@ public partial class MeetingService
         }
         else
         {
-            await MarkChatVoiceRecordSpecifiedStatusAsync(new List<MeetingChatVoiceRecord> { meetingChatVoiceRecord }, ChatRecordGenerationStatus.InProgress, cancellationToken).ConfigureAwait(false);
+            await MarkChatVoiceRecordSpecifiedStatusAsync(
+                new List<MeetingChatVoiceRecord> { meetingChatVoiceRecord }, ChatRecordGenerationStatus.InProgress, cancellationToken).ConfigureAwait(false);
         }
     }
 
