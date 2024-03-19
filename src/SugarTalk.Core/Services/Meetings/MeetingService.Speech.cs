@@ -178,22 +178,24 @@ public partial class MeetingService
         
         var roomSetting = await _meetingDataProvider.GetMeetingChatRoomSettingByMeetingIdAsync(
             _currentUser.Id.Value, command.MeetingId, cancellationToken).ConfigureAwait(false);
+    
+        var meetingChatVoiceRecords = speeches.Select(x => new MeetingChatVoiceRecord
+        {
+            SpeechId = x.Id,
+            VoiceLanguage = roomSetting.ListeningLanguage,
+            GenerationStatus = ChatRecordGenerationStatus.InProgress
+        }).ToList();
+    
+        await _meetingDataProvider.AddMeetingChatVoiceRecordAsync(meetingChatVoiceRecords, true, cancellationToken).ConfigureAwait(false);
+
+        var parentJobId = _backgroundJobClient.Enqueue<IMeetingService>(x => x.GenerateChatRecordProcessAsync(
+            meetingChatVoiceRecords.First().Id, speeches.First().OriginalText, roomSetting, cancellationToken));
 
         foreach (var speech in speeches)
         {
-            var meetingChatVoiceRecord = new MeetingChatVoiceRecord
-            {
-                SpeechId = speech.Id,
-                VoiceLanguage = roomSetting.ListeningLanguage,
-                GenerationStatus = ChatRecordGenerationStatus.InProgress
-            };
-            
-            await _meetingDataProvider.AddMeetingChatVoiceRecordAsync(meetingChatVoiceRecord, true, cancellationToken);
-
-            _backgroundJobClient.Enqueue<IMeetingService>(x => x.GenerateChatRecordProcessAsync(
-                meetingChatVoiceRecord.Id, speech.OriginalText, roomSetting, cancellationToken));
-            
-            return new GenerateChatRecordResponse { Data = _mapper.Map<MeetingSpeechDto>(speech)};
+            meetingChatVoiceRecords.Skip(1).Aggregate(parentJobId, (current, meetingChatVoiceRecord) =>
+                _backgroundJobClient.ContinueJobWith(current, () => GenerateChatRecordProcessAsync(
+                    meetingChatVoiceRecord.Id, speech.OriginalText, roomSetting, cancellationToken)));
         }
 
         return new GenerateChatRecordResponse();
