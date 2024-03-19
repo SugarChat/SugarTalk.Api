@@ -271,7 +271,7 @@ namespace SugarTalk.Core.Services.Meetings
 
             CheckJoinMeetingConditions(meeting, user);
 
-            await OutLiveKitExistedUser(meetingNumber: meeting.MeetingNumber, userName: user.UserName, cancellationToken: cancellationToken).ConfigureAwait(false);
+            await OutLiveKitExistedUserAsync(meetingNumber: meeting.MeetingNumber, userName: user.UserName, cancellationToken: cancellationToken).ConfigureAwait(false);
             
             await ConnectUserToMeetingAsync(user, meeting, command.IsMuted, cancellationToken).ConfigureAwait(false);
 
@@ -310,7 +310,7 @@ namespace SugarTalk.Core.Services.Meetings
             throw new CannotJoinMeetingWhenMeetingClosedException();
         }
 
-        private async Task OutLiveKitExistedUser(string meetingNumber = null, string userName = null, Guid? meetingId = null, CancellationToken cancellationToken = default)
+        private async Task OutLiveKitExistedUserAsync(string meetingNumber = null, string userName = null, Guid? meetingId = null, CancellationToken cancellationToken = default)
         {
             if (meetingId.HasValue)
                 meetingNumber = _mapper.Map<MeetingDto>(await _meetingDataProvider.GetMeetingByIdAsync(meetingId.Value, cancellationToken).ConfigureAwait(false)).MeetingNumber;
@@ -323,10 +323,12 @@ namespace SugarTalk.Core.Services.Meetings
             if (meetingExistUser != null)
             {
                 var existUser = meetingExistUser.Participants.FirstOrDefault(x => x.Name == userName);
-                
-                if(existUser != null)
+
+                if (existUser != null)
+                {
                     await _liveKitClient.RemoveParticipantAsync(
                         new RemoverParticipantRequestDto{Room = meetingNumber, Identity = existUser.Identity, Token = token}, cancellationToken).ConfigureAwait(false);
+                }
             }
         }
 
@@ -341,7 +343,7 @@ namespace SugarTalk.Core.Services.Meetings
             
             await _meetingDataProvider.UpdateMeetingUserSessionAsync(userSession, cancellationToken).ConfigureAwait(false);
             
-            await OutLiveKitExistedUser(userName: _currentUser?.Name, meetingId: command.MeetingId, cancellationToken: cancellationToken).ConfigureAwait(false);
+            await OutLiveKitExistedUserAsync(userName: _currentUser?.Name, meetingId: command.MeetingId, cancellationToken: cancellationToken).ConfigureAwait(false);
 
             await _meetingDataProvider.HandleMeetingStatusWhenOutMeetingAsync(
                 userSession.UserId, command.MeetingId, command.MeetingSubId, cancellationToken).ConfigureAwait(false);
