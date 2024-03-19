@@ -60,7 +60,7 @@ public partial class MeetingService
         
         await _meetingDataProvider.PersistMeetingSpeechAsync(meetingSpeech, cancellationToken).ConfigureAwait(false);
         
-        await GenerateChatRecordAsync(command.MeetingId, meetingSpeech.Id, cancellationToken).ConfigureAwait(false);
+        await GenerateChatRecordAsync(command.MeetingId, meetingSpeech, cancellationToken).ConfigureAwait(false);
         
         return new MeetingAudioSavedEvent();
     }
@@ -167,7 +167,7 @@ public partial class MeetingService
         return new MeetingSpeechUpdatedEvent { Result = "success" };
     }
 
-    public async Task GenerateChatRecordAsync(Guid meetingId, Guid speechId, CancellationToken cancellationToken)
+    public async Task GenerateChatRecordAsync(Guid meetingId, MeetingSpeech meetingSpeech, CancellationToken cancellationToken)
     {
         if (!_currentUser.Id.HasValue) throw new UnauthorizedAccessException();
         
@@ -176,7 +176,7 @@ public partial class MeetingService
     
         var meetingRecord = new MeetingChatVoiceRecord()
         {
-            SpeechId = speechId,
+            SpeechId = meetingSpeech.Id,
             IsSelf = true,
             VoiceId = roomSetting.VoiceId,
             VoiceLanguage = roomSetting.ListeningLanguage,
@@ -185,17 +185,15 @@ public partial class MeetingService
 
         await _meetingDataProvider.AddMeetingChatVoiceRecordAsync(meetingRecord, true, cancellationToken).ConfigureAwait(false);
         
-        _backgroundJobClient.Enqueue(() => GenerateChatRecordProcessAsync(meetingRecord, speechId, cancellationToken));
+        _backgroundJobClient.Enqueue(() => GenerateChatRecordProcessAsync(meetingRecord, meetingSpeech, cancellationToken));
     }
 
     private async Task GenerateChatRecordProcessAsync(
-        MeetingChatVoiceRecord meetingChatVoiceRecord, Guid speechId, CancellationToken cancellationToken)
+        MeetingChatVoiceRecord meetingChatVoiceRecord, MeetingSpeech meetingSpeech, CancellationToken cancellationToken)
     {
-        var speech = await _meetingDataProvider.GetMeetingSpeechByIdAsync(speechId, cancellationToken).ConfigureAwait(false);
-        
         var textToVoice = (await _speechClient.SpeechToInferenceMandarinAsync(new SpeechToInferenceMandarinDto
         {
-            Text = speech.OriginalText,
+            Text = meetingSpeech.OriginalText,
             UserName = _currentUser.Name,
             VoiceId = meetingChatVoiceRecord.VoiceId
         }, cancellationToken).ConfigureAwait(false)).Result;
