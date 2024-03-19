@@ -185,16 +185,16 @@ public partial class MeetingService
 
         await _meetingDataProvider.AddMeetingChatVoiceRecordAsync(meetingRecord, true, cancellationToken).ConfigureAwait(false);
         
-        _backgroundJobClient.Enqueue(() => GenerateChatRecordProcessAsync(meetingRecord, meetingSpeech, cancellationToken));
+        _backgroundJobClient.Enqueue(() => GenerateChatRecordProcessAsync(meetingRecord, _currentUser.Name, meetingSpeech, cancellationToken));
     }
 
-    private async Task GenerateChatRecordProcessAsync(
-        MeetingChatVoiceRecord meetingChatVoiceRecord, MeetingSpeech meetingSpeech, CancellationToken cancellationToken)
+    public async Task GenerateChatRecordProcessAsync(
+        MeetingChatVoiceRecord meetingChatVoiceRecord, string userName, MeetingSpeech meetingSpeech, CancellationToken cancellationToken)
     {
         var textToVoice = (await _speechClient.SpeechToInferenceMandarinAsync(new SpeechToInferenceMandarinDto
         {
             Text = meetingSpeech.OriginalText,
-            UserName = _currentUser.Name,
+            UserName = userName,
             VoiceId = meetingChatVoiceRecord.VoiceId
         }, cancellationToken).ConfigureAwait(false)).Result;
         
