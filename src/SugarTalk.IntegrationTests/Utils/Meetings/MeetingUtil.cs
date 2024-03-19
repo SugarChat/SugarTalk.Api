@@ -155,6 +155,25 @@ public class MeetingUtil : TestUtil
         });
     }
 
+    public async Task AddMeetingChatRoomSetting(int id, Guid meetingId, int userId, string voiceId,
+        SpeechTargetLanguageType selfLanguage, SpeechTargetLanguageType listeningLanguage,
+        DateTimeOffset? lastModifiedDate = null)
+    {
+        await RunWithUnitOfWork<IRepository>(async repository =>
+        {
+            await repository.InsertAsync(new MeetingChatRoomSetting
+            {
+                Id = id,
+                MeetingId = meetingId,
+                UserId = userId,
+                VoiceId = voiceId,
+                SelfLanguage = selfLanguage,
+                ListeningLanguage = listeningLanguage,
+                LastModifiedDate = lastModifiedDate ?? DateTimeOffset.Now
+            }, CancellationToken.None);
+        });
+    }
+    
     public async Task EndMeeting(string meetingNumber)
     {
         await Run<IMediator>(async mediator =>

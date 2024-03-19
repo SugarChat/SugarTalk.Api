@@ -7,7 +7,6 @@ using System.Collections.Generic;
 using SugarTalk.Core.Domain.Meeting;
 using System.Text.RegularExpressions;
 using Newtonsoft.Json;
-using SugarTalk.Core.Services.Exceptions;
 using SugarTalk.Messages.Commands.Speech;
 using SugarTalk.Messages.Requests.Speech;
 using SugarTalk.Messages.Dto.Meetings.Speech;
@@ -52,12 +51,16 @@ public partial class MeetingService
 
         if (responseToText is null) return new MeetingAudioSavedEvent { Result = "Ai does not recognize the audio content" };
 
-        await _meetingDataProvider.PersistMeetingSpeechAsync(new MeetingSpeech
+        var meetingSpeech = new MeetingSpeech
         {
             MeetingId = command.MeetingId,
             UserId = _currentUser.Id.Value,
             OriginalText = responseToText.Result
-        }, cancellationToken).ConfigureAwait(false);
+        };
+        
+        await _meetingDataProvider.PersistMeetingSpeechAsync(meetingSpeech, cancellationToken).ConfigureAwait(false);
+        
+        await GenerateChatRecordAsync(command.MeetingId, meetingSpeech, cancellationToken).ConfigureAwait(false);
         
         return new MeetingAudioSavedEvent();
     }
@@ -163,7 +166,80 @@ public partial class MeetingService
 
         return new MeetingSpeechUpdatedEvent { Result = "success" };
     }
+
+    public async Task GenerateChatRecordAsync(Guid meetingId, MeetingSpeech meetingSpeech, CancellationToken cancellationToken)
+    {
+        if (!_currentUser.Id.HasValue) throw new UnauthorizedAccessException();
+        
+        var roomSetting = await _meetingDataProvider.GetMeetingChatRoomSettingByMeetingIdAsync(
+            _currentUser.Id.Value, meetingId, cancellationToken).ConfigureAwait(false);
     
+        var meetingRecord = new MeetingChatVoiceRecord
+        {
+            SpeechId = meetingSpeech.Id,
+            IsSelf = true,
+            VoiceId = roomSetting.VoiceId,
+            VoiceLanguage = roomSetting.ListeningLanguage,
+            GenerationStatus = ChatRecordGenerationStatus.InProgress
+        };
+
+        await _meetingDataProvider.AddMeetingChatVoiceRecordAsync(meetingRecord, true, cancellationToken).ConfigureAwait(false);
+        
+        _backgroundJobClient.Enqueue(() => GenerateChatRecordProcessAsync(meetingRecord, roomSetting, meetingSpeech, cancellationToken));
+    }
+
+    public async Task GenerateChatRecordProcessAsync(
+        MeetingChatVoiceRecord meetingChatVoiceRecord, MeetingChatRoomSetting roomSetting, MeetingSpeech meetingSpeech, CancellationToken cancellationToken)
+    {
+        var voiceUrl = roomSetting.ListeningLanguage switch
+        {
+            SpeechTargetLanguageType.Cantonese or SpeechTargetLanguageType.Korean or SpeechTargetLanguageType.Spanish =>
+                GenerateSpeechToInferenceCantonAsync(meetingChatVoiceRecord, roomSetting, meetingSpeech, cancellationToken).Result,
+            SpeechTargetLanguageType.Mandarin or SpeechTargetLanguageType.English =>
+                GenerateSpeechToInferenceMandarinAsync(meetingChatVoiceRecord, roomSetting, meetingSpeech, cancellationToken).Result,
+            _ => throw new NotSupportedException(nameof(roomSetting.ListeningLanguage))
+        };
+
+        meetingChatVoiceRecord.VoiceUrl = voiceUrl; 
+        
+        meetingChatVoiceRecord.GenerationStatus = !string.IsNullOrEmpty(voiceUrl)
+            ? ChatRecordGenerationStatus.Completed 
+            : ChatRecordGenerationStatus.InProgress;
+        
+        await _meetingDataProvider
+            .UpdateMeetingChatVoiceRecordAsync(new List<MeetingChatVoiceRecord> { meetingChatVoiceRecord }, cancellationToken).ConfigureAwait(false);
+    }
+    
+    private async Task<string> GenerateSpeechToInferenceCantonAsync(
+        MeetingChatVoiceRecord meetingChatVoiceRecord, MeetingChatRoomSetting roomSetting, MeetingSpeech meetingSpeech, CancellationToken cancellationToken)
+    {
+        var response = await _speechClient.SpeechToInferenceCantonAsync(new SpeechToInferenceCantonDto
+        {
+            Text = meetingSpeech.OriginalText,
+            Name = roomSetting.VoiceName,
+            VoiceId = meetingChatVoiceRecord.VoiceId
+        }, cancellationToken).ConfigureAwait(false);
+
+        Log.Information("Get speech to inference canton {@Response}", response);
+        
+        return response?.Result?.Url;
+    }
+
+    private async Task<string> GenerateSpeechToInferenceMandarinAsync(
+        MeetingChatVoiceRecord meetingChatVoiceRecord, MeetingChatRoomSetting roomSetting, MeetingSpeech meetingSpeech, CancellationToken cancellationToken)
+    {
+        var response = await _speechClient.SpeechToInferenceMandarinAsync(new SpeechToInferenceMandarinDto
+        {
+            Text = meetingSpeech.OriginalText,
+            UserName = roomSetting.VoiceName,
+            VoiceId = meetingChatVoiceRecord.VoiceId
+        }, cancellationToken).ConfigureAwait(false);
+
+        Log.Information("Get speech to inference mandarin {@Response}", response);
+        
+        return response?.Result?.Url?.UrlValue;
+    }
+
     private static string HandleToBase64(string base64)
     {
         return Regex.Replace(base64, @"^data:[^;]+;[^,]+,", "");
