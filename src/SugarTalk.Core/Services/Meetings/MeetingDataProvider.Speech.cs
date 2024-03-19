@@ -16,8 +16,6 @@ public partial interface IMeetingDataProvider
     Task<List<MeetingSpeech>> GetMeetingSpeechesAsync(Guid meetingId, CancellationToken cancellationToken, bool filterHasCanceledAudio = false);
     
     Task<MeetingSpeech> GetMeetingSpeechByIdAsync(Guid meetingSpeechId, CancellationToken cancellationToken);
-    
-    Task<MeetingChatVoiceRecord> GetMeetingChatVoiceRecordAsync(Guid meetingChatVoiceId, CancellationToken cancellationToken);
 
     Task<MeetingUserSetting> DistributeLanguageForMeetingUserAsync(Guid meetingId, CancellationToken cancellationToken);
 
@@ -55,18 +53,10 @@ public partial class MeetingDataProvider
             .FirstOrDefaultAsync(cancellationToken).ConfigureAwait(false);
     }
 
-    public async Task<MeetingChatVoiceRecord> GetMeetingChatVoiceRecordAsync(Guid meetingChatVoiceId, CancellationToken cancellationToken)
-    {
-        return await _repository.Query<MeetingChatVoiceRecord>()
-            .Where(x=>x.Id == meetingChatVoiceId)
-            .FirstOrDefaultAsync(cancellationToken).ConfigureAwait(false);
-    }
-    
     public async Task<MeetingSpeech> GetSpeechByChatVoiceRecordIdAsync(Guid chatVoiceRecordId, CancellationToken cancellationToken)
     {
-        var query = from chatVoiceRecord in _repository.Query<MeetingChatVoiceRecord>()
-            join speech in _repository.Query<MeetingSpeech>()
-                on chatVoiceRecord.SpeechId equals speech.Id
+        var query = from chatVoiceRecord in _repository.Query<MeetingChatVoiceRecord>() 
+            join speech in _repository.Query<MeetingSpeech>() on chatVoiceRecord.SpeechId equals speech.Id 
             where chatVoiceRecord.Id == chatVoiceRecordId
             select speech;
 
