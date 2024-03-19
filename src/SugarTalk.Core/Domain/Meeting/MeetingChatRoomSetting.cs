@@ -25,6 +25,9 @@ public class MeetingChatRoomSetting : IEntity
     [Column("user_id")] 
     public int UserId { get; set; }
     
+    [Column("voice_name")]
+    public string VoiceName { get; set; }
+    
     [Column("voice_id")]
     public string VoiceId { get; set; }
     

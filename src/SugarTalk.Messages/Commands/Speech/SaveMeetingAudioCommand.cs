@@ -9,9 +9,7 @@ namespace SugarTalk.Messages.Commands.Speech;
 public class SaveMeetingAudioCommand : ICommand
 {
     public Guid MeetingId { get; set; }
-    
-    public string UserName { get; set; }
-    
+
     public string AudioForBase64 { get; set; }
 }
 

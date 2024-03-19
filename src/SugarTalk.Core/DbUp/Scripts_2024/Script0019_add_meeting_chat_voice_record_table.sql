@@ -9,3 +9,5 @@ create table if not exists `meeting_chat_voice_record`(
     is_self tinyint(1) not null default 0,
     generation_status int not null default 0
 ) charset=utf8mb4;
+
+ALTER TABLE meeting_chat_room_setting ADD `voice_name` varchar(128) null;
