@@ -24,6 +24,10 @@ public partial interface IMeetingService
     Task<GetMeetingAudioListResponse> GetMeetingAudioListAsync(GetMeetingAudioListRequest request, CancellationToken cancellationToken);
     
     Task<MeetingSpeechUpdatedEvent> UpdateMeetingSpeechAsync(UpdateMeetingSpeechCommand command, CancellationToken cancellationToken);
+
+    Task<GetMeetingChatVoiceRecordEvent> GetMeetingChatVoiceRecordAsync(GetMeetingChatVoiceRecordRequest request, CancellationToken cancellationToken);
+    
+    Task ShouldGenerateMeetingChatVoiceRecordAsync(MeetingChatVoiceRecordDto meetingChatVoiceRecord, CancellationToken cancellationToken);
 }
 
 public partial class MeetingService
@@ -165,6 +169,49 @@ public partial class MeetingService
         await _unitOfWork.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
 
         return new MeetingSpeechUpdatedEvent { Result = "success" };
+    }
+    
+    public async Task<GetMeetingChatVoiceRecordEvent> GetMeetingChatVoiceRecordAsync(GetMeetingChatVoiceRecordRequest request, CancellationToken cancellationToken)
+    {
+        if (!_currentUser.Id.HasValue) throw new UnauthorizedAccessException();
+
+        var selfVoiceRecord = await _meetingDataProvider.GetMeetingChatVoiceRecordsForCurrentUserAsync(request.MeetingId, cancellationToken).ConfigureAwait(false);
+
+        var meetingSpeeches = await _meetingDataProvider.GetMeetingSpeechesAsync(request.MeetingId, cancellationToken).ConfigureAwait(false);
+
+        var combinedRecords = new List<MeetingChatVoiceRecordDto>();
+        var shouldGenerates = new List<MeetingChatVoiceRecordDto>(); 
+
+        foreach (var meetingSpeech in meetingSpeeches)
+        {
+            var allRecord = await _meetingDataProvider.GetMeetingChatVoiceRecordBySpeechIdAsync(meetingSpeech.Id, cancellationToken).ConfigureAwait(false);
+            
+            var targetVoiceRecord = await _meetingDataProvider.GetTargetMeetingChatVoiceRecord(meetingSpeech.Id, request.LanguageType, cancellationToken).ConfigureAwait(false);
+            
+            var shouldGenerate = allRecord.Except(targetVoiceRecord).ToList();
+            shouldGenerates.AddRange(_mapper.Map<List<MeetingChatVoiceRecordDto>>(shouldGenerate));
+
+            combinedRecords.AddRange(_mapper.Map<List<MeetingChatVoiceRecordDto>>(allRecord));
+            
+            Log.Information("Get meeting chat voice record {@ShouldGenerateCount}", shouldGenerates.Count);
+        }
+   
+        combinedRecords.AddRange(_mapper.Map<List<MeetingChatVoiceRecordDto>>(selfVoiceRecord));
+
+        Log.Information("Get meeting chat voice record {@CombinedRecordsCount}", combinedRecords.Count);
+        
+        return new GetMeetingChatVoiceRecordEvent
+        {
+            MeetingChatVoiceRecords = combinedRecords,
+            ShouldGenerateVoiceRecords = shouldGenerates
+        };
+    }
+
+    public async Task ShouldGenerateMeetingChatVoiceRecordAsync(MeetingChatVoiceRecordDto meetingChatVoiceRecord, CancellationToken cancellationToken)
+    { 
+        var shouldGenerateSpeech = await _meetingDataProvider.GetMeetingSpeechByIdAsync(meetingChatVoiceRecord.SpeechId, cancellationToken).ConfigureAwait(false);
+        
+        await GenerateChatRecordAsync(shouldGenerateSpeech.MeetingId, shouldGenerateSpeech, cancellationToken).ConfigureAwait(false);
     }
 
     public async Task GenerateChatRecordAsync(Guid meetingId, MeetingSpeech meetingSpeech, CancellationToken cancellationToken)
