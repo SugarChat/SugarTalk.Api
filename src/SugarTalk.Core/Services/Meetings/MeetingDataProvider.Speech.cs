@@ -86,10 +86,8 @@ public partial class MeetingDataProvider
 
     public async Task<List<MeetingChatVoiceRecord>> GetMeetingChatVoiceRecordsForCurrentUserAsync(Guid meetingId, CancellationToken cancellationToken)
     {
-        var query =
-            from roomSetting in _repository.Query<MeetingChatRoomSetting>()
-            join record in _repository.Query<MeetingChatVoiceRecord>() 
-                on roomSetting.VoiceId equals record.VoiceId
+        var query = from roomSetting in _repository.Query<MeetingChatRoomSetting>() 
+            join record in _repository.Query<MeetingChatVoiceRecord>() on roomSetting.VoiceId equals record.VoiceId
             where roomSetting.MeetingId == meetingId 
                   && roomSetting.UserId == _currentUser.Id.Value 
                   && record.IsSelf == true
