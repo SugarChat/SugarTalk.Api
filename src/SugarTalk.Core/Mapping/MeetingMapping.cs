@@ -35,5 +35,7 @@ public class MeetingMapping: Profile
         CreateMap<AddOrUpdateChatRoomSettingCommand, MeetingChatRoomSetting>()
             .ForMember(dest => dest.SelfLanguage, source => source.MapFrom(x => x.SelfLanguage))
             .ForMember(dest => dest.ListeningLanguage, source => source.MapFrom(x => x.ListeningLanguage));
+
+        CreateMap<MeetingChatVoiceRecordDto, MeetingChatVoiceRecord>().ReverseMap();
     }
 }
