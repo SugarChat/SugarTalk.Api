@@ -19,7 +19,7 @@ public partial interface IMeetingDataProvider
     
     Task<MeetingUserSetting> DistributeLanguageForMeetingUserAsync(Guid meetingId, CancellationToken cancellationToken);
     
-    Task<List<MeetingChatVoiceRecord>> GetMeetingChatVoiceRecordsForCurrentUserAsync(Guid meetingId, CancellationToken cancellationToken);
+    Task<List<MeetingChatVoiceRecord>> GetMeetingChatVoiceRecordsForCurrentUserAsync(Guid meetingId, int userId, CancellationToken cancellationToken);
     
     Task<List<MeetingChatVoiceRecord>> GetMeetingChatVoiceRecordBySpeechIdAsync(Guid speechId, CancellationToken cancellationToken);
     
@@ -84,13 +84,12 @@ public partial class MeetingDataProvider
         return meetingUserSetting;
     }
 
-    public async Task<List<MeetingChatVoiceRecord>> GetMeetingChatVoiceRecordsForCurrentUserAsync(Guid meetingId, CancellationToken cancellationToken)
+    public async Task<List<MeetingChatVoiceRecord>> GetMeetingChatVoiceRecordsForCurrentUserAsync(Guid meetingId, int userId, CancellationToken cancellationToken)
     {
         var query = from roomSetting in _repository.Query<MeetingChatRoomSetting>() 
             join record in _repository.Query<MeetingChatVoiceRecord>() on roomSetting.VoiceId equals record.VoiceId
             where roomSetting.MeetingId == meetingId 
-                  && roomSetting.UserId == _currentUser.Id.Value 
-                  && record.IsSelf == true
+                  && roomSetting.UserId == userId
             select record;
         
         return await query.ToListAsync(cancellationToken).ConfigureAwait(false);
