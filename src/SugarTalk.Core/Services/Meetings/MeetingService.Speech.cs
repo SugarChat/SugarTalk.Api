@@ -175,9 +175,11 @@ public partial class MeetingService
     {
         if (!_currentUser.Id.HasValue) throw new UnauthorizedAccessException();
 
-        var selfVoiceRecord = await _meetingDataProvider.GetMeetingChatVoiceRecordsForCurrentUserAsync(request.MeetingId, cancellationToken).ConfigureAwait(false);
+        var selfVoiceRecord = await _meetingDataProvider.GetMeetingChatVoiceRecordsForCurrentUserAsync(
+            request.MeetingId, _currentUser.Id.Value, cancellationToken).ConfigureAwait(false);
 
-        var meetingSpeeches = await _meetingDataProvider.GetMeetingSpeechesAsync(request.MeetingId, cancellationToken).ConfigureAwait(false);
+        var meetingSpeeches = await _meetingDataProvider.GetMeetingSpeechesAsync(
+            request.MeetingId, cancellationToken, request.FilterHasCanceledAudio).ConfigureAwait(false);
 
         var combinedRecords = new List<MeetingChatVoiceRecordDto>();
         var shouldGenerates = new List<MeetingChatVoiceRecordDto>(); 
@@ -186,7 +188,7 @@ public partial class MeetingService
         {
             var allRecord = await _meetingDataProvider.GetMeetingChatVoiceRecordBySpeechIdAsync(meetingSpeech.Id, cancellationToken).ConfigureAwait(false);
             
-            var targetVoiceRecord = await _meetingDataProvider.GetTargetMeetingChatVoiceRecord(meetingSpeech.Id, request.LanguageType, cancellationToken).ConfigureAwait(false);
+            var targetVoiceRecord = await _meetingDataProvider.GetTargetMeetingChatVoiceRecord(meetingSpeech.Id, request.ListenLanguage, cancellationToken).ConfigureAwait(false);
             
             var shouldGenerate = allRecord.Except(targetVoiceRecord).ToList();
             shouldGenerates.AddRange(_mapper.Map<List<MeetingChatVoiceRecordDto>>(shouldGenerate));
@@ -202,7 +204,7 @@ public partial class MeetingService
         
         return new GetMeetingChatVoiceRecordEvent
         {
-            MeetingChatVoiceRecords = combinedRecords,
+            MeetingSpeech = _mapper.Map<List<MeetingSpeechDto>>(meetingSpeeches),
             ShouldGenerateVoiceRecords = shouldGenerates
         };
     }

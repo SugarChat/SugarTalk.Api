@@ -24,7 +24,7 @@ public class GetMeetingChatVoiceRecordRequestHandler : IRequestHandler<GetMeetin
 
         return new GetMeetingChatVoiceRecordResponse
         {
-            Data = @event.MeetingChatVoiceRecords
+            Data = @event.MeetingSpeech
         };
     }
 }

@@ -17,17 +17,15 @@ public class GetMeetingChatVoiceRecordEventHandler : IEventHandler<GetMeetingCha
         _meetingService = meetingService;
     }
 
-    public Task Handle(IReceiveContext<GetMeetingChatVoiceRecordEvent> context, CancellationToken cancellationToken)
+    public async Task Handle(IReceiveContext<GetMeetingChatVoiceRecordEvent> context, CancellationToken cancellationToken)
     {
-        if (context.Message.ShouldGenerateVoiceRecords.Count <= 0) return Task.CompletedTask;
+        if (context.Message.ShouldGenerateVoiceRecords.Count <= 0) return;
         
         Log.Information("GetMeetingChatVoiceRecordEventHandler: {ShouldGenerateVoiceRecordsCount}", context.Message.ShouldGenerateVoiceRecords.Count);
         
         foreach (var shouldGenerateVoiceRecord in context.Message.ShouldGenerateVoiceRecords)
         { 
-            _meetingService.ShouldGenerateMeetingChatVoiceRecordAsync(shouldGenerateVoiceRecord, cancellationToken);
+            await _meetingService.ShouldGenerateMeetingChatVoiceRecordAsync(shouldGenerateVoiceRecord, cancellationToken);
         }
-
-        return Task.CompletedTask;
     }
 }

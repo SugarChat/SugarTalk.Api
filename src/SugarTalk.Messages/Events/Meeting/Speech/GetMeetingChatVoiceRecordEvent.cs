@@ -6,7 +6,7 @@ namespace SugarTalk.Messages.Events.Meeting.Speech;
 
 public class GetMeetingChatVoiceRecordEvent : IEvent
 {
-    public List<MeetingChatVoiceRecordDto> MeetingChatVoiceRecords { get; set; }
+    public List<MeetingSpeechDto> MeetingSpeech { get; set; }
     
     public List<MeetingChatVoiceRecordDto> ShouldGenerateVoiceRecords { get; set; }
 }
