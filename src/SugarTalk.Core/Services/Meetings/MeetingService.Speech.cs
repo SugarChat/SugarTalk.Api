@@ -236,7 +236,7 @@ public partial class MeetingService
             .Select(speech => new MeetingChatVoiceRecord
             {
                 SpeechId = speech.Id,
-                IsSelf = true,
+                IsSelf = false,
                 VoiceId = roomSetting.VoiceId,
                 VoiceLanguage = roomSetting.ListeningLanguage,
                 CreatedDate = DateTimeOffset.Now,
