@@ -25,8 +25,8 @@ public partial interface IMeetingDataProvider
     Task<List<MeetingChatVoiceRecord>> GetMeetingChatVoiceRecordBySpeechIdAsync(Guid speechId, CancellationToken cancellationToken);
     
     Task<List<MeetingChatVoiceRecord>> GetTargetMeetingChatVoiceRecord(Guid speechId, SpeechTargetLanguageType targetLanguage, CancellationToken cancellationToken);
-    
-    Task<MeetingSpeechDto> GetMeetingSpeechWithVoiceRecordAsync(Guid speechId, SpeechTargetLanguageType targetLanguageType, CancellationToken cancellationToken);
+
+    Task<List<MeetingSpeechDto>> GetMeetingSpeechWithVoiceRecordAsync(List<Guid> speechIds, SpeechTargetLanguageType targetLanguageType, CancellationToken cancellationToken);
 }
 
 public partial class MeetingDataProvider
@@ -112,31 +112,27 @@ public partial class MeetingDataProvider
             .ToListAsync(cancellationToken).ConfigureAwait(false);
     }
 
-    public async Task<MeetingSpeechDto> GetMeetingSpeechWithVoiceRecordAsync(Guid speechId, SpeechTargetLanguageType targetLanguageType, CancellationToken cancellationToken)
+    public async Task<List<MeetingSpeechDto>> GetMeetingSpeechWithVoiceRecordAsync(List<Guid> speechIds, SpeechTargetLanguageType targetLanguageType, CancellationToken cancellationToken)
     {
-        var query = from meetingSpeech in _repository.Query<MeetingSpeech>()
-            join voiceRecord in _repository.Query<MeetingChatVoiceRecord>() on speechId equals voiceRecord.SpeechId into voiceRecordGroup
-            from voiceRecord in voiceRecordGroup.DefaultIfEmpty()
-            join roomSetting in _repository.Query<MeetingChatRoomSetting>() on voiceRecord.VoiceId equals roomSetting.VoiceId into roomSettingGroup
-            from roomSetting in roomSettingGroup.DefaultIfEmpty()
-            where voiceRecord == null || voiceRecord.VoiceLanguage == targetLanguageType
+        var query =
+            from speech in _repository.Query<MeetingSpeech>()
+            join record in _repository.Query<MeetingChatVoiceRecord>() on speech.Id equals record.SpeechId into voiceRecordGroup
+            from record in voiceRecordGroup.DefaultIfEmpty()
+            where speechIds.Contains(speech.Id) && record.VoiceLanguage == targetLanguageType
             select new MeetingSpeechDto
             {
-                MeetingId = meetingSpeech.MeetingId,
-                UserId = meetingSpeech.UserId,
-                OriginalText = meetingSpeech.OriginalText,
-                Status = meetingSpeech.Status,
-                VoiceRecord = new MeetingChatVoiceRecordDto
-                {
-                    VoiceUrl = voiceRecord.VoiceUrl,
-                }
+                Id = speech.Id,
+                MeetingId = speech.MeetingId,
+                UserId = speech.UserId,
+                OriginalText = speech.OriginalText,
+                Status = speech.Status,
+                CreatedDate = speech.CreatedDate,
+                VoiceRecord = record == null ? null : _mapper.Map<MeetingChatVoiceRecordDto>(record),
             };
-
-        var groupedQuery = query.GroupBy(ms => ms.Id);
-
-        var meetingSpeeches = groupedQuery.Select(group => group.First());
-
-        return await meetingSpeeches.FirstOrDefaultAsync(cancellationToken);
+        
+        var groupedQuery = query.GroupBy(ms => ms.Id).Select(x => x.First());
+        
+        return await groupedQuery.ToListAsync(cancellationToken).ConfigureAwait(false);
     }
 
     private void AssignTone<T>(

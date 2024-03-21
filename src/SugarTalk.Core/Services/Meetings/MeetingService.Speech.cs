@@ -216,54 +216,40 @@ public partial class MeetingService
     public async Task<GetMeetingChatVoiceRecordEvent> GetMeetingChatVoiceRecordAsync(GetMeetingChatVoiceRecordRequest request, CancellationToken cancellationToken)
     {
         if (!_currentUser.Id.HasValue) throw new UnauthorizedAccessException();
-
-        var selfVoiceRecord = await _meetingDataProvider.GetMeetingChatVoiceRecordsForCurrentUserAsync(
-            request.MeetingId, _currentUser.Id.Value, cancellationToken).ConfigureAwait(false);
-
+        
         var roomSetting = await _meetingDataProvider.GetMeetingChatRoomSettingByMeetingIdAsync(
             _currentUser.Id.Value, request.MeetingId, cancellationToken).ConfigureAwait(false);
 
         var meetingSpeeches = await _meetingDataProvider.GetMeetingSpeechesAsync(
             request.MeetingId, cancellationToken, request.FilterHasCanceledAudio).ConfigureAwait(false);
 
-        var combinedRecords = new List<MeetingChatVoiceRecordDto>();
-        var shouldGenerates = new List<MeetingChatVoiceRecordDto>();
-        var speechDtos = new List<MeetingSpeechDto>();
-
         var speechWithName = await SetUserNamesForMeetingSpeechesAsync(
             request.MeetingId, meetingSpeeches, cancellationToken).ConfigureAwait(false);
 
-        foreach (var meetingSpeech in speechWithName)
-        {
-            var allRecord = await _meetingDataProvider.GetMeetingChatVoiceRecordBySpeechIdAsync(
-                meetingSpeech.Id, cancellationToken).ConfigureAwait(false);
+        var speechId = speechWithName.Select(x => x.Id).ToList();
+        
+        var allSpeech = await _meetingDataProvider.GetMeetingSpeechWithVoiceRecordAsync(
+            speechId, roomSetting.ListeningLanguage, cancellationToken).ConfigureAwait(false);
 
-            var targetVoiceRecord = await _meetingDataProvider.GetTargetMeetingChatVoiceRecord(
-                meetingSpeech.Id, roomSetting.ListeningLanguage, cancellationToken).ConfigureAwait(false);
+        var shouldGenerateVoiceRecords = allSpeech
+            .Where(speech => speech.VoiceRecord == null)
+            .Select(speech => new MeetingChatVoiceRecord
+            {
+                SpeechId = speech.Id,
+                IsSelf = true,
+                VoiceId = roomSetting.VoiceId,
+                VoiceLanguage = roomSetting.ListeningLanguage,
+                CreatedDate = DateTimeOffset.Now,
+                GenerationStatus = ChatRecordGenerationStatus.InProgress
+            })
+            .ToList();
 
-            var shouldGenerate = allRecord.Except(targetVoiceRecord).ToList();
-            shouldGenerates.AddRange(_mapper.Map<List<MeetingChatVoiceRecordDto>>(shouldGenerate));
-
-            combinedRecords.AddRange(_mapper.Map<List<MeetingChatVoiceRecordDto>>(allRecord));
-
-            var speech = await _meetingDataProvider.GetMeetingSpeechWithVoiceRecordAsync(
-                meetingSpeech.Id, roomSetting.ListeningLanguage, cancellationToken).ConfigureAwait(false);
-
-            var speechDto = _mapper.Map<MeetingSpeechDto>(speech);
-            
-            speechDtos.Add(speechDto);
-            
-            Log.Information("Get meeting chat voice record {@ShouldGenerateCount}", shouldGenerates.Count);
-        }
-
-        combinedRecords.AddRange(_mapper.Map<List<MeetingChatVoiceRecordDto>>(selfVoiceRecord));
-
-        Log.Information("Get meeting chat voice record {@CombinedRecordsCount}", combinedRecords.Count);
+        await _meetingDataProvider.AddMeetingChatVoiceRecordAsync(shouldGenerateVoiceRecords, true, cancellationToken).ConfigureAwait(false);
 
         return new GetMeetingChatVoiceRecordEvent
         {
-            MeetingSpeech = speechDtos,
-            ShouldGenerateVoiceRecords = shouldGenerates
+            MeetingSpeech = allSpeech,
+            ShouldGenerateVoiceRecords = _mapper.Map<List<MeetingChatVoiceRecordDto>>(shouldGenerateVoiceRecords)
         };
     }
     
@@ -290,7 +276,7 @@ public partial class MeetingService
             GenerationStatus = ChatRecordGenerationStatus.InProgress
         };
 
-        await _meetingDataProvider.AddMeetingChatVoiceRecordAsync(meetingRecord, true, cancellationToken).ConfigureAwait(false);
+        await _meetingDataProvider.AddMeetingChatVoiceRecordAsync(new List<MeetingChatVoiceRecord> { meetingRecord }, true, cancellationToken).ConfigureAwait(false);
         
         _backgroundJobClient.Enqueue(() => GenerateChatRecordProcessAsync(meetingRecord, roomSetting, meetingSpeech, cancellationToken));
     }
