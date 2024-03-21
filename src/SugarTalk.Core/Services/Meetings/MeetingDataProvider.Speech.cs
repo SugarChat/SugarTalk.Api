@@ -19,12 +19,6 @@ public partial interface IMeetingDataProvider
     Task<MeetingSpeech> GetMeetingSpeechByIdAsync(Guid meetingSpeechId, CancellationToken cancellationToken);
     
     Task<MeetingUserSetting> DistributeLanguageForMeetingUserAsync(Guid meetingId, CancellationToken cancellationToken);
-    
-    Task<List<MeetingChatVoiceRecord>> GetMeetingChatVoiceRecordsForCurrentUserAsync(Guid meetingId, int userId, CancellationToken cancellationToken);
-    
-    Task<List<MeetingChatVoiceRecord>> GetMeetingChatVoiceRecordBySpeechIdAsync(Guid speechId, CancellationToken cancellationToken);
-    
-    Task<List<MeetingChatVoiceRecord>> GetTargetMeetingChatVoiceRecord(Guid speechId, SpeechTargetLanguageType targetLanguage, CancellationToken cancellationToken);
 
     Task<List<MeetingSpeechDto>> GetMeetingSpeechWithVoiceRecordAsync(List<Guid> speechIds, SpeechTargetLanguageType targetLanguageType, CancellationToken cancellationToken);
 }
@@ -85,31 +79,6 @@ public partial class MeetingDataProvider
         await _unitOfWork.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
 
         return meetingUserSetting;
-    }
-
-    public async Task<List<MeetingChatVoiceRecord>> GetMeetingChatVoiceRecordsForCurrentUserAsync(Guid meetingId, int userId, CancellationToken cancellationToken)
-    {
-        var query = from roomSetting in _repository.Query<MeetingChatRoomSetting>() 
-            join record in _repository.Query<MeetingChatVoiceRecord>() on roomSetting.VoiceId equals record.VoiceId
-            where roomSetting.MeetingId == meetingId 
-                  && roomSetting.UserId == userId
-            select record;
-        
-        return await query.ToListAsync(cancellationToken).ConfigureAwait(false);
-    }
-
-    public async Task<List<MeetingChatVoiceRecord>> GetMeetingChatVoiceRecordBySpeechIdAsync(Guid speechId, CancellationToken cancellationToken)
-    {
-        return await _repository.Query<MeetingChatVoiceRecord>()
-            .Where(x=>x.SpeechId == speechId)
-            .ToListAsync(cancellationToken).ConfigureAwait(false);
-    }
-
-    public async Task<List<MeetingChatVoiceRecord>> GetTargetMeetingChatVoiceRecord(Guid speechId, SpeechTargetLanguageType targetLanguage, CancellationToken cancellationToken)
-    {
-        return await _repository.Query<MeetingChatVoiceRecord>()
-            .Where(x => x.SpeechId == speechId && x.VoiceLanguage == targetLanguage)
-            .ToListAsync(cancellationToken).ConfigureAwait(false);
     }
 
     public async Task<List<MeetingSpeechDto>> GetMeetingSpeechWithVoiceRecordAsync(List<Guid> speechIds, SpeechTargetLanguageType targetLanguageType, CancellationToken cancellationToken)

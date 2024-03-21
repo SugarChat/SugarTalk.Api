@@ -57,6 +57,8 @@ namespace SugarTalk.Core.Services.Meetings
         
         Task<MeetingChatRoomSetting> GetMeetingChatRoomSettingByMeetingIdAsync(int userId, Guid meetingId, CancellationToken cancellationToken);
 
+        Task<MeetingChatRoomSetting> GetMeetingChatRoomSettingByVoiceIdAsync(string voiceId, CancellationToken cancellationToken);
+        
         Task CheckMeetingSecurityCodeAsync(Guid meetingId, string securityCode, CancellationToken cancellationToken);
         
         Task UpdateMeetingsAsync(List<Meeting> meetingList, CancellationToken cancellationToken);
@@ -302,6 +304,13 @@ namespace SugarTalk.Core.Services.Meetings
         {
             return await _repository.Query<MeetingChatRoomSetting>()
                 .Where(x => x.UserId == userId && x.MeetingId == meetingId)
+                .FirstOrDefaultAsync(cancellationToken).ConfigureAwait(false);
+        }
+
+        public async Task<MeetingChatRoomSetting> GetMeetingChatRoomSettingByVoiceIdAsync(string voiceId, CancellationToken cancellationToken)
+        {
+            return await _repository.QueryNoTracking<MeetingChatRoomSetting>()
+                .Where(x => x.VoiceId == voiceId)
                 .FirstOrDefaultAsync(cancellationToken).ConfigureAwait(false);
         }
 

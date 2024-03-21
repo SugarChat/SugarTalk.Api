@@ -226,10 +226,8 @@ public partial class MeetingService
         var speechWithName = await SetUserNamesForMeetingSpeechesAsync(
             request.MeetingId, meetingSpeeches, cancellationToken).ConfigureAwait(false);
 
-        var speechId = speechWithName.Select(x => x.Id).ToList();
-        
         var allSpeech = await _meetingDataProvider.GetMeetingSpeechWithVoiceRecordAsync(
-            speechId, roomSetting.ListeningLanguage, cancellationToken).ConfigureAwait(false);
+            speechWithName.Select(x => x.Id).ToList(), roomSetting.ListeningLanguage, cancellationToken).ConfigureAwait(false);
 
         var shouldGenerateVoiceRecords = allSpeech
             .Where(speech => speech.VoiceRecord == null)
@@ -256,8 +254,10 @@ public partial class MeetingService
     public async Task ShouldGenerateMeetingChatVoiceRecordAsync(MeetingChatVoiceRecordDto meetingChatVoiceRecord, CancellationToken cancellationToken)
     { 
         var shouldGenerateSpeech = await _meetingDataProvider.GetMeetingSpeechByIdAsync(meetingChatVoiceRecord.SpeechId, cancellationToken).ConfigureAwait(false);
-        
-        await GenerateChatRecordAsync(shouldGenerateSpeech.MeetingId, shouldGenerateSpeech, cancellationToken).ConfigureAwait(false);
+
+        var roomSetting = await _meetingDataProvider.GetMeetingChatRoomSettingByVoiceIdAsync(meetingChatVoiceRecord.VoiceId, cancellationToken).ConfigureAwait(false);
+
+        await GenerateChatRecordProcessAsync(_mapper.Map<MeetingChatVoiceRecord>(meetingChatVoiceRecord), roomSetting, shouldGenerateSpeech, cancellationToken).ConfigureAwait(false);
     }
 
     public async Task GenerateChatRecordAsync(Guid meetingId, MeetingSpeech meetingSpeech, CancellationToken cancellationToken)
