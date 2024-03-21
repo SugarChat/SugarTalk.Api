@@ -120,7 +120,7 @@ public partial class MeetingService
         return new GetMeetingAudioListResponse { Data = meetingSpeechesDto };
     }
 
-    public async Task<List<MeetingSpeechDto>> SetUserNamesForMeetingSpeechesAsync(Guid meetingId, List<MeetingSpeech> meetingSpeeches, CancellationToken cancellationToken)
+    public async Task<List<MeetingSpeechDto>> EnhanceMeetingSpeechesWithUserNamesAsync(Guid meetingId, List<MeetingSpeech> meetingSpeeches, CancellationToken cancellationToken)
     {
         var meetingSpeechesDto = _mapper.Map<List<MeetingSpeechDto>>(meetingSpeeches);
 
@@ -219,11 +219,19 @@ public partial class MeetingService
         
         var roomSetting = await _meetingDataProvider.GetMeetingChatRoomSettingByMeetingIdAsync(
             _currentUser.Id.Value, request.MeetingId, cancellationToken).ConfigureAwait(false);
-
+        
+        if (roomSetting is null) throw new Exception("Can found roomSetting when get meeting chat voice record");
+        
+        Log.Information("Get meeting chat voice record roomSetting {@RoomSetting}", roomSetting);
+        
         var meetingSpeeches = await _meetingDataProvider.GetMeetingSpeechesAsync(
             request.MeetingId, cancellationToken, request.FilterHasCanceledAudio).ConfigureAwait(false);
 
-        var speechWithName = await SetUserNamesForMeetingSpeechesAsync(
+        if (meetingSpeeches is null || meetingSpeeches.Count == 0) { return new GetMeetingChatVoiceRecordEvent(); }
+        
+        Log.Information("Get meeting chat voice record meetingSpeeches {@MeetingSpeeches}", meetingSpeeches);
+        
+        var speechWithName = await EnhanceMeetingSpeechesWithUserNamesAsync(
             request.MeetingId, meetingSpeeches, cancellationToken).ConfigureAwait(false);
 
         var allSpeech = await _meetingDataProvider.GetMeetingSpeechWithVoiceRecordAsync(

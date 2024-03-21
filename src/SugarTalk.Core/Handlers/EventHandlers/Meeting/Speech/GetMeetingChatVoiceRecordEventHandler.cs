@@ -25,7 +25,7 @@ public class GetMeetingChatVoiceRecordEventHandler : IEventHandler<GetMeetingCha
         
         if (shouldGenerateVoiceRecords.Count <= 0) return Task.CompletedTask;;
         
-        Log.Information("GetMeetingChatVoiceRecordEventHandler: {ShouldGenerateVoiceRecordsCount}", shouldGenerateVoiceRecords.Count);
+        Log.Information("GetMeetingChatVoiceRecordEventHandler: {@ShouldGenerateVoiceRecordsCount}", shouldGenerateVoiceRecords);
         
         var parentJobId = _backgroundJobClient.Enqueue<IMeetingService>(x=>
             x.ShouldGenerateMeetingChatVoiceRecordAsync(shouldGenerateVoiceRecords.First(), cancellationToken));
