@@ -25,7 +25,7 @@ public class MeetingMapping: Profile
         CreateMap<ScheduleMeetingCommand, Meeting>()
             .ForMember(dest => dest.StartDate, source => source.MapFrom(x => x.StartDate.ToUnixTimeSeconds()))
             .ForMember(dest => dest.EndDate, source => source.MapFrom(x => x.EndDate.ToUnixTimeSeconds()));
-        CreateMap<MeetingSpeech, MeetingSpeechDto>();
+        CreateMap<MeetingSpeech, MeetingSpeechDto>().ReverseMap();
         CreateMap<MeetingUserSetting, MeetingUserSettingDto>().ReverseMap();
         CreateMap<MeetingHistory, MeetingHistoryDto>();
         CreateMap<MeetingSpeakDetail, MeetingSpeakDetailDto>().ReverseMap();
