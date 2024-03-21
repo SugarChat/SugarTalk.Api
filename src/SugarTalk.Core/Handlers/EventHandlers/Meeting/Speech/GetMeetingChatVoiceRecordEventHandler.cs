@@ -12,26 +12,28 @@ namespace SugarTalk.Core.Handlers.EventHandlers.Meeting.Speech;
 
 public class GetMeetingChatVoiceRecordEventHandler : IEventHandler<GetMeetingChatVoiceRecordEvent>
 {
-    private readonly IMeetingService _meetingService;
     private readonly ISugarTalkBackgroundJobClient _backgroundJobClient;
 
-    public GetMeetingChatVoiceRecordEventHandler(IMeetingService meetingService, ISugarTalkBackgroundJobClient backgroundJobClient)
+    public GetMeetingChatVoiceRecordEventHandler(ISugarTalkBackgroundJobClient backgroundJobClient)
     {
-        _meetingService = meetingService;
         _backgroundJobClient = backgroundJobClient;
     }
 
     public Task Handle(IReceiveContext<GetMeetingChatVoiceRecordEvent> context, CancellationToken cancellationToken)
     {
-        if (context.Message.ShouldGenerateVoiceRecords.Count <= 0) return Task.CompletedTask;;
+        var shouldGenerateVoiceRecords = context.Message.ShouldGenerateVoiceRecords;
         
-        Log.Information("GetMeetingChatVoiceRecordEventHandler: {ShouldGenerateVoiceRecordsCount}", context.Message.ShouldGenerateVoiceRecords.Count);
+        if (shouldGenerateVoiceRecords.Count <= 0) return Task.CompletedTask;;
         
-        var parentJobId = _backgroundJobClient.Enqueue(() => _meetingService.ShouldGenerateMeetingChatVoiceRecordAsync(context.Message.ShouldGenerateVoiceRecords.First(), cancellationToken));
+        Log.Information("GetMeetingChatVoiceRecordEventHandler: {ShouldGenerateVoiceRecordsCount}", shouldGenerateVoiceRecords.Count);
         
-        context.Message.ShouldGenerateVoiceRecords.Skip(1).Aggregate(parentJobId, (current, shouldGenerateVoiceRecord)=>
-            _backgroundJobClient.ContinueJobWith(current, () => _meetingService.ShouldGenerateMeetingChatVoiceRecordAsync(shouldGenerateVoiceRecord, cancellationToken)));
-        
+        var parentJobId = _backgroundJobClient.Enqueue<IMeetingService>(x=>
+            x.ShouldGenerateMeetingChatVoiceRecordAsync(shouldGenerateVoiceRecords.First(), cancellationToken));
+
+        shouldGenerateVoiceRecords.Skip(1).Aggregate(parentJobId, (current, shouldGenerateVoiceRecord) =>
+            _backgroundJobClient.ContinueJobWith<IMeetingService>(current,
+                x => x.ShouldGenerateMeetingChatVoiceRecordAsync(shouldGenerateVoiceRecord, cancellationToken)));
+
         return Task.CompletedTask;
     }
 }

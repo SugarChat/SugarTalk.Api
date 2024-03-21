@@ -220,6 +220,9 @@ public partial class MeetingService
         var selfVoiceRecord = await _meetingDataProvider.GetMeetingChatVoiceRecordsForCurrentUserAsync(
             request.MeetingId, _currentUser.Id.Value, cancellationToken).ConfigureAwait(false);
 
+        var roomSetting = await _meetingDataProvider.GetMeetingChatRoomSettingByMeetingIdAsync(
+            _currentUser.Id.Value, request.MeetingId, cancellationToken).ConfigureAwait(false);
+
         var meetingSpeeches = await _meetingDataProvider.GetMeetingSpeechesAsync(
             request.MeetingId, cancellationToken, request.FilterHasCanceledAudio).ConfigureAwait(false);
 
@@ -236,7 +239,7 @@ public partial class MeetingService
                 meetingSpeech.Id, cancellationToken).ConfigureAwait(false);
 
             var targetVoiceRecord = await _meetingDataProvider.GetTargetMeetingChatVoiceRecord(
-                meetingSpeech.Id, request.ListenLanguage, cancellationToken).ConfigureAwait(false);
+                meetingSpeech.Id, roomSetting.ListeningLanguage, cancellationToken).ConfigureAwait(false);
 
             var shouldGenerate = allRecord.Except(targetVoiceRecord).ToList();
             shouldGenerates.AddRange(_mapper.Map<List<MeetingChatVoiceRecordDto>>(shouldGenerate));
@@ -244,7 +247,7 @@ public partial class MeetingService
             combinedRecords.AddRange(_mapper.Map<List<MeetingChatVoiceRecordDto>>(allRecord));
 
             var speech = await _meetingDataProvider.GetMeetingSpeechWithVoiceRecordAsync(
-                meetingSpeech.Id, request.ListenLanguage, cancellationToken).ConfigureAwait(false);
+                meetingSpeech.Id, roomSetting.ListeningLanguage, cancellationToken).ConfigureAwait(false);
 
             var speechDto = _mapper.Map<MeetingSpeechDto>(speech);
             

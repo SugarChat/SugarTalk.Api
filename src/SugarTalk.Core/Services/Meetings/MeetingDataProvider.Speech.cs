@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using SugarTalk.Core.Domain.Meeting;
+using SugarTalk.Messages.Dto.Meetings.Speech;
 using SugarTalk.Messages.Enums.Speech;
 
 namespace SugarTalk.Core.Services.Meetings;
@@ -25,7 +26,7 @@ public partial interface IMeetingDataProvider
     
     Task<List<MeetingChatVoiceRecord>> GetTargetMeetingChatVoiceRecord(Guid speechId, SpeechTargetLanguageType targetLanguage, CancellationToken cancellationToken);
     
-    Task<MeetingSpeech> GetMeetingSpeechWithVoiceRecordAsync(Guid speechId, SpeechTargetLanguageType targetLanguageType, CancellationToken cancellationToken);
+    Task<MeetingSpeechDto> GetMeetingSpeechWithVoiceRecordAsync(Guid speechId, SpeechTargetLanguageType targetLanguageType, CancellationToken cancellationToken);
 }
 
 public partial class MeetingDataProvider
@@ -111,15 +112,25 @@ public partial class MeetingDataProvider
             .ToListAsync(cancellationToken).ConfigureAwait(false);
     }
 
-    public async Task<MeetingSpeech> GetMeetingSpeechWithVoiceRecordAsync(Guid speechId, SpeechTargetLanguageType targetLanguageType, CancellationToken cancellationToken)
+    public async Task<MeetingSpeechDto> GetMeetingSpeechWithVoiceRecordAsync(Guid speechId, SpeechTargetLanguageType targetLanguageType, CancellationToken cancellationToken)
     {
         var query = from meetingSpeech in _repository.Query<MeetingSpeech>()
-            join voiceRecord in _repository.Query<MeetingChatVoiceRecord>() on meetingSpeech.Id equals voiceRecord.SpeechId into voiceRecordGroup
+            join voiceRecord in _repository.Query<MeetingChatVoiceRecord>() on speechId equals voiceRecord.SpeechId into voiceRecordGroup
             from voiceRecord in voiceRecordGroup.DefaultIfEmpty()
             join roomSetting in _repository.Query<MeetingChatRoomSetting>() on voiceRecord.VoiceId equals roomSetting.VoiceId into roomSettingGroup
             from roomSetting in roomSettingGroup.DefaultIfEmpty()
             where voiceRecord == null || voiceRecord.VoiceLanguage == targetLanguageType
-            select meetingSpeech;
+            select new MeetingSpeechDto
+            {
+                MeetingId = meetingSpeech.MeetingId,
+                UserId = meetingSpeech.UserId,
+                OriginalText = meetingSpeech.OriginalText,
+                Status = meetingSpeech.Status,
+                VoiceRecord = new MeetingChatVoiceRecordDto
+                {
+                    VoiceUrl = voiceRecord.VoiceUrl,
+                }
+            };
 
         var groupedQuery = query.GroupBy(ms => ms.Id);
 
