@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using SugarTalk.Messages.Enums.Speech;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
@@ -32,4 +33,7 @@ public class MeetingSpeech : IEntity
 
     [Column("status")]
     public SpeechStatus Status { get; set; }
+    
+    [NotMapped]
+    public List<MeetingChatVoiceRecord> VoiceRecords { get; set; }
 }

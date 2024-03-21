@@ -31,7 +31,7 @@ public class MeetingSpeechController : ControllerBase
     [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(UpdateMeetingSpeechResponse))]
     public async Task<IActionResult> UpdateMeetingSpeechAsync(UpdateMeetingSpeechCommand command)
     {
-        var response = await _mediator.SendAsync<UpdateMeetingSpeechCommand, UpdateMeetingSpeechResponse>(command);
+        var response = await _mediator.SendAsync<UpdateMeetingSpeechCommand, UpdateMeetingSpeechResponse>(command).ConfigureAwait(false);
             
         return Ok(response);
     }
@@ -40,7 +40,16 @@ public class MeetingSpeechController : ControllerBase
     [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(GetMeetingAudioListResponse))]
     public async Task<IActionResult> GetMeetingAudioListAsync([FromQuery] GetMeetingAudioListRequest request)
     {
-        var response = await _mediator.RequestAsync<GetMeetingAudioListRequest, GetMeetingAudioListResponse>(request);
+        var response = await _mediator.RequestAsync<GetMeetingAudioListRequest, GetMeetingAudioListResponse>(request).ConfigureAwait(false);
+            
+        return Ok(response);
+    }
+    
+    [Route("speech"), HttpGet]
+    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(GetMeetingChatVoiceRecordResponse))]
+    public async Task<IActionResult> GetMeetingChatVoiceRecordAsync([FromQuery] GetMeetingChatVoiceRecordRequest request)
+    {
+        var response = await _mediator.RequestAsync<GetMeetingChatVoiceRecordRequest, GetMeetingChatVoiceRecordResponse>(request).ConfigureAwait(false);
             
         return Ok(response);
     }
