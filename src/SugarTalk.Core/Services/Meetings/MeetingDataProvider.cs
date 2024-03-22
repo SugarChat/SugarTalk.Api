@@ -57,6 +57,8 @@ namespace SugarTalk.Core.Services.Meetings
         
         Task<MeetingChatRoomSetting> GetMeetingChatRoomSettingByMeetingIdAsync(int userId, Guid meetingId, CancellationToken cancellationToken);
 
+        Task<MeetingChatRoomSetting> GetMeetingChatRoomSettingByVoiceIdAsync(string voiceId, CancellationToken cancellationToken);
+        
         Task CheckMeetingSecurityCodeAsync(Guid meetingId, string securityCode, CancellationToken cancellationToken);
         
         Task UpdateMeetingsAsync(List<Meeting> meetingList, CancellationToken cancellationToken);
@@ -103,7 +105,7 @@ namespace SugarTalk.Core.Services.Meetings
 
         Task<MeetingRepeatRule> GetMeetingRuleByMeetingIdAsync(Guid meetingId, CancellationToken cancellationToken);
 
-        Task AddMeetingChatVoiceRecordAsync(MeetingChatVoiceRecord meetingChatVoiceRecord, bool forSave = true, CancellationToken cancellationToken = default);
+        Task AddMeetingChatVoiceRecordAsync(List<MeetingChatVoiceRecord> meetingChatVoiceRecord, bool forSave = true, CancellationToken cancellationToken = default);
     }
     
     public partial class MeetingDataProvider : IMeetingDataProvider
@@ -302,6 +304,13 @@ namespace SugarTalk.Core.Services.Meetings
         {
             return await _repository.Query<MeetingChatRoomSetting>()
                 .Where(x => x.UserId == userId && x.MeetingId == meetingId)
+                .FirstOrDefaultAsync(cancellationToken).ConfigureAwait(false);
+        }
+
+        public async Task<MeetingChatRoomSetting> GetMeetingChatRoomSettingByVoiceIdAsync(string voiceId, CancellationToken cancellationToken)
+        {
+            return await _repository.QueryNoTracking<MeetingChatRoomSetting>()
+                .Where(x => x.VoiceId == voiceId)
                 .FirstOrDefaultAsync(cancellationToken).ConfigureAwait(false);
         }
 
@@ -683,11 +692,11 @@ namespace SugarTalk.Core.Services.Meetings
                 .FirstOrDefaultAsync(x => x.MeetingId == meetingId, cancellationToken).ConfigureAwait(false);
         }
 
-        public async Task AddMeetingChatVoiceRecordAsync(MeetingChatVoiceRecord meetingChatVoiceRecord, bool forSave = true, CancellationToken cancellationToken = default)
+        public async Task AddMeetingChatVoiceRecordAsync(List<MeetingChatVoiceRecord> meetingChatVoiceRecord, bool forSave = true, CancellationToken cancellationToken = default)
         {
             if (meetingChatVoiceRecord is null) return;
             
-            await _repository.InsertAsync(meetingChatVoiceRecord, cancellationToken).ConfigureAwait(false);
+            await _repository.InsertAllAsync(meetingChatVoiceRecord, cancellationToken).ConfigureAwait(false);
             
             if (forSave) await _unitOfWork.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
         }
