@@ -380,8 +380,6 @@ namespace SugarTalk.Core.Services.Meetings
         public async Task ConnectUserToMeetingAsync(
             UserAccountDto user, MeetingDto meeting, bool? isMuted = null, CancellationToken cancellationToken = default)
         {
-            meeting.UserSessions = meeting.UserSessions.Where(x => x.OnlineType == MeetingUserSessionOnlineType.Online).ToList();
-            
             var userSession = meeting.UserSessions
                 .Where(x => x.UserId == user.Id)
                 .OrderByDescending(x => x.CreatedDate)
