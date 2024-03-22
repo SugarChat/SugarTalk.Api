@@ -359,7 +359,6 @@ public partial class MeetingServiceFixture
         });
         await Run<IMediator, IRepository>(async (mediator, repository) =>
         {
-            
             var response = await mediator.RequestAsync<GetMeetingChatVoiceRecordRequest, GetMeetingChatVoiceRecordResponse>(
                 new GetMeetingChatVoiceRecordRequest 
                 {
