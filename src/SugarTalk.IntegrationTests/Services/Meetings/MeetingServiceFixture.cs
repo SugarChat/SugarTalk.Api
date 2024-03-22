@@ -1076,16 +1076,20 @@ public partial class MeetingServiceFixture : MeetingFixtureBase
     }
 
     [Theory]
-    [InlineData("8b9c631a-3c76-4b24-b90d-5a25d6b2f4f9", SpeechTargetLanguageType.Cantonese, SpeechTargetLanguageType.Cantonese)]
-    [InlineData("af0e2598-7d9d-493e-bf77-6f33db8f5c3c", SpeechTargetLanguageType.English, SpeechTargetLanguageType.Spanish)]
-    public async Task CanAndOrUpdateMeetingChatRoom(
-        Guid meetingId, SpeechTargetLanguageType listeningLanguage, SpeechTargetLanguageType selfLanguage)
+    [InlineData("8b9c631a-3c76-4b24-b90d-5a25d6b2f4f9", true, true, "", SpeechTargetLanguageType.Cantonese, SpeechTargetLanguageType.Cantonese)]
+    [InlineData("8b9c631a-3c76-4b24-b90d-5a25d6b2f4f9", false, true, "123456", SpeechTargetLanguageType.English, SpeechTargetLanguageType.English)]
+    [InlineData("8b9c631a-3c76-4b24-b90d-5a25d6b2f4f9", true, false, "", SpeechTargetLanguageType.Cantonese, SpeechTargetLanguageType.Cantonese)]
+    [InlineData("8b9c631a-3c76-4b24-b90d-5a25d6b2f4f9", false, false, "123456", SpeechTargetLanguageType.English, SpeechTargetLanguageType.English)]
+    [InlineData("af0e2598-7d9d-493e-bf77-6f33db8f5c3c", false, false, "123456", SpeechTargetLanguageType.English, SpeechTargetLanguageType.English)]
+    public async Task CanAddOrUpdateMeetingChatRoom(
+        Guid meetingId, bool roomSettingIsSystem, bool commandIsSystem, string voiceId, SpeechTargetLanguageType listeningLanguage, SpeechTargetLanguageType selfLanguage)
     {
         var meetingChatRoomSetting = new MeetingChatRoomSetting()
         {
             UserId = 1,
             MeetingId = Guid.Parse("8b9c631a-3c76-4b24-b90d-5a25d6b2f4f9"),
             VoiceId = "123",
+            IsSystem = roomSettingIsSystem,
             SelfLanguage = SpeechTargetLanguageType.French,
             ListeningLanguage = SpeechTargetLanguageType.Mandarin,
             LastModifiedDate = DateTimeOffset.Now
@@ -1094,7 +1098,6 @@ public partial class MeetingServiceFixture : MeetingFixtureBase
         await RunWithUnitOfWork<IRepository>(async repository =>
         {
             await repository.InsertAsync(meetingChatRoomSetting).ConfigureAwait(false);
-            
         }).ConfigureAwait(false);
 
         await Run<IMediator, IRepository>(async (mediator, repository) =>
@@ -1102,6 +1105,8 @@ public partial class MeetingServiceFixture : MeetingFixtureBase
             await mediator.SendAsync(new AddOrUpdateChatRoomSettingCommand
             {
                 MeetingId = meetingId,
+                IsSystem = commandIsSystem,
+                VoiceId = voiceId,
                 SelfLanguage = selfLanguage,
                 ListeningLanguage = listeningLanguage,
             }).ConfigureAwait(false);
@@ -1110,8 +1115,19 @@ public partial class MeetingServiceFixture : MeetingFixtureBase
                 x => x.UserId == 1 && x.MeetingId == meetingId).FirstOrDefaultAsync().ConfigureAwait(false);
             
             meetingChatRoom.ShouldNotBeNull();
-            meetingChatRoom.SelfLanguage.ShouldBe(selfLanguage);
-            meetingChatRoom.ListeningLanguage.ShouldBe(listeningLanguage);
+
+            if (commandIsSystem)
+            {
+                meetingChatRoom.SelfLanguage.ShouldBe(meetingChatRoomSetting.SelfLanguage);
+                meetingChatRoom.ListeningLanguage.ShouldBe(meetingChatRoomSetting.ListeningLanguage);
+                meetingChatRoom.VoiceId.ShouldNotBeEmpty();
+            }
+            else
+            {
+                meetingChatRoom.SelfLanguage.ShouldBe(selfLanguage);
+                meetingChatRoom.ListeningLanguage.ShouldBe(listeningLanguage);
+                meetingChatRoom.VoiceId.ShouldBe(voiceId);
+            }
         });
     }
 }
