@@ -88,7 +88,7 @@ public partial class MeetingDataProvider
             join record in _repository.Query<MeetingChatVoiceRecord>() on speech.Id equals record.SpeechId into voiceRecordGroup
             from record in voiceRecordGroup.DefaultIfEmpty()
             where speechIds.Contains(speech.Id) && record.VoiceLanguage == targetLanguageType
-            orderby speech.CreatedDate descending
+            orderby record.CreatedDate descending
             select new MeetingSpeechDto
             {
                 Id = speech.Id,

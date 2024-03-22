@@ -298,7 +298,7 @@ public partial class MeetingServiceFixture
             Id = Guid.NewGuid(),
             OriginalText = "你好呀",
             UserId = 1, 
-            CreatedDate = DateTimeOffset.Now.AddSeconds(-1)
+            CreatedDate = DateTimeOffset.Now.AddSeconds(-1000)
         };
         
         var meetingSpeech2 = new MeetingSpeech()
@@ -319,7 +319,8 @@ public partial class MeetingServiceFixture
             GenerationStatus = ChatRecordGenerationStatus.Completed,
             VoiceId = "111",
             SpeechId = meetingSpeech1.Id,
-            VoiceLanguage = SpeechTargetLanguageType.Cantonese
+            VoiceLanguage = SpeechTargetLanguageType.Cantonese,
+            CreatedDate = DateTimeOffset.Now.AddSeconds(-500)
         };
         
         var meetingChatVoiceRecord = new MeetingChatVoiceRecord
@@ -330,7 +331,8 @@ public partial class MeetingServiceFixture
             GenerationStatus = ChatRecordGenerationStatus.Completed,
             VoiceId = "111",
             SpeechId = meetingSpeech2.Id,
-            VoiceLanguage = SpeechTargetLanguageType.Cantonese
+            VoiceLanguage = SpeechTargetLanguageType.Cantonese,
+            CreatedDate = DateTimeOffset.Now
         };
         
         var roomSetting = new MeetingChatRoomSetting()
