@@ -12,7 +12,7 @@ public class AddOrUpdateChatRoomSettingCommandValidator : FluentMessageValidator
         RuleFor(x => x.ListeningLanguage).NotNull();
         
         RuleFor(x => x.VoiceId)
-            .NotNull().When(x => !x.IsSystem).WithMessage("VoiceId cannot be empty when IsSystem is false.");
+            .NotEmpty().When(x => !x.IsSystem).WithMessage("VoiceId cannot be empty when IsSystem is false.");
     }
    
 }
