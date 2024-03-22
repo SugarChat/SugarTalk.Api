@@ -31,6 +31,9 @@ public class MeetingChatRoomSetting : IEntity
     [Column("voice_id")]
     public string VoiceId { get; set; }
     
+    [Column("is_system", TypeName = "tinyint(1)")]
+    public bool IsSystem { get; set; }
+    
     [Column("self_language")]
     public SpeechTargetLanguageType SelfLanguage { get; set; }
     

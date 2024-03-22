@@ -508,9 +508,8 @@ namespace SugarTalk.Core.Services.Meetings
         public async Task<ChatRoomSettingAddOrUpdateEvent> AddOrUpdateChatRoomSettingAsync(AddOrUpdateChatRoomSettingCommand command, CancellationToken cancellationToken)
         {
             if (!_currentUser.Id.HasValue) throw new UnauthorizedAccessException();
-
-            var roomSetting = await _meetingDataProvider
-                .GetMeetingChatRoomSettingByMeetingIdAsync(_currentUser.Id.Value, command.MeetingId, cancellationToken).ConfigureAwait(false);
+            
+            var roomSetting = await _meetingDataProvider.GetMeetingChatRoomSettingByMeetingIdAsync(_currentUser.Id.Value, command.MeetingId, cancellationToken).ConfigureAwait(false);
 
             if (roomSetting == null)
             {
@@ -523,14 +522,39 @@ namespace SugarTalk.Core.Services.Meetings
                     ListeningLanguage = command.ListeningLanguage,
                 }, true, cancellationToken).ConfigureAwait(false);
             }
-            else
+            else switch (command.IsSystem)
             {
-                await _meetingDataProvider.UpdateMeetingChatRoomSettingAsync(_mapper.Map(command, roomSetting), cancellationToken).ConfigureAwait(false);
+                case true when roomSetting.IsSystem:
+                    roomSetting.VoiceId = await AutoAssignAndUpdateVoiceIdAsync(roomSetting, command.MeetingId, cancellationToken);
+                    break;
+                case false when !roomSetting.IsSystem:
+                    await _meetingDataProvider.UpdateMeetingChatRoomSettingAsync(roomSetting, cancellationToken).ConfigureAwait(false);
+                    break;
             }
 
             return new ChatRoomSettingAddOrUpdateEvent();
         }
 
+        private async Task<string> AutoAssignAndUpdateVoiceIdAsync(MeetingChatRoomSetting roomSetting, Guid meetingId, CancellationToken cancellationToken)
+        {
+            var userSetting = await _meetingDataProvider.DistributeLanguageForMeetingUserAsync(meetingId, cancellationToken).ConfigureAwait(false);
+    
+            var toneTypes = new Enum[] { userSetting.CantoneseToneType, userSetting.MandarinToneType, userSetting.EnglishToneType, userSetting.SpanishToneType }
+                .Where(toneType => toneType != null)
+                .Take(1)
+                .ToList();
+
+            var voiceId = toneTypes.Count > 0 ? toneTypes[0].ToString() : string.Empty;
+
+            if (string.IsNullOrEmpty(voiceId)) return voiceId;
+            
+            roomSetting.VoiceId = voiceId;
+        
+            await _meetingDataProvider.UpdateMeetingChatRoomSettingAsync(roomSetting, cancellationToken).ConfigureAwait(false);
+
+            return voiceId;
+        }
+        
         public async Task<GetMeetingUserSettingResponse> GetMeetingUserSettingAsync(GetMeetingUserSettingRequest request, CancellationToken cancellationToken)
         {
             if (!_currentUser.Id.HasValue) throw new UnauthorizedAccessException();
