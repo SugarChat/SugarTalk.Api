@@ -20,6 +20,7 @@ using SugarTalk.Messages.Commands.Speech;
 using SugarTalk.Messages.Dto.Meetings.Speech;
 using SugarTalk.Messages.Dto.Users;
 using SugarTalk.Messages.Enums.Account;
+using SugarTalk.Messages.Enums.Meeting;
 using SugarTalk.Messages.Enums.Speech;
 using SugarTalk.Messages.Requests.Meetings.User;
 using SugarTalk.Messages.Requests.Speech;
@@ -296,7 +297,7 @@ public partial class MeetingServiceFixture
             Status = SpeechStatus.UnViewed,
             Id = Guid.NewGuid(),
             OriginalText = "你好呀",
-            UserId = 1,
+            UserId = 1, 
             CreatedDate = DateTimeOffset.Now.AddSeconds(-1)
         };
         
@@ -358,6 +359,7 @@ public partial class MeetingServiceFixture
             await repository.InsertAsync(meetingSpeech1);
             await repository.InsertAsync(meetingSpeech2);
         });
+        
         await Run<IMediator>(async mediator =>
         {
             var response = await mediator.RequestAsync<GetMeetingChatVoiceRecordRequest, GetMeetingChatVoiceRecordResponse>(
