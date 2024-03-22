@@ -271,7 +271,7 @@ namespace SugarTalk.Core.Services.Meetings
 
             CheckJoinMeetingConditions(meeting, user);
 
-            await OutLiveKitExistedUserAsync(meetingNumber: meeting.MeetingNumber, userName: user.UserName, cancellationToken: cancellationToken).ConfigureAwait(false);
+            //await OutLiveKitExistedUserAsync(meetingNumber: meeting.MeetingNumber, userName: user.UserName, cancellationToken: cancellationToken).ConfigureAwait(false);
             
             await ConnectUserToMeetingAsync(user, meeting, command.IsMuted, cancellationToken).ConfigureAwait(false);
 
