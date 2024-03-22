@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using SugarTalk.Core.Domain.Meeting;
+using SugarTalk.Messages.Dto.Meetings.Speech;
 using SugarTalk.Messages.Enums.Speech;
 
 namespace SugarTalk.Core.Services.Meetings;
@@ -18,6 +19,8 @@ public partial interface IMeetingDataProvider
     Task<MeetingSpeech> GetMeetingSpeechByIdAsync(Guid meetingSpeechId, CancellationToken cancellationToken);
     
     Task<MeetingUserSetting> DistributeLanguageForMeetingUserAsync(Guid meetingId, CancellationToken cancellationToken);
+
+    Task<List<MeetingSpeechDto>> GetMeetingSpeechWithVoiceRecordAsync(List<Guid> speechIds, SpeechTargetLanguageType targetLanguageType, CancellationToken cancellationToken);
 }
 
 public partial class MeetingDataProvider
@@ -62,8 +65,6 @@ public partial class MeetingDataProvider
         var existMeetingUserSetting = userSettings.FirstOrDefault(x => x.UserId == _currentUser.Id.Value);
 
         if (existMeetingUserSetting != null) return existMeetingUserSetting;
-
-        if (userSettings.Count > 10) return null;
         
         AssignTone(userSettings, x => x.SpanishToneType, meetingUserSetting);
         AssignTone(userSettings, x => x.EnglishToneType, meetingUserSetting);
@@ -79,20 +80,55 @@ public partial class MeetingDataProvider
 
         return meetingUserSetting;
     }
-    
+
+    public async Task<List<MeetingSpeechDto>> GetMeetingSpeechWithVoiceRecordAsync(List<Guid> speechIds, SpeechTargetLanguageType targetLanguageType, CancellationToken cancellationToken)
+    {
+        var query =
+            from speech in _repository.Query<MeetingSpeech>()
+            join record in _repository.Query<MeetingChatVoiceRecord>() on speech.Id equals record.SpeechId into voiceRecordGroup
+            from record in voiceRecordGroup.DefaultIfEmpty()
+            where speechIds.Contains(speech.Id) && record.VoiceLanguage == targetLanguageType
+            select new MeetingSpeechDto
+            {
+                Id = speech.Id,
+                MeetingId = speech.MeetingId,
+                UserId = speech.UserId,
+                OriginalText = speech.OriginalText,
+                Status = speech.Status,
+                CreatedDate = speech.CreatedDate,
+                VoiceRecord = record == null ? null : _mapper.Map<MeetingChatVoiceRecordDto>(record),
+            };
+        
+        var groupedQuery = query.GroupBy(ms => ms.Id).Select(x => x.First());
+        
+        return await groupedQuery.ToListAsync(cancellationToken).ConfigureAwait(false);
+    }
+
     private void AssignTone<T>(
         List<MeetingUserSetting> userSettings, Func<MeetingUserSetting, T> toneSelector, MeetingUserSetting meetingUserSetting) where T : Enum
     {
         var usedTones = userSettings.Select(toneSelector).Distinct().ToList();
-        var allTones = Enum.GetValues(typeof(T)).Cast<T>();
+        var allTones = Enum.GetValues(typeof(T)).Cast<T>().ToList();
         var availableTones = allTones.Except(usedTones).ToList();
 
         if (availableTones.Any())
         {
-            var property = typeof(MeetingUserSetting).GetProperty($"{typeof(T).Name}");
-            
-            property?.SetValue(meetingUserSetting, availableTones.First());
+            SetProperty(meetingUserSetting, availableTones.First());
         }
+        else
+        {
+            var random = new Random();
+            
+            var randomTone = allTones[random.Next(0, allTones.Count)];
+
+            SetProperty(meetingUserSetting, randomTone);
+        }
+    }
+    
+    private void SetProperty<T>(MeetingUserSetting meetingUserSetting, T tone)
+    {
+        var property = typeof(MeetingUserSetting).GetProperty($"{typeof(T).Name}");
+        property?.SetValue(meetingUserSetting, tone);
     }
     
     private void AssignCantoneseTone(MeetingUserSetting meetingUserSetting)

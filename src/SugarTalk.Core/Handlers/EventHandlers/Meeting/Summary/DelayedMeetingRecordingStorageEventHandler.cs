@@ -2,6 +2,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Mediator.Net.Context;
 using Mediator.Net.Contracts;
+using Serilog;
 using SugarTalk.Core.Services.Jobs;
 using SugarTalk.Core.Services.Meetings;
 using SugarTalk.Messages.Events.Meeting.Summary;
@@ -19,8 +20,11 @@ public class DelayedMeetingRecordingStorageEventHandler : IEventHandler<DelayedM
 
     public Task Handle(IReceiveContext<DelayedMeetingRecordingStorageEvent> context, CancellationToken cancellationToken)
     {
+        Log.Information("Start storage meeting record url");
+        
         _sugarTalkBackgroundJobClient.Enqueue<IMeetingService>(x =>
-            x.DelayStorageMeetingRecordVideoJobAsync(context.Message.EgressId, context.Message.MeetingRecordId, context.Message.Token, cancellationToken).ConfigureAwait(false));
+            x.DelayStorageMeetingRecordVideoJobAsync(
+                context.Message.EgressId, context.Message.MeetingRecordId, context.Message.Token, context.Message.ReTryLimit, cancellationToken));
 
         return Task.CompletedTask;
     }

@@ -7,13 +7,13 @@ using System.Collections.Generic;
 using SugarTalk.Core.Domain.Meeting;
 using System.Text.RegularExpressions;
 using Newtonsoft.Json;
-using SugarTalk.Core.Services.Exceptions;
 using SugarTalk.Messages.Commands.Speech;
 using SugarTalk.Messages.Requests.Speech;
 using SugarTalk.Messages.Dto.Meetings.Speech;
 using SugarTalk.Messages.Enums.Account;
 using SugarTalk.Messages.Enums.Speech;
 using SugarTalk.Messages.Events.Meeting.Speech;
+using SugarTalk.Messages.Requests.Meetings;
 
 namespace SugarTalk.Core.Services.Meetings;
 
@@ -24,6 +24,10 @@ public partial interface IMeetingService
     Task<GetMeetingAudioListResponse> GetMeetingAudioListAsync(GetMeetingAudioListRequest request, CancellationToken cancellationToken);
     
     Task<MeetingSpeechUpdatedEvent> UpdateMeetingSpeechAsync(UpdateMeetingSpeechCommand command, CancellationToken cancellationToken);
+
+    Task<GetMeetingChatVoiceRecordEvent> GetMeetingChatVoiceRecordAsync(GetMeetingChatVoiceRecordRequest request, CancellationToken cancellationToken);
+    
+    Task ShouldGenerateMeetingChatVoiceRecordAsync(MeetingChatVoiceRecordDto meetingChatVoiceRecord, CancellationToken cancellationToken);
 }
 
 public partial class MeetingService
@@ -51,12 +55,16 @@ public partial class MeetingService
 
         if (responseToText is null) return new MeetingAudioSavedEvent { Result = "Ai does not recognize the audio content" };
 
-        await _meetingDataProvider.PersistMeetingSpeechAsync(new MeetingSpeech
+        var meetingSpeech = new MeetingSpeech
         {
             MeetingId = command.MeetingId,
             UserId = _currentUser.Id.Value,
             OriginalText = responseToText.Result
-        }, cancellationToken).ConfigureAwait(false);
+        };
+        
+        await _meetingDataProvider.PersistMeetingSpeechAsync(meetingSpeech, cancellationToken).ConfigureAwait(false);
+        
+        await GenerateChatRecordAsync(command.MeetingId, meetingSpeech, cancellationToken).ConfigureAwait(false);
         
         return new MeetingAudioSavedEvent();
     }
@@ -65,6 +73,8 @@ public partial class MeetingService
     {
         var meetingSpeeches = await _meetingDataProvider
             .GetMeetingSpeechesAsync(request.MeetingId, cancellationToken, request.FilterHasCanceledAudio).ConfigureAwait(false);
+
+        if (meetingSpeeches is not { Count: > 0 }) return new GetMeetingAudioListResponse();
 
         var meetingSpeechesDto = _mapper.Map<List<MeetingSpeechDto>>(meetingSpeeches);
         
@@ -75,26 +85,32 @@ public partial class MeetingService
 
         var userIdsFromGuest = users.Where(x => x.Issuer == UserAccountIssuer.Guest).Select(x => x.Id).ToList();
 
-        var userSessionsByGuest = await _meetingDataProvider.GetMeetingUserSessionByUserIdsAsync(userIdsFromGuest, request.MeetingSubId, cancellationToken).ConfigureAwait(false);
-
-        userSessionsByGuest = userSessionsByGuest.DistinctBy(x => x.UserId).ToList();
-        
         meetingSpeechesDto = meetingSpeechesDto.OrderBy(x => x.CreatedDate).ToList();
 
-        var userDictionary = users.ToDictionary(user => user.Id, user => user);
+        var meeting = await _meetingDataProvider.GetMeetingByIdAsync(request.MeetingId, cancellationToken).ConfigureAwait(false);
 
-        const int guestCount = 1;
+        var userSessions = (await GetMeetingByNumberAsync(new GetMeetingByNumberRequest
+        {
+            MeetingNumber = meeting.MeetingNumber,
+            IncludeUserSession = true
+        }, cancellationToken).ConfigureAwait(false)).Data?.UserSessions;
 
-        var guestDic = userSessionsByGuest.OrderBy(x => x.CreatedDate)
-            .ToDictionary(x => x.UserId, _ => $"Anonymity{guestCount + 1}");
+        if (userSessions is not { Count: > 0 }) return new GetMeetingAudioListResponse();
+
+        var userSessionDicByUserId = userSessions
+            .GroupBy(x => x.UserId)
+            .Select(g => g.First())
+            .ToDictionary(x => x.UserId, x => x);
         
         foreach (var meetingSpeech in meetingSpeechesDto)
         {
-            if (!userDictionary.TryGetValue(meetingSpeech.UserId, out var userAccount)) continue;
+            userSessionDicByUserId.TryGetValue(meetingSpeech.UserId, out var session);
 
-            var guest = guestDic.TryGetValue(meetingSpeech.UserId, out var guestName) ? guestName : null;
+            if (session is null) continue;
 
-            meetingSpeech.UserName = guest is null ? userAccount.UserName : guestName;
+            meetingSpeech.UserName = userIdsFromGuest.Contains(session.UserId)
+                ? session.GuestName
+                : session.UserName;
         }
 
         await GenerateTextByTranslateAsync(request.LanguageType, meetingSpeechesDto, cancellationToken).ConfigureAwait(false);
@@ -102,6 +118,48 @@ public partial class MeetingService
         await GenerateVoiceByLanguageTypeAsync(request.LanguageType, request.MeetingId, meetingSpeechesDto, cancellationToken).ConfigureAwait(false);
 
         return new GetMeetingAudioListResponse { Data = meetingSpeechesDto };
+    }
+
+    public async Task<List<MeetingSpeechDto>> EnhanceMeetingSpeechesWithUserNamesAsync(Guid meetingId, List<MeetingSpeech> meetingSpeeches, CancellationToken cancellationToken)
+    {
+        var meetingSpeechesDto = _mapper.Map<List<MeetingSpeechDto>>(meetingSpeeches);
+
+        var userIds = meetingSpeeches.Select(x => x.UserId).ToList();
+
+        var users = await _accountDataProvider
+            .GetUserAccountsAsync(userIds, cancellationToken).ConfigureAwait(false);
+
+        var userIdsFromGuest = users.Where(x => x.Issuer == UserAccountIssuer.Guest).Select(x => x.Id).ToList();
+
+        meetingSpeechesDto = meetingSpeechesDto.OrderBy(x => x.CreatedDate).ToList();
+
+        var meeting = await _meetingDataProvider.GetMeetingByIdAsync(meetingId, cancellationToken).ConfigureAwait(false);
+
+        var userSessions = (await GetMeetingByNumberAsync(new GetMeetingByNumberRequest
+        {
+            MeetingNumber = meeting.MeetingNumber,
+            IncludeUserSession = true
+        }, cancellationToken).ConfigureAwait(false)).Data?.UserSessions;
+
+        if (userSessions is not { Count: > 0 }) return null;
+        
+        var userSessionDicByUserId = userSessions
+            .GroupBy(x => x.UserId)
+            .Select(g => g.First())
+            .ToDictionary(x => x.UserId, x => x);
+
+        foreach (var meetingSpeech in meetingSpeechesDto)
+        {
+            userSessionDicByUserId.TryGetValue(meetingSpeech.UserId, out var session);
+
+            if (session is null) continue;
+
+            meetingSpeech.UserName = userIdsFromGuest.Contains(session.UserId)
+                ? session.GuestName
+                : session.UserName;
+        }
+        
+        return meetingSpeechesDto;
     }
 
     private async Task GenerateTextByTranslateAsync(SpeechTargetLanguageType languageType, List<MeetingSpeechDto> meetingSpeechList, CancellationToken cancellationToken)
@@ -154,7 +212,135 @@ public partial class MeetingService
 
         return new MeetingSpeechUpdatedEvent { Result = "success" };
     }
+
+    public async Task<GetMeetingChatVoiceRecordEvent> GetMeetingChatVoiceRecordAsync(GetMeetingChatVoiceRecordRequest request, CancellationToken cancellationToken)
+    {
+        if (!_currentUser.Id.HasValue) throw new UnauthorizedAccessException();
+        
+        var roomSetting = await _meetingDataProvider.GetMeetingChatRoomSettingByMeetingIdAsync(
+            _currentUser.Id.Value, request.MeetingId, cancellationToken).ConfigureAwait(false);
+        
+        if (roomSetting is null) throw new Exception("Can found roomSetting when get meeting chat voice record");
+        
+        Log.Information("Get meeting chat voice record roomSetting {@RoomSetting}", roomSetting);
+        
+        var meetingSpeeches = await _meetingDataProvider.GetMeetingSpeechesAsync(
+            request.MeetingId, cancellationToken, request.FilterHasCanceledAudio).ConfigureAwait(false);
+
+        if (meetingSpeeches is null || meetingSpeeches.Count == 0) { return new GetMeetingChatVoiceRecordEvent(); }
+        
+        Log.Information("Get meeting chat voice record meetingSpeeches {@MeetingSpeeches}", meetingSpeeches);
+        
+        var speechWithName = await EnhanceMeetingSpeechesWithUserNamesAsync(
+            request.MeetingId, meetingSpeeches, cancellationToken).ConfigureAwait(false);
+
+        var allSpeech = await _meetingDataProvider.GetMeetingSpeechWithVoiceRecordAsync(
+            speechWithName.Select(x => x.Id).ToList(), roomSetting.ListeningLanguage, cancellationToken).ConfigureAwait(false);
+
+        var shouldGenerateVoiceRecords = allSpeech
+            .Where(speech => speech.VoiceRecord == null)
+            .Select(speech => new MeetingChatVoiceRecord
+            {
+                SpeechId = speech.Id,
+                IsSelf = false,
+                VoiceId = roomSetting.VoiceId,
+                VoiceLanguage = roomSetting.ListeningLanguage,
+                CreatedDate = DateTimeOffset.Now,
+                GenerationStatus = ChatRecordGenerationStatus.InProgress
+            })
+            .ToList();
+
+        await _meetingDataProvider.AddMeetingChatVoiceRecordAsync(shouldGenerateVoiceRecords, true, cancellationToken).ConfigureAwait(false);
+
+        return new GetMeetingChatVoiceRecordEvent
+        {
+            MeetingSpeech = allSpeech,
+            ShouldGenerateVoiceRecords = _mapper.Map<List<MeetingChatVoiceRecordDto>>(shouldGenerateVoiceRecords)
+        };
+    }
     
+    public async Task ShouldGenerateMeetingChatVoiceRecordAsync(MeetingChatVoiceRecordDto meetingChatVoiceRecord, CancellationToken cancellationToken)
+    { 
+        var shouldGenerateSpeech = await _meetingDataProvider.GetMeetingSpeechByIdAsync(meetingChatVoiceRecord.SpeechId, cancellationToken).ConfigureAwait(false);
+
+        var roomSetting = await _meetingDataProvider.GetMeetingChatRoomSettingByVoiceIdAsync(meetingChatVoiceRecord.VoiceId, cancellationToken).ConfigureAwait(false);
+
+        await GenerateChatRecordProcessAsync(_mapper.Map<MeetingChatVoiceRecord>(meetingChatVoiceRecord), roomSetting, shouldGenerateSpeech, cancellationToken).ConfigureAwait(false);
+    }
+
+    public async Task GenerateChatRecordAsync(Guid meetingId, MeetingSpeech meetingSpeech, CancellationToken cancellationToken)
+    {
+        if (!_currentUser.Id.HasValue) throw new UnauthorizedAccessException();
+        
+        var roomSetting = await _meetingDataProvider.GetMeetingChatRoomSettingByMeetingIdAsync(
+            _currentUser.Id.Value, meetingId, cancellationToken).ConfigureAwait(false);
+    
+        var meetingRecord = new MeetingChatVoiceRecord
+        {
+            SpeechId = meetingSpeech.Id,
+            IsSelf = true,
+            VoiceId = roomSetting.VoiceId,
+            VoiceLanguage = roomSetting.ListeningLanguage,
+            GenerationStatus = ChatRecordGenerationStatus.InProgress
+        };
+
+        await _meetingDataProvider.AddMeetingChatVoiceRecordAsync(new List<MeetingChatVoiceRecord> { meetingRecord }, true, cancellationToken).ConfigureAwait(false);
+        
+        _backgroundJobClient.Enqueue(() => GenerateChatRecordProcessAsync(meetingRecord, roomSetting, meetingSpeech, cancellationToken));
+    }
+
+    public async Task GenerateChatRecordProcessAsync(
+        MeetingChatVoiceRecord meetingChatVoiceRecord, MeetingChatRoomSetting roomSetting, MeetingSpeech meetingSpeech, CancellationToken cancellationToken)
+    {
+        var voiceUrl = roomSetting.ListeningLanguage switch
+        {
+            SpeechTargetLanguageType.Cantonese or SpeechTargetLanguageType.Korean or SpeechTargetLanguageType.Spanish =>
+                GenerateSpeechToInferenceCantonAsync(meetingChatVoiceRecord, roomSetting, meetingSpeech, cancellationToken).Result,
+            SpeechTargetLanguageType.Mandarin or SpeechTargetLanguageType.English =>
+                GenerateSpeechToInferenceMandarinAsync(meetingChatVoiceRecord, roomSetting, meetingSpeech, cancellationToken).Result,
+            _ => throw new NotSupportedException(nameof(roomSetting.ListeningLanguage))
+        };
+
+        meetingChatVoiceRecord.VoiceUrl = voiceUrl; 
+        
+        meetingChatVoiceRecord.GenerationStatus = !string.IsNullOrEmpty(voiceUrl)
+            ? ChatRecordGenerationStatus.Completed 
+            : ChatRecordGenerationStatus.InProgress;
+        
+        await _meetingDataProvider
+            .UpdateMeetingChatVoiceRecordAsync(new List<MeetingChatVoiceRecord> { meetingChatVoiceRecord }, cancellationToken).ConfigureAwait(false);
+    }
+    
+    private async Task<string> GenerateSpeechToInferenceCantonAsync(
+        MeetingChatVoiceRecord meetingChatVoiceRecord, MeetingChatRoomSetting roomSetting, MeetingSpeech meetingSpeech, CancellationToken cancellationToken)
+    {
+        var response = await _speechClient.SpeechToInferenceCantonAsync(new SpeechToInferenceCantonDto
+        {
+            Text = meetingSpeech.OriginalText,
+            Name = roomSetting.VoiceName,
+            VoiceId = meetingChatVoiceRecord.VoiceId
+        }, cancellationToken).ConfigureAwait(false);
+
+        Log.Information("Get speech to inference canton {@Response}", response);
+        
+        return response?.Result?.Url;
+    }
+
+    private async Task<string> GenerateSpeechToInferenceMandarinAsync(
+        MeetingChatVoiceRecord meetingChatVoiceRecord, MeetingChatRoomSetting roomSetting, MeetingSpeech meetingSpeech, CancellationToken cancellationToken)
+    {
+        var response = await _speechClient.SpeechToInferenceMandarinAsync(new SpeechToInferenceMandarinDto
+        {
+            Text = meetingSpeech.OriginalText,
+            UserName = roomSetting.VoiceName,
+            VoiceId = meetingChatVoiceRecord.VoiceId
+        }, cancellationToken).ConfigureAwait(false);
+
+        Log.Information("Get speech to inference mandarin {@Response}", response);
+        
+        return response?.Result?.Url?.UrlValue;
+    }
+
     private static string HandleToBase64(string base64)
     {
         return Regex.Replace(base64, @"^data:[^;]+;[^,]+,", "");

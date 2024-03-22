@@ -11,6 +11,9 @@ public class StorageMeetingRecordVideoCommand : ICommand
     public string EgressId { get; set; }
         
     public Guid MeetingRecordId { get; set; }
+    
+    public int ReTryLimit { get; set; } = 5;
+    
 }
     
 public class StorageMeetingRecordVideoResponse : SugarTalkResponse

@@ -58,7 +58,7 @@ public partial class BaseFixture
             MeetingSubId = meetingSubId,
             Status = status,
             OnlineType = onlineType,
-            FirstJoinTime = firstJoinTime,
+            LastJoinTime = firstJoinTime,
             LastQuitTime = lastQuitTime,
             TotalJoinCount = totalJoinCount,
             CumulativeTime = cumulativeTime,

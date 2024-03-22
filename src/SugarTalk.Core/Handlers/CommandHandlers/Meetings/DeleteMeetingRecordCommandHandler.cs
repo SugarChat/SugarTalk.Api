@@ -4,10 +4,11 @@ using Mediator.Net.Context;
 using Mediator.Net.Contracts;
 using SugarTalk.Core.Services.Meetings;
 using SugarTalk.Messages.Commands.Meetings;
+using SugarTalk.Messages.Events.Meeting;
 
 namespace SugarTalk.Core.Handlers.CommandHandlers.Meetings;
 
-public class DeleteMeetingRecordCommandHandler : ICommandHandler<DeleteMeetingRecordCommand>
+public class DeleteMeetingRecordCommandHandler : ICommandHandler<DeleteMeetingRecordCommand, DeleteMeetingRecordResponse>
 {
     private readonly IMeetingService _meetingService;
 
@@ -16,8 +17,12 @@ public class DeleteMeetingRecordCommandHandler : ICommandHandler<DeleteMeetingRe
         _meetingService = meetingService;
     }
 
-    public async Task Handle(IReceiveContext<DeleteMeetingRecordCommand> context, CancellationToken cancellationToken)
+    public async Task<DeleteMeetingRecordResponse> Handle(IReceiveContext<DeleteMeetingRecordCommand> context, CancellationToken cancellationToken)
     {
-        await _meetingService.DeleteMeetingRecordAsync(context.Message, cancellationToken).ConfigureAwait(false);
+        var @event = await _meetingService.DeleteMeetingRecordAsync(context.Message, cancellationToken).ConfigureAwait(false);
+        
+        await context.PublishAsync(@event, cancellationToken).ConfigureAwait(false);
+
+        return new DeleteMeetingRecordResponse();
     }
 }

@@ -12,6 +12,7 @@ using SugarTalk.Core.Data;
 using SugarTalk.Core.Extensions;
 using System.Collections.Generic;
 using Google.Cloud.Translation.V2;
+using Microsoft.AspNetCore.Http;
 using SugarTalk.Core.Services.Jobs;
 using SugarTalk.Core.Services.Account;
 using SugarTalk.Core.Services.AntMediaServer;
@@ -29,7 +30,11 @@ using SugarTalk.Messages.Dto.Meetings.User;
 using SugarTalk.Messages.Dto.Users;
 using SugarTalk.Messages.Enums.Account;
 using SugarTalk.Core.Domain.Meeting;
+using SugarTalk.Core.Services.Http;
 using SugarTalk.Core.Services.OpenAi;
+using SugarTalk.Core.Settings.Meeting;
+using SugarTalk.Messages.Commands.Meetings.Speak;
+using SugarTalk.Messages.Dto.LiveKit.Egress;
 using SugarTalk.Messages.Enums.Meeting;
 using SugarTalk.Messages.Events.Meeting;
 using SugarTalk.Messages.Requests.Meetings;
@@ -62,6 +67,9 @@ namespace SugarTalk.Core.Services.Meetings
         
         Task<MeetingUserSettingAddOrUpdatedEvent> AddOrUpdateMeetingUserSettingAsync(
             AddOrUpdateMeetingUserSettingCommand command, CancellationToken cancellationToken);
+        
+        Task<ChatRoomSettingAddOrUpdateEvent> AddOrUpdateChatRoomSettingAsync(
+            AddOrUpdateChatRoomSettingCommand command, CancellationToken cancellationToken);
 
         Task<GetMeetingUserSettingResponse> GetMeetingUserSettingAsync(GetMeetingUserSettingRequest request, CancellationToken cancellationToken);
 
@@ -78,7 +86,7 @@ namespace SugarTalk.Core.Services.Meetings
         
         Task DeleteMeetingHistoryAsync(DeleteMeetingHistoryCommand command, CancellationToken cancellationToken);
         
-        Task CancelAppointmentMeetingAsync(CancelAppointmentMeetingCommand command, CancellationToken cancellationToken);
+        Task<AppointmentMeetingCanceledEvent> CancelAppointmentMeetingAsync(CancelAppointmentMeetingCommand command, CancellationToken cancellationToken);
         
         Task<GetMeetingInviteInfoResponse> GetMeetingInviteInfoAsync(GetMeetingInviteInfoRequest request, CancellationToken cancellationToken);
     }
@@ -98,6 +106,7 @@ namespace SugarTalk.Core.Services.Meetings
         private readonly IMeetingUtilService _meetingUtilService;
         private readonly IAccountDataProvider _accountDataProvider;
         private readonly IMeetingDataProvider _meetingDataProvider;
+        private readonly ISugarTalkHttpClientFactory _httpClientFactory;
         private readonly ISugarTalkBackgroundJobClient _backgroundJobClient;
         private readonly ILiveKitServerUtilService _liveKitServerUtilService;
         private readonly IAntMediaServerUtilService _antMediaServerUtilService;
@@ -105,6 +114,7 @@ namespace SugarTalk.Core.Services.Meetings
 
         private readonly AliYunOssSettings _aliYunOssSetting;
         private readonly LiveKitServerSetting _liveKitServerSetting;
+        private readonly MeetingInfoSettings _meetingInfoSettings;
         
         public MeetingService(
             IClock clock,
@@ -114,16 +124,18 @@ namespace SugarTalk.Core.Services.Meetings
             IOpenAiService openAiService,
             ISpeechClient speechClient,
             ILiveKitClient liveKitClient,
+            AliYunOssSettings aliYunOssSetting,
             TranslationClient translationClient,
             IMeetingUtilService meetingUtilService,
             IMeetingDataProvider meetingDataProvider,
             IAccountDataProvider accountDataProvider,
-            AliYunOssSettings aliYunOssSetting,
             LiveKitServerSetting liveKitServerSetting,
+            ISugarTalkHttpClientFactory httpClientFactory,
             ISugarTalkBackgroundJobClient backgroundJobClient,
             ILiveKitServerUtilService liveKitServerUtilService,
             IAntMediaServerUtilService antMediaServerUtilService,
-            ISugarTalkBackgroundJobClient sugarTalkBackgroundJobClient)
+            ISugarTalkBackgroundJobClient sugarTalkBackgroundJobClient, 
+            MeetingInfoSettings meetingInfoSettings)
         {
             _clock = clock;
             _mapper = mapper;
@@ -132,16 +144,18 @@ namespace SugarTalk.Core.Services.Meetings
             _openAiService = openAiService;
             _speechClient = speechClient;
             _liveKitClient = liveKitClient;
+            _aliYunOssSetting = aliYunOssSetting;
+            _httpClientFactory = httpClientFactory;
             _translationClient = translationClient;
             _meetingUtilService = meetingUtilService;
             _accountDataProvider = accountDataProvider;
             _meetingDataProvider = meetingDataProvider;
             _backgroundJobClient = backgroundJobClient;
-            _aliYunOssSetting = aliYunOssSetting;
             _liveKitServerSetting = liveKitServerSetting;
             _liveKitServerUtilService = liveKitServerUtilService;
             _antMediaServerUtilService = antMediaServerUtilService;
             _sugarTalkBackgroundJobClient = sugarTalkBackgroundJobClient;
+            _meetingInfoSettings = meetingInfoSettings;
         }
         
         public async Task<MeetingScheduledEvent> ScheduleMeetingAsync(ScheduleMeetingCommand command, CancellationToken cancellationToken)
@@ -249,13 +263,15 @@ namespace SugarTalk.Core.Services.Meetings
             
             var meeting = await _meetingDataProvider.GetMeetingAsync(command.MeetingNumber, cancellationToken).ConfigureAwait(false);
 
-            if (meeting.IsPasswordEnabled)
+            if (meeting.MeetingMasterUserId != user.Id && meeting.IsPasswordEnabled)
             {
                 await _meetingDataProvider
                     .CheckMeetingSecurityCodeAsync(meeting.Id, command.SecurityCode, cancellationToken).ConfigureAwait(false);
             }
 
             CheckJoinMeetingConditions(meeting, user);
+
+            await OutLiveKitExistedUserAsync(meetingNumber: meeting.MeetingNumber, userName: user.UserName, cancellationToken: cancellationToken).ConfigureAwait(false);
             
             await ConnectUserToMeetingAsync(user, meeting, command.IsMuted, cancellationToken).ConfigureAwait(false);
 
@@ -294,6 +310,28 @@ namespace SugarTalk.Core.Services.Meetings
             throw new CannotJoinMeetingWhenMeetingClosedException();
         }
 
+        private async Task OutLiveKitExistedUserAsync(string meetingNumber = null, string userName = null, Guid? meetingId = null, CancellationToken cancellationToken = default)
+        {
+            if (meetingId.HasValue)
+                meetingNumber = _mapper.Map<MeetingDto>(await _meetingDataProvider.GetMeetingByIdAsync(meetingId.Value, cancellationToken).ConfigureAwait(false)).MeetingNumber;
+            
+            var token = _liveKitServerUtilService.GetMeetingInfoPermission(meetingNumber);
+            
+            var meetingExistUser = await _liveKitClient.ListParticipantsAsync(
+                new ListParticipantsRequestDto{Room = meetingNumber, Token = token}, cancellationToken).ConfigureAwait(false);
+            
+            if (meetingExistUser != null)
+            {
+                var existUser = meetingExistUser.Participants.FirstOrDefault(x => x.Name == userName);
+
+                if (existUser != null)
+                {
+                    await _liveKitClient.RemoveParticipantAsync(
+                        new RemoverParticipantRequestDto{Room = meetingNumber, Identity = existUser.Identity, Token = token}, cancellationToken).ConfigureAwait(false);
+                }
+            }
+        }
+
         public async Task<MeetingOutedEvent> OutMeetingAsync(OutMeetingCommand command, CancellationToken cancellationToken)
         {
             var userSession = await _meetingDataProvider.GetMeetingUserSessionByMeetingIdAsync(
@@ -304,6 +342,8 @@ namespace SugarTalk.Core.Services.Meetings
             EnrichMeetingUserSessionForOutMeeting(userSession);
             
             await _meetingDataProvider.UpdateMeetingUserSessionAsync(userSession, cancellationToken).ConfigureAwait(false);
+            
+            await OutLiveKitExistedUserAsync(userName: _currentUser?.Name, meetingId: command.MeetingId, cancellationToken: cancellationToken).ConfigureAwait(false);
 
             await _meetingDataProvider.HandleMeetingStatusWhenOutMeetingAsync(
                 userSession.UserId, command.MeetingId, command.MeetingSubId, cancellationToken).ConfigureAwait(false);
@@ -340,6 +380,8 @@ namespace SugarTalk.Core.Services.Meetings
         public async Task ConnectUserToMeetingAsync(
             UserAccountDto user, MeetingDto meeting, bool? isMuted = null, CancellationToken cancellationToken = default)
         {
+            meeting.UserSessions = meeting.UserSessions.Where(x => x.OnlineType == MeetingUserSessionOnlineType.Online).ToList();
+            
             var userSession = meeting.UserSessions
                 .Where(x => x.UserId == user.Id)
                 .OrderByDescending(x => x.CreatedDate)
@@ -355,9 +397,9 @@ namespace SugarTalk.Core.Services.Meetings
                 var addUserSession = _mapper.Map<MeetingUserSessionDto>(userSession);
                 addUserSession.UserName = user.UserName;
 
-                var guestCount = meeting.UserSessions.Count(x => !string.IsNullOrEmpty(x.GuestName));
+                if (user.Issuer == UserAccountIssuer.Guest) HandleGuestNameForUserSession(meeting, addUserSession);
 
-                if (user.Issuer is UserAccountIssuer.Guest) addUserSession.GuestName = $"Anonymity{guestCount + 1}";
+                Log.Information("ConnectUserToMeetingAsync: addUserSession:{addUserSession}", addUserSession);
 
                 meeting.AddUserSession(addUserSession);
                 
@@ -374,7 +416,7 @@ namespace SugarTalk.Core.Services.Meetings
                     userSession.IsMuted = isMuted.Value;
 
                 userSession.Status = MeetingAttendeeStatus.Present;
-                userSession.FirstJoinTime = _clock.Now.ToUnixTimeSeconds();
+                userSession.LastJoinTime = _clock.Now.ToUnixTimeSeconds();
                 userSession.TotalJoinCount += 1;
                 userSession.MeetingSubId = meeting.MeetingSubId;
                 userSession.OnlineType = MeetingUserSessionOnlineType.Online;
@@ -389,6 +431,9 @@ namespace SugarTalk.Core.Services.Meetings
                 {
                     updateUserSession.IsMeetingMaster = true;
                 }
+                
+                if (user.Issuer == UserAccountIssuer.Guest) HandleGuestNameForUserSession(meeting, updateUserSession);
+                
                 meeting.UpdateUserSession(updateUserSession);
 
                 meeting.MeetingTokenFromLiveKit = user.Issuer switch
@@ -458,6 +503,32 @@ namespace SugarTalk.Core.Services.Meetings
             }
             
             return response;
+        }
+
+        public async Task<ChatRoomSettingAddOrUpdateEvent> AddOrUpdateChatRoomSettingAsync(AddOrUpdateChatRoomSettingCommand command, CancellationToken cancellationToken)
+        {
+            if (!_currentUser.Id.HasValue) throw new UnauthorizedAccessException();
+
+            var roomSetting = await _meetingDataProvider
+                .GetMeetingChatRoomSettingByMeetingIdAsync(_currentUser.Id.Value, command.MeetingId, cancellationToken).ConfigureAwait(false);
+
+            if (roomSetting == null)
+            {
+                await _meetingDataProvider.AddMeetingChatRoomSettingAsync(new MeetingChatRoomSetting
+                {
+                    UserId = _currentUser.Id.Value,
+                    MeetingId = command.MeetingId,
+                    VoiceId = command.VoiceId,
+                    SelfLanguage = command.SelfLanguage,
+                    ListeningLanguage = command.ListeningLanguage,
+                }, true, cancellationToken).ConfigureAwait(false);
+            }
+            else
+            {
+                await _meetingDataProvider.UpdateMeetingChatRoomSettingAsync(_mapper.Map(command, roomSetting), cancellationToken).ConfigureAwait(false);
+            }
+
+            return new ChatRoomSettingAddOrUpdateEvent();
         }
 
         public async Task<GetMeetingUserSettingResponse> GetMeetingUserSettingAsync(GetMeetingUserSettingRequest request, CancellationToken cancellationToken)
@@ -614,7 +685,7 @@ namespace SugarTalk.Core.Services.Meetings
                 IsMuted = isMuted,
                 MeetingId = meetingId,
                 Status = MeetingAttendeeStatus.Present,
-                FirstJoinTime = _clock.Now.ToUnixTimeSeconds(),
+                LastJoinTime = _clock.Now.ToUnixTimeSeconds(),
                 TotalJoinCount = 1,
                 MeetingSubId = meetingSubId
             };
@@ -647,13 +718,15 @@ namespace SugarTalk.Core.Services.Meetings
             await _meetingDataProvider.DeleteMeetingHistoryAsync(command.MeetingHistoryIds, user.Id, cancellationToken).ConfigureAwait(false);
         }
 
-        public async Task CancelAppointmentMeetingAsync(CancelAppointmentMeetingCommand command, CancellationToken cancellationToken)
+        public async Task<AppointmentMeetingCanceledEvent> CancelAppointmentMeetingAsync(CancelAppointmentMeetingCommand command, CancellationToken cancellationToken)
         {
             var user = await _accountDataProvider.GetUserAccountAsync(_currentUser?.Id.Value, cancellationToken: cancellationToken).ConfigureAwait(false);
 
             if (user is null) throw new UnauthorizedAccessException();
             
             await _meetingDataProvider.CancelAppointmentMeetingAsync(command.MeetingId, cancellationToken).ConfigureAwait(false);
+
+            return new AppointmentMeetingCanceledEvent();
         }
 
         public async Task<GetMeetingInviteInfoResponse> GetMeetingInviteInfoAsync(GetMeetingInviteInfoRequest request, CancellationToken cancellationToken)
@@ -672,26 +745,28 @@ namespace SugarTalk.Core.Services.Meetings
                     Sender = user.UserName,
                     Title = meeting.Title,
                     MeetingNumber = meeting.MeetingNumber,
-                    Url = string.Empty,
+                    Url = _meetingInfoSettings.InviteBaseUrl + $"/#/?meetingNumber={meeting.MeetingNumber}",
                     Password = meeting.Password
                 }
             };
         }
 
-        public async Task DeleteMeetingRecordAsync(DeleteMeetingRecordCommand command, CancellationToken cancellationToken)
+        public async Task<MeetingRecordDeletedEvent> DeleteMeetingRecordAsync(DeleteMeetingRecordCommand command, CancellationToken cancellationToken)
         {
             var user = await _accountDataProvider.GetUserAccountAsync(_currentUser.Id, cancellationToken: cancellationToken).ConfigureAwait(false);
 
             if (user is null) throw new UnauthorizedAccessException();
             
             await _meetingDataProvider.DeleteMeetingRecordAsync(command.MeetingRecordIds, cancellationToken).ConfigureAwait(false);
+
+            return new MeetingRecordDeletedEvent();
         }
         
         private void EnrichMeetingUserSessionForOutMeeting(MeetingUserSession userSession)
         {
             var lastQuitTimeBeforeChange =
                 userSession.LastQuitTime ??
-                userSession.FirstJoinTime ??
+                userSession.LastJoinTime ??
                 userSession.CreatedDate.ToUnixTimeSeconds();
             
             userSession.OnlineType = MeetingUserSessionOnlineType.OutMeeting;
@@ -711,6 +786,19 @@ namespace SugarTalk.Core.Services.Meetings
             
             if (meeting.MeetingMasterUserId != currentUser.Id) 
                 throw new CannotUpdateMeetingWhenMasterUserIdMismatchException();
+        }
+
+        private void HandleGuestNameForUserSession(MeetingDto meeting, MeetingUserSessionDto userSession)
+        {
+            var guestCount = meeting.UserSessions.Count(x => !string.IsNullOrEmpty(x.GuestName));
+            
+            var index = guestCount > 0 ? meeting.UserSessions
+                    .Where(x => !string.IsNullOrEmpty(x.GuestName))
+                    .Select(x => x.GuestName.Substring("Anonymity".Length))
+                    .Select(x => int.TryParse(x, out int result) ? result : 0)
+                    .Max() + 1 : 1;
+
+            userSession.GuestName = $"Anonymity{index}";
         }
     }
 }

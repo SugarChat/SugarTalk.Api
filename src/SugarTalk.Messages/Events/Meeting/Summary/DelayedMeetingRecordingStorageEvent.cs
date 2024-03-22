@@ -12,4 +12,6 @@ public class DelayedMeetingRecordingStorageEvent : IEvent
     public Guid MeetingRecordId { get; set; }
     
     public string Token { get; set; }
+    
+    public int ReTryLimit { get; set; } = 5;
 }

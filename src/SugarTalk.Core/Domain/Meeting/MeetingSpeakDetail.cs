@@ -25,6 +25,9 @@ public class MeetingSpeakDetail : IEntity
     [Column("user_id")]
     public int UserId { get; set; }
     
+    [Column("username"), StringLength(128)]
+    public string Username { get; set; }
+    
     [Column("speak_start_time")]
     public long SpeakStartTime { get; set; }
     
@@ -34,18 +37,12 @@ public class MeetingSpeakDetail : IEntity
     [Column("speak_status")] 
     public SpeakStatus SpeakStatus { get; set; } = SpeakStatus.Speaking;
     
-    [Column("speak_content")]
-    public string SpeakContent { get; set; }
+    [Column("original_content")]
+    public string OriginalContent { get; set; }
     
-    [Column("egress_id"), StringLength(128)]
-    public string EgressId { get; set; }
-    
-    [Column("file_path"), StringLength(256)]
-    public string FilePath { get; set; }
-    
-    [Column("file_url"), StringLength(256)]
-    public string FileUrl { get; set; }
-    
+    [Column("smart_content")]
+    public string SmartContent { get; set; }
+
     [Column("file_transcription_status")] 
     public FileTranscriptionStatus FileTranscriptionStatus { get; set; } = FileTranscriptionStatus.Pending;
 

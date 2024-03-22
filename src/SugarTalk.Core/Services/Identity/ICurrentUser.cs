@@ -11,6 +11,8 @@ public interface ICurrentUser
 {
     int? Id { get; }
     
+    string Name { get; }
+    
     UserAccountIssuer AuthType { get; }
 }
 
@@ -35,6 +37,14 @@ public class CurrentUser : ICurrentUser
             return int.TryParse(idClaim, out var id) ? id : null;
         }
     }
+    
+    public string Name
+    {
+        get
+        {
+            return _httpContextAccessor?.HttpContext?.User.Claims.SingleOrDefault(x => x.Type == ClaimTypes.Name)?.Value;
+        }
+    }
 
     public UserAccountIssuer AuthType
     {
@@ -56,5 +66,7 @@ public class InternalUser : ICurrentUser
 {
     public int? Id => 1;
 
+    public string Name => "internal_user";
+    
     public UserAccountIssuer AuthType => UserAccountIssuer.Wiltechs;
 }

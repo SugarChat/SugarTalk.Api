@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Newtonsoft.Json;
 using SugarTalk.Messages.Enums.Speech;
 
@@ -23,6 +24,8 @@ public class MeetingSpeechDto
     public DateTimeOffset CreatedDate { get; set; }
     
     public SpeechStatus Status { get; set; }
+
+    public MeetingChatVoiceRecordDto VoiceRecord { get; set; }
 }
 
 public class SpeechToTextDto

@@ -26,6 +26,7 @@ using SugarTalk.Messages.Enums.Speech;
 using SugarTalk.Core.Services.Account;
 using SugarTalk.Core.Services.OpenAi;
 using SugarTalk.Core.Services.Http.Clients;
+using SugarTalk.Core.Services.Identity;
 using SugarTalk.Core.Services.Meetings;
 using SugarTalk.Core.Settings.Caching;
 using SugarTalk.Messages.Dto.LiveKit.Egress;
@@ -154,6 +155,25 @@ public class MeetingUtil : TestUtil
         });
     }
 
+    public async Task AddMeetingChatRoomSetting(int id, Guid meetingId, int userId, string voiceId,
+        SpeechTargetLanguageType selfLanguage, SpeechTargetLanguageType listeningLanguage,
+        DateTimeOffset? lastModifiedDate = null)
+    {
+        await RunWithUnitOfWork<IRepository>(async repository =>
+        {
+            await repository.InsertAsync(new MeetingChatRoomSetting
+            {
+                Id = id,
+                MeetingId = meetingId,
+                UserId = userId,
+                VoiceId = voiceId,
+                SelfLanguage = selfLanguage,
+                ListeningLanguage = listeningLanguage,
+                LastModifiedDate = lastModifiedDate ?? DateTimeOffset.Now
+            }, CancellationToken.None);
+        });
+    }
+    
     public async Task EndMeeting(string meetingNumber)
     {
         await Run<IMediator>(async mediator =>
@@ -240,14 +260,15 @@ public class MeetingUtil : TestUtil
         });
     }
     
-    public async Task<MeetingDto> JoinMeetingByUserAsync(UserAccount user, string meetingNumber, bool isMuted = false)
+    public async Task<MeetingDto> JoinMeetingByUserAsync(UserAccount user, string meetingNumber, bool isMuted = false, string securityCode = null)
     {
         return await Run<IMediator, MeetingDto>(async (mediator) =>
         {
             var response = await mediator.SendAsync<JoinMeetingCommand, JoinMeetingResponse>(new JoinMeetingCommand
             {
                 MeetingNumber = meetingNumber,
-                IsMuted = isMuted
+                IsMuted = isMuted,
+                SecurityCode = securityCode
             });
             return response.Data.Meeting;
         }, async builder =>
@@ -384,50 +405,39 @@ public class MeetingUtil : TestUtil
             builder.RegisterInstance(meetingService);
         });
     }
-
-    public async Task StorageMeetingRecordVideoAsync(StorageMeetingRecordVideoCommand command, string token = null)
+    
+    public async Task OutMeetingByUser(UserAccount user, Guid meetingId, Guid? meetingSubId = null)
     {
-        token = token ?? "11231312312312312313223";
-        
-        await Run<IMeetingService,SugarTalkDbContext>(async (meetingService,dbContenxt) =>
+        await Run<IMediator>(async (mediator) =>
         {
-            await meetingService.DelayStorageMeetingRecordVideoJobAsync(command.EgressId, command.MeetingRecordId, token, CancellationToken.None);
-           await dbContenxt.SaveChangesAsync();
+            await mediator.SendAsync<OutMeetingCommand, OutMeetingResponse>(new OutMeetingCommand
+            {
+                MeetingId = meetingId,
+                MeetingSubId = meetingSubId
+            });
         }, builder =>
         {
-            var liveKitservices = Substitute.For<ILiveKitServerUtilService>();
-            var liveKitClient = Substitute.For<ILiveKitClient>();
-            
-            liveKitservices.GenerateTokenForJoinMeeting(Arg.Any<UserAccountDto>(), Arg.Any<string>())
-                .Returns(token);
-            
-            liveKitClient.StopEgressAsync(Arg.Any<StopEgressRequestDto>(), Arg.Any<CancellationToken>())
-                .Returns(new StopEgressResponseDto()
-                {
-                    EgressId = "mock egressId",
-                    EndedAt = "mock endedat",
-                    File = new FileDetails { Location = "mock url" },
-                    Status = "mock status",
-                    Error = "mock error",
-                });
+            var liveKitServerUtilService = Substitute.For<ILiveKitServerUtilService>();
+            var accountDataProvider = Substitute.For<IAccountDataProvider>();
+            var openAiService = Substitute.For<IOpenAiService>();
+            var currentUser = Substitute.For<ICurrentUser>();
+            currentUser.Id.Returns(user.Id);
 
-            liveKitClient.GetEgressInfoListAsync(Arg.Any<GetEgressRequestDto>(), Arg.Any<CancellationToken>())
-                .Returns(new GetEgressInfoListResponseDto()
-                {
-                    EgressItems = new List<EgressItemDto>
-                    {
-                        new EgressItemDto
-                        {
-                            EgressId = "mock egressId",
-                            EndedAt = "mock endedAt",
-                            Status = "EGRESS_COMPLETE",
-                            File = new FileDetails { Location = "mock url" }
-                        }
-                    }
-                });
-            
-            builder.RegisterInstance(liveKitservices);
-            builder.RegisterInstance(liveKitClient);
+            accountDataProvider.GetUserAccountAsync(Arg.Any<int>()).Returns(new UserAccountDto()
+            {
+                Id = user.Id,
+                UserName = user.UserName,
+                Uuid = user.Uuid,
+                IsActive = user.IsActive,
+                Issuer = user.Issuer,
+                ThirdPartyUserId = user.ThirdPartyUserId,
+                CreatedOn = user.CreatedOn,
+                ModifiedOn = user.ModifiedOn,
+            });
+            builder.RegisterInstance(liveKitServerUtilService);
+            builder.RegisterInstance(accountDataProvider);
+            builder.RegisterInstance(openAiService);
+            builder.RegisterInstance(currentUser);
         });
     }
 }

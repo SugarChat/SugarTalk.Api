@@ -12,7 +12,7 @@
       <PackageReference Include="AutoMapper" Version="12.0.1" />
       <PackageReference Include="AutoMapper.Contrib.Autofac.DependencyInjection" Version="7.1.0" />
       <PackageReference Include="Betalgo.OpenAI" Version="7.4.6" />
-      <PackageReference Include="C-sharp-livekit-sdk" Version="0.0.8" />
+      <PackageReference Include="C-sharp-livekit-sdk" Version="1.0.0" />
       <PackageReference Include="dbup" Version="5.0.8" />
       <PackageReference Include="dbup-mysql" Version="5.0.10" />
       <PackageReference Include="Destructurama.JsonNet" Version="2.0.0" />
@@ -81,6 +81,7 @@
         <EmbeddedResource Include="DbUp\Scripts_2024\Script0007_modify_columns_for_meeting_speak_detail_table.sql" />
         <EmbeddedResource Include="DbUp\Scripts_2024\Script0008_add_meeting_summary_relate_tables.sql" />
         <EmbeddedResource Include="DbUp\Scripts_2024\Script0007_add_meeting_record_table.sql" />
+        <EmbeddedResource Include="DbUp\Scripts_2024\Script0017_add_username_for_speak_detail_table.sql" />
         <None Remove="DbUp\Scripts_2024\Script0009_alter_meeting_record_table.sql" />
         <None Remove="DbUp\Scripts_2024\Script0008_modify_meeting_record_column.sql" />
         <EmbeddedResource Include="DbUp\Scripts_2024\Script0008_modify_meeting_record_column.sql" />
@@ -89,6 +90,12 @@
         <EmbeddedResource Include="DbUp\Scripts_2024\Script0011_add_meeting_speech_voice_table.sql" />
         <EmbeddedResource Include="DbUp\Scripts_2024\Script0012_add_egress_id_for_meeting_record_table.sql" />
         <EmbeddedResource Include="DbUp\Scripts_2024\Script0013_add_password_for_meeting_table.sql" />
+        <EmbeddedResource Include="DbUp\Scripts_2024\Script0014_modify_meeting_speak_detail_table.sql" />
+        <EmbeddedResource Include="DbUp\Scripts_2024\Script0015_modify_join_time_for_meeting_user_session_table.sql" />
+        <EmbeddedResource Include="DbUp\Scripts_2024\Script0016_add_smart_content_for_meeting_speak_detail_table.sql" />
+        <EmbeddedResource Include="DbUp\Scripts_2024\Script0017_add_meeting_speak_detail_translation_record.sql" />
+        <EmbeddedResource Include="DbUp\Scripts_2024\Script0018_add_meeting_chat_room_setting_table.sql" />
+        <EmbeddedResource Include="DbUp\Scripts_2024\Script0019_add_meeting_chat_voice_record_table.sql" />
     </ItemGroup>
     
     <ItemGroup>

@@ -1,7 +1,5 @@
 using Xunit;
 using System;
-using System.Collections.Generic;
-using System.IO;
 using Autofac;
 using Shouldly;
 using System.Linq;
@@ -11,19 +9,19 @@ using Mediator.Net;
 using System.Threading;
 using SugarTalk.Core.Data;
 using System.Threading.Tasks;
+using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
 using SugarTalk.Core.Domain.Meeting;
-using SugarTalk.Messages.Dto.LiveKit;
+using SugarTalk.Core.Services.Http;
 using SugarTalk.Core.Services.Identity;
 using SugarTalk.Core.Validators.Commands;
 using SugarTalk.Core.Services.Http.Clients;
 using SugarTalk.Core.Services.LiveKit;
-using SugarTalk.Core.Services.Meetings;
 using SugarTalk.Core.Services.OpenAi;
-using SugarTalk.Messages.Commands.Meetings;
 using SugarTalk.Messages.Enums.Meeting.Speak;
 using SugarTalk.Messages.Commands.Meetings.Speak;
 using SugarTalk.Messages.Dto.LiveKit.Egress;
+using SugarTalk.Messages.Dto.OpenAi;
 using SugarTalk.Messages.Dto.Users;
 using SugarTalk.Messages.Enums.OpenAi;
 
@@ -51,8 +49,6 @@ public partial class MeetingServiceFixture
                 await repository.InsertAsync(new MeetingSpeakDetail
                 {
                     TrackId = trackId,
-                    FilePath = "test",
-                    EgressId = "test",
                     Id = speakDetailId,
                     MeetingNumber = roomNumber,
                     SpeakStartTime = starTime,
@@ -77,7 +73,6 @@ public partial class MeetingServiceFixture
             response.Data.ShouldNotBeNull();
             response.Data.UserId.ShouldBe(1);
             response.Data.TrackId.ShouldBe(trackId);
-            response.Data.EgressId.ShouldNotBeNull();
             response.Data.MeetingNumber.ShouldBe(roomNumber);
 
             var speakDetails = await repository.Query<MeetingSpeakDetail>().ToListAsync().ConfigureAwait(false);
@@ -85,7 +80,6 @@ public partial class MeetingServiceFixture
             speakDetails.Count.ShouldBe(1);
             speakDetails.First().UserId.ShouldBe(1);
             speakDetails.First().TrackId.ShouldBe(trackId);
-            speakDetails.First().EgressId.ShouldNotBeNull();
             speakDetails.First().MeetingNumber.ShouldBe(roomNumber);
             
             if (isUpdate)
@@ -95,15 +89,14 @@ public partial class MeetingServiceFixture
                 speakDetails.First().Id.ShouldBe(speakDetailId);
                 speakDetails.First().SpeakEndTime.ShouldBe(endTime);
                 speakDetails.First().SpeakStatus.ShouldBe(SpeakStatus.End);
-                speakDetails.First().FileUrl.ShouldBe(fileUrl);
 
                 switch (speakDetails.First().FileTranscriptionStatus)
                 {
                     case FileTranscriptionStatus.Completed:
-                        speakDetails.First().SpeakContent.ShouldBe(audioContent);
+                        speakDetails.First().OriginalContent.ShouldBe(audioContent);
                         break;
                     case FileTranscriptionStatus.Pending:
-                        speakDetails.First().SpeakContent.ShouldBeNull();
+                        speakDetails.First().OriginalContent.ShouldBeNull();
                         break;
                     default:
                         throw new ArgumentOutOfRangeException();
@@ -118,8 +111,9 @@ public partial class MeetingServiceFixture
         }, builder =>
         {
             var liveKitClient = Substitute.For<ILiveKitClient>();
-            var liveKitServerUtilService = Substitute.For<ILiveKitServerUtilService>();
             var openAiService = Substitute.For<IOpenAiService>();
+            var liveKitServerUtilService = Substitute.For<ILiveKitServerUtilService>();
+            var sugarTalkHttpClientFactory = Substitute.For<ISugarTalkHttpClientFactory>();
 
             liveKitClient.StartTrackCompositeEgressAsync(Arg.Any<StartTrackCompositeEgressRequestDto>(), Arg.Any<CancellationToken>())
                 .Returns(new StartEgressResponseDto
@@ -156,15 +150,33 @@ public partial class MeetingServiceFixture
                 Arg.Any<long>(), Arg.Any<long>(), Arg.Any<TranscriptionFileType>(), Arg.Any<TranscriptionResponseFormat>(),
                 Arg.Any<CancellationToken>()).Returns(audioContent);
 
-            openAiService.GetAsync<byte[]>(Arg.Any<string>(), Arg.Any<CancellationToken>())
+            sugarTalkHttpClientFactory.GetAsync<byte[]>(Arg.Any<string>(), Arg.Any<CancellationToken>())
                 .Returns(fileContent);
             
+            openAiService.ChatCompletionsAsync(
+                    Arg.Any<List<CompletionsRequestMessageDto>>(), 
+                    Arg.Any<List<CompletionsRequestFunctionDto>>(), 
+                    Arg.Any<CompletionsRequestFunctionCallDto>(), 
+                    Arg.Any<OpenAiModel>(), Arg.Any<CompletionResponseFormatDto>(), Arg.Any<int>(), Arg.Any<double>(), 
+                    Arg.Any<bool>(), Arg.Any<CancellationToken>())
+                .Returns(new CompletionsResponseDto
+                {
+                    Choices = new List<CompletionsChoiceDto>
+                    {
+                        new()
+                        {
+                            Text = "I'm smart content"
+                        }
+                    }
+                });
+           
             liveKitServerUtilService.GenerateTokenForRecordMeeting(Arg.Any<UserAccountDto>(), Arg.Any<string>())
                 .Returns("token123");
             
             builder.RegisterInstance(liveKitClient);
             builder.RegisterInstance(openAiService);
             builder.RegisterInstance(liveKitServerUtilService);
+            builder.RegisterInstance(sugarTalkHttpClientFactory);
         });
     }
     
@@ -195,87 +207,5 @@ public partial class MeetingServiceFixture
         var result = await validator.ValidateAsync(command);
         
         result.IsValid.ShouldBe(isValid);
-    }
-    
-    [Theory]
-    [InlineData("EGRESS_COMPLETE", "", FileTranscriptionStatus.Exception)]
-    [InlineData("EGRESS_COMPLETE", "path/to/file/url", FileTranscriptionStatus.Completed)]
-    [InlineData("EGRESS_LIMIT_REACHED","", FileTranscriptionStatus.Exception)]
-    [InlineData("EGRESS_LIMIT_REACHED", "path/to/file/url", FileTranscriptionStatus.Completed)]
-    [InlineData("EGRESS_STARTING", "", FileTranscriptionStatus.Pending)]
-    [InlineData("EGRESS_STARTING", "path/to/file/url", FileTranscriptionStatus.Pending)]
-    [InlineData("EGRESS_ACTIVE", "", FileTranscriptionStatus.Pending)]
-    [InlineData("EGRESS_ACTIVE", "path/to/file/url", FileTranscriptionStatus.Pending)]
-    [InlineData("EGRESS_ENDING", "", FileTranscriptionStatus.Pending)]
-    [InlineData("EGRESS_ENDING", "path/to/file/url", FileTranscriptionStatus.Pending)]
-    public async Task CanUpdateMeetingFileTranscriptionStatus(string status, string location,
-        FileTranscriptionStatus expectFileTranscriptionStatus)
-    {
-        var meetingSpeakList = new MeetingSpeakDetail()
-        {
-            Id = 1,
-            MeetingNumber = "123456",
-            MeetingRecordId = Guid.Parse("7a7f6ff4-1832-4f5f-b059-c2ebdc6196a3"),
-            TrackId = "123456",
-            UserId = 1,
-            SpeakStartTime = 1,
-            SpeakEndTime = 2,
-            SpeakStatus = SpeakStatus.End,
-            SpeakContent = "test",
-            EgressId = "1",
-            FilePath = "path/to/file",
-            FileUrl = "path/to/file/url",
-            FileTranscriptionStatus = FileTranscriptionStatus.Pending,
-            CreatedDate = DateTimeOffset.Now
-        };
-
-        await RunWithUnitOfWork<IRepository>(async repository =>
-        {
-            await repository.InsertAsync(meetingSpeakList);
-        });
-
-        await RunWithUnitOfWork<IMediator, IRepository>(async (mediator, repository) =>
-        {
-            await mediator.SendAsync(
-            new UpdateMeetingFileTranscriptionStatusCommand());
-          
-            var afterMeetingSpeak =
-                await repository.Query<MeetingSpeakDetail>().ToListAsync().ConfigureAwait(false);
-            
-            afterMeetingSpeak.Count.ShouldBe(1);
-            afterMeetingSpeak[0].FileTranscriptionStatus.ShouldBe(expectFileTranscriptionStatus);
-        }, builder =>
-        {
-            var liveKitClient = Substitute.For<ILiveKitClient>();
-            var liveKitServerUtilService = Substitute.For<ILiveKitServerUtilService>();
-            
-            liveKitClient.GetEgressInfoListAsync(Arg.Any<GetEgressRequestDto>(), Arg.Any<CancellationToken>())
-                .Returns(new GetEgressInfoListResponseDto
-                {
-                    EgressItems = new List<EgressItemDto>
-                    {
-                        new EgressItemDto()
-                        {
-                            EgressId = "1",
-                            Status = status,
-                            File = new FileDetails()
-                            {
-                                Filename = "a2421020-f81a-4ade-9628-1b5b1414fd1d.wav",
-                                StartedAt = "2024-01-01T00:00:00Z",
-                                EndedAt = "2024-01-01T00:00:12Z",
-                                Duration = "12s",
-                                Size = "1234567890",
-                                Location = location
-                            }
-                        }
-                    }
-                });
-            
-            liveKitServerUtilService.GenerateTokenForRecordMeeting(Arg.Any<UserAccountDto>(), Arg.Any<string>())
-                .Returns("token123");
-            
-            builder.RegisterInstance(liveKitClient);
-            builder.RegisterInstance(liveKitServerUtilService);
-        });
     }
 }

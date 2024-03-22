@@ -2,6 +2,7 @@ using System.Threading;
 using SugarTalk.Core.Ioc;
 using System.Threading.Tasks;
 using LiveKit_CSharp.Services.Meeting;
+using Serilog;
 using SugarTalk.Core.Domain.Account;
 using SugarTalk.Core.Services.Account;
 using SugarTalk.Messages.Dto.LiveKit;
@@ -25,6 +26,8 @@ public interface ILiveKitServerUtilService : IScopedDependency
     string GenerateTokenForRecordMeeting(UserAccountDto user, string meetingNumber);
 
     string GenerateTokenForGuest(string deviceId, string username, string meetingNumber);
+
+    string GetMeetingInfoPermission(string meetingNumber);
 }
 
 public class LiveKitServerUtilService : ILiveKitServerUtilService
@@ -56,6 +59,8 @@ public class LiveKitServerUtilService : ILiveKitServerUtilService
     {
         var generateAccessToken = new GenerateAccessToken();
         
+        Log.Information("GenerateTokenForCreateMeeting: meetingNumber: {meetingNumber}, userId: {deviceId}, username: {username}", meetingNumber, user.Id, user.UserName);
+        
         return generateAccessToken.CreateMeeting(
             meetingNumber: meetingNumber, apiKey: _liveKitServerSetting.Apikey, apiSecret: _liveKitServerSetting.ApiSecret, 
             userId: user.Id.ToString(), username: user.UserName);
@@ -65,6 +70,8 @@ public class LiveKitServerUtilService : ILiveKitServerUtilService
     {
         var generateAccessToken = new GenerateAccessToken();
         
+        Log.Information("GenerateTokenForJoinMeeting: meetingNumber: {meetingNumber}, userId: {deviceId}, username: {username}", meetingNumber, user.Id, user.UserName);
+        
         return generateAccessToken.JoinMeeting(
             meetingNumber, _liveKitServerSetting.Apikey, _liveKitServerSetting.ApiSecret, user.Id.ToString(), user.UserName);
     }
@@ -72,6 +79,8 @@ public class LiveKitServerUtilService : ILiveKitServerUtilService
     public string GenerateTokenForRecordMeeting(UserAccountDto user, string meetingNumber)
     {
         var generateAccessToken = new GenerateAccessToken();
+
+        Log.Information("GenerateTokenForRecordMeeting: meetingNumber: {meetingNumber}, userId: {deviceId}, username: {username}", meetingNumber, user.Id, user.UserName);
         
         return generateAccessToken.RecordMeeting(
             meetingNumber, _liveKitServerSetting.Apikey, _liveKitServerSetting.ApiSecret, user.Id.ToString(), user.UserName);
@@ -81,8 +90,20 @@ public class LiveKitServerUtilService : ILiveKitServerUtilService
     {
         var generateAccessToken = new GenerateAccessToken();
         
+        Log.Information("GenerateTokenForGuest: meetingNumber: {meetingNumber}, deviceId: {deviceId}, username: {username}", meetingNumber, deviceId, username);
+        
         return generateAccessToken.JoinMeeting(
             meetingNumber, _liveKitServerSetting.Apikey, _liveKitServerSetting.ApiSecret, 
             deviceId, username, true, true, false);
+    }
+
+    public string GetMeetingInfoPermission(string meetingNumber)
+    {
+        var generateAccessToken = new GenerateAccessToken();
+        
+        Log.Information("GenerateTokenForGuest: meetingNumber: {meetingNumber}", meetingNumber);
+        
+        return generateAccessToken.GetMeetingInfoPermission(
+            meetingNumber, _liveKitServerSetting.Apikey, _liveKitServerSetting.ApiSecret);
     }
 }
