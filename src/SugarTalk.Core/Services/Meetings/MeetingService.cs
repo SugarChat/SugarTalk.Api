@@ -507,31 +507,29 @@ namespace SugarTalk.Core.Services.Meetings
 
         public async Task<ChatRoomSettingAddOrUpdateEvent> AddOrUpdateChatRoomSettingAsync(AddOrUpdateChatRoomSettingCommand command, CancellationToken cancellationToken)
         {
-            if (!_currentUser.Id.HasValue)
-            {
-                throw new UnauthorizedAccessException();
-            }
-
+            if (!_currentUser.Id.HasValue) throw new UnauthorizedAccessException();
+            
             var roomSetting = await _meetingDataProvider.GetMeetingChatRoomSettingByMeetingIdAsync(_currentUser.Id.Value, command.MeetingId, cancellationToken).ConfigureAwait(false);
 
-            if (roomSetting == null || !command.IsSystem)
+            if (roomSetting == null)
             {
-                roomSetting ??= new MeetingChatRoomSetting
+                await _meetingDataProvider.AddMeetingChatRoomSettingAsync(new MeetingChatRoomSetting
                 {
                     UserId = _currentUser.Id.Value,
-                    MeetingId = command.MeetingId
-                };
-
-                roomSetting.VoiceId = command.VoiceId;
-                roomSetting.SelfLanguage = command.SelfLanguage;
-                roomSetting.ListeningLanguage = command.ListeningLanguage;
-                roomSetting.IsSystem = command.IsSystem;
-
-                await _meetingDataProvider.UpdateMeetingChatRoomSettingAsync(roomSetting, cancellationToken).ConfigureAwait(false);
+                    MeetingId = command.MeetingId,
+                    VoiceId = command.VoiceId,
+                    SelfLanguage = command.SelfLanguage,
+                    ListeningLanguage = command.ListeningLanguage,
+                }, true, cancellationToken).ConfigureAwait(false);
             }
-            else if (command.IsSystem && (roomSetting.IsSystem || !roomSetting.IsSystem))
+            else switch (command.IsSystem)
             {
-                roomSetting.VoiceId = await AutoAssignAndUpdateVoiceIdAsync(roomSetting, command.MeetingId, cancellationToken);
+                case true when roomSetting.IsSystem:
+                    roomSetting.VoiceId = await AutoAssignAndUpdateVoiceIdAsync(roomSetting, command.MeetingId, cancellationToken);
+                    break;
+                case false when !roomSetting.IsSystem:
+                    await _meetingDataProvider.UpdateMeetingChatRoomSettingAsync(roomSetting, cancellationToken).ConfigureAwait(false);
+                    break;
             }
 
             return new ChatRoomSettingAddOrUpdateEvent();
