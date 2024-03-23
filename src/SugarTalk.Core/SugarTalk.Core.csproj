@@ -96,6 +96,7 @@
         <EmbeddedResource Include="DbUp\Scripts_2024\Script0017_add_meeting_speak_detail_translation_record.sql" />
         <EmbeddedResource Include="DbUp\Scripts_2024\Script0018_add_meeting_chat_room_setting_table.sql" />
         <EmbeddedResource Include="DbUp\Scripts_2024\Script0019_add_meeting_chat_voice_record_table.sql" />
+        <EmbeddedResource Include="DbUp\Scripts_2024\Script0020_modify_meeting_chat_room_setting_table.sql" />
     </ItemGroup>
     
     <ItemGroup>

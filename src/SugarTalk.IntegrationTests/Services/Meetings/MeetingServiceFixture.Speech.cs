@@ -260,7 +260,7 @@ public partial class MeetingServiceFixture
             builder.RegisterInstance(liveKitServerUtilService);
         });
     }
-    
+
     [Fact]
     public async Task CanGetMeetingChatVoiceRecord()
     {
@@ -297,7 +297,8 @@ public partial class MeetingServiceFixture
             Status = SpeechStatus.UnViewed,
             Id = Guid.NewGuid(),
             OriginalText = "你好呀",
-            UserId = 1,
+            UserId = 1, 
+            CreatedDate = DateTimeOffset.Now.AddSeconds(-1000)
         };
         
         var meetingSpeech2 = new MeetingSpeech()
@@ -307,6 +308,7 @@ public partial class MeetingServiceFixture
             Id = Guid.NewGuid(),
             OriginalText = "我是小李呀",
             UserId = 1,
+            CreatedDate = DateTimeOffset.Now
         };
         
         var meetingChatVoiceRecord1 = new MeetingChatVoiceRecord
@@ -317,7 +319,8 @@ public partial class MeetingServiceFixture
             GenerationStatus = ChatRecordGenerationStatus.Completed,
             VoiceId = "111",
             SpeechId = meetingSpeech1.Id,
-            VoiceLanguage = SpeechTargetLanguageType.Cantonese
+            VoiceLanguage = SpeechTargetLanguageType.Cantonese,
+            CreatedDate = DateTimeOffset.Now.AddSeconds(-500)
         };
         
         var meetingChatVoiceRecord = new MeetingChatVoiceRecord
@@ -328,7 +331,8 @@ public partial class MeetingServiceFixture
             GenerationStatus = ChatRecordGenerationStatus.Completed,
             VoiceId = "111",
             SpeechId = meetingSpeech2.Id,
-            VoiceLanguage = SpeechTargetLanguageType.Cantonese
+            VoiceLanguage = SpeechTargetLanguageType.Cantonese,
+            CreatedDate = DateTimeOffset.Now
         };
         
         var roomSetting = new MeetingChatRoomSetting()
@@ -357,7 +361,8 @@ public partial class MeetingServiceFixture
             await repository.InsertAsync(meetingSpeech1);
             await repository.InsertAsync(meetingSpeech2);
         });
-        await Run<IMediator, IRepository>(async (mediator, repository) =>
+        
+        await Run<IMediator>(async mediator =>
         {
             var response = await mediator.RequestAsync<GetMeetingChatVoiceRecordRequest, GetMeetingChatVoiceRecordResponse>(
                 new GetMeetingChatVoiceRecordRequest 
