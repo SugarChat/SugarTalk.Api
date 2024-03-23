@@ -132,7 +132,7 @@ public partial class MeetingService
 
         var userIdsFromGuest = users.Where(x => x.Issuer == UserAccountIssuer.Guest).Select(x => x.Id).ToList();
 
-        meetingSpeechesDto = meetingSpeechesDto.OrderBy(x => x.CreatedDate).ToList();
+        meetingSpeechesDto = meetingSpeechesDto.OrderByDescending(x => x.CreatedDate).ToList();
 
         var meeting = await _meetingDataProvider.GetMeetingByIdAsync(meetingId, cancellationToken).ConfigureAwait(false);
 
