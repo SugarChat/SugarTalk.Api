@@ -1,0 +1,1 @@
+ALTER TABLE meeting_speech ADD COLUMN `translated_text` TEXT NULL;

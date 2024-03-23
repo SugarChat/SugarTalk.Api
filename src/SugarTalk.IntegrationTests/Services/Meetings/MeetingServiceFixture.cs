@@ -1106,6 +1106,8 @@ public partial class MeetingServiceFixture : MeetingFixtureBase
                 MeetingId = meetingId,
                 IsSystem = commandIsSystem,
                 VoiceId = voiceId,
+                Gender = EchoAvatarGenderVoiceType.Female,
+                VoiceName = "yayaya",
                 SelfLanguage = selfLanguage,
                 ListeningLanguage = listeningLanguage,
             }).ConfigureAwait(false);
