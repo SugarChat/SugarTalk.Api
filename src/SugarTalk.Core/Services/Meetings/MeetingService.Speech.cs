@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using SugarTalk.Core.Domain.Meeting;
 using System.Text.RegularExpressions;
 using Newtonsoft.Json;
+using Smarties.Messages.Extensions;
 using SugarTalk.Messages.Commands.Speech;
 using SugarTalk.Messages.Requests.Speech;
 using SugarTalk.Messages.Dto.Meetings.Speech;
@@ -173,7 +174,7 @@ public partial class MeetingService
             }, cancellationToken).ConfigureAwait(false))?.Result;
         }
     }
-
+    
     private async Task GenerateVoiceByLanguageTypeAsync(
         SpeechTargetLanguageType languageType, Guid meetingId, List<MeetingSpeechDto> meetingSpeechList, CancellationToken cancellationToken)
     {
@@ -196,6 +197,32 @@ public partial class MeetingService
             
             meetingSpeech.VoiceUrl = (await _speechClient.GetAudioFromTextAsync(targetLanguage, cancellationToken).ConfigureAwait(false))?.Result;
         }
+    }
+    
+    private async Task TranslateAndGenerateTextAsync(SpeechTargetLanguageType languageType, MeetingSpeech speech, CancellationToken cancellationToken)
+    {
+        speech.TranslatedText = (await _speechClient.TranslateTextAsync(new TextTranslationDto
+        {
+            Text = speech.OriginalText,
+            TargetLanguageType = languageType
+        }, cancellationToken).ConfigureAwait(false))?.Result;
+    }
+    
+    private async Task GenerateSystemVoiceUrlAsync(
+        SpeechTargetLanguageType languageType, MeetingChatVoiceRecord meetingChatVoiceRecord, int voiceId, MeetingSpeech speech, CancellationToken cancellationToken)
+    {
+        var targetLanguage = languageType switch
+            {
+                SpeechTargetLanguageType.Cantonese => new TextToSpeechDto { Text = speech.TranslatedText, CantoneseToneType = (CantoneseToneType)voiceId},
+                SpeechTargetLanguageType.Mandarin => new TextToSpeechDto { Text = speech.TranslatedText, MandarinToneType = (MandarinToneType)voiceId },
+                SpeechTargetLanguageType.English => new TextToSpeechDto { Text = speech.TranslatedText, EnglishToneType = (EnglishToneType)voiceId },
+                SpeechTargetLanguageType.Spanish => new TextToSpeechDto { Text = speech.TranslatedText, SpanishToneType = (SpanishToneType)voiceId }
+            };
+            
+        meetingChatVoiceRecord.VoiceUrl = (await _speechClient.GetAudioFromTextAsync(targetLanguage, cancellationToken).ConfigureAwait(false))?.Result;
+        
+        await _meetingDataProvider.UpdateMeetingChatVoiceRecordAsync(
+            new List<MeetingChatVoiceRecord> { meetingChatVoiceRecord }, cancellationToken).ConfigureAwait(false);
     }
 
     public async Task<MeetingSpeechUpdatedEvent> UpdateMeetingSpeechAsync(
@@ -230,14 +257,16 @@ public partial class MeetingService
         if (meetingSpeeches is null || meetingSpeeches.Count == 0) { return new GetMeetingChatVoiceRecordEvent(); }
         
         Log.Information("Get meeting chat voice record meetingSpeeches {@MeetingSpeeches}", meetingSpeeches);
-        
-        var speechWithName = await EnhanceMeetingSpeechesWithUserNamesAsync(
-            request.MeetingId, meetingSpeeches, cancellationToken).ConfigureAwait(false);
 
         var allSpeech = await _meetingDataProvider.GetMeetingSpeechWithVoiceRecordAsync(
-            speechWithName.Select(x => x.Id).ToList(), roomSetting.ListeningLanguage, cancellationToken).ConfigureAwait(false);
+            meetingSpeeches.Select(x => x.Id).ToList(), roomSetting.ListeningLanguage, cancellationToken).ConfigureAwait(false);
+        
+        var speechWithName = await EnhanceMeetingSpeechesWithUserNamesAsync(
+            request.MeetingId, _mapper.Map<List<MeetingSpeech>>(allSpeech), cancellationToken).ConfigureAwait(false);
 
-        var shouldGenerateVoiceRecords = allSpeech
+        Log.Information("Get meeting chat voice record allSpeech {@AllSpeech}", allSpeech);
+        
+        var shouldGenerateVoiceRecords = speechWithName
             .Where(speech => speech.VoiceRecord == null)
             .Select(speech => new MeetingChatVoiceRecord
             {
@@ -247,9 +276,8 @@ public partial class MeetingService
                 VoiceLanguage = roomSetting.ListeningLanguage,
                 CreatedDate = DateTimeOffset.Now,
                 GenerationStatus = ChatRecordGenerationStatus.InProgress
-            })
-            .ToList();
-
+            }).ToList();
+        
         await _meetingDataProvider.AddMeetingChatVoiceRecordAsync(shouldGenerateVoiceRecords, true, cancellationToken).ConfigureAwait(false);
 
         return new GetMeetingChatVoiceRecordEvent
@@ -284,31 +312,43 @@ public partial class MeetingService
             GenerationStatus = ChatRecordGenerationStatus.InProgress
         };
 
-        await _meetingDataProvider.AddMeetingChatVoiceRecordAsync(new List<MeetingChatVoiceRecord> { meetingRecord }, true, cancellationToken).ConfigureAwait(false);
+        Log.Information("Generate voice Url {@MeetingRecord}", meetingRecord);
         
+        await _meetingDataProvider.AddMeetingChatVoiceRecordAsync(new List<MeetingChatVoiceRecord> { meetingRecord }, true, cancellationToken).ConfigureAwait(false);
+
         _backgroundJobClient.Enqueue(() => GenerateChatRecordProcessAsync(meetingRecord, roomSetting, meetingSpeech, cancellationToken));
     }
 
     public async Task GenerateChatRecordProcessAsync(
         MeetingChatVoiceRecord meetingChatVoiceRecord, MeetingChatRoomSetting roomSetting, MeetingSpeech meetingSpeech, CancellationToken cancellationToken)
     {
-        var voiceUrl = roomSetting.ListeningLanguage switch
+        if (roomSetting.IsSystem)
+        { 
+            await TranslateAndGenerateTextAsync(roomSetting.ListeningLanguage, meetingSpeech, cancellationToken).ConfigureAwait(false);
+            
+            await GenerateSystemVoiceUrlAsync(
+                roomSetting.ListeningLanguage, meetingChatVoiceRecord, int.Parse(roomSetting.VoiceId), meetingSpeech, cancellationToken).ConfigureAwait(false);
+        }
+        else
         {
-            SpeechTargetLanguageType.Cantonese or SpeechTargetLanguageType.Korean or SpeechTargetLanguageType.Spanish =>
-                GenerateSpeechToInferenceCantonAsync(meetingChatVoiceRecord, roomSetting, meetingSpeech, cancellationToken).Result,
-            SpeechTargetLanguageType.Mandarin or SpeechTargetLanguageType.English =>
-                GenerateSpeechToInferenceMandarinAsync(meetingChatVoiceRecord, roomSetting, meetingSpeech, cancellationToken).Result,
-            _ => throw new NotSupportedException(nameof(roomSetting.ListeningLanguage))
-        };
+            var voiceUrl = roomSetting.ListeningLanguage switch
+            {
+                SpeechTargetLanguageType.Cantonese or SpeechTargetLanguageType.Korean or SpeechTargetLanguageType.Spanish =>
+                    GenerateSpeechToInferenceCantonAsync(meetingChatVoiceRecord, roomSetting, meetingSpeech, cancellationToken).Result,
+                SpeechTargetLanguageType.Mandarin or SpeechTargetLanguageType.English =>
+                    GenerateSpeechToInferenceMandarinAsync(meetingChatVoiceRecord, roomSetting, meetingSpeech, cancellationToken).Result,
+                _ => throw new NotSupportedException(nameof(roomSetting.ListeningLanguage))
+            };
 
-        meetingChatVoiceRecord.VoiceUrl = voiceUrl; 
+            meetingChatVoiceRecord.VoiceUrl = voiceUrl; 
         
-        meetingChatVoiceRecord.GenerationStatus = !string.IsNullOrEmpty(voiceUrl)
-            ? ChatRecordGenerationStatus.Completed 
-            : ChatRecordGenerationStatus.InProgress;
-        
-        await _meetingDataProvider
-            .UpdateMeetingChatVoiceRecordAsync(new List<MeetingChatVoiceRecord> { meetingChatVoiceRecord }, cancellationToken).ConfigureAwait(false);
+            meetingChatVoiceRecord.GenerationStatus = !string.IsNullOrEmpty(voiceUrl)
+                ? ChatRecordGenerationStatus.Completed 
+                : ChatRecordGenerationStatus.InProgress;
+            
+            await _meetingDataProvider
+                .UpdateMeetingChatVoiceRecordAsync(new List<MeetingChatVoiceRecord> { meetingChatVoiceRecord }, cancellationToken).ConfigureAwait(false);
+        }
     }
     
     private async Task<string> GenerateSpeechToInferenceCantonAsync(
@@ -318,7 +358,15 @@ public partial class MeetingService
         {
             Text = meetingSpeech.OriginalText,
             Name = roomSetting.VoiceName,
-            VoiceId = meetingChatVoiceRecord.VoiceId
+            VoiceId = meetingChatVoiceRecord.VoiceId,
+            ResponseFormat = "url",
+            Gender = roomSetting.Gender.GetDescription(),
+            LanguageType = roomSetting.ListeningLanguage switch
+            {
+                SpeechTargetLanguageType.Cantonese => EchoAvatarLanguageType.English,
+                SpeechTargetLanguageType.Spanish => EchoAvatarLanguageType.Spanish,
+                SpeechTargetLanguageType.Korean => EchoAvatarLanguageType.Korean
+            }
         }, cancellationToken).ConfigureAwait(false);
 
         Log.Information("Get speech to inference canton {@Response}", response);

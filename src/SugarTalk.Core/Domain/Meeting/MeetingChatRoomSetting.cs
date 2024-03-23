@@ -12,6 +12,7 @@ public class MeetingChatRoomSetting : IEntity
     {
         LastModifiedDate = DateTimeOffset.Now;
         SelfLanguage = SpeechTargetLanguageType.Cantonese;
+        Gender = EchoAvatarGenderVoiceType.Male;
         ListeningLanguage = SpeechTargetLanguageType.Cantonese;
     }
     
@@ -33,6 +34,9 @@ public class MeetingChatRoomSetting : IEntity
     
     [Column("is_system", TypeName = "tinyint(1)")]
     public bool IsSystem { get; set; }
+    
+    [Column("gender")]
+    public EchoAvatarGenderVoiceType Gender { get; set; }
     
     [Column("self_language")]
     public SpeechTargetLanguageType SelfLanguage { get; set; }
