@@ -282,7 +282,7 @@ public partial class MeetingService
 
         return new GetMeetingChatVoiceRecordEvent
         {
-            MeetingSpeech = allSpeech,
+            MeetingSpeech = speechWithName,
             ShouldGenerateVoiceRecords = _mapper.Map<List<MeetingChatVoiceRecordDto>>(shouldGenerateVoiceRecords)
         };
     }
