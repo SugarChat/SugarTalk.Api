@@ -1,0 +1,1 @@
+ALTER TABLE meeting_chat_room_setting ADD COLUMN `gender` INT NOT NULL;
