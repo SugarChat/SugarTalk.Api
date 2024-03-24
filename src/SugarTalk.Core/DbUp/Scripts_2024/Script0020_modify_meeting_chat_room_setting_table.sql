@@ -1,0 +1,1 @@
+alter table `meeting_chat_room_setting` add column `is_system` tinyint(1) null default 0;

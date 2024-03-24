@@ -9,7 +9,9 @@ using Microsoft.EntityFrameworkCore;
 using NSubstitute;
 using Shouldly;
 using SugarTalk.Core.Data;
+using SugarTalk.Core.Domain.Account;
 using SugarTalk.Core.Domain.Meeting;
+using SugarTalk.Core.Extensions;
 using SugarTalk.Core.Services.Http.Clients;
 using SugarTalk.Core.Services.LiveKit;
 using SugarTalk.Core.Services.OpenAi;
@@ -18,6 +20,7 @@ using SugarTalk.Messages.Commands.Speech;
 using SugarTalk.Messages.Dto.Meetings.Speech;
 using SugarTalk.Messages.Dto.Users;
 using SugarTalk.Messages.Enums.Account;
+using SugarTalk.Messages.Enums.Meeting;
 using SugarTalk.Messages.Enums.Speech;
 using SugarTalk.Messages.Requests.Meetings.User;
 using SugarTalk.Messages.Requests.Speech;
@@ -255,6 +258,126 @@ public partial class MeetingServiceFixture
             
             builder.RegisterInstance(openAiService);
             builder.RegisterInstance(liveKitServerUtilService);
+        });
+    }
+
+    [Fact]
+    public async Task CanGetMeetingChatVoiceRecord()
+    {
+        var meetingId = Guid.NewGuid();
+        var now = DateTimeOffset.Now;
+        
+        var account = new UserAccount
+        {
+            Id = 1,
+            UserName = "lizzie",
+            Password = "123456".ToSha256(),
+            Issuer = UserAccountIssuer.Guest
+        };
+
+        var meetingUserSession = new MeetingUserSession
+        {
+            MeetingId = meetingId,
+            UserId = account.Id,
+        };
+
+        var meetingTable = new Meeting()
+        {
+            Id = meetingId,
+            MeetingNumber = "99999",
+            MeetingMasterUserId = account.Id,
+            StartDate = now.ToUnixTimeMilliseconds(),
+            EndDate = now.ToUnixTimeMilliseconds() + 3600,
+            OriginAddress = "test",
+        };
+        
+        var meetingSpeech1 = new MeetingSpeech()
+        {
+            MeetingId = meetingId,
+            Status = SpeechStatus.UnViewed,
+            Id = Guid.NewGuid(),
+            OriginalText = "你好呀",
+            UserId = 1, 
+            CreatedDate = DateTimeOffset.Now.AddSeconds(-1000)
+        };
+        
+        var meetingSpeech2 = new MeetingSpeech()
+        {
+            MeetingId = meetingId,
+            Status = SpeechStatus.UnViewed,
+            Id = Guid.NewGuid(),
+            OriginalText = "我是小李呀",
+            UserId = 1,
+            CreatedDate = DateTimeOffset.Now
+        };
+        
+        var meetingChatVoiceRecord1 = new MeetingChatVoiceRecord
+        {
+            Id = Guid.NewGuid(),
+            VoiceUrl = "test.url",
+            IsSelf = true,
+            GenerationStatus = ChatRecordGenerationStatus.Completed,
+            VoiceId = "111",
+            SpeechId = meetingSpeech1.Id,
+            VoiceLanguage = SpeechTargetLanguageType.Cantonese,
+            CreatedDate = DateTimeOffset.Now.AddSeconds(-500)
+        };
+        
+        var meetingChatVoiceRecord = new MeetingChatVoiceRecord
+        {
+            Id = Guid.NewGuid(),
+            VoiceUrl = "test222.url",
+            IsSelf = false,
+            GenerationStatus = ChatRecordGenerationStatus.Completed,
+            VoiceId = "111",
+            SpeechId = meetingSpeech2.Id,
+            VoiceLanguage = SpeechTargetLanguageType.Cantonese,
+            CreatedDate = DateTimeOffset.Now
+        };
+        
+        var roomSetting = new MeetingChatRoomSetting()
+        {
+            Id = 1,
+            MeetingId = meetingId,
+            UserId = 1,
+            VoiceId = "111",
+            VoiceName = "小李的voice",
+            SelfLanguage = SpeechTargetLanguageType.English,
+            ListeningLanguage = SpeechTargetLanguageType.Cantonese
+        };
+
+        var meeting = await _meetingUtil.ScheduleMeeting();
+
+        await _meetingUtil.JoinMeeting(meeting.Data.MeetingNumber);
+        await _meetingUtil.JoinMeetingByUserAsync(account, meeting.Data.MeetingNumber);
+
+        await RunWithUnitOfWork<IRepository>(async  repository =>
+        {
+            await repository.InsertAsync(meetingChatVoiceRecord1);
+            await repository.InsertAsync(meetingChatVoiceRecord);
+            await repository.InsertAsync(roomSetting);
+            await repository.InsertAsync(meetingUserSession);
+            await repository.InsertAsync(meetingTable);
+            await repository.InsertAsync(meetingSpeech1);
+            await repository.InsertAsync(meetingSpeech2);
+        });
+        
+        await Run<IMediator>(async mediator =>
+        {
+            var response = await mediator.RequestAsync<GetMeetingChatVoiceRecordRequest, GetMeetingChatVoiceRecordResponse>(
+                new GetMeetingChatVoiceRecordRequest 
+                {
+                    MeetingId = meetingId,
+                    FilterHasCanceledAudio = false,
+                });
+
+            response.Data.Count.ShouldBe(2);
+            response.Data.First().MeetingId.ShouldBe(meetingId);
+            response.Data.First().UserId.ShouldBe(account.Id);
+            response.Data[0].OriginalText.ShouldBe("你好呀");
+            response.Data[0].VoiceRecord.VoiceUrl.ShouldBe("test.url");
+            response.Data[1].OriginalText.ShouldBe("我是小李呀");
+            response.Data[1].VoiceRecord.VoiceUrl.ShouldBe("test222.url");
         });
     }
 }
