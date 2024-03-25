@@ -23,7 +23,7 @@ public class GetMeetingChatVoiceRecordEventHandler : IEventHandler<GetMeetingCha
     {
         var shouldGenerateVoiceRecords = context.Message.ShouldGenerateVoiceRecords;
         
-        if (shouldGenerateVoiceRecords?.Count <= 0) return Task.CompletedTask;;
+        if (shouldGenerateVoiceRecords is not { Count: > 0 }) return Task.CompletedTask;
         
         Log.Information("GetMeetingChatVoiceRecordEventHandler: {@ShouldGenerateVoiceRecordsCount}", shouldGenerateVoiceRecords);
         
