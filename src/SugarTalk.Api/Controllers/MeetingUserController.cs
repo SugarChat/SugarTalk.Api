@@ -10,7 +10,7 @@ using SugarTalk.Messages.Requests.Meetings.User;
 
 namespace SugarTalk.Api.Controllers;
 
-//[Authorize]
+[Authorize]
 [ApiController]
 [Route("[controller]")]
 public class MeetingUserController : ControllerBase
@@ -75,19 +75,6 @@ public class MeetingUserController : ControllerBase
     public async Task<IActionResult> KickOutMeetingAsync(KickOutMeetingByUserIdCommand command)
     {
         var response = await _mediator.SendAsync<KickOutMeetingByUserIdCommand, KickOutMeetingByUserIdResponse>(command).ConfigureAwait(false);
-        
-        return Ok(response);
-    }
-    
-    [Route("speak"), HttpPost]
-    public async Task<IActionResult> SpeakAsync()
-    {
-        var response = await _speechClient.SpeechToInferenceMandarinAsync(new SpeechToInferenceMandarinDto
-        {
-            VoiceId = "6f4d0fb7-ab21-4749-910a-9ce894a45a5c",
-            UserName = "钮哥的音色",
-            Text = "你好嗎你好嗎你好嗎\n"
-        }, CancellationToken.None).ConfigureAwait(false);
         
         return Ok(response);
     }
