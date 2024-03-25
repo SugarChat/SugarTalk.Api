@@ -530,7 +530,7 @@ namespace SugarTalk.Core.Services.Meetings
                     roomSetting.VoiceId = await AutoAssignAndUpdateVoiceIdAsync(roomSetting, command.MeetingId, cancellationToken);
                     break;
                 case false when !roomSetting.IsSystem:
-                    await _meetingDataProvider.UpdateMeetingChatRoomSettingAsync(roomSetting, cancellationToken).ConfigureAwait(false);
+                    await _meetingDataProvider.UpdateMeetingChatRoomSettingAsync(roomSetting, true, cancellationToken).ConfigureAwait(false);
                     break;
             }
 
@@ -554,7 +554,7 @@ namespace SugarTalk.Core.Services.Meetings
 
             roomSetting.VoiceId = voiceId;
 
-            await _meetingDataProvider.UpdateMeetingChatRoomSettingAsync(roomSetting, cancellationToken).ConfigureAwait(false);
+            await _meetingDataProvider.UpdateMeetingChatRoomSettingAsync(roomSetting, true, cancellationToken).ConfigureAwait(false);
 
             return voiceId;
         }
