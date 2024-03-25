@@ -220,6 +220,10 @@ public partial class MeetingService
             
         record.VoiceUrl = (await _speechClient.GetAudioFromTextAsync(targetLanguage, cancellationToken).ConfigureAwait(false))?.Result;
         
+        record.GenerationStatus = !string.IsNullOrEmpty(record.VoiceUrl)
+            ? ChatRecordGenerationStatus.Completed 
+            : ChatRecordGenerationStatus.InProgress;
+        
         await _meetingDataProvider.UpdateMeetingChatVoiceRecordAsync(record, true, cancellationToken).ConfigureAwait(false);
     }
 
