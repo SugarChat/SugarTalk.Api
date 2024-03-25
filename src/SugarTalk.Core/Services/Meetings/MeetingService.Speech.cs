@@ -359,11 +359,11 @@ public partial class MeetingService
             VoiceId = meetingChatVoiceRecord.VoiceId,
             ResponseFormat = "url",
             Gender = roomSetting.Gender.GetDescription(),
-            LanguageType = roomSetting.ListeningLanguage switch
+            Language = roomSetting.ListeningLanguage switch
             {
-                SpeechTargetLanguageType.Cantonese => EchoAvatarLanguageType.English,
-                SpeechTargetLanguageType.Spanish => EchoAvatarLanguageType.Spanish,
-                SpeechTargetLanguageType.Korean => EchoAvatarLanguageType.Korean
+                SpeechTargetLanguageType.Cantonese => "canton",
+                SpeechTargetLanguageType.Spanish => "korean",
+                SpeechTargetLanguageType.Korean => "spanish"
             }
         }, cancellationToken).ConfigureAwait(false);
 
