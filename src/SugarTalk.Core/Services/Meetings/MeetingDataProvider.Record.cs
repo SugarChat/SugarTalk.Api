@@ -48,7 +48,7 @@ public partial interface IMeetingDataProvider
     
     Task UpdateMeetingDetailTranslationRecordAsync(MeetingSpeakDetailTranslationRecord meetingSpeakDetail, CancellationToken cancellationToken);
     
-    Task UpdateMeetingChatVoiceRecordAsync(List<MeetingChatVoiceRecord> meetingChatVoiceRecord, CancellationToken cancellationToken);
+    Task UpdateMeetingChatVoiceRecordAsync(MeetingChatVoiceRecord meetingChatVoiceRecord, bool forSave = true, CancellationToken cancellationToken = default);
 }
 
 public partial class MeetingDataProvider
@@ -260,11 +260,13 @@ public partial class MeetingDataProvider
         await _unitOfWork.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
     }
 
-    public async Task UpdateMeetingChatVoiceRecordAsync(List<MeetingChatVoiceRecord> meetingChatVoiceRecord, CancellationToken cancellationToken)
+    public async Task UpdateMeetingChatVoiceRecordAsync(MeetingChatVoiceRecord meetingChatVoiceRecord, bool forSave = true, CancellationToken cancellationToken = default)
     {
-        await _repository.UpdateAllAsync(meetingChatVoiceRecord, cancellationToken).ConfigureAwait(false);
+        if (meetingChatVoiceRecord is null) return;
         
-        await _unitOfWork.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        await _repository.UpdateAsync(meetingChatVoiceRecord, cancellationToken).ConfigureAwait(false);
+        
+        if (forSave) await _unitOfWork.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
     }
 
     private async Task<List<MeetingSpeakDetailDto>> GetMeetingRecordDetailsTranslationAsync(Guid recordId, TranslationLanguage? language, CancellationToken cancellationToken)

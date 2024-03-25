@@ -310,19 +310,7 @@ public partial class MeetingServiceFixture
             VoiceLanguage = SpeechTargetLanguageType.Cantonese,
             CreatedDate = DateTimeOffset.Now.AddSeconds(-500)
         };
-
-        var meetingChatVoiceRecord2 = new MeetingChatVoiceRecord
-        {
-            Id = Guid.NewGuid(),
-            IsSelf = true,
-            GenerationStatus = ChatRecordGenerationStatus.Completed,
-            VoiceId = roomSetting.VoiceId,
-            SpeechId = meetingSpeech2.Id,
-            VoiceUrl = "test222.url",   
-            VoiceLanguage = SpeechTargetLanguageType.Cantonese,
-            CreatedDate = DateTimeOffset.Now.AddSeconds(-500)
-        };
-
+        
         var account = new UserAccount
         {
             Id = 1,
@@ -355,7 +343,6 @@ public partial class MeetingServiceFixture
         await RunWithUnitOfWork<IRepository>(async repository =>
         {
             await repository.InsertAsync(meetingChatVoiceRecord1);
-            await repository.InsertAsync(meetingChatVoiceRecord2);
             await repository.InsertAsync(roomSetting);
             await repository.InsertAsync(meetingUserSession);
             await repository.InsertAsync(meetingTable);
@@ -363,7 +350,7 @@ public partial class MeetingServiceFixture
             await repository.InsertAsync(meetingSpeech2);
         });
         
-        await Run<IMediator>(async mediator =>
+        await RunWithUnitOfWork<IMediator, IRepository>(async (mediator, repository) =>
         {
             var response = await mediator.RequestAsync<GetMeetingChatVoiceRecordRequest, GetMeetingChatVoiceRecordResponse>(
                 new GetMeetingChatVoiceRecordRequest 
@@ -377,9 +364,24 @@ public partial class MeetingServiceFixture
             response.Data.First().UserId.ShouldBe(account.Id);
             response.Data[0].OriginalText.ShouldBe("你好呀");
             response.Data[0].VoiceRecord.VoiceUrl.ShouldBe("test.url");
-            response.Data[1].OriginalText.ShouldBe("我是小李呀");
-            response.Data[1].VoiceRecord.VoiceUrl.ShouldBe("test222.url");
             response.Data.First().UserName.ShouldBe("TEST_USER");
+
+            var voiceRecord = await repository
+                .QueryNoTracking<MeetingChatVoiceRecord>().ToListAsync();
+            
+            voiceRecord.Count.ShouldBe(2);
+
+        }, builder =>
+        {
+            var speechClient = Substitute.For<ISpeechClient>();
+
+            speechClient.SpeechToInferenceCantonAsync(Arg.Any<SpeechToInferenceCantonDto>(), CancellationToken.None)
+                .Returns(new SpeechToInferenceCantonResponseDto
+                {
+                    Result = new SpeechToInferenceCantonResultDto { Url = "hhhhh"}
+                });
+            
+            builder.RegisterInstance(speechClient);
         });
     }
 }

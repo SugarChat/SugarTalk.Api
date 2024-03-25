@@ -219,8 +219,7 @@ public partial class MeetingService
             
         meetingChatVoiceRecord.VoiceUrl = (await _speechClient.GetAudioFromTextAsync(targetLanguage, cancellationToken).ConfigureAwait(false))?.Result;
         
-        await _meetingDataProvider.UpdateMeetingChatVoiceRecordAsync(
-            new List<MeetingChatVoiceRecord> { meetingChatVoiceRecord }, cancellationToken).ConfigureAwait(false);
+        await _meetingDataProvider.UpdateMeetingChatVoiceRecordAsync(meetingChatVoiceRecord, true, cancellationToken).ConfigureAwait(false);
     }
 
     public async Task<MeetingSpeechUpdatedEvent> UpdateMeetingSpeechAsync(
@@ -289,8 +288,10 @@ public partial class MeetingService
         var shouldGenerateSpeech = await _meetingDataProvider.GetMeetingSpeechByIdAsync(meetingChatVoiceRecord.SpeechId, cancellationToken).ConfigureAwait(false);
 
         var roomSetting = await _meetingDataProvider.GetMeetingChatRoomSettingByVoiceIdAsync(meetingChatVoiceRecord.VoiceId, cancellationToken).ConfigureAwait(false);
+        
+        var meetingRecord = await _meetingDataProvider.GetMeetingChatVoiceRecordAsync(meetingChatVoiceRecord.Id, cancellationToken).ConfigureAwait(false);
 
-        await GenerateChatRecordProcessAsync(_mapper.Map<MeetingChatVoiceRecord>(meetingChatVoiceRecord), roomSetting, shouldGenerateSpeech, cancellationToken).ConfigureAwait(false);
+        await GenerateChatRecordProcessAsync(meetingRecord, roomSetting, shouldGenerateSpeech, cancellationToken).ConfigureAwait(false);
     }
 
     public async Task GenerateChatRecordAsync(Guid meetingId, MeetingSpeech meetingSpeech, CancellationToken cancellationToken)
@@ -344,7 +345,7 @@ public partial class MeetingService
                 : ChatRecordGenerationStatus.InProgress;
             
             await _meetingDataProvider
-                .UpdateMeetingChatVoiceRecordAsync(new List<MeetingChatVoiceRecord> { meetingChatVoiceRecord }, cancellationToken).ConfigureAwait(false);
+                .UpdateMeetingChatVoiceRecordAsync(meetingChatVoiceRecord , true, cancellationToken).ConfigureAwait(false);
         }
     }
     

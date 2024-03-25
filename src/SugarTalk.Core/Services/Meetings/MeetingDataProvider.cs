@@ -106,6 +106,8 @@ namespace SugarTalk.Core.Services.Meetings
         Task<MeetingRepeatRule> GetMeetingRuleByMeetingIdAsync(Guid meetingId, CancellationToken cancellationToken);
 
         Task AddMeetingChatVoiceRecordAsync(List<MeetingChatVoiceRecord> meetingChatVoiceRecord, bool forSave = true, CancellationToken cancellationToken = default);
+        
+        Task<MeetingChatVoiceRecord> GetMeetingChatVoiceRecordAsync(Guid id, CancellationToken cancellationToken);
     }
     
     public partial class MeetingDataProvider : IMeetingDataProvider
@@ -700,7 +702,13 @@ namespace SugarTalk.Core.Services.Meetings
             
             if (forSave) await _unitOfWork.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
         }
-        
+
+        public async Task<MeetingChatVoiceRecord> GetMeetingChatVoiceRecordAsync(Guid id, CancellationToken cancellationToken)
+        {
+            return await _repository.Query<MeetingChatVoiceRecord>(x => x.Id == id)
+                .FirstOrDefaultAsync(cancellationToken).ConfigureAwait(false);
+        }
+
         private async Task<List<Meeting>> FilterAppointmentMeetingsWithoutAttendeesAsync(List<Meeting> appointmentMeetings, CancellationToken cancellationToken)
         {
             var meetingIds = appointmentMeetings.Select(x => x.Id);

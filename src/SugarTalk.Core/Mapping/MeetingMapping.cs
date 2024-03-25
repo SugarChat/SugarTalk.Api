@@ -36,10 +36,6 @@ public class MeetingMapping: Profile
             .ForMember(dest => dest.SelfLanguage, source => source.MapFrom(x => x.SelfLanguage))
             .ForMember(dest => dest.ListeningLanguage, source => source.MapFrom(x => x.ListeningLanguage));
 
-        CreateMap<MeetingChatVoiceRecordDto, MeetingChatVoiceRecord>()
-            .ForMember(dest => dest.Id, opt => opt.Ignore());
-        
-        CreateMap<MeetingChatVoiceRecord, MeetingChatVoiceRecordDto>()
-            .ForMember(dest => dest.Id, opt => opt.Ignore());
+        CreateMap<MeetingChatVoiceRecordDto, MeetingChatVoiceRecord>().ReverseMap();
     }
 }
