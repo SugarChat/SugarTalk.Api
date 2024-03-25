@@ -16,12 +16,10 @@ namespace SugarTalk.Api.Controllers;
 public class MeetingUserController : ControllerBase
 {
     private readonly IMediator _mediator;
-    private readonly SpeechClient _speechClient;
 
-    public MeetingUserController(IMediator mediator, SpeechClient speechClient)
+    public MeetingUserController(IMediator mediator)
     {
         _mediator = mediator;
-        _speechClient = speechClient;
     }
 
     [Route("setting/addOrUpdate"), HttpPost]
