@@ -370,6 +370,7 @@ public partial class MeetingServiceFixture
                 .QueryNoTracking<MeetingChatVoiceRecord>().ToListAsync();
             
             voiceRecord.Count.ShouldBe(2);
+            voiceRecord[0].TranslatedText.ShouldBe("你好呀");
 
         }, builder =>
         {
@@ -380,6 +381,10 @@ public partial class MeetingServiceFixture
                 {
                     Result = new SpeechToInferenceCantonResultDto { Url = "hhhhh"}
                 });
+            
+            speechClient.TranslateTextAsync
+                (Arg.Any<TextTranslationDto>(), CancellationToken.None)
+                .Returns(new SpeechResponseDto { Result = "你好呀" });
             
             builder.RegisterInstance(speechClient);
         });
