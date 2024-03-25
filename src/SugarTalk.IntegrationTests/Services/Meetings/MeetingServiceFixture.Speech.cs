@@ -79,7 +79,7 @@ public partial class MeetingServiceFixture
             speechClient.SpeechToInferenceMandarinAsync(Arg.Any<SpeechToInferenceMandarinDto>(), CancellationToken.None)
                 .Returns(new SpeechToInferenceMandarinResponseDto
                 {
-                    Result = new SpeechToInferenceResultDto { Url = new SpeechToInferenceResultDto.InferredUrlObject{UrlValue = "hhhhh"}}
+                    Result = new SpeechToInferenceResultDto { Url = "hhhhh"}
                 });
 
             builder.RegisterInstance(speechClient);

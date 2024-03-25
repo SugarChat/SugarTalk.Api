@@ -84,7 +84,6 @@ public class SpeechClient : ISpeechClient
 
     public async Task<SpeechToInferenceMandarinResponseDto> SpeechToInferenceMandarinAsync(SpeechToInferenceMandarinDto speechToInference, CancellationToken cancellationToken)
     {
-        
         Log.Information("Speech, Speech to mandarin:{textTranslation}", JsonConvert.SerializeObject(speechToInference));
 
         return await _httpClientFactory.PostAsJsonAsync<SpeechToInferenceMandarinResponseDto>(

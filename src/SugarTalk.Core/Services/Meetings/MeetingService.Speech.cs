@@ -384,7 +384,7 @@ public partial class MeetingService
 
         Log.Information("Get speech to inference mandarin {@Response}", response);
         
-        return response?.Result?.Url?.UrlValue;
+        return response?.Result?.Url;
     }
 
     private static string HandleToBase64(string base64)
