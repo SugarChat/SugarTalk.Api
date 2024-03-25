@@ -85,10 +85,11 @@ public partial class MeetingDataProvider
     {
         var query =
             from speech in _repository.Query<MeetingSpeech>()
-            join record in _repository.Query<MeetingChatVoiceRecord>() on speech.Id equals record.SpeechId into voiceRecordGroup
+            join record in _repository.Query<MeetingChatVoiceRecord>().Where(x => x.VoiceLanguage == targetLanguageType)
+                on speech.Id equals record.SpeechId into voiceRecordGroup
             from record in voiceRecordGroup.DefaultIfEmpty()
-            where speechIds.Contains(speech.Id) && record.VoiceLanguage == targetLanguageType
-            orderby record.CreatedDate descending
+            where speechIds.Contains(speech.Id)
+            orderby speech.CreatedDate descending
             select new MeetingSpeechDto
             {
                 Id = speech.Id,
@@ -99,7 +100,7 @@ public partial class MeetingDataProvider
                 CreatedDate = speech.CreatedDate,
                 VoiceRecord = record == null ? null : _mapper.Map<MeetingChatVoiceRecordDto>(record),
             };
-        
+
         var groupedQuery = query.GroupBy(ms => ms.Id).Select(x => x.First());
         
         return await groupedQuery.ToListAsync(cancellationToken).ConfigureAwait(false);
