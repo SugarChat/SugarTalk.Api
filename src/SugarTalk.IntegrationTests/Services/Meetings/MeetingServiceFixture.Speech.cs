@@ -20,7 +20,6 @@ using SugarTalk.Messages.Commands.Speech;
 using SugarTalk.Messages.Dto.Meetings.Speech;
 using SugarTalk.Messages.Dto.Users;
 using SugarTalk.Messages.Enums.Account;
-using SugarTalk.Messages.Enums.Meeting;
 using SugarTalk.Messages.Enums.Speech;
 using SugarTalk.Messages.Requests.Meetings.User;
 using SugarTalk.Messages.Requests.Speech;
@@ -61,6 +60,7 @@ public partial class MeetingServiceFixture
             var meetingChatVoiceRecord = await repository.QueryNoTracking<MeetingChatVoiceRecord>().SingleAsync(CancellationToken.None);
             
             meetingChatVoiceRecord.VoiceUrl.ShouldBe("hhhhh");
+            meetingChatVoiceRecord.TranslatedText.ShouldBe("translated_text");
             meetingChatVoiceRecord.GenerationStatus.ShouldBe(ChatRecordGenerationStatus.Completed);
         }, builder =>
         {
