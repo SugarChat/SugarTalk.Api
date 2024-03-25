@@ -42,4 +42,7 @@ public class MeetingChatVoiceRecord : IEntity
     
     [Column("generation_status")]
     public ChatRecordGenerationStatus GenerationStatus { get; set; }
+    
+    [Column("translated_text")]
+    public string TranslatedText { get; set; }
 }

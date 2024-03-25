@@ -27,9 +27,6 @@ public class MeetingSpeech : IEntity
 
     [Column("original_text")] 
     public string OriginalText { get; set; }
-    
-    [Column("translated_text")]
-    public string TranslatedText { get; set; }
 
     [Column("created_date")] 
     public DateTimeOffset CreatedDate { get; set; }
