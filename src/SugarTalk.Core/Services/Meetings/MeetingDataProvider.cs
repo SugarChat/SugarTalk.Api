@@ -51,7 +51,7 @@ namespace SugarTalk.Core.Services.Meetings
 
         Task UpdateMeetingUserSettingAsync(MeetingUserSetting meetingUserSetting, CancellationToken cancellationToken);
         
-        Task UpdateMeetingChatRoomSettingAsync(MeetingChatRoomSetting chatRoomSetting, CancellationToken cancellationToken);
+        Task UpdateMeetingChatRoomSettingAsync(MeetingChatRoomSetting chatRoomSetting, bool forSave = true, CancellationToken cancellationToken = default);
 
         Task<MeetingUserSetting> GetMeetingUserSettingByUserIdAsync(int userId, Guid meetingId, CancellationToken cancellationToken);
         
@@ -288,11 +288,13 @@ namespace SugarTalk.Core.Services.Meetings
             await _repository.UpdateAsync(meetingUserSetting, cancellationToken).ConfigureAwait(false);
         }
 
-        public async Task UpdateMeetingChatRoomSettingAsync(MeetingChatRoomSetting meetingChatRoomSetting, CancellationToken cancellationToken)
+        public async Task UpdateMeetingChatRoomSettingAsync(MeetingChatRoomSetting meetingChatRoomSetting, bool forSave = true, CancellationToken cancellationToken = default)
         {
             if (meetingChatRoomSetting is null) return;
             
             await _repository.UpdateAsync(meetingChatRoomSetting, cancellationToken).ConfigureAwait(false);
+            
+            if (forSave) await _unitOfWork.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
         }
 
         public async Task<MeetingUserSetting> GetMeetingUserSettingByUserIdAsync(int userId, Guid meetingId, CancellationToken cancellationToken)

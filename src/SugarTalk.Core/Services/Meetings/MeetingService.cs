@@ -281,7 +281,22 @@ namespace SugarTalk.Core.Services.Meetings
             
             //接入音色接口后 弃用
             var userSetting = await _meetingDataProvider.DistributeLanguageForMeetingUserAsync(meeting.Id, cancellationToken).ConfigureAwait(false);
-            
+
+            await _meetingDataProvider.AddMeetingChatRoomSettingAsync(new MeetingChatRoomSetting
+            {
+                IsSystem = true,
+                UserId = user.Id,
+                MeetingId = meeting.Id,
+                VoiceId = userSetting.TargetLanguageType switch
+                {
+                    SpeechTargetLanguageType.Cantonese => ((int)userSetting.CantoneseToneType).ToString(),
+                    SpeechTargetLanguageType.Mandarin => ((int)userSetting.MandarinToneType).ToString(),
+                    SpeechTargetLanguageType.English => ((int)userSetting.EnglishToneType).ToString(),
+                    SpeechTargetLanguageType.Spanish => ((int)userSetting.SpanishToneType).ToString(),
+                    _ => string.Empty
+                }
+            }, true, cancellationToken).ConfigureAwait(false);
+
             Log.Information("SugarTalk get userSetting from JoinMeetingAsync :{userSetting}", JsonConvert.SerializeObject(userSetting));
 
             return new MeetingJoinedEvent
@@ -530,7 +545,7 @@ namespace SugarTalk.Core.Services.Meetings
                     roomSetting.VoiceId = await AutoAssignAndUpdateVoiceIdAsync(roomSetting, command.MeetingId, cancellationToken);
                     break;
                 case false when !roomSetting.IsSystem:
-                    await _meetingDataProvider.UpdateMeetingChatRoomSettingAsync(roomSetting, cancellationToken).ConfigureAwait(false);
+                    await _meetingDataProvider.UpdateMeetingChatRoomSettingAsync(roomSetting, true, cancellationToken).ConfigureAwait(false);
                     break;
             }
 
@@ -543,20 +558,22 @@ namespace SugarTalk.Core.Services.Meetings
 
             var voiceId = roomSetting.ListeningLanguage switch
             {
-                SpeechTargetLanguageType.Cantonese => userSetting.CantoneseToneType.ToString(),
-                SpeechTargetLanguageType.Mandarin => userSetting.MandarinToneType.ToString(),
-                SpeechTargetLanguageType.English => userSetting.EnglishToneType.ToString(),
-                SpeechTargetLanguageType.Spanish => userSetting.SpanishToneType.ToString(),
-                _ => string.Empty
+                SpeechTargetLanguageType.Cantonese => (int)userSetting.CantoneseToneType,
+                SpeechTargetLanguageType.Mandarin => (int)userSetting.MandarinToneType,
+                SpeechTargetLanguageType.English => (int)userSetting.EnglishToneType,
+                SpeechTargetLanguageType.Spanish => (int)userSetting.SpanishToneType,
+                _ => 0
             };
 
-            if (string.IsNullOrEmpty(voiceId)) return voiceId;
+            var stringVoiceId = voiceId.ToString();
+            
+            if (string.IsNullOrEmpty(stringVoiceId)) return stringVoiceId;
 
-            roomSetting.VoiceId = voiceId;
+            roomSetting.VoiceId = stringVoiceId;
 
-            await _meetingDataProvider.UpdateMeetingChatRoomSettingAsync(roomSetting, cancellationToken).ConfigureAwait(false);
+            await _meetingDataProvider.UpdateMeetingChatRoomSettingAsync(roomSetting, true, cancellationToken).ConfigureAwait(false);
 
-            return voiceId;
+            return stringVoiceId;
         }
         
         public async Task<GetMeetingUserSettingResponse> GetMeetingUserSettingAsync(GetMeetingUserSettingRequest request, CancellationToken cancellationToken)
