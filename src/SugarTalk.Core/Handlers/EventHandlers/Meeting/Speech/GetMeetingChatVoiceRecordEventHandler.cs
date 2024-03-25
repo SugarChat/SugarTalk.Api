@@ -23,14 +23,14 @@ public class GetMeetingChatVoiceRecordEventHandler : IEventHandler<GetMeetingCha
     {
         var shouldGenerateVoiceRecords = context.Message.ShouldGenerateVoiceRecords;
         
-        if (shouldGenerateVoiceRecords.Count <= 0) return Task.CompletedTask;;
+        if (shouldGenerateVoiceRecords?.Count <= 0) return Task.CompletedTask;;
         
         Log.Information("GetMeetingChatVoiceRecordEventHandler: {@ShouldGenerateVoiceRecordsCount}", shouldGenerateVoiceRecords);
         
         var parentJobId = _backgroundJobClient.Enqueue<IMeetingService>(x=>
             x.ProcessGenerateMeetingChatVoiceRecordAsync(shouldGenerateVoiceRecords.First(), cancellationToken));
 
-        shouldGenerateVoiceRecords.Skip(1).Aggregate(parentJobId, (current, shouldGenerateVoiceRecord) =>
+        shouldGenerateVoiceRecords?.Skip(1).Aggregate(parentJobId, (current, shouldGenerateVoiceRecord) =>
             _backgroundJobClient.ContinueJobWith<IMeetingService>(current,
                 x => x.ProcessGenerateMeetingChatVoiceRecordAsync(shouldGenerateVoiceRecord, cancellationToken)));
 
