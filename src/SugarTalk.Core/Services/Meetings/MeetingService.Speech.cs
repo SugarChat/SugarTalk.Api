@@ -264,7 +264,7 @@ public partial class MeetingService
 
         Log.Information("Get meeting chat voice record allSpeech {@AllSpeech}", allSpeech);
         
-        var shouldGenerateVoiceRecords = allSpeech
+        var shouldGenerateVoiceRecords = speechWithName
             .Where(speech => speech.VoiceRecord == null)
             .Select(speech => new MeetingChatVoiceRecord
             {
