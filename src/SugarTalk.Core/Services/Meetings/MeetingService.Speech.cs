@@ -132,7 +132,7 @@ public partial class MeetingService
 
         var userIdsFromGuest = users.Where(x => x.Issuer == UserAccountIssuer.Guest).Select(x => x.Id).ToList();
 
-        meetingSpeechesDto = meetingSpeechesDto.OrderByDescending(x => x.CreatedDate).ToList();
+        meetingSpeechesDto = meetingSpeechesDto.OrderBy(x => x.CreatedDate).ToList();
 
         var meeting = await _meetingDataProvider.GetMeetingByIdAsync(meetingId, cancellationToken).ConfigureAwait(false);
 
@@ -159,7 +159,7 @@ public partial class MeetingService
                 ? session.GuestName
                 : session.UserName;
         }
-        
+
         return meetingSpeechesDto;
     }
 
@@ -274,7 +274,6 @@ public partial class MeetingService
                 IsSelf = false,
                 VoiceId = roomSetting.VoiceId,
                 VoiceLanguage = roomSetting.ListeningLanguage,
-                CreatedDate = DateTimeOffset.Now,
                 GenerationStatus = ChatRecordGenerationStatus.InProgress
             }).ToList();
         
