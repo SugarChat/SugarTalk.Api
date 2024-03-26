@@ -12,7 +12,7 @@ public class MeetingChatVoiceRecord : IEntity
     {
         CreatedDate = DateTimeOffset.Now;
         VoiceLanguage = SpeechTargetLanguageType.Cantonese;
-        GenerationStatus = ChatRecordGenerationStatus.InProgress;
+        GenerationStatus = ChatRecordGenerationStatus.Pending;
     }
     
     [Key]
