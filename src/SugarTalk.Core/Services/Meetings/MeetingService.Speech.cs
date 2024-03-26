@@ -263,10 +263,12 @@ public partial class MeetingService
         var allSpeech = await _meetingDataProvider.GetMeetingSpeechWithVoiceRecordAsync(
             meetingSpeeches.Select(x => x.Id).ToList(), roomSetting.ListeningLanguage, cancellationToken).ConfigureAwait(false);
         
+        Log.Information("Get meeting chat voice record allSpeech {@AllSpeech}", allSpeech);
+        
         var speechWithName = await EnhanceMeetingSpeechesWithUserNamesAsync(
             request.MeetingId, allSpeech, cancellationToken).ConfigureAwait(false);
 
-        Log.Information("Get meeting chat voice record allSpeech {@AllSpeech}", allSpeech);
+        Log.Information("Get meeting chat voice record speechWithName {@@SpeechWithName}", speechWithName);
         
         var shouldGenerateVoiceRecords = speechWithName
             .Where(speech => speech.VoiceRecord == null)
