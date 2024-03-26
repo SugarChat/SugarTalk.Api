@@ -315,6 +315,7 @@ namespace SugarTalk.Core.Services.Meetings
         {
             return await _repository.QueryNoTracking<MeetingChatRoomSetting>()
                 .Where(x => x.VoiceId == voiceId)
+                .OrderByDescending(x => x.LastModifiedDate)
                 .FirstOrDefaultAsync(cancellationToken).ConfigureAwait(false);
         }
 
