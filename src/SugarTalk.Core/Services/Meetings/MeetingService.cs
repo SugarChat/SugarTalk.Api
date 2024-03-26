@@ -539,20 +539,29 @@ namespace SugarTalk.Core.Services.Meetings
                     ListeningLanguage = command.ListeningLanguage,
                 }, true, cancellationToken).ConfigureAwait(false);
             }
-            else switch (command.IsSystem)
+
+            if (roomSetting == null) return new ChatRoomSettingAddOrUpdateEvent();
+            
+            if (command.IsSystem)
             {
-                case true when roomSetting.IsSystem:
-                    roomSetting.VoiceId = await AutoAssignAndUpdateVoiceIdAsync(roomSetting, command.MeetingId, cancellationToken);
-                    break;
-                case false when !roomSetting.IsSystem:
+                if (roomSetting is { IsSystem: true })
+                {
+                    await AutoAssignAndUpdateVoiceIdAsync(roomSetting, command.MeetingId, cancellationToken);
+                }
+                else
+                {
                     await _meetingDataProvider.UpdateMeetingChatRoomSettingAsync(roomSetting, true, cancellationToken).ConfigureAwait(false);
-                    break;
+                }
+            }
+            else
+            {
+                await _meetingDataProvider.UpdateMeetingChatRoomSettingAsync(roomSetting, roomSetting.IsSystem, cancellationToken).ConfigureAwait(false);
             }
 
             return new ChatRoomSettingAddOrUpdateEvent();
         }
         
-        private async Task<string> AutoAssignAndUpdateVoiceIdAsync(MeetingChatRoomSetting roomSetting, Guid meetingId, CancellationToken cancellationToken)
+        private async Task AutoAssignAndUpdateVoiceIdAsync(MeetingChatRoomSetting roomSetting, Guid meetingId, CancellationToken cancellationToken)
         {
             var userSetting = await _meetingDataProvider.DistributeLanguageForMeetingUserAsync(meetingId, cancellationToken).ConfigureAwait(false);
 
@@ -567,13 +576,10 @@ namespace SugarTalk.Core.Services.Meetings
 
             var stringVoiceId = voiceId.ToString();
             
-            if (string.IsNullOrEmpty(stringVoiceId)) return stringVoiceId;
-
-            roomSetting.VoiceId = stringVoiceId;
+            if (string.IsNullOrEmpty(stringVoiceId)) 
+                roomSetting.VoiceId = stringVoiceId;
 
             await _meetingDataProvider.UpdateMeetingChatRoomSettingAsync(roomSetting, true, cancellationToken).ConfigureAwait(false);
-
-            return stringVoiceId;
         }
         
         public async Task<GetMeetingUserSettingResponse> GetMeetingUserSettingAsync(GetMeetingUserSettingRequest request, CancellationToken cancellationToken)
