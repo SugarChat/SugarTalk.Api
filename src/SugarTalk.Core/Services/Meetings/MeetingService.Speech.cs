@@ -268,8 +268,6 @@ public partial class MeetingService
         var speechWithName = await EnhanceMeetingSpeechesWithUserNamesAsync(
             request.MeetingId, allSpeech, cancellationToken).ConfigureAwait(false);
 
-        Log.Information("Get meeting chat voice record speechWithName {@SpeechWithName}", speechWithName);
-        
         var shouldGenerateVoiceRecords = speechWithName
             .Where(speech => speech.VoiceRecord == null)
             .Select(speech => new MeetingChatVoiceRecord
@@ -295,8 +293,6 @@ public partial class MeetingService
         var shouldGenerateSpeech = await _meetingDataProvider.GetMeetingSpeechByIdAsync(meetingChatVoiceRecord.SpeechId, cancellationToken).ConfigureAwait(false);
 
         var roomSetting = await _meetingDataProvider.GetMeetingChatRoomSettingByVoiceIdAsync(meetingChatVoiceRecord.VoiceId, cancellationToken).ConfigureAwait(false);
-        
-        Log.Information("Get correct roomSetting when get meeting chat voice record {@RoomSetting}", roomSetting);
         
         var meetingRecord = await _meetingDataProvider.GetMeetingChatVoiceRecordAsync(meetingChatVoiceRecord.Id, cancellationToken).ConfigureAwait(false);
 
