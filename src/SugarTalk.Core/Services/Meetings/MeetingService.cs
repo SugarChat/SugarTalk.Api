@@ -554,6 +554,7 @@ namespace SugarTalk.Core.Services.Meetings
                     roomSetting.Gender = command.Gender;
                     roomSetting.SelfLanguage = command.SelfLanguage;
                     roomSetting.ListeningLanguage = command.ListeningLanguage;
+                    roomSetting.IsSystem = command.IsSystem;
 
                     await _meetingDataProvider.UpdateMeetingChatRoomSettingAsync(roomSetting, true, cancellationToken).ConfigureAwait(false);
                 }
