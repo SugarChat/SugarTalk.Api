@@ -210,6 +210,8 @@ public partial class MeetingService
     
     private async Task GenerateSystemVoiceUrlAsync(MeetingChatVoiceRecord record, int voiceId, CancellationToken cancellationToken)
     {
+        Log.Information("Start generating system voice url");
+        
         var targetLanguage = record.VoiceLanguage switch
             {
                 SpeechTargetLanguageType.Cantonese => new TextToSpeechDto { Text = record.TranslatedText, CantoneseToneType = (CantoneseToneType)voiceId},
@@ -223,6 +225,8 @@ public partial class MeetingService
         record.GenerationStatus = !string.IsNullOrEmpty(record.VoiceUrl)
             ? ChatRecordGenerationStatus.Completed 
             : ChatRecordGenerationStatus.InProgress;
+        
+        Log.Information("Generated system voice url{@MeetingChatVoiceRecord}", record);
         
         await _meetingDataProvider.UpdateMeetingChatVoiceRecordAsync(record, true, cancellationToken).ConfigureAwait(false);
     }
