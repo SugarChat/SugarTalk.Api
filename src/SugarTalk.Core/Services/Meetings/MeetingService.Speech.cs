@@ -294,6 +294,8 @@ public partial class MeetingService
 
         var roomSetting = await _meetingDataProvider.GetMeetingChatRoomSettingByVoiceIdAsync(meetingChatVoiceRecord.VoiceId, cancellationToken).ConfigureAwait(false);
         
+        Log.Information("Get correct roomSetting when get meeting chat voice record {@RoomSetting}", roomSetting);
+        
         var meetingRecord = await _meetingDataProvider.GetMeetingChatVoiceRecordAsync(meetingChatVoiceRecord.Id, cancellationToken).ConfigureAwait(false);
 
         await GenerateChatRecordProcessAsync(meetingRecord, roomSetting, shouldGenerateSpeech, cancellationToken).ConfigureAwait(false);
@@ -325,6 +327,8 @@ public partial class MeetingService
     public async Task GenerateChatRecordProcessAsync(
         MeetingChatVoiceRecord meetingChatVoiceRecord, MeetingChatRoomSetting roomSetting, MeetingSpeech meetingSpeech, CancellationToken cancellationToken)
     {
+        Log.Information("Generate Chat Record Process Room setting: {@RoomSetting}", roomSetting);
+        
         await TranslateAndGenerateTextAsync(roomSetting.ListeningLanguage, meetingChatVoiceRecord, meetingSpeech, cancellationToken).ConfigureAwait(false);
         
         if (roomSetting.IsSystem)
