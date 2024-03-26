@@ -541,7 +541,11 @@ namespace SugarTalk.Core.Services.Meetings
             }
             else
             {
-                if (!command.IsSystem || roomSetting.IsSystem != true)
+                if (command.IsSystem && roomSetting.IsSystem != true)
+                {
+                    await AutoAssignAndUpdateVoiceIdAsync(roomSetting, command.MeetingId, cancellationToken);
+                }
+                else
                 {
                     roomSetting.VoiceId = command.VoiceId;
                     roomSetting.VoiceName = command.VoiceName;
@@ -550,10 +554,6 @@ namespace SugarTalk.Core.Services.Meetings
                     roomSetting.ListeningLanguage = command.ListeningLanguage;
 
                     await _meetingDataProvider.UpdateMeetingChatRoomSettingAsync(roomSetting, true, cancellationToken).ConfigureAwait(false);
-                }
-                else
-                {
-                    await AutoAssignAndUpdateVoiceIdAsync(roomSetting, command.MeetingId, cancellationToken);
                 }
             }
 
