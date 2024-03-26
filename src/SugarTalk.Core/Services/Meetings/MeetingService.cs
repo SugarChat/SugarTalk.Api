@@ -540,22 +540,13 @@ namespace SugarTalk.Core.Services.Meetings
                 }, true, cancellationToken).ConfigureAwait(false);
             }
 
-            if (roomSetting == null) return new ChatRoomSettingAddOrUpdateEvent();
-            
-            if (command.IsSystem)
+            if (command.IsSystem && roomSetting is { IsSystem: true })
             {
-                if (roomSetting is { IsSystem: true })
-                {
-                    await AutoAssignAndUpdateVoiceIdAsync(roomSetting, command.MeetingId, cancellationToken);
-                }
-                else
-                {
-                    await _meetingDataProvider.UpdateMeetingChatRoomSettingAsync(roomSetting, true, cancellationToken).ConfigureAwait(false);
-                }
+                await AutoAssignAndUpdateVoiceIdAsync(roomSetting, command.MeetingId, cancellationToken);
             }
             else
             {
-                await _meetingDataProvider.UpdateMeetingChatRoomSettingAsync(roomSetting, roomSetting.IsSystem, cancellationToken).ConfigureAwait(false);
+                await _meetingDataProvider.UpdateMeetingChatRoomSettingAsync(roomSetting, true, cancellationToken).ConfigureAwait(false);
             }
 
             return new ChatRoomSettingAddOrUpdateEvent();
