@@ -528,7 +528,7 @@ namespace SugarTalk.Core.Services.Meetings
 
             if (roomSetting == null)
             {
-                await _meetingDataProvider.AddMeetingChatRoomSettingAsync(new MeetingChatRoomSetting
+                await _meetingDataProvider.AddMeetingChatRoomSettingAsync(new MeetingChatRoomSetting 
                 {
                     UserId = _currentUser.Id.Value,
                     MeetingId = command.MeetingId,
@@ -539,19 +539,27 @@ namespace SugarTalk.Core.Services.Meetings
                     ListeningLanguage = command.ListeningLanguage,
                 }, true, cancellationToken).ConfigureAwait(false);
             }
-
-            if (command.IsSystem && roomSetting is { IsSystem: true })
-            {
-                await AutoAssignAndUpdateVoiceIdAsync(roomSetting, command.MeetingId, cancellationToken);
-            }
             else
             {
-                await _meetingDataProvider.UpdateMeetingChatRoomSettingAsync(roomSetting, true, cancellationToken).ConfigureAwait(false);
+                if (!command.IsSystem || roomSetting.IsSystem != true)
+                {
+                    roomSetting.VoiceId = command.VoiceId;
+                    roomSetting.VoiceName = command.VoiceName;
+                    roomSetting.Gender = command.Gender;
+                    roomSetting.SelfLanguage = command.SelfLanguage;
+                    roomSetting.ListeningLanguage = command.ListeningLanguage;
+
+                    await _meetingDataProvider.UpdateMeetingChatRoomSettingAsync(roomSetting, true, cancellationToken).ConfigureAwait(false);
+                }
+                else
+                {
+                    await AutoAssignAndUpdateVoiceIdAsync(roomSetting, command.MeetingId, cancellationToken);
+                }
             }
 
             return new ChatRoomSettingAddOrUpdateEvent();
         }
-        
+
         private async Task AutoAssignAndUpdateVoiceIdAsync(MeetingChatRoomSetting roomSetting, Guid meetingId, CancellationToken cancellationToken)
         {
             var userSetting = await _meetingDataProvider.DistributeLanguageForMeetingUserAsync(meetingId, cancellationToken).ConfigureAwait(false);
