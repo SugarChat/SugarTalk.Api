@@ -21,5 +21,7 @@ public class MeetingChatVoiceRecordDto
     
     public bool IsSelf { get; set; }
     
+    public string TranslatedText { get; set; }
+    
     public ChatRecordGenerationStatus GenerationStatus { get; set; }
 }

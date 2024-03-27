@@ -20,7 +20,6 @@ using SugarTalk.Messages.Commands.Speech;
 using SugarTalk.Messages.Dto.Meetings.Speech;
 using SugarTalk.Messages.Dto.Users;
 using SugarTalk.Messages.Enums.Account;
-using SugarTalk.Messages.Enums.Meeting;
 using SugarTalk.Messages.Enums.Speech;
 using SugarTalk.Messages.Requests.Meetings.User;
 using SugarTalk.Messages.Requests.Speech;
@@ -61,6 +60,7 @@ public partial class MeetingServiceFixture
             var meetingChatVoiceRecord = await repository.QueryNoTracking<MeetingChatVoiceRecord>().SingleAsync(CancellationToken.None);
             
             meetingChatVoiceRecord.VoiceUrl.ShouldBe("hhhhh");
+            meetingChatVoiceRecord.TranslatedText.ShouldBe("translated_text");
             meetingChatVoiceRecord.GenerationStatus.ShouldBe(ChatRecordGenerationStatus.Completed);
         }, builder =>
         {
@@ -79,7 +79,7 @@ public partial class MeetingServiceFixture
             speechClient.SpeechToInferenceMandarinAsync(Arg.Any<SpeechToInferenceMandarinDto>(), CancellationToken.None)
                 .Returns(new SpeechToInferenceMandarinResponseDto
                 {
-                    Result = new SpeechToInferenceResultDto { Url = new SpeechToInferenceResultDto.InferredUrlObject{UrlValue = "hhhhh"}}
+                    Result = new SpeechToInferenceResultDto { Url = "hhhhh"}
                 });
 
             builder.RegisterInstance(speechClient);
@@ -266,6 +266,50 @@ public partial class MeetingServiceFixture
     {
         var meetingId = Guid.NewGuid();
         var now = DateTimeOffset.Now;
+
+        var roomSetting = new MeetingChatRoomSetting()
+        {
+            Id = 1,
+            MeetingId = meetingId,
+            UserId = 1,
+            VoiceId = "I'm voice id from room setting",
+            VoiceName = "小李的voice",
+            Gender = EchoAvatarGenderVoiceType.Female,
+            SelfLanguage = SpeechTargetLanguageType.English,
+            ListeningLanguage = SpeechTargetLanguageType.Cantonese
+        };
+
+        var meetingSpeech1 = new MeetingSpeech()
+        {
+            MeetingId = meetingId,
+            Status = SpeechStatus.UnViewed,
+            Id = Guid.NewGuid(),
+            OriginalText = "你好呀",
+            UserId = 1,
+            CreatedDate = DateTimeOffset.Now.AddSeconds(-1000)
+        };
+
+        var meetingSpeech2 = new MeetingSpeech()
+        {
+            MeetingId = meetingId,
+            Status = SpeechStatus.UnViewed,
+            Id = Guid.NewGuid(),
+            OriginalText = "我是小李呀",
+            UserId = 1,
+            CreatedDate = DateTimeOffset.Now
+        };
+
+        var meetingChatVoiceRecord1 = new MeetingChatVoiceRecord
+        {
+            Id = Guid.NewGuid(),
+            IsSelf = true,
+            GenerationStatus = ChatRecordGenerationStatus.Completed,
+            VoiceId = roomSetting.VoiceId,
+            SpeechId = meetingSpeech1.Id,
+            VoiceUrl = "test.url",
+            VoiceLanguage = SpeechTargetLanguageType.Cantonese,
+            CreatedDate = DateTimeOffset.Now.AddSeconds(-500)
+        };
         
         var account = new UserAccount
         {
@@ -290,71 +334,15 @@ public partial class MeetingServiceFixture
             EndDate = now.ToUnixTimeMilliseconds() + 3600,
             OriginAddress = "test",
         };
-        
-        var meetingSpeech1 = new MeetingSpeech()
-        {
-            MeetingId = meetingId,
-            Status = SpeechStatus.UnViewed,
-            Id = Guid.NewGuid(),
-            OriginalText = "你好呀",
-            UserId = 1, 
-            CreatedDate = DateTimeOffset.Now.AddSeconds(-1000)
-        };
-        
-        var meetingSpeech2 = new MeetingSpeech()
-        {
-            MeetingId = meetingId,
-            Status = SpeechStatus.UnViewed,
-            Id = Guid.NewGuid(),
-            OriginalText = "我是小李呀",
-            UserId = 1,
-            CreatedDate = DateTimeOffset.Now
-        };
-        
-        var meetingChatVoiceRecord1 = new MeetingChatVoiceRecord
-        {
-            Id = Guid.NewGuid(),
-            VoiceUrl = "test.url",
-            IsSelf = true,
-            GenerationStatus = ChatRecordGenerationStatus.Completed,
-            VoiceId = "111",
-            SpeechId = meetingSpeech1.Id,
-            VoiceLanguage = SpeechTargetLanguageType.Cantonese,
-            CreatedDate = DateTimeOffset.Now.AddSeconds(-500)
-        };
-        
-        var meetingChatVoiceRecord = new MeetingChatVoiceRecord
-        {
-            Id = Guid.NewGuid(),
-            VoiceUrl = "test222.url",
-            IsSelf = false,
-            GenerationStatus = ChatRecordGenerationStatus.Completed,
-            VoiceId = "111",
-            SpeechId = meetingSpeech2.Id,
-            VoiceLanguage = SpeechTargetLanguageType.Cantonese,
-            CreatedDate = DateTimeOffset.Now
-        };
-        
-        var roomSetting = new MeetingChatRoomSetting()
-        {
-            Id = 1,
-            MeetingId = meetingId,
-            UserId = 1,
-            VoiceId = "111",
-            VoiceName = "小李的voice",
-            SelfLanguage = SpeechTargetLanguageType.English,
-            ListeningLanguage = SpeechTargetLanguageType.Cantonese
-        };
 
         var meeting = await _meetingUtil.ScheduleMeeting();
 
         await _meetingUtil.JoinMeeting(meeting.Data.MeetingNumber);
         await _meetingUtil.JoinMeetingByUserAsync(account, meeting.Data.MeetingNumber);
 
-        await RunWithUnitOfWork<IRepository>(async  repository =>
+        await RunWithUnitOfWork<IRepository>(async repository =>
         {
             await repository.InsertAsync(meetingChatVoiceRecord1);
-            await repository.InsertAsync(meetingChatVoiceRecord);
             await repository.InsertAsync(roomSetting);
             await repository.InsertAsync(meetingUserSession);
             await repository.InsertAsync(meetingTable);
@@ -362,7 +350,7 @@ public partial class MeetingServiceFixture
             await repository.InsertAsync(meetingSpeech2);
         });
         
-        await Run<IMediator>(async mediator =>
+        await RunWithUnitOfWork<IMediator, IRepository>(async (mediator, repository) =>
         {
             var response = await mediator.RequestAsync<GetMeetingChatVoiceRecordRequest, GetMeetingChatVoiceRecordResponse>(
                 new GetMeetingChatVoiceRecordRequest 
@@ -376,8 +364,29 @@ public partial class MeetingServiceFixture
             response.Data.First().UserId.ShouldBe(account.Id);
             response.Data[0].OriginalText.ShouldBe("你好呀");
             response.Data[0].VoiceRecord.VoiceUrl.ShouldBe("test.url");
-            response.Data[1].OriginalText.ShouldBe("我是小李呀");
-            response.Data[1].VoiceRecord.VoiceUrl.ShouldBe("test222.url");
+            response.Data.First().UserName.ShouldBe("TEST_USER");
+
+            var voiceRecord = await repository
+                .QueryNoTracking<MeetingChatVoiceRecord>().ToListAsync();
+            
+            voiceRecord.Count.ShouldBe(2);
+            voiceRecord[0].TranslatedText.ShouldBe("你好呀");
+
+        }, builder =>
+        {
+            var speechClient = Substitute.For<ISpeechClient>();
+
+            speechClient.SpeechToInferenceCantonAsync(Arg.Any<SpeechToInferenceCantonDto>(), CancellationToken.None)
+                .Returns(new SpeechToInferenceCantonResponseDto
+                {
+                    Result = new SpeechToInferenceCantonResultDto { Url = "hhhhh"}
+                });
+            
+            speechClient.TranslateTextAsync
+                (Arg.Any<TextTranslationDto>(), CancellationToken.None)
+                .Returns(new SpeechResponseDto { Result = "你好呀" });
+            
+            builder.RegisterInstance(speechClient);
         });
     }
 }
