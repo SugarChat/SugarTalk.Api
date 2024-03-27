@@ -272,6 +272,8 @@ public partial class MeetingService
         var speechWithName = await EnhanceMeetingSpeechesWithUserNamesAsync(
             request.MeetingId, allSpeech, cancellationToken).ConfigureAwait(false);
 
+        Log.Information("Get meeting chat voice record speechWithName {@SpeechWithName}", speechWithName);
+        
         var shouldGenerateVoiceRecords = speechWithName
             .Where(speech => speech.VoiceRecord == null)
             .Select(speech => new MeetingChatVoiceRecord
