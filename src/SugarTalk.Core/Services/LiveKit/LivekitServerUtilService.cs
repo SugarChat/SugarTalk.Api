@@ -94,7 +94,7 @@ public class LiveKitServerUtilService : ILiveKitServerUtilService
         
         return generateAccessToken.JoinMeeting(
             meetingNumber, _liveKitServerSetting.Apikey, _liveKitServerSetting.ApiSecret, 
-            deviceId, username, true, true, false);
+            deviceId, username);
     }
 
     public string GetMeetingInfoPermission(string meetingNumber)
