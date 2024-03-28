@@ -395,8 +395,6 @@ namespace SugarTalk.Core.Services.Meetings
         public async Task ConnectUserToMeetingAsync(
             UserAccountDto user, MeetingDto meeting, bool? isMuted = null, CancellationToken cancellationToken = default)
         {
-            meeting.UserSessions = meeting.UserSessions.Where(x => x.OnlineType == MeetingUserSessionOnlineType.Online).ToList();
-            
             var userSession = meeting.UserSessions
                 .Where(x => x.UserId == user.Id)
                 .OrderByDescending(x => x.CreatedDate)
@@ -420,7 +418,7 @@ namespace SugarTalk.Core.Services.Meetings
                 
                 meeting.MeetingTokenFromLiveKit = user.Issuer switch
                 {
-                    UserAccountIssuer.Guest => _liveKitServerUtilService.GenerateTokenForGuest(user.UserName, addUserSession.GuestName, meeting.MeetingNumber),
+                    UserAccountIssuer.Guest => _liveKitServerUtilService.GenerateTokenForGuest(addUserSession.GuestName, addUserSession.GuestName, meeting.MeetingNumber),
                     UserAccountIssuer.Self or UserAccountIssuer.Wiltechs => _liveKitServerUtilService.GenerateTokenForJoinMeeting(user, meeting.MeetingNumber),
                     _ => throw new ArgumentOutOfRangeException()
                 };
@@ -453,7 +451,7 @@ namespace SugarTalk.Core.Services.Meetings
 
                 meeting.MeetingTokenFromLiveKit = user.Issuer switch
                 {
-                    UserAccountIssuer.Guest => _liveKitServerUtilService.GenerateTokenForGuest(user.UserName, updateUserSession.GuestName, meeting.MeetingNumber),
+                    UserAccountIssuer.Guest => _liveKitServerUtilService.GenerateTokenForGuest(updateUserSession.GuestName, updateUserSession.GuestName, meeting.MeetingNumber),
                     UserAccountIssuer.Self or UserAccountIssuer.Wiltechs => _liveKitServerUtilService.GenerateTokenForJoinMeeting(user, meeting.MeetingNumber),
                     _ => throw new ArgumentOutOfRangeException()
                 };

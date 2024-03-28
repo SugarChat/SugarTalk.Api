@@ -73,7 +73,7 @@ public class LiveKitServerUtilService : ILiveKitServerUtilService
         Log.Information("GenerateTokenForJoinMeeting: meetingNumber: {meetingNumber}, userId: {deviceId}, username: {username}", meetingNumber, user.Id, user.UserName);
         
         return generateAccessToken.JoinMeeting(
-            meetingNumber, _liveKitServerSetting.Apikey, _liveKitServerSetting.ApiSecret, user.Id.ToString(), user.UserName);
+            meetingNumber, _liveKitServerSetting.Apikey, _liveKitServerSetting.ApiSecret, user.UserName, user.UserName);
     }
 
     public string GenerateTokenForRecordMeeting(UserAccountDto user, string meetingNumber)
@@ -94,7 +94,7 @@ public class LiveKitServerUtilService : ILiveKitServerUtilService
         
         return generateAccessToken.JoinMeeting(
             meetingNumber, _liveKitServerSetting.Apikey, _liveKitServerSetting.ApiSecret, 
-            deviceId, username, true, true, false);
+            deviceId, username);
     }
 
     public string GetMeetingInfoPermission(string meetingNumber)
