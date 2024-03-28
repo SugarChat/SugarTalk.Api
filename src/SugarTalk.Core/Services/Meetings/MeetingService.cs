@@ -534,7 +534,8 @@ namespace SugarTalk.Core.Services.Meetings
                     MeetingId = command.MeetingId,
                     VoiceId = command.VoiceId,
                     VoiceName = command.VoiceName,
-                    Gender = command.Gender,
+                    Speed = command.Speed,
+                    Transpose = command.Transpose,
                     SelfLanguage = command.SelfLanguage,
                     ListeningLanguage = command.ListeningLanguage,
                 }, true, cancellationToken).ConfigureAwait(false);
@@ -551,10 +552,11 @@ namespace SugarTalk.Core.Services.Meetings
                 {
                     roomSetting.VoiceId = command.VoiceId;
                     roomSetting.VoiceName = command.VoiceName;
-                    roomSetting.Gender = command.Gender;
                     roomSetting.SelfLanguage = command.SelfLanguage;
                     roomSetting.ListeningLanguage = command.ListeningLanguage;
                     roomSetting.IsSystem = command.IsSystem;
+                    roomSetting.Speed = command.Speed;
+                    roomSetting.Transpose = command.Transpose;
 
                     await _meetingDataProvider.UpdateMeetingChatRoomSettingAsync(roomSetting, true, cancellationToken).ConfigureAwait(false);
                 }
