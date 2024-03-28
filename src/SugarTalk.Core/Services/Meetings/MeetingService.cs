@@ -287,7 +287,7 @@ namespace SugarTalk.Core.Services.Meetings
             await _meetingDataProvider.AddMeetingChatRoomSettingAsync(new MeetingChatRoomSetting
             {
                 IsSystem = true,
-                UserId = user.Id,
+                UserId = userSetting.UserId,
                 MeetingId = meeting.Id,
                 VoiceId = userSetting.TargetLanguageType switch
                 {
