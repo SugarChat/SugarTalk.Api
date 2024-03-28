@@ -7,7 +7,6 @@ using System.Collections.Generic;
 using SugarTalk.Core.Domain.Meeting;
 using System.Text.RegularExpressions;
 using Newtonsoft.Json;
-using Smarties.Messages.Extensions;
 using SugarTalk.Messages.Commands.Speech;
 using SugarTalk.Messages.Requests.Speech;
 using SugarTalk.Messages.Dto.Meetings.Speech;
@@ -281,7 +280,6 @@ public partial class MeetingService
                 SpeechId = speech.Id,
                 IsSelf = false,
                 VoiceId = roomSetting.VoiceId,
-                VoiceLanguage = roomSetting.ListeningLanguage,
                 GenerationStatus = ChatRecordGenerationStatus.InProgress
             }).ToList();
         
@@ -314,10 +312,9 @@ public partial class MeetingService
     
         var meetingRecord = new MeetingChatVoiceRecord
         {
-            SpeechId = meetingSpeech.Id,
             IsSelf = true,
+            SpeechId = meetingSpeech.Id,
             VoiceId = roomSetting.VoiceId,
-            VoiceLanguage = roomSetting.ListeningLanguage,
             GenerationStatus = ChatRecordGenerationStatus.InProgress
         };
 
@@ -341,14 +338,7 @@ public partial class MeetingService
         }
         else
         {
-            var voiceUrl = roomSetting.ListeningLanguage switch
-            {
-                SpeechTargetLanguageType.Cantonese or SpeechTargetLanguageType.Korean or SpeechTargetLanguageType.Spanish =>
-                    GenerateSpeechToInferenceCantonAsync(meetingChatVoiceRecord, roomSetting, meetingSpeech, cancellationToken).Result,
-                SpeechTargetLanguageType.Mandarin or SpeechTargetLanguageType.English =>
-                    GenerateSpeechToInferenceMandarinAsync(meetingChatVoiceRecord, roomSetting, meetingSpeech, cancellationToken).Result,
-                _ => throw new NotSupportedException(nameof(roomSetting.ListeningLanguage))
-            };
+            var voiceUrl = await ProcessSpeechReasoningAsync(meetingChatVoiceRecord, roomSetting, meetingSpeech, cancellationToken).ConfigureAwait(false);
 
             meetingChatVoiceRecord.VoiceUrl = voiceUrl; 
         
@@ -361,37 +351,17 @@ public partial class MeetingService
         }
     }
     
-    private async Task<string> GenerateSpeechToInferenceCantonAsync(
+    private async Task<string> ProcessSpeechReasoningAsync(
         MeetingChatVoiceRecord meetingChatVoiceRecord, MeetingChatRoomSetting roomSetting, MeetingSpeech meetingSpeech, CancellationToken cancellationToken)
     {
-        var response = await _speechClient.SpeechToInferenceCantonAsync(new SpeechToInferenceCantonDto
+        var response = await _speechClient.SpeechInferenceAsync(new SpeechInferenceDto
         {
-            Text = meetingSpeech.OriginalText,
             Name = roomSetting.VoiceName,
-            VoiceId = meetingChatVoiceRecord.VoiceId,
-            ResponseFormat = "url",
-            Gender = roomSetting.Gender.GetDescription(),
-            Language = roomSetting.ListeningLanguage switch
-            {
-                SpeechTargetLanguageType.Cantonese => "canton",
-                SpeechTargetLanguageType.Spanish => "korean",
-                SpeechTargetLanguageType.Korean => "spanish"
-            }
-        }, cancellationToken).ConfigureAwait(false);
-
-        Log.Information("Get speech to inference canton {@Response}", response);
-        
-        return response?.Result?.Url;
-    }
-
-    private async Task<string> GenerateSpeechToInferenceMandarinAsync(
-        MeetingChatVoiceRecord meetingChatVoiceRecord, MeetingChatRoomSetting roomSetting, MeetingSpeech meetingSpeech, CancellationToken cancellationToken)
-    {
-        var response = await _speechClient.SpeechToInferenceMandarinAsync(new SpeechToInferenceMandarinDto
-        {
             Text = meetingSpeech.OriginalText,
-            UserName = roomSetting.VoiceName,
-            VoiceId = meetingChatVoiceRecord.VoiceId
+            LanguageId = int.Parse(meetingChatVoiceRecord.VoiceId),
+            Transpose = roomSetting.Transpose,
+            Speed = roomSetting.Speed,
+            ResponseFormat = "url"
         }, cancellationToken).ConfigureAwait(false);
 
         Log.Information("Get speech to inference mandarin {@Response}", response);

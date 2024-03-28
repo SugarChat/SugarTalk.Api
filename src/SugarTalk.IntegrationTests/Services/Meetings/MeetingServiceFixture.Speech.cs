@@ -261,8 +261,10 @@ public partial class MeetingServiceFixture
         });
     }
 
-    [Fact]
-    public async Task CanGetMeetingChatVoiceRecord()
+    [Theory]
+    [InlineData(false, "我是ea产生的voiceUrl")]
+    [InlineData(true, "我是系统音色产生的voiceUrl")]
+    public async Task CanGetMeetingChatVoiceRecord(bool isSystem, string voiceUrl)
     {
         var meetingId = Guid.NewGuid();
         var now = DateTimeOffset.Now;
@@ -272,9 +274,11 @@ public partial class MeetingServiceFixture
             Id = 1,
             MeetingId = meetingId,
             UserId = 1,
-            VoiceId = "I'm voice id from room setting",
+            IsSystem = isSystem,
+            VoiceId = "123",
             VoiceName = "小李的voice",
-            Gender = EchoAvatarGenderVoiceType.Female,
+            Transpose = 1,
+            Speed = 2,
             SelfLanguage = SpeechTargetLanguageType.English,
             ListeningLanguage = SpeechTargetLanguageType.Cantonese
         };
@@ -311,34 +315,21 @@ public partial class MeetingServiceFixture
             CreatedDate = DateTimeOffset.Now.AddSeconds(-500)
         };
         
-        var account = new UserAccount
-        {
-            Id = 1,
-            UserName = "lizzie",
-            Password = "123456".ToSha256(),
-            Issuer = UserAccountIssuer.Guest
-        };
-
         var meetingUserSession = new MeetingUserSession
         {
             MeetingId = meetingId,
-            UserId = account.Id,
+            UserId = 1
         };
 
         var meetingTable = new Meeting()
         {
             Id = meetingId,
             MeetingNumber = "99999",
-            MeetingMasterUserId = account.Id,
+            MeetingMasterUserId = 1,
             StartDate = now.ToUnixTimeMilliseconds(),
             EndDate = now.ToUnixTimeMilliseconds() + 3600,
             OriginAddress = "test",
         };
-
-        var meeting = await _meetingUtil.ScheduleMeeting();
-
-        await _meetingUtil.JoinMeeting(meeting.Data.MeetingNumber);
-        await _meetingUtil.JoinMeetingByUserAsync(account, meeting.Data.MeetingNumber);
 
         await RunWithUnitOfWork<IRepository>(async repository =>
         {
@@ -361,7 +352,6 @@ public partial class MeetingServiceFixture
 
             response.Data.Count.ShouldBe(2);
             response.Data.First().MeetingId.ShouldBe(meetingId);
-            response.Data.First().UserId.ShouldBe(account.Id);
             response.Data[0].OriginalText.ShouldBe("你好呀");
             response.Data[0].VoiceRecord.VoiceUrl.ShouldBe("test.url");
             response.Data.First().UserName.ShouldBe("TEST_USER");
@@ -370,21 +360,25 @@ public partial class MeetingServiceFixture
                 .QueryNoTracking<MeetingChatVoiceRecord>().ToListAsync();
             
             voiceRecord.Count.ShouldBe(2);
+            voiceRecord[0].VoiceUrl.ShouldBe(voiceUrl);
             voiceRecord[0].TranslatedText.ShouldBe("你好呀");
+            voiceRecord[1].VoiceUrl.ShouldBe("test.url");
 
         }, builder =>
         {
             var speechClient = Substitute.For<ISpeechClient>();
 
-            speechClient.SpeechToInferenceCantonAsync(Arg.Any<SpeechToInferenceCantonDto>(), CancellationToken.None)
-                .Returns(new SpeechToInferenceCantonResponseDto
+            speechClient.SpeechInferenceAsync(Arg.Any<SpeechInferenceDto>(), CancellationToken.None)
+                .Returns(new SpeechInferenceResponseDto
                 {
-                    Result = new SpeechToInferenceCantonResultDto { Url = "hhhhh"}
+                    Result = new SpeechInferenceResultDto { Url = "我是ea产生的voiceUrl"}
                 });
-            
-            speechClient.TranslateTextAsync
-                (Arg.Any<TextTranslationDto>(), CancellationToken.None)
+          
+            speechClient.TranslateTextAsync(Arg.Any<TextTranslationDto>(), CancellationToken.None)
                 .Returns(new SpeechResponseDto { Result = "你好呀" });
+
+            speechClient.GetAudioFromTextAsync(Arg.Any<TextToSpeechDto>(), CancellationToken.None)
+                .Returns(new SpeechResponseDto { Result = "我是系统音色产生的voiceUrl" });
             
             builder.RegisterInstance(speechClient);
         });
