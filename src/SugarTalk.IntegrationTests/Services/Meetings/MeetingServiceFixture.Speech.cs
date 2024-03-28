@@ -9,9 +9,7 @@ using Microsoft.EntityFrameworkCore;
 using NSubstitute;
 using Shouldly;
 using SugarTalk.Core.Data;
-using SugarTalk.Core.Domain.Account;
 using SugarTalk.Core.Domain.Meeting;
-using SugarTalk.Core.Extensions;
 using SugarTalk.Core.Services.Http.Clients;
 using SugarTalk.Core.Services.LiveKit;
 using SugarTalk.Core.Services.OpenAi;
@@ -59,7 +57,7 @@ public partial class MeetingServiceFixture
             
             var meetingChatVoiceRecord = await repository.QueryNoTracking<MeetingChatVoiceRecord>().SingleAsync(CancellationToken.None);
             
-            meetingChatVoiceRecord.VoiceUrl.ShouldBe("hhhhh");
+            meetingChatVoiceRecord.VoiceUrl.ShouldBe("我是ea产生的voiceUrl");
             meetingChatVoiceRecord.TranslatedText.ShouldBe("translated_text");
             meetingChatVoiceRecord.GenerationStatus.ShouldBe(ChatRecordGenerationStatus.Completed);
         }, builder =>
@@ -76,10 +74,10 @@ public partial class MeetingServiceFixture
             speechClient.GetAudioFromTextAsync(Arg.Any<TextToSpeechDto>(), CancellationToken.None)
                 .Returns(new SpeechResponseDto { Result = "text.url" });
             
-            speechClient.SpeechToInferenceMandarinAsync(Arg.Any<SpeechToInferenceMandarinDto>(), CancellationToken.None)
-                .Returns(new SpeechToInferenceMandarinResponseDto
+            speechClient.SpeechInferenceAsync(Arg.Any<SpeechInferenceDto>(), CancellationToken.None)
+                .Returns(new SpeechInferenceResponseDto
                 {
-                    Result = new SpeechToInferenceResultDto { Url = "hhhhh"}
+                    Result = new SpeechInferenceResultDto { Url = "我是ea产生的voiceUrl"}
                 });
 
             builder.RegisterInstance(speechClient);
