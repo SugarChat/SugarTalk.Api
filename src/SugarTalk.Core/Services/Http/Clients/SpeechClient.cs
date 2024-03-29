@@ -21,6 +21,7 @@ public interface ISpeechClient : IScopedDependency
 
     Task<SpeechToInferenceMandarinResponseDto> SpeechToInferenceMandarinAsync(SpeechToInferenceMandarinDto speechToInference, CancellationToken cancellationToken);
 
+    Task<SpeechInferenceResponseDto> SpeechInferenceAsync(SpeechInferenceDto speechInference, CancellationToken cancellationToken);
 }
 
 public class SpeechClient : ISpeechClient
@@ -88,5 +89,14 @@ public class SpeechClient : ISpeechClient
 
         return await _httpClientFactory.PostAsJsonAsync<SpeechToInferenceMandarinResponseDto>(
             $"{_speechSettings.EchoAvatar.BaseUrl}/api/speech/ptts/inference/mandarin", speechToInference, cancellationToken, headers: _echoAvatarHeader).ConfigureAwait(false);
+    }
+
+    public async Task<SpeechInferenceResponseDto> SpeechInferenceAsync(SpeechInferenceDto speechInference, CancellationToken cancellationToken)
+    {
+        Log.Information("SugarTalk Speech Inference:{SpeechInference}", JsonConvert.SerializeObject(speechInference));
+    
+        return await _httpClientFactory
+            .PostAsJsonAsync<SpeechInferenceResponseDto>(
+                $"{_speechSettings.EchoAvatar.BaseUrl}/api/speech/ptts", speechInference, cancellationToken, headers: _echoAvatarHeader).ConfigureAwait(false);
     }
 }
