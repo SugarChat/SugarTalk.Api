@@ -228,6 +228,8 @@ namespace SugarTalk.Core.Services.Meetings
                 session.UserName = user.UserName;
             }
 
+            await Task.Delay(100);
+
             return userSessions;
         }
         

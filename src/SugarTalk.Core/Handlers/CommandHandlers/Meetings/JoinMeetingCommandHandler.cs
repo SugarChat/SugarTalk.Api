@@ -3,10 +3,12 @@ using System.Threading.Tasks;
 using Mediator.Net.Context;
 using Mediator.Net.Contracts;
 using SugarTalk.Core.Services.Meetings;
+using SugarTalk.Messages.Attributes;
 using SugarTalk.Messages.Commands.Meetings;
 
 namespace SugarTalk.Core.Handlers.CommandHandlers.Meetings
 {
+    [AllowGuestAccess]
     public class JoinMeetingCommandHandler : ICommandHandler<JoinMeetingCommand, JoinMeetingResponse>
     {
         private readonly IMeetingService _meetingService;

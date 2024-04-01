@@ -395,11 +395,8 @@ namespace SugarTalk.Core.Services.Meetings
         public async Task ConnectUserToMeetingAsync(
             UserAccountDto user, MeetingDto meeting, bool? isMuted = null, CancellationToken cancellationToken = default)
         {
-            meeting.UserSessions = meeting.UserSessions.Where(x => x.OnlineType == MeetingUserSessionOnlineType.Online).ToList();
-            
             var userSession = meeting.UserSessions
                 .Where(x => x.UserId == user.Id)
-                .OrderByDescending(x => x.CreatedDate)
                 .Select(x => _mapper.Map<MeetingUserSession>(x))
                 .FirstOrDefault();
 
@@ -412,7 +409,7 @@ namespace SugarTalk.Core.Services.Meetings
                 var addUserSession = _mapper.Map<MeetingUserSessionDto>(userSession);
                 addUserSession.UserName = user.UserName;
 
-                if (user.Issuer == UserAccountIssuer.Guest) HandleGuestNameForUserSession(meeting, addUserSession);
+                if (user.Issuer == UserAccountIssuer.Guest) HandleGuestNameForUserSession(meeting, false, addUserSession);
 
                 Log.Information("ConnectUserToMeetingAsync: addUserSession:{addUserSession}", addUserSession);
 
@@ -447,10 +444,10 @@ namespace SugarTalk.Core.Services.Meetings
                     updateUserSession.IsMeetingMaster = true;
                 }
                 
-                if (user.Issuer == UserAccountIssuer.Guest) HandleGuestNameForUserSession(meeting, updateUserSession);
+                if (user.Issuer == UserAccountIssuer.Guest) HandleGuestNameForUserSession(meeting, true, updateUserSession);
                 
                 meeting.UpdateUserSession(updateUserSession);
-
+                
                 meeting.MeetingTokenFromLiveKit = user.Issuer switch
                 {
                     UserAccountIssuer.Guest => _liveKitServerUtilService.GenerateTokenForGuest(user.UserName, updateUserSession.GuestName, meeting.MeetingNumber),
@@ -846,17 +843,40 @@ namespace SugarTalk.Core.Services.Meetings
                 throw new CannotUpdateMeetingWhenMasterUserIdMismatchException();
         }
 
-        private void HandleGuestNameForUserSession(MeetingDto meeting, MeetingUserSessionDto userSession)
+        private void HandleGuestNameForUserSession(MeetingDto meeting, bool isUpdate, MeetingUserSessionDto userSession)
         {
-            var guestCount = meeting.UserSessions.Count(x => !string.IsNullOrEmpty(x.GuestName));
-            
-            var index = guestCount > 0 ? meeting.UserSessions
-                    .Where(x => !string.IsNullOrEmpty(x.GuestName))
-                    .Select(x => x.GuestName.Substring("Anonymity".Length))
-                    .Select(x => int.TryParse(x, out int result) ? result : 0)
-                    .Max() + 1 : 1;
+            if (!isUpdate)
+            {
+                var guestCount = meeting.UserSessions.Count(x => !string.IsNullOrEmpty(x.GuestName));
 
-            userSession.GuestName = $"Anonymity{index}";
+                var index = guestCount > 0 ? meeting.UserSessions
+                        .Where(x => !string.IsNullOrEmpty(x.GuestName))
+                        .Select(x => x.GuestName.Substring("Anonymity".Length))
+                        .Select(x => int.TryParse(x, out int result) ? result : 0)
+                        .Max() + 1 : 1;
+
+                userSession.GuestName = $"Anonymity{index}";
+            }
+            else
+            {
+                var guests = meeting.UserSessions.Where(x => !string.IsNullOrEmpty(x.GuestName)).ToList();
+                
+                var guestCount = guests.Count;
+
+                var origin = meeting.UserSessions.FirstOrDefault(x => x.Id == userSession.Id);
+
+                int.TryParse(origin?.GuestName.Substring("Anonymity".Length), out var index);
+                
+                foreach (var guest in guests)
+                {
+                    int.TryParse(guest.GuestName.AsSpan("Anonymity".Length), out int serialNumber);
+
+                    if (serialNumber > index)
+                        guest.GuestName = $"Anonymity{serialNumber - 1}";
+                }
+
+                userSession.GuestName = $"Anonymity{guestCount}";
+            }
         }
     }
 }
