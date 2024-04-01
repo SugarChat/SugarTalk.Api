@@ -89,6 +89,8 @@ namespace SugarTalk.Core.Services.Meetings
         Task<AppointmentMeetingCanceledEvent> CancelAppointmentMeetingAsync(CancelAppointmentMeetingCommand command, CancellationToken cancellationToken);
         
         Task<GetMeetingInviteInfoResponse> GetMeetingInviteInfoAsync(GetMeetingInviteInfoRequest request, CancellationToken cancellationToken);
+        
+        Task<UpdateInProcessMeetingResponse> UpdateMeetingChatResponseAsync(UpdateInProcessMeetingCommand command, CancellationToken cancellationToken);
     }
     
     public partial class MeetingService : IMeetingService
@@ -466,7 +468,7 @@ namespace SugarTalk.Core.Services.Meetings
             
             var meeting = await _meetingDataProvider.GetMeetingByIdAsync(command.Id, cancellationToken).ConfigureAwait(false);
 
-            ValidateMeetingUpdateConditions(meeting, user);
+            ValidateMeetingUpdateConditions(meeting, user, CurrentMeetingStatus.Pending);
 
             var updateMeeting = _mapper.Map(command, meeting);
             updateMeeting.Password = command.SecurityCode;
@@ -608,6 +610,22 @@ namespace SugarTalk.Core.Services.Meetings
             {
                 Data = _mapper.Map<MeetingUserSettingDto>(userSettings.FirstOrDefault())
             };
+        }
+
+        public async Task<UpdateInProcessMeetingResponse> UpdateMeetingChatResponseAsync(
+            UpdateInProcessMeetingCommand command, CancellationToken cancellationToken)
+        {
+            var user = await _accountDataProvider.CheckCurrentLoggedInUser(cancellationToken).ConfigureAwait(false);
+            
+            var meeting = await _meetingDataProvider.GetMeetingByIdAsync(command.Id, cancellationToken).ConfigureAwait(false);
+
+            ValidateMeetingUpdateConditions(meeting, user, CurrentMeetingStatus.Inprogress);
+
+            meeting.IsEa = command.IsEa;
+            
+            await _meetingDataProvider.UpdateMeetingAsync(meeting, cancellationToken).ConfigureAwait(false);
+
+            return new UpdateInProcessMeetingResponse();
         }
 
         private async Task<Meeting> GenerateMeetingInfoFromThirdPartyServicesAsync(string meetingNumber, CancellationToken cancellationToken)
@@ -832,13 +850,16 @@ namespace SugarTalk.Core.Services.Meetings
             userSession.CumulativeTime = (userSession.CumulativeTime ?? 0) + (userSession.LastQuitTime - lastQuitTimeBeforeChange);
         }
         
-        private void ValidateMeetingUpdateConditions(Meeting meeting, UserAccountDto currentUser)
+        private void ValidateMeetingUpdateConditions(Meeting meeting, UserAccountDto currentUser, CurrentMeetingStatus currentMeetingStatus)
         {
             if (meeting is null) 
                 throw new MeetingNotFoundException();
             
-            if (meeting.Status != MeetingStatus.Pending && meeting.Status != MeetingStatus.InProgress) 
+            if (meeting.Status != MeetingStatus.Pending && currentMeetingStatus == CurrentMeetingStatus.Pending) 
                 throw new CannotUpdateMeetingWhenStatusNotPendingException();
+
+            if (meeting.Status != MeetingStatus.InProgress && currentMeetingStatus == CurrentMeetingStatus.Inprogress)
+                throw new CannotUpdateMeetingWhenStatusNotInProgressException();
             
             Log.Information("Meeting master userId:{masterId}, current userId{currentUserId}", meeting.MeetingMasterUserId, _currentUser.Id.Value);
             

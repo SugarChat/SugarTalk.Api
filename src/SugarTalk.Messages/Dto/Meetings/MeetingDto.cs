@@ -120,6 +120,4 @@ public class AddOrUpdateMeetingDto
     public bool IsMuted { get; set; } = false;
     
     public bool IsRecorded { get; set; } = false;
-
-    public bool IsEa { get; set; } = false;
 }
