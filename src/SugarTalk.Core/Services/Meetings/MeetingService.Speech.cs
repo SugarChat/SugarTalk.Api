@@ -338,7 +338,7 @@ public partial class MeetingService
         }
         else
         {
-            var voiceUrl = await ProcessSpeechReasoningAsync(meetingChatVoiceRecord, roomSetting, meetingSpeech, cancellationToken).ConfigureAwait(false);
+            var voiceUrl = await ProcessSpeechInferenceAsync(meetingChatVoiceRecord, roomSetting, meetingSpeech, cancellationToken).ConfigureAwait(false);
 
             meetingChatVoiceRecord.VoiceUrl = voiceUrl; 
         
@@ -351,7 +351,7 @@ public partial class MeetingService
         }
     }
     
-    private async Task<string> ProcessSpeechReasoningAsync(
+    private async Task<string> ProcessSpeechInferenceAsync(
         MeetingChatVoiceRecord meetingChatVoiceRecord, MeetingChatRoomSetting roomSetting, MeetingSpeech meetingSpeech, CancellationToken cancellationToken)
     {
         var response = await _speechClient.SpeechInferenceAsync(new SpeechInferenceDto
