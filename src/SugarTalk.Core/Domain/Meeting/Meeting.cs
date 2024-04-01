@@ -64,4 +64,7 @@ public class Meeting : IEntity
 
     [Column("is_recorded")] 
     public bool IsRecorded { get; set; }
+
+    [Column("is_ea")]
+    public bool IsEa { get; set; }
 }

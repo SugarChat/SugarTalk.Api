@@ -837,7 +837,7 @@ namespace SugarTalk.Core.Services.Meetings
             if (meeting is null) 
                 throw new MeetingNotFoundException();
             
-            if (meeting.Status != MeetingStatus.Pending) 
+            if (meeting.Status != MeetingStatus.Pending && meeting.Status != MeetingStatus.InProgress) 
                 throw new CannotUpdateMeetingWhenStatusNotPendingException();
             
             Log.Information("Meeting master userId:{masterId}, current userId{currentUserId}", meeting.MeetingMasterUserId, _currentUser.Id.Value);
