@@ -330,6 +330,11 @@ namespace SugarTalk.Core.Services.Meetings
             {
                 return;
             }
+
+            if (meeting.AppointmentType == MeetingAppointmentType.Quick && (meeting.Status == MeetingStatus.Pending || meeting.Status == MeetingStatus.InProgress))
+            {
+                return;
+            }
     
             throw new CannotJoinMeetingWhenMeetingClosedException();
         }

@@ -617,28 +617,38 @@ namespace SugarTalk.Core.Services.Meetings
                 .FirstOrDefaultAsync(x => x.Id == meetingId, cancellationToken).ConfigureAwait(false);
 
             if (meeting is null) throw new MeetingNotFoundException();
+            
+            var attendingUserSessionsExceptCurrentUser = await _repository.QueryNoTracking<MeetingUserSession>()
+                .Where(x => x.MeetingId == meetingId && x.UserId != userId)
+                .Where(x => x.MeetingSubId == null || x.MeetingSubId == meetingSubId)
+                .Where(x => x.Status == MeetingAttendeeStatus.Present && x.OnlineType == MeetingUserSessionOnlineType.Online)
+                .ToListAsync(cancellationToken).ConfigureAwait(false);
 
-            if (meeting.AppointmentType == MeetingAppointmentType.Appointment)
+            if (attendingUserSessionsExceptCurrentUser is { Count: > 0 }) return;
+            
+            meeting.Status = MeetingStatus.InProgress;
+
+            switch (meeting.AppointmentType)
             {
-                var attendingUserSessionsExceptCurrentUser = await _repository.QueryNoTracking<MeetingUserSession>()
-                    .Where(x => x.MeetingId == meetingId && x.UserId != userId)
-                    .Where(x => x.MeetingSubId == null || x.MeetingSubId == meetingSubId)
-                    .Where(x => x.Status == MeetingAttendeeStatus.Present && x.OnlineType == MeetingUserSessionOnlineType.Online)
-                    .ToListAsync(cancellationToken).ConfigureAwait(false);
-
-                if (attendingUserSessionsExceptCurrentUser is { Count: > 0 }) return;
-                
-                meeting.Status = MeetingStatus.InProgress;
-
-                if (_clock.Now < DateTimeOffset.FromUnixTimeSeconds(meeting.StartDate))
-                {
-                    meeting.Status = MeetingStatus.Pending;
-                }
-
-                if (_clock.Now > DateTimeOffset.FromUnixTimeSeconds(meeting.EndDate))
-                {
+                case MeetingAppointmentType.Quick:
                     meeting.Status = MeetingStatus.Completed;
+                    break;
+                case MeetingAppointmentType.Appointment:
+                {
+                    if (_clock.Now < DateTimeOffset.FromUnixTimeSeconds(meeting.StartDate))
+                    {
+                        meeting.Status = MeetingStatus.Pending;
+                    }
+
+                    if (_clock.Now > DateTimeOffset.FromUnixTimeSeconds(meeting.EndDate))
+                    {
+                        meeting.Status = MeetingStatus.Completed;
+                    }
+
+                    break;
                 }
+               
+                default: throw new ArgumentOutOfRangeException();
             }
 
             await _unitOfWork.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
