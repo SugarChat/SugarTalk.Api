@@ -997,7 +997,7 @@ public partial class MeetingServiceFixture : MeetingFixtureBase
         
         await _meetingUtil.JoinMeetingByUserAsync(testUser3, meeting.Data.MeetingNumber);
         
-        await RunWithUnitOfWork<IMediator, IRepository>(async (mediator, response) =>
+        await RunWithUnitOfWork<IMediator>(async mediator =>
         {
             var response1 = await mediator.RequestAsync<GetMeetingByNumberRequest, GetMeetingByNumberResponse>(
                 new GetMeetingByNumberRequest
@@ -1033,7 +1033,7 @@ public partial class MeetingServiceFixture : MeetingFixtureBase
             response3.Data.UserSessions.Single(x => x.UserName == testUser4.UserName).GuestName.ShouldBe("Anonymity4");
 
             await _meetingUtil.JoinMeetingByUserAsync(testUser2, meeting.Data.MeetingNumber);
-            
+
             var response4 = await mediator.RequestAsync<GetMeetingByNumberRequest, GetMeetingByNumberResponse>(
                 new GetMeetingByNumberRequest
                 {
@@ -1041,9 +1041,7 @@ public partial class MeetingServiceFixture : MeetingFixtureBase
                 });
             
             response4.Data.UserSessions.Count.ShouldBe(5);
-            response4.Data.UserSessions.Single(x => x.UserName == testUser2.UserName).GuestName.ShouldBe("Anonymity4");
-            response4.Data.UserSessions.Single(x => x.UserName == testUser3.UserName).GuestName.ShouldBe("Anonymity2");
-            response4.Data.UserSessions.Single(x => x.UserName == testUser4.UserName).GuestName.ShouldBe("Anonymity3");
+            response4.Data.UserSessions.Single(x => x.UserName == testUser2.UserName).GuestName.ShouldBe("Anonymity5");
         }, MockLiveKitService);
     }
 

@@ -210,8 +210,6 @@ namespace SugarTalk.Core.Services.Meetings
         private async Task<List<MeetingUserSessionDto>> EnrichMeetingUserSessionsByOnlineAsync(
             List<MeetingUserSessionDto> userSessions, CancellationToken cancellationToken)
         {
-            var anonymityCounter = 1;
-            
             var userIds = userSessions.Select(x => x.UserId);
 
             var userAccounts = await _repository
@@ -219,17 +217,13 @@ namespace SugarTalk.Core.Services.Meetings
 
             var userAccountsDict = userAccounts.ToDictionary(x => x.Id, x => x);
 
-            foreach (var session in userSessions.OrderBy(x => x.LastJoinTime))
+            foreach (var session in userSessions)
             {
                 if (!userAccountsDict.TryGetValue(session.UserId, out var user)) continue;
 
-                if (user.Issuer == UserAccountIssuer.Guest) session.GuestName = $"Anonymity{anonymityCounter++}";
-
                 session.UserName = user.UserName;
             }
-
-            await Task.Delay(100);
-
+            
             return userSessions;
         }
         

@@ -404,12 +404,12 @@ namespace SugarTalk.Core.Services.Meetings
             {
                 userSession = GenerateNewUserSessionFromUser(user, meeting.Id, meeting.MeetingSubId, isMuted ?? false);
                 
+                if (user.Issuer == UserAccountIssuer.Guest) HandleGuestNameForUserSession(meeting, userSession);
+                
                 await _meetingDataProvider.AddMeetingUserSessionAsync(userSession, cancellationToken).ConfigureAwait(false);
 
                 var addUserSession = _mapper.Map<MeetingUserSessionDto>(userSession);
                 addUserSession.UserName = user.UserName;
-
-                if (user.Issuer == UserAccountIssuer.Guest) HandleGuestNameForUserSession(meeting, false, addUserSession);
 
                 Log.Information("ConnectUserToMeetingAsync: addUserSession:{addUserSession}", addUserSession);
 
@@ -433,6 +433,8 @@ namespace SugarTalk.Core.Services.Meetings
                 userSession.MeetingSubId = meeting.MeetingSubId;
                 userSession.OnlineType = MeetingUserSessionOnlineType.Online;
 
+                if (user.Issuer == UserAccountIssuer.Guest) HandleGuestNameForUserSession(meeting, userSession);
+                
                 await _meetingDataProvider.UpdateMeetingUserSessionAsync(userSession, cancellationToken).ConfigureAwait(false);
 
                 var updateUserSession = _mapper.Map<MeetingUserSessionDto>(userSession);
@@ -444,10 +446,8 @@ namespace SugarTalk.Core.Services.Meetings
                     updateUserSession.IsMeetingMaster = true;
                 }
                 
-                if (user.Issuer == UserAccountIssuer.Guest) HandleGuestNameForUserSession(meeting, true, updateUserSession);
-                
                 meeting.UpdateUserSession(updateUserSession);
-                
+
                 meeting.MeetingTokenFromLiveKit = user.Issuer switch
                 {
                     UserAccountIssuer.Guest => _liveKitServerUtilService.GenerateTokenForGuest(user.UserName, updateUserSession.GuestName, meeting.MeetingNumber),
@@ -843,10 +843,8 @@ namespace SugarTalk.Core.Services.Meetings
                 throw new CannotUpdateMeetingWhenMasterUserIdMismatchException();
         }
 
-        private void HandleGuestNameForUserSession(MeetingDto meeting, bool isUpdate, MeetingUserSessionDto userSession)
+        private void HandleGuestNameForUserSession(MeetingDto meeting, MeetingUserSession userSession)
         {
-            if (!isUpdate)
-            {
                 var guestCount = meeting.UserSessions.Count(x => !string.IsNullOrEmpty(x.GuestName));
 
                 var index = guestCount > 0 ? meeting.UserSessions
@@ -856,27 +854,6 @@ namespace SugarTalk.Core.Services.Meetings
                         .Max() + 1 : 1;
 
                 userSession.GuestName = $"Anonymity{index}";
-            }
-            else
-            {
-                var guests = meeting.UserSessions.Where(x => !string.IsNullOrEmpty(x.GuestName)).ToList();
-                
-                var guestCount = guests.Count;
-
-                var origin = meeting.UserSessions.FirstOrDefault(x => x.Id == userSession.Id);
-
-                int.TryParse(origin?.GuestName.Substring("Anonymity".Length), out var index);
-                
-                foreach (var guest in guests)
-                {
-                    int.TryParse(guest.GuestName.AsSpan("Anonymity".Length), out int serialNumber);
-
-                    if (serialNumber > index)
-                        guest.GuestName = $"Anonymity{serialNumber - 1}";
-                }
-
-                userSession.GuestName = $"Anonymity{guestCount}";
-            }
         }
     }
 }
