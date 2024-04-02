@@ -316,7 +316,7 @@ public partial class MeetingServiceFixture
             Id = 1,
             UserName = "lizzie",
             Password = "123456".ToSha256(),
-            Issuer = UserAccountIssuer.Guest
+            Issuer = UserAccountIssuer.Self
         };
 
         var meetingUserSession = new MeetingUserSession
