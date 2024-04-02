@@ -252,6 +252,7 @@ public partial class MeetingServiceFixture : MeetingFixtureBase
             });
 
             response.Status.ShouldBe(MeetingStatus.Completed);
+            response.EndDate.ShouldBe(DateTimeOffset.Now.ToUnixTimeSeconds());
         }, builder =>
         {
             var openAiService = Substitute.For<IOpenAiService>();
