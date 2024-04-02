@@ -1008,7 +1008,7 @@ public partial class MeetingServiceFixture : MeetingFixtureBase
         
         await _meetingUtil.JoinMeetingByUserAsync(testUser3, meeting.Data.MeetingNumber);
         
-        await Run<IMediator>(async (mediator) =>
+        await Run<IMediator>(async mediator =>
         {
             var response1 = await mediator.RequestAsync<GetMeetingByNumberRequest, GetMeetingByNumberResponse>(
                 new GetMeetingByNumberRequest

@@ -56,4 +56,7 @@ public class MeetingUserSession : IEntity
     
     [Column("online_type")]
     public MeetingUserSessionOnlineType OnlineType { get; set; }
+
+    [Column("guest_Name")]
+    public string GuestName { get; set; }
 }
