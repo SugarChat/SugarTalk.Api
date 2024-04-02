@@ -223,7 +223,7 @@ namespace SugarTalk.Core.Services.Meetings
 
                 session.UserName = user.UserName;
             }
-            
+
             return userSessions;
         }
         

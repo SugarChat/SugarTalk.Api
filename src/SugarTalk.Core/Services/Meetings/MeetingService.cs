@@ -845,15 +845,15 @@ namespace SugarTalk.Core.Services.Meetings
 
         private void HandleGuestNameForUserSession(MeetingDto meeting, MeetingUserSession userSession)
         {
-                var guestCount = meeting.UserSessions.Count(x => !string.IsNullOrEmpty(x.GuestName));
+            var guestCount = meeting.UserSessions.Count(x => !string.IsNullOrEmpty(x.GuestName));
 
-                var index = guestCount > 0 ? meeting.UserSessions
-                        .Where(x => !string.IsNullOrEmpty(x.GuestName))
-                        .Select(x => x.GuestName.Substring("Anonymity".Length))
-                        .Select(x => int.TryParse(x, out int result) ? result : 0)
-                        .Max() + 1 : 1;
+            var index = guestCount > 0 ? meeting.UserSessions
+                    .Where(x => !string.IsNullOrEmpty(x.GuestName))
+                    .Select(x => x.GuestName.Substring("Anonymity".Length))
+                    .Select(x => int.TryParse(x, out int result) ? result : 0)
+                    .Max() + 1 : 1;
 
-                userSession.GuestName = $"Anonymity{index}";
+            userSession.GuestName = $"Anonymity{index}";
         }
     }
 }
