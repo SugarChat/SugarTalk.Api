@@ -44,7 +44,7 @@ public class MeetingUtil : TestUtil
     public async Task<ScheduleMeetingResponse> ScheduleMeeting(
         string title = null, string timezone = null, string securityCode = null,
         DateTimeOffset? startDate = null, DateTimeOffset? endDate = null, DateTimeOffset? utilDate = null,
-        MeetingAppointmentType appointmentType = MeetingAppointmentType.Quick,
+        MeetingAppointmentType appointmentType = MeetingAppointmentType.Appointment,
         MeetingRepeatType repeatType = MeetingRepeatType.None, bool isMuted = false, bool isRecorded = false)
     {
         return await Run<IMediator, ScheduleMeetingResponse>(async (mediator) =>
