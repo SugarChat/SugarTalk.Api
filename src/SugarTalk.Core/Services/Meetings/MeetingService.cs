@@ -170,6 +170,7 @@ namespace SugarTalk.Core.Services.Meetings
             meeting.MeetingStreamMode = MeetingStreamMode.LEGACY;
             meeting.SecurityCode = !string.IsNullOrEmpty(command.SecurityCode) ? command.SecurityCode.ToSha256() : null;
             meeting.Password = command.SecurityCode;
+            meeting.Title = _currentUser.Name + "的快速会议";
 
             // 处理周期性预定会议生成的子会议
             if (command.AppointmentType == MeetingAppointmentType.Appointment)
