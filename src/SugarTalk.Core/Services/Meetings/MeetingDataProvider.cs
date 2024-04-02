@@ -541,7 +541,11 @@ namespace SugarTalk.Core.Services.Meetings
         
         public async Task MarkMeetingAsCompletedAsync(Meeting meeting, CancellationToken cancellationToken)
         {
-            meeting.EndDate = _clock.Now.ToUnixTimeSeconds();
+            if (meeting.AppointmentType == MeetingAppointmentType.Quick)
+            {
+                meeting.EndDate = _clock.Now.ToUnixTimeSeconds();
+            }
+            
             meeting.Status = MeetingStatus.Completed;
             
             await _repository.UpdateAsync(meeting, cancellationToken).ConfigureAwait(false);
