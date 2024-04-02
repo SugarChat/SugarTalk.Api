@@ -170,24 +170,33 @@ namespace SugarTalk.Core.Services.Meetings
             meeting.MeetingStreamMode = MeetingStreamMode.LEGACY;
             meeting.SecurityCode = !string.IsNullOrEmpty(command.SecurityCode) ? command.SecurityCode.ToSha256() : null;
             meeting.Password = command.SecurityCode;
-
-            // 处理周期性预定会议生成的子会议
-            if (command.AppointmentType == MeetingAppointmentType.Appointment)
+            
+            switch (command.AppointmentType)
             {
-                if (command.RepeatType != MeetingRepeatType.None)
-                    await HandleToRepeatMeetingAsync(
-                        meeting.Id,
-                        command.StartDate,
-                        command.EndDate,
-                        command.UtilDate,
-                        command.RepeatType, cancellationToken).ConfigureAwait(false);
-                
-                await _meetingDataProvider.PersistMeetingRepeatRuleAsync(new MeetingRepeatRule
+                case MeetingAppointmentType.Quick:
+                    meeting.Title = _currentUser.Name + "的快速会议";
+                    break;
+                // 处理周期性预定会议生成的子会议
+                case MeetingAppointmentType.Appointment:
                 {
-                    MeetingId = meeting.Id,
-                    RepeatType = command.RepeatType,
-                    RepeatUntilDate = command.UtilDate
-                }, cancellationToken).ConfigureAwait(false);
+                    if (command.RepeatType != MeetingRepeatType.None)
+                        await HandleToRepeatMeetingAsync(
+                            meeting.Id,
+                            command.StartDate,
+                            command.EndDate,
+                            command.UtilDate,
+                            command.RepeatType, cancellationToken).ConfigureAwait(false);
+                
+                    await _meetingDataProvider.PersistMeetingRepeatRuleAsync(new MeetingRepeatRule
+                    {
+                        MeetingId = meeting.Id,
+                        RepeatType = command.RepeatType,
+                        RepeatUntilDate = command.UtilDate
+                    }, cancellationToken).ConfigureAwait(false);
+                    break;
+                }
+                default:
+                    throw new ArgumentOutOfRangeException();
             }
 
             await _meetingDataProvider.PersistMeetingAsync(meeting, cancellationToken).ConfigureAwait(false);

@@ -60,6 +60,17 @@ public partial class MeetingServiceFixture : MeetingFixtureBase
         response.Data.RepeatType.ShouldBe(MeetingRepeatType.Weekly);
         response.Data.MeetingStreamMode.ShouldBe(MeetingStreamMode.LEGACY);
     }
+    
+    [Fact]
+    public async Task CanChangeQuickMeetingTitle()
+    {
+        var response = await _meetingUtil.ScheduleMeeting(timezone: "UTC", appointmentType: MeetingAppointmentType.Quick);
+
+        response.Data.ShouldNotBeNull();
+        response.Data.TimeZone.ShouldBe("UTC");
+        response.Data.Title.ShouldBe("TEST_USER的快速会议");
+        response.Data.MeetingStreamMode.ShouldBe(MeetingStreamMode.LEGACY);
+    }
 
     [Fact]
     public async Task ShouldGetMeeting()
@@ -252,6 +263,7 @@ public partial class MeetingServiceFixture : MeetingFixtureBase
             });
 
             response.Status.ShouldBe(MeetingStatus.Completed);
+            response.EndDate.ShouldBe(DateTimeOffset.Now.ToUnixTimeSeconds());
         }, builder =>
         {
             var openAiService = Substitute.For<IOpenAiService>();
