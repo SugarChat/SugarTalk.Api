@@ -382,7 +382,8 @@ namespace SugarTalk.Core.Services.Meetings
             return new MeetingOutedEvent();
         }
 
-        public async Task HandleMeetingStatusWhenOutMeetingAsync(int userId, Guid meetingId, Guid? meetingSubId = null, CancellationToken cancellationToken = default)
+        public async Task HandleMeetingStatusWhenOutMeetingAsync(
+            int userId, Guid meetingId, Guid? meetingSubId = null, CancellationToken cancellationToken = default)
         {
             var meeting = await _meetingDataProvider.GetMeetingByIdAsync(meetingId, cancellationToken).ConfigureAwait(false);
             
