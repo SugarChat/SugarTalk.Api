@@ -16,10 +16,3 @@ public enum MeetingStatus
     [Description("已取消")]
     Cancelled
 }
-
-public enum CurrentMeetingStatus
-{
-    Pending,
-    
-    Inprogress
-}

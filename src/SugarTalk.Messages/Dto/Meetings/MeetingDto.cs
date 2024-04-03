@@ -86,7 +86,7 @@ public class MeetingBaseDto
     
     public bool IsPasswordEnabled { get; set; } = false;
 
-    public bool IsEa { get; set; } = false;
+    public bool IsActiveEa { get; set; } = false;
 }
 
 public class AddOrUpdateMeetingDto
