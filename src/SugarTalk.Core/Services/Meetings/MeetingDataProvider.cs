@@ -210,8 +210,6 @@ namespace SugarTalk.Core.Services.Meetings
         private async Task<List<MeetingUserSessionDto>> EnrichMeetingUserSessionsByOnlineAsync(
             List<MeetingUserSessionDto> userSessions, CancellationToken cancellationToken)
         {
-            var anonymityCounter = 1;
-            
             var userIds = userSessions.Select(x => x.UserId);
 
             var userAccounts = await _repository
@@ -219,11 +217,9 @@ namespace SugarTalk.Core.Services.Meetings
 
             var userAccountsDict = userAccounts.ToDictionary(x => x.Id, x => x);
 
-            foreach (var session in userSessions.OrderBy(x => x.LastJoinTime))
+            foreach (var session in userSessions)
             {
                 if (!userAccountsDict.TryGetValue(session.UserId, out var user)) continue;
-
-                if (user.Issuer == UserAccountIssuer.Guest) session.GuestName = $"Anonymity{anonymityCounter++}";
 
                 session.UserName = user.UserName;
             }
@@ -541,7 +537,11 @@ namespace SugarTalk.Core.Services.Meetings
         
         public async Task MarkMeetingAsCompletedAsync(Meeting meeting, CancellationToken cancellationToken)
         {
-            // meeting.EndDate = _clock.Now.ToUnixTimeSeconds();
+            if (meeting.AppointmentType == MeetingAppointmentType.Quick)
+            {
+                meeting.EndDate = _clock.Now.ToUnixTimeSeconds();
+            }
+            
             meeting.Status = MeetingStatus.Completed;
             
             await _repository.UpdateAsync(meeting, cancellationToken).ConfigureAwait(false);
