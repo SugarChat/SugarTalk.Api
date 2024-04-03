@@ -89,6 +89,8 @@ namespace SugarTalk.Core.Services.Meetings
         Task<AppointmentMeetingCanceledEvent> CancelAppointmentMeetingAsync(CancelAppointmentMeetingCommand command, CancellationToken cancellationToken);
         
         Task<GetMeetingInviteInfoResponse> GetMeetingInviteInfoAsync(GetMeetingInviteInfoRequest request, CancellationToken cancellationToken);
+        
+        Task HandleMeetingStatusWhenOutMeetingAsync(int userId, Guid meetingId, Guid? meetingSubId = null, CancellationToken cancellationToken = default);
     }
     
     public partial class MeetingService : IMeetingService
@@ -374,12 +376,55 @@ namespace SugarTalk.Core.Services.Meetings
             
             await OutLiveKitExistedUserAsync(userName: _currentUser?.Name, meetingId: command.MeetingId, cancellationToken: cancellationToken).ConfigureAwait(false);
 
-            await _meetingDataProvider.HandleMeetingStatusWhenOutMeetingAsync(
+            await HandleMeetingStatusWhenOutMeetingAsync(
                 userSession.UserId, command.MeetingId, command.MeetingSubId, cancellationToken).ConfigureAwait(false);
 
             return new MeetingOutedEvent();
         }
-        
+
+        public async Task HandleMeetingStatusWhenOutMeetingAsync(int userId, Guid meetingId, Guid? meetingSubId = null, CancellationToken cancellationToken = default)
+        {
+            var meeting = await _meetingDataProvider.GetMeetingByIdAsync(meetingId, cancellationToken).ConfigureAwait(false);
+            
+            if (meeting is null) throw new MeetingNotFoundException();
+            
+            var attendingUserSessionsExceptCurrentUser = 
+                await _meetingDataProvider.GetMeetingUserSessionAsync(meetingId, meetingSubId, cancellationToken).ConfigureAwait(false);
+
+            attendingUserSessionsExceptCurrentUser = attendingUserSessionsExceptCurrentUser
+                .Where(x => x.UserId != userId)
+                .Where(x => x.Status == MeetingAttendeeStatus.Present && x.OnlineType == MeetingUserSessionOnlineType.Online).ToList();
+            
+            if (attendingUserSessionsExceptCurrentUser is { Count: > 0 }) return;
+            
+            meeting.Status = MeetingStatus.InProgress;
+
+            switch (meeting.AppointmentType)
+            {
+                case MeetingAppointmentType.Quick:
+                    meeting.Status = MeetingStatus.Completed;
+                    break;
+                case MeetingAppointmentType.Appointment:
+                {
+                    if (_clock.Now < DateTimeOffset.FromUnixTimeSeconds(meeting.StartDate))
+                    {
+                        meeting.Status = MeetingStatus.Pending;
+                    }
+
+                    if (_clock.Now > DateTimeOffset.FromUnixTimeSeconds(meeting.EndDate))
+                    {
+                        meeting.Status = MeetingStatus.Completed;
+                    }
+
+                    break;
+                }
+               
+                default: throw new ArgumentOutOfRangeException();
+            }
+
+            await _meetingDataProvider.UpdateMeetingAsync(meeting, cancellationToken).ConfigureAwait(false);
+        }
+
         public async Task<MeetingEndedEvent> EndMeetingAsync(EndMeetingCommand command, CancellationToken cancellationToken)
         {
             var meeting = await _meetingDataProvider.GetMeetingAsync(command.MeetingNumber, cancellationToken).ConfigureAwait(false);
