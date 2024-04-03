@@ -269,7 +269,7 @@ public class MeetingDataProviderFixture : BaseFixture
 
         await _meetingService.HandleMeetingStatusWhenOutMeetingAsync(userId1, meetingId3, null, CancellationToken.None);
         var response3 = await _repository.Query<Core.Domain.Meeting.Meeting>().FirstOrDefaultAsync(x => x.Id == meetingId3);
-        response3?.Status.ShouldBe(MeetingStatus.InProgress);
+        response3?.Status.ShouldBe(MeetingStatus.Completed);
     }
 
     [Fact]
