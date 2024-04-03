@@ -7,16 +7,16 @@ using SugarTalk.Messages.Commands.Meetings;
 
 namespace SugarTalk.Core.Handlers.CommandHandlers.Meetings;
 
-public class UpdateInProcessMeetingCommandHandler : ICommandHandler<UpdateInProcessMeetingCommand, UpdateInProcessMeetingResponse>
+public class MeetingSwitchEaCommandHandler : ICommandHandler<MeetingSwitchEaCommand, MeetingSwitchEaResponse>
 {
     private readonly IMeetingService _meetingService;
 
-    public UpdateInProcessMeetingCommandHandler(IMeetingService meetingService)
+    public MeetingSwitchEaCommandHandler(IMeetingService meetingService)
     {
         _meetingService = meetingService;
     }
     
-    public async Task<UpdateInProcessMeetingResponse> Handle(IReceiveContext<UpdateInProcessMeetingCommand> context, CancellationToken cancellationToken)
+    public async Task<MeetingSwitchEaResponse> Handle(IReceiveContext<MeetingSwitchEaCommand> context, CancellationToken cancellationToken)
     {
         return await _meetingService.UpdateMeetingChatResponseAsync(context.Message, cancellationToken).ConfigureAwait(false);
     }

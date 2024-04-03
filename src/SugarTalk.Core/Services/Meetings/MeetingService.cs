@@ -90,7 +90,7 @@ namespace SugarTalk.Core.Services.Meetings
         
         Task<GetMeetingInviteInfoResponse> GetMeetingInviteInfoAsync(GetMeetingInviteInfoRequest request, CancellationToken cancellationToken);
         
-        Task<UpdateInProcessMeetingResponse> UpdateMeetingChatResponseAsync(UpdateInProcessMeetingCommand command, CancellationToken cancellationToken);
+        Task<MeetingSwitchEaResponse> UpdateMeetingChatResponseAsync(MeetingSwitchEaCommand switchEaCommand, CancellationToken cancellationToken);
     }
     
     public partial class MeetingService : IMeetingService
@@ -468,7 +468,7 @@ namespace SugarTalk.Core.Services.Meetings
             
             var meeting = await _meetingDataProvider.GetMeetingByIdAsync(command.Id, cancellationToken).ConfigureAwait(false);
 
-            ValidateMeetingUpdateConditions(meeting, user, CurrentMeetingStatus.Pending);
+            ValidateMeetingUpdateConditions(meeting, user);
 
             var updateMeeting = _mapper.Map(command, meeting);
             updateMeeting.Password = command.SecurityCode;
@@ -612,20 +612,26 @@ namespace SugarTalk.Core.Services.Meetings
             };
         }
 
-        public async Task<UpdateInProcessMeetingResponse> UpdateMeetingChatResponseAsync(
-            UpdateInProcessMeetingCommand command, CancellationToken cancellationToken)
+        public async Task<MeetingSwitchEaResponse> UpdateMeetingChatResponseAsync(
+            MeetingSwitchEaCommand switchEaCommand, CancellationToken cancellationToken)
         {
             var user = await _accountDataProvider.CheckCurrentLoggedInUser(cancellationToken).ConfigureAwait(false);
             
-            var meeting = await _meetingDataProvider.GetMeetingByIdAsync(command.Id, cancellationToken).ConfigureAwait(false);
+            var meeting = await _meetingDataProvider.GetMeetingByIdAsync(switchEaCommand.Id, cancellationToken).ConfigureAwait(false);
 
-            ValidateMeetingUpdateConditions(meeting, user, CurrentMeetingStatus.Inprogress);
+            if (meeting.Status != MeetingStatus.InProgress)
+                throw new CannotUpdateMeetingWhenStatusNotInProgressException();
+            
+            if (meeting.MeetingMasterUserId != user.Id) 
+                throw new CannotUpdateMeetingWhenMasterUserIdMismatchException();
 
-            meeting.IsEa = command.IsEa;
+            Log.Information("Meeting master userId:{masterId}, current userId{currentUserId}", meeting.MeetingMasterUserId, _currentUser.Id.Value);
+            
+            meeting.IsActiveEa = switchEaCommand.IsActiveEa;
             
             await _meetingDataProvider.UpdateMeetingAsync(meeting, cancellationToken).ConfigureAwait(false);
 
-            return new UpdateInProcessMeetingResponse();
+            return new MeetingSwitchEaResponse();
         }
 
         private async Task<Meeting> GenerateMeetingInfoFromThirdPartyServicesAsync(string meetingNumber, CancellationToken cancellationToken)
@@ -850,16 +856,13 @@ namespace SugarTalk.Core.Services.Meetings
             userSession.CumulativeTime = (userSession.CumulativeTime ?? 0) + (userSession.LastQuitTime - lastQuitTimeBeforeChange);
         }
         
-        private void ValidateMeetingUpdateConditions(Meeting meeting, UserAccountDto currentUser, CurrentMeetingStatus currentMeetingStatus)
+        private void ValidateMeetingUpdateConditions(Meeting meeting, UserAccountDto currentUser)
         {
             if (meeting is null) 
                 throw new MeetingNotFoundException();
             
-            if (meeting.Status != MeetingStatus.Pending && currentMeetingStatus == CurrentMeetingStatus.Pending) 
+            if (meeting.Status != MeetingStatus.Pending) 
                 throw new CannotUpdateMeetingWhenStatusNotPendingException();
-
-            if (meeting.Status != MeetingStatus.InProgress && currentMeetingStatus == CurrentMeetingStatus.Inprogress)
-                throw new CannotUpdateMeetingWhenStatusNotInProgressException();
             
             Log.Information("Meeting master userId:{masterId}, current userId{currentUserId}", meeting.MeetingMasterUserId, _currentUser.Id.Value);
             

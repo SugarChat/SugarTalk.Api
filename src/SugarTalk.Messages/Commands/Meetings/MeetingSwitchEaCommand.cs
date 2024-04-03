@@ -4,13 +4,13 @@ using SugarTalk.Messages.Responses;
 
 namespace SugarTalk.Messages.Commands.Meetings;
 
-public class UpdateInProcessMeetingCommand : ICommand
+public class MeetingSwitchEaCommand : ICommand
 {
     public Guid Id { get; set; }
 
-    public bool IsEa { get; set; }
+    public bool IsActiveEa { get; set; }
 }
 
-public class UpdateInProcessMeetingResponse : SugarTalkResponse
+public class MeetingSwitchEaResponse : SugarTalkResponse
 {
 }

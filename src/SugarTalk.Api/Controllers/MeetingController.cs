@@ -58,11 +58,11 @@ public class MeetingController : ControllerBase
         return Ok(response);
     }
     
-    [Route("update/inprocess"), HttpPost]
-    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(UpdateInProcessMeetingResponse))]
-    public async Task<IActionResult> UpdateInProcessMeetingAsync([FromBody] UpdateInProcessMeetingCommand command)
+    [Route("switch/ea"), HttpPost]
+    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(MeetingSwitchEaResponse))]
+    public async Task<IActionResult> MeetingSwitchEaAsync([FromBody] MeetingSwitchEaCommand switchEaCommand)
     {
-        var response = await _mediator.SendAsync<UpdateInProcessMeetingCommand, UpdateInProcessMeetingResponse>(command).ConfigureAwait(false);
+        var response = await _mediator.SendAsync<MeetingSwitchEaCommand, MeetingSwitchEaResponse>(switchEaCommand).ConfigureAwait(false);
 
         return Ok(response);
     }
