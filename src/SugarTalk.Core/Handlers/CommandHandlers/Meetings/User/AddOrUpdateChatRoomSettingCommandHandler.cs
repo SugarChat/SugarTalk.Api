@@ -3,10 +3,12 @@ using System.Threading.Tasks;
 using Mediator.Net.Context;
 using Mediator.Net.Contracts;
 using SugarTalk.Core.Services.Meetings;
+using SugarTalk.Messages.Attributes;
 using SugarTalk.Messages.Commands.Meetings.Speak;
 
 namespace SugarTalk.Core.Handlers.CommandHandlers.Meetings.User;
 
+[AllowGuestAccess]
 public class AddOrUpdateChatRoomSettingCommandHandler : ICommandHandler<AddOrUpdateChatRoomSettingCommand, AddOrUpdateChatRoomSettingResponse>
 {
     private readonly IMeetingService _meetingService;
