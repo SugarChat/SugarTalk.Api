@@ -93,7 +93,7 @@ namespace SugarTalk.Core.Services.Meetings
         
         Task CancelAppointmentMeetingAsync(Guid meetingId, CancellationToken cancellationToken);
 
-        Task HandleMeetingStatusWhenOutMeetingAsync(int userId, Guid meetingId, Guid? meetingSubId = null, CancellationToken cancellationToken = default);
+        Task<List<MeetingUserSession>> GetMeetingUserSessionAsync(Guid meetingId, Guid? meetingSubId = null, CancellationToken cancellationToken = default);
         
         Task<List<Meeting>> GetAvailableRepeatMeetingAsync(CancellationToken cancellationToken);
         
@@ -609,39 +609,14 @@ namespace SugarTalk.Core.Services.Meetings
 
             await _unitOfWork.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
         }
-        
-        public async Task HandleMeetingStatusWhenOutMeetingAsync(int userId, Guid meetingId, Guid? meetingSubId = null, CancellationToken cancellationToken = default)
+
+        public async Task<List<MeetingUserSession>> GetMeetingUserSessionAsync(Guid meetingId, Guid? meetingSubId = null, CancellationToken cancellationToken = default)
         {
-            //当预定会议未到真正开始时间时，最后一个人退出会议，会议状态根据当前时间改变。
-            var meeting = await _repository.Query<Meeting>()
-                .FirstOrDefaultAsync(x => x.Id == meetingId, cancellationToken).ConfigureAwait(false);
+            var query = _repository.QueryNoTracking<MeetingUserSession>().Where(x => x.MeetingId == meetingId);
 
-            if (meeting is null) throw new MeetingNotFoundException();
+            if (meetingSubId.HasValue) query = query.Where(x => x.MeetingSubId == meetingSubId.Value);
 
-            if (meeting.AppointmentType == MeetingAppointmentType.Appointment)
-            {
-                var attendingUserSessionsExceptCurrentUser = await _repository.QueryNoTracking<MeetingUserSession>()
-                    .Where(x => x.MeetingId == meetingId && x.UserId != userId)
-                    .Where(x => x.MeetingSubId == null || x.MeetingSubId == meetingSubId)
-                    .Where(x => x.Status == MeetingAttendeeStatus.Present && x.OnlineType == MeetingUserSessionOnlineType.Online)
-                    .ToListAsync(cancellationToken).ConfigureAwait(false);
-
-                if (attendingUserSessionsExceptCurrentUser is { Count: > 0 }) return;
-                
-                meeting.Status = MeetingStatus.InProgress;
-
-                if (_clock.Now < DateTimeOffset.FromUnixTimeSeconds(meeting.StartDate))
-                {
-                    meeting.Status = MeetingStatus.Pending;
-                }
-
-                if (_clock.Now > DateTimeOffset.FromUnixTimeSeconds(meeting.EndDate))
-                {
-                    meeting.Status = MeetingStatus.Completed;
-                }
-            }
-
-            await _unitOfWork.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+            return await query.ToListAsync(cancellationToken).ConfigureAwait(false);
         }
 
         public async Task<List<Meeting>> GetAvailableRepeatMeetingAsync(CancellationToken cancellationToken)
