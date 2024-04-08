@@ -614,7 +614,7 @@ namespace SugarTalk.Core.Services.Meetings
         {
             var query = _repository.QueryNoTracking<MeetingUserSession>().Where(x => x.MeetingId == meetingId);
 
-            if (meetingSubId.HasValue) query = query.Where(x => x.MeetingSubId == meetingSubId);
+            if (meetingSubId.HasValue) query = query.Where(x => x.MeetingSubId == meetingSubId.Value);
 
             return await query.ToListAsync(cancellationToken).ConfigureAwait(false);
         }
