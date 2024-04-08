@@ -624,9 +624,6 @@ namespace SugarTalk.Core.Services.Meetings
             var user = await _accountDataProvider.CheckCurrentLoggedInUser(cancellationToken).ConfigureAwait(false);
             
             var meeting = await _meetingDataProvider.GetMeetingByIdAsync(switchEaCommand.Id, cancellationToken).ConfigureAwait(false);
-
-            if (meeting.Status != MeetingStatus.InProgress)
-                throw new CannotUpdateMeetingWhenStatusNotInProgressException();
             
             if (meeting.MeetingMasterUserId != user.Id) 
                 throw new CannotUpdateMeetingWhenMasterUserIdMismatchException();
