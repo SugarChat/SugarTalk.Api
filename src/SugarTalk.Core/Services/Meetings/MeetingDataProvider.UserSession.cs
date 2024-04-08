@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using AutoMapper;
 using Microsoft.EntityFrameworkCore;
 using SugarTalk.Core.Data;
+using SugarTalk.Core.Domain.Account;
 using SugarTalk.Core.Domain.Meeting;
 using SugarTalk.Core.Ioc;
 using SugarTalk.Core.Services.Identity;
@@ -85,9 +86,25 @@ public partial class MeetingDataProvider
             query = query.Where(x => x.MeetingSubId == meetingSubId);
         }
 
-        var userSessions = await query.ToListAsync(cancellationToken).ConfigureAwait(false);
+        var sessions = await (from session in query
+            join account in _repository.QueryNoTracking<UserAccount>() on session.UserId equals account.Id into accounts
+            from account in accounts.DefaultIfEmpty()
+            select new MeetingUserSessionDto
+                {
+                    Id = session.Id,
+                    UserId = session.UserId,
+                    IsMuted = session.IsMuted,
+                    UserName = account.UserName,
+                    GuestName = session.GuestName,
+                    MeetingId = session.MeetingId,
+                    OnlineType = session.OnlineType,
+                    CreatedDate = session.CreatedDate,
+                    MeetingSubId = session.MeetingSubId,
+                    LastJoinTime = session.LastJoinTime,
+                    IsSharingScreen = session.IsSharingScreen
+                }).ToListAsync(cancellationToken).ConfigureAwait(false);
 
-        return _mapper.Map<List<MeetingUserSessionDto>>(userSessions);
+        return sessions;
     }
 
     public async Task<bool> IsOtherSharingAsync(MeetingUserSession userSession, CancellationToken cancellationToken)
