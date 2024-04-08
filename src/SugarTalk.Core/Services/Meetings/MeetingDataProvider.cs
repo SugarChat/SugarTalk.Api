@@ -191,10 +191,8 @@ namespace SugarTalk.Core.Services.Meetings
 
             if (includeUserSessions)
             {
-                var allUserSessions =
+                updateMeeting.UserSessions = 
                     await GetUserSessionsByMeetingIdAsync(meeting.Id, updateMeeting.MeetingSubId, cancellationToken, true).ConfigureAwait(false);
-
-                updateMeeting.UserSessions = await EnrichMeetingUserSessionsByOnlineAsync(allUserSessions, cancellationToken).ConfigureAwait(false);
             }
 
             var meetingRule = await GetMeetingRuleByMeetingIdAsync(updateMeeting.Id, cancellationToken).ConfigureAwait(false);
@@ -658,8 +656,8 @@ namespace SugarTalk.Core.Services.Meetings
                 .Join(_repository.QueryNoTracking<MeetingUserSession>(),
                     meeting => meeting.Id,
                     session => session.MeetingId,
-                    (meeting, session) => new { meeting, session })
-                .Where(x => x.session.UserId == userId && x.session.OnlineType == MeetingUserSessionOnlineType.KickOutMeeting)
+                    (meeting, session) => session)
+                .Where(x => x.UserId == userId && x.OnlineType == MeetingUserSessionOnlineType.KickOutMeeting)
                 .AnyAsync(cancellationToken).ConfigureAwait(false);
 
             if (isKicked)

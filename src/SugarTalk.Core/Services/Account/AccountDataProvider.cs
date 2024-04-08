@@ -96,18 +96,11 @@ namespace SugarTalk.Core.Services.Account
 
             if (account == null || !includeRoles) return account;
             {
-                var userRoleIds = await _repository
-                    .QueryNoTracking<RoleUser>().Where(x => x.UserId == account.Id)
-                    .Select(x => x.RoleId).ToListAsync(cancellationToken).ConfigureAwait(false);
-
-                if (userRoleIds.Any())
-                {
-                    account.Roles = await _repository
-                        .QueryNoTracking<Role>()
-                        .Where(x => userRoleIds.Contains(x.Id))
-                        .ProjectTo<RoleDto>(_mapper.ConfigurationProvider)
-                        .ToListAsync(cancellationToken).ConfigureAwait(false);
-                }
+                account.Roles = await _repository.QueryNoTracking<RoleUser>()
+                    .Where(x => x.UserId == account.Id)
+                    .Join(_repository.QueryNoTracking<Role>(), x => x.RoleId, y => y.Id, (x, y) => y)
+                    .ProjectTo<RoleDto>(_mapper.ConfigurationProvider).ToListAsync(cancellationToken)
+                    .ConfigureAwait(false);
             }
 
             return account;
