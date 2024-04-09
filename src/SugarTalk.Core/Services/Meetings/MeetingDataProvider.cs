@@ -559,6 +559,7 @@ namespace SugarTalk.Core.Services.Meetings
                     (DateTimeOffset.FromUnixTimeSeconds(meeting.EndDate) -
                      DateTimeOffset.FromUnixTimeSeconds(meeting.StartDate)).TotalSeconds);
                 x.LastQuitTime = meeting.EndDate;
+                x.OnlineType = MeetingUserSessionOnlineType.OutMeeting;
             });
 
             await _repository.UpdateAllAsync(userSessions, cancellationToken).ConfigureAwait(false);
