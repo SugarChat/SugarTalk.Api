@@ -327,8 +327,8 @@ namespace SugarTalk.Core.Services.Meetings
             
             var now = _clock.Now.ToUnixTimeSeconds();
 
-            var hasUserSessions = meeting.UserSessions.Count > 0;
-            var hasMeetingMaster = meeting.UserSessions.Any(x => x.IsMeetingMaster);
+            var hasUserSessions = meeting.UserSessions.Count(x => x.OnlineType == MeetingUserSessionOnlineType.Online) > 0;
+            var hasMeetingMaster = meeting.UserSessions.Any(x => x.IsMeetingMaster && x.OnlineType == MeetingUserSessionOnlineType.Online);
             
             if (now >= meeting.StartDate && now <= meeting.EndDate && (hasMeetingMaster || hasUserSessions))
             {
