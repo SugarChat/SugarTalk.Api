@@ -494,6 +494,7 @@ namespace SugarTalk.Core.Services.Meetings
 
             var query =
                 from meeting in _repository.Query<Meeting>()
+                where meeting.Status != MeetingStatus.Cancelled
                 join rules in _repository.Query<MeetingRepeatRule>() on meeting.Id equals rules.MeetingId
                 join subMeetings in _repository.Query<MeetingSubMeeting>() on meeting.Id equals subMeetings.MeetingId
                     into subMeetingGroup
