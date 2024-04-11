@@ -422,7 +422,7 @@ namespace SugarTalk.Core.Services.Meetings
                 .ToDictionary(group => group.Key, group =>
                 {
                     var attendees = group
-                        .Select(x => GetAttendees(userAccounts, x)).ToList();
+                        .Select(x => GetAttendee(userAccounts, x)).ToList();
                     return attendees;
                 });
 
@@ -701,7 +701,7 @@ namespace SugarTalk.Core.Services.Meetings
             return appointmentMeetings.Where(x => !filteredMeetingId.Contains(x.Id)).ToList();
         }
         
-        private static string GetAttendees(List<UserAccount> userAccounts, MeetingUserSession meetingUserSession)
+        private static string GetAttendee(List<UserAccount> userAccounts, MeetingUserSession meetingUserSession)
         {
             var userAccount = userAccounts.FirstOrDefault(user => user.Id == meetingUserSession.UserId);
 
