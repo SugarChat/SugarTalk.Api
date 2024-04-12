@@ -203,7 +203,7 @@ public partial class MeetingService
         {   
             await MarkSpeakTranscriptAsSpecifiedStatusAsync(meetingDetails, FileTranscriptionStatus.InProcess, cancellationToken).ConfigureAwait(false);
 
-             await TranscriptionMeetingAsync(meetingDetails, meetingRecord, cancellationToken);
+            await TranscriptionMeetingAsync(meetingDetails, meetingRecord, cancellationToken);
         }
     }
 
