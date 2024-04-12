@@ -107,9 +107,11 @@ public partial class MeetingService
             
                 Log.Information("transcription error: {ErrorMessage}", ex.Message);
             }
+            finally
+            {
+                await _meetingDataProvider.UpdateMeetingSpeakDetailAsync(speakDetail, true, cancellationToken).ConfigureAwait(false);
+            }
         }
-        
-        await _meetingDataProvider.UpdateMeetingSpeakDetailsAsync(speakDetails, true, cancellationToken).ConfigureAwait(false);
     }
 
     public async Task OptimizeTranscribedContent(MeetingSpeakDetail speakDetail, CancellationToken cancellationToken)
