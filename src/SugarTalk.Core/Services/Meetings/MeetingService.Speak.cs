@@ -100,7 +100,6 @@ public partial class MeetingService
                 Log.Information("Complete transcribed content optimization" );
             
                 speakDetail.FileTranscriptionStatus = FileTranscriptionStatus.Completed;
-            
             }
             catch (Exception ex)
             {
@@ -110,10 +109,10 @@ public partial class MeetingService
             }
         }
         
-        await _meetingDataProvider.UpdateMeetingSpeakDetailsAsync(speakDetails, cancellationToken: cancellationToken).ConfigureAwait(false);
+        await _meetingDataProvider.UpdateMeetingSpeakDetailsAsync(speakDetails, true, cancellationToken).ConfigureAwait(false);
     }
 
-    public async Task OptimizeTranscribedContent (MeetingSpeakDetail speakDetail, CancellationToken cancellationToken)
+    public async Task OptimizeTranscribedContent(MeetingSpeakDetail speakDetail, CancellationToken cancellationToken)
     {
         var message = new List<CompletionsRequestMessageDto>()
         {
@@ -132,10 +131,12 @@ public partial class MeetingService
         var openAiSmartContent = await _openAiService.ChatCompletionsAsync(
             message, model: OpenAiModel.Gpt35Turbo, responseFormat: new CompletionResponseFormatDto { Type = "json_object" }, cancellationToken: cancellationToken).ConfigureAwait(false);
         
-        Log.Information("OriginalContent: {OriginalContent},\n SmartContent: {openAiSmartContent}", speakDetail, openAiSmartContent);
+        Log.Information("OriginalContent: {OriginalContent},\n SmartContent: {openAiSmartContent}", speakDetail.OriginalContent, openAiSmartContent.Response);
         
-        speakDetail.SmartContent = JsonConvert.DeserializeObject<MeetingDetailSmartContentDto>(openAiSmartContent.Response).OptimizedText;;
+        speakDetail.SmartContent = JsonConvert.DeserializeObject<MeetingDetailSmartContentDto>(openAiSmartContent.Response).OptimizedText;
 
+        Log.Information("SmartContent: {SmartContent}", speakDetail.SmartContent);
+        
         await _meetingDataProvider.UpdateMeetingSpeakDetailAsync(speakDetail, true, cancellationToken).ConfigureAwait(false);
     }
 
