@@ -20,7 +20,7 @@ public class AddOrUpdateChatRoomSettingCommand : ICommand
     public int Transpose { get; set; }
     
     public SpeechTargetLanguageType SelfLanguage { get; set; }
-    
+
     public SpeechTargetLanguageType ListeningLanguage { get; set; }
 }
 
