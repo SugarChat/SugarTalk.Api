@@ -1,6 +1,5 @@
 using Xunit;
 using System;
-using System.Collections.Generic;
 using Autofac;
 using Shouldly;
 using NSubstitute;
@@ -12,23 +11,23 @@ using System.Threading;
 using SugarTalk.Core.Data;
 using SugarTalk.Messages.Dto;
 using System.Threading.Tasks;
-using AutoMapper.Configuration.Annotations;
+using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
 using SugarTalk.Core.Domain.Meeting;
 using SugarTalk.Core.Services.Http;
 using SugarTalk.Core.Services.Utils;
-using SugarTalk.Core.Services.Http.Clients;
 using SugarTalk.Core.Services.LiveKit;
 using SugarTalk.Core.Services.OpenAi;
-using SugarTalk.Messages.Commands.Meetings;
+using SugarTalk.Messages.Dto.OpenAi;
+using SugarTalk.Messages.Enums.OpenAi;
 using SugarTalk.Messages.Enums.Meeting;
+using SugarTalk.Messages.Dto.Translation;
+using SugarTalk.Messages.Commands.Meetings;
+using SugarTalk.Core.Services.Http.Clients;
 using SugarTalk.Messages.Requests.Meetings;
 using SugarTalk.Messages.Dto.LiveKit.Egress;
-using SugarTalk.Messages.Dto.OpenAi;
-using SugarTalk.Messages.Dto.Translation;
 using SugarTalk.Messages.Enums.Meeting.Speak;
 using SugarTalk.Messages.Enums.Meeting.Summary;
-using SugarTalk.Messages.Enums.OpenAi;
 using UserAccountDto = SugarTalk.Messages.Dto.Users.UserAccountDto;
 
 namespace SugarTalk.IntegrationTests.Services.Meetings;
@@ -711,6 +710,8 @@ public partial class MeetingServiceFixture
         var meetingId = Guid.NewGuid();
         const string audioContent = "0123123测试测试";
         var fileContent = Encoding.UTF8.GetBytes(audioContent);
+        var startedAt = DateTimeOffset.Now;
+        var endedAt = DateTimeOffset.Now.AddHours(1);
         
         var meeting = new Meeting()
         {
@@ -724,7 +725,7 @@ public partial class MeetingServiceFixture
             Id = meetingRecordId,
             RecordNumber = "6666",
             RecordType = MeetingRecordType.OnRecord,
-            CreatedDate = DateTimeOffset.Now,
+            CreatedDate = startedAt,
             IsDeleted = false,
             UrlStatus = MeetingRecordUrlStatus.Pending,
             MeetingId = meetingId
@@ -785,7 +786,8 @@ public partial class MeetingServiceFixture
                         new EgressItemDto
                         {
                             EgressId = "5555",
-                            EndedAt = "mock endedAt",
+                            EndedAt = endedAt.ToString(),
+                            StartedAt = startedAt.ToString(),
                             Status = "EGRESS_COMPLETE",
                             File = new FileDetails { Location = "mock url" }
                         }
@@ -847,6 +849,8 @@ public partial class MeetingServiceFixture
             afterGetRecords.FirstOrDefault(x => x.Id == meetingRecordId)?.Url.ShouldBe("mock url");
             afterGetRecords.FirstOrDefault(x => x.Id == meetingRecordId)?.RecordType.ShouldBe(MeetingRecordType.EndRecord);
             afterGetRecords.FirstOrDefault(x => x.Id == meetingRecordId)?.UrlStatus.ShouldBe(MeetingRecordUrlStatus.Completed);
+            afterGetRecords.FirstOrDefault(x => x.Id == meetingRecordId)?.StartedAt.UtcDateTime.ToString("yyyy-MM-ddTHH:mm:ssZ").ShouldBe(startedAt.UtcDateTime.ToString("yyyy-MM-ddTHH:mm:ssZ"));
+            afterGetRecords.FirstOrDefault(x => x.Id == meetingRecordId)?.EndedAt.UtcDateTime.ToString("yyyy-MM-ddTHH:mm:ssZ").ShouldBe(endedAt.UtcDateTime.ToString("yyyy-MM-ddTHH:mm:ssZ"));
             
             var afterGetMeetingDetail = await repository.Query<MeetingSpeakDetail>().ToListAsync().ConfigureAwait(false);
             
