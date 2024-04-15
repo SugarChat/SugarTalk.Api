@@ -22,7 +22,7 @@ public partial interface IMeetingService
 {
     Task<MeetingSpeakRecordedEvent> RecordMeetingSpeakAsync(RecordMeetingSpeakCommand command, CancellationToken cancellationToken);
 
-    Task OptimizeTranscribedContent(MeetingSpeakDetail speakDetail, CancellationToken cancellationToken);
+    Task OptimizeTranscribedContent(List<MeetingSpeakDetail> speakDetail, CancellationToken cancellationToken);
 }
 
 public partial class MeetingService
@@ -94,13 +94,10 @@ public partial class MeetingService
                 speakDetail.OriginalContent = await _openAiService.TranscriptionAsync(
                     recordFile, TranscriptionLanguage.Chinese, speakStartTimeVideo, speakEndTimeVideo,
                     TranscriptionFileType.Mp4, TranscriptionResponseFormat.Text, cancellationToken: cancellationToken).ConfigureAwait(false);
-            
-                _backgroundJobClient.Enqueue<IMeetingService>(x => x.OptimizeTranscribedContent(speakDetail, cancellationToken));
-
+                
                 Log.Information("Complete transcribed content optimization" );
             
                 speakDetail.FileTranscriptionStatus = FileTranscriptionStatus.Completed;
-            
             }
             catch (Exception ex)
             {
@@ -110,33 +107,40 @@ public partial class MeetingService
             }
         }
         
-        await _meetingDataProvider.UpdateMeetingSpeakDetailsAsync(speakDetails, cancellationToken: cancellationToken).ConfigureAwait(false);
+        await _meetingDataProvider.UpdateMeetingSpeakDetailsAsync(speakDetails, true, cancellationToken).ConfigureAwait(false);
+        
+        _backgroundJobClient.Enqueue<IMeetingService>(x => x.OptimizeTranscribedContent(speakDetails, cancellationToken));
     }
 
-    public async Task OptimizeTranscribedContent (MeetingSpeakDetail speakDetail, CancellationToken cancellationToken)
+    public async Task OptimizeTranscribedContent(List<MeetingSpeakDetail> speakDetails, CancellationToken cancellationToken)
     {
-        var message = new List<CompletionsRequestMessageDto>()
+        foreach (var speakDetail in speakDetails)
         {
-            new ()
+            var message = new List<CompletionsRequestMessageDto>()
             {
-                Role = "system",
-                Content = "你是一个会议智能助手，你可以概括含糊其辞的内容转化简单通俗易懂的句子." +
-                          "你的目标是根据所获取到的内容提供更加清晰和易于理解的内容，必须保持原有意思不变。" +
-                          "根据上下文和语句进行智能优化，进行纠正语句的语法，以至于段落信息变的更加通顺合理，但是不要在你获取的段落中额外添加其他信息," +
-                          "你返回的内容必须是json格式,例如，当收到的输入为：我觉得emmm，这个吧，，，有点，，，我再想想，这时候你给我的返回必须是{\"optimized_text\": 这个问题我需要再想一下}",
-            },
-            
-            new() { Role = "user", Content = $"输入: {speakDetail.OriginalContent}, 返回: "}
-        };
+                new()
+                {
+                    Role = "system",
+                    Content = "你是一个会议智能助手，你可以概括含糊其辞的内容转化简单通俗易懂的句子." +
+                              "你的目标是根据所获取到的内容提供更加清晰和易于理解的内容，必须保持原有意思不变。" +
+                              "根据上下文和语句进行智能优化，进行纠正语句的语法，以至于段落信息变的更加通顺合理，但是不要在你获取的段落中额外添加其他信息," +
+                              "你返回的内容必须是json格式,例如，当收到的输入为：我觉得emmm，这个吧，，，有点，，，我再想想，这时候你给我的返回必须是{\"optimized_text\": 这个问题我需要再想一下}",
+                },
 
-        var openAiSmartContent = await _openAiService.ChatCompletionsAsync(
-            message, model: OpenAiModel.Gpt35Turbo, responseFormat: new CompletionResponseFormatDto { Type = "json_object" }, cancellationToken: cancellationToken).ConfigureAwait(false);
-        
-        Log.Information("OriginalContent: {OriginalContent},\n SmartContent: {openAiSmartContent}", speakDetail, openAiSmartContent);
-        
-        speakDetail.SmartContent = JsonConvert.DeserializeObject<MeetingDetailSmartContentDto>(openAiSmartContent.Response).OptimizedText;;
+                new() { Role = "user", Content = $"输入: {speakDetail.OriginalContent}, 返回: " }
+            };
 
-        await _meetingDataProvider.UpdateMeetingSpeakDetailAsync(speakDetail, true, cancellationToken).ConfigureAwait(false);
+            var openAiSmartContent = await _openAiService.ChatCompletionsAsync(
+                message, model: OpenAiModel.Gpt35Turbo, responseFormat: new CompletionResponseFormatDto { Type = "json_object" }, cancellationToken: cancellationToken).ConfigureAwait(false);
+
+            Log.Information("OriginalContent: {OriginalContent},\n SmartContent: {openAiSmartContent}", speakDetail.OriginalContent, openAiSmartContent.Response);
+
+            speakDetail.SmartContent = JsonConvert.DeserializeObject<MeetingDetailSmartContentDto>(openAiSmartContent.Response).OptimizedText;
+
+            Log.Information("SmartContent: {SmartContent}", speakDetail.SmartContent);
+
+            await _meetingDataProvider.UpdateMeetingSpeakDetailAsync(speakDetail, true, cancellationToken).ConfigureAwait(false);
+        }
     }
 
     private async Task MarkSpeakTranscriptAsSpecifiedStatusAsync(

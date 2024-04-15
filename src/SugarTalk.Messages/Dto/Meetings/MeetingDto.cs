@@ -72,6 +72,10 @@ public class MeetingBaseDto
     
     public string Title { get; set; }
     
+    public string Password { get; set; }
+    
+    public string SecurityCode { get; set;}
+    
     public MeetingRepeatType RepeatType { get; set; }
     
     public MeetingStreamMode MeetingStreamMode { get; set; }
@@ -85,6 +89,8 @@ public class MeetingBaseDto
     public bool IsRecorded { get; set; } = false;
     
     public bool IsPasswordEnabled { get; set; } = false;
+
+    public bool IsActiveEa { get; set; } = false;
 }
 
 public class AddOrUpdateMeetingDto
