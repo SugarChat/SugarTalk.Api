@@ -355,13 +355,16 @@ public partial class MeetingService
     private async Task<string> ProcessSpeechInferenceAsync(
         MeetingChatVoiceRecord meetingChatVoiceRecord, MeetingChatRoomSetting roomSetting, MeetingSpeech meetingSpeech, CancellationToken cancellationToken)
     {
+        if(roomSetting.Transpose == null || roomSetting.Speed == null) 
+            throw new Exception("Room setting transpose or speed is null");
+        
         var response = await _speechClient.SpeechInferenceAsync(new SpeechInferenceDto
         {
             Name = roomSetting.VoiceName,
             Text = meetingSpeech.OriginalText,
             LanguageId = int.Parse(meetingChatVoiceRecord.VoiceId),
-            Transpose = roomSetting.Transpose,
-            Speed = roomSetting.Speed,
+            Transpose = roomSetting.Transpose.Value,
+            Speed = roomSetting.Speed.Value,
             ResponseFormat = "url"
         }, cancellationToken).ConfigureAwait(false);
 
