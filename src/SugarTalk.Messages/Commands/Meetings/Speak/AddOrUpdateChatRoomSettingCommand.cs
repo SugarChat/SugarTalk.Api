@@ -15,13 +15,13 @@ public class AddOrUpdateChatRoomSettingCommand : ICommand
     
     public string VoiceName { get; set; }
     
-    public float Speed { get; set; }
+    public float? Speed { get; set; }
     
-    public float Transpose { get; set; }
+    public float? Transpose { get; set; }
     
-    public int Style { get; set; }
+    public int? Style { get; set; }
     
-    public int InferenceRecordId { get; set; }
+    public int? InferenceRecordId { get; set; }
     
     public SpeechTargetLanguageType SelfLanguage { get; set; }
 

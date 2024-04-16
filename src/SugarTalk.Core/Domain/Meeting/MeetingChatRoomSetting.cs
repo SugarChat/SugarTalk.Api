@@ -35,16 +35,16 @@ public class MeetingChatRoomSetting : IEntity
     public bool IsSystem { get; set; }
     
     [Column("transpose")]
-    public float Transpose { get; set; }
+    public float? Transpose { get; set; }
     
     [Column("speed")]
-    public float Speed { get; set; }
+    public float? Speed { get; set; }
     
     [Column("style")]
-    public int Style { get; set; }
+    public int? Style { get; set; }
     
     [Column("inference_record_id")]
-    public int InferenceRecordId { get; set; }
+    public int? InferenceRecordId { get; set; }
 
     [Column("self_language")]
     public SpeechTargetLanguageType SelfLanguage { get; set; }
