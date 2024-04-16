@@ -30,10 +30,10 @@ public class MeetingRecord : IEntity
     public DateTimeOffset CreatedDate { get; set; }
 
     [Column("started_at")]
-    public DateTimeOffset StartedAt { get; set; }
+    public DateTimeOffset? StartedAt { get; set; }
 
     [Column("ended_at")]
-    public DateTimeOffset EndedAt { get; set; }
+    public DateTimeOffset? EndedAt { get; set; }
     
     [Column("is_deleted", TypeName = "tinyint(1)")]
     public bool IsDeleted { get; set; }
