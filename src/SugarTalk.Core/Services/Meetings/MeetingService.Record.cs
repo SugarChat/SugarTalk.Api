@@ -192,8 +192,6 @@ public partial class MeetingService
         meetingRecord.Url = egressItem.File.Location;
         meetingRecord.RecordType = MeetingRecordType.EndRecord;
         meetingRecord.UrlStatus = MeetingRecordUrlStatus.Completed;
-        meetingRecord.StartedAt = DateTimeOffset.Parse(egressItem.StartedAt);
-        meetingRecord.EndedAt = DateTimeOffset.Parse(egressItem.EndedAt);
     
         Log.Information("Complete storage meeting record url");
     

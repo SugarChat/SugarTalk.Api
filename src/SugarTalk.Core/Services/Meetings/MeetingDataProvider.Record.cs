@@ -146,6 +146,7 @@ public partial class MeetingDataProvider
             Id = meetingRecordId,
             MeetingId = meetingId,
             EgressId = egressId,
+            StartedAt = DateTimeOffset.Now,
             RecordNumber = GenerateRecordNumber(++meetingRecordTotal)
         }, cancellationToken).ConfigureAwait(false);
     }
@@ -225,6 +226,7 @@ public partial class MeetingDataProvider
         if (meetingRecord == null) return;
 
         meetingRecord.UrlStatus = urlStatus;
+        meetingRecord.EndedAt = DateTimeOffset.Now;
 
         await _unitOfWork.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
     }
