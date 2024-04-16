@@ -280,6 +280,7 @@ public partial class MeetingService
                 SpeechId = speech.Id,
                 IsSelf = false,
                 VoiceId = roomSetting.VoiceId,
+                InferenceRecordId = roomSetting.InferenceRecordId,
                 GenerationStatus = ChatRecordGenerationStatus.InProgress
             }).ToList();
         

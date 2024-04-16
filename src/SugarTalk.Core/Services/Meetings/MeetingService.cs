@@ -583,20 +583,23 @@ namespace SugarTalk.Core.Services.Meetings
         {
             if (!_currentUser.Id.HasValue) throw new UnauthorizedAccessException();
             
-            var roomSetting = await _meetingDataProvider.GetMeetingChatRoomSettingByMeetingIdAsync(_currentUser.Id.Value, command.MeetingId, cancellationToken).ConfigureAwait(false);
+            var roomSetting = await _meetingDataProvider.GetMeetingChatRoomSettingByMeetingIdAsync(
+                _currentUser.Id.Value, command.MeetingId, cancellationToken).ConfigureAwait(false);
 
             if (roomSetting == null)
             {
                 await _meetingDataProvider.AddMeetingChatRoomSettingAsync(new MeetingChatRoomSetting 
                 {
+                    Style = command.Style,
+                    Speed = command.Speed,
+                    VoiceId = command.VoiceId,
                     UserId = _currentUser.Id.Value,
                     MeetingId = command.MeetingId,
-                    VoiceId = command.VoiceId,
                     VoiceName = command.VoiceName,
-                    Speed = command.Speed,
                     Transpose = command.Transpose,
                     SelfLanguage = command.SelfLanguage,
-                    ListeningLanguage = command.ListeningLanguage,
+                    InferenceRecordId = command.InferenceRecordId,
+                    ListeningLanguage = command.ListeningLanguage
                 }, true, cancellationToken).ConfigureAwait(false);
             }
             else
@@ -609,14 +612,16 @@ namespace SugarTalk.Core.Services.Meetings
                 }
                 else
                 {
+                    roomSetting.Speed = command.Speed;
+                    roomSetting.Style = command.Style;
                     roomSetting.VoiceId = command.VoiceId;
+                    roomSetting.IsSystem = command.IsSystem;
+                    roomSetting.Transpose = command.Transpose;
                     roomSetting.VoiceName = command.VoiceName;
                     roomSetting.SelfLanguage = command.SelfLanguage;
                     roomSetting.ListeningLanguage = command.ListeningLanguage;
-                    roomSetting.IsSystem = command.IsSystem;
-                    roomSetting.Speed = command.Speed;
-                    roomSetting.Transpose = command.Transpose;
-
+                    roomSetting.InferenceRecordId = command.InferenceRecordId;
+                    
                     await _meetingDataProvider.UpdateMeetingChatRoomSettingAsync(roomSetting, true, cancellationToken).ConfigureAwait(false);
                 }
             }
@@ -645,6 +650,7 @@ namespace SugarTalk.Core.Services.Meetings
             {
                 roomSetting.VoiceId = stringVoiceId;
                 roomSetting.IsSystem = true;
+                roomSetting.Style = voiceId;
             }
             
             await _meetingDataProvider.UpdateMeetingChatRoomSettingAsync(roomSetting, true, cancellationToken).ConfigureAwait(false);

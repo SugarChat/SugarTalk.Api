@@ -45,4 +45,7 @@ public class MeetingChatVoiceRecord : IEntity
     
     [Column("translated_text")]
     public string TranslatedText { get; set; }
+    
+    [Column("inference_record_id")]
+    public int InferenceRecordId { get; set; }
 }
