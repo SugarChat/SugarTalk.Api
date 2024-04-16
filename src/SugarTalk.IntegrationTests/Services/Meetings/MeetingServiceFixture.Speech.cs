@@ -277,6 +277,7 @@ public partial class MeetingServiceFixture
             VoiceName = "小李的voice",
             Transpose = 1,
             Speed = 2,
+            Style = 1,
             SelfLanguage = SpeechTargetLanguageType.English,
             ListeningLanguage = SpeechTargetLanguageType.Cantonese
         };
