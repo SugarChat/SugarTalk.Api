@@ -12,7 +12,6 @@ using SugarTalk.Messages.Dto.Meetings;
 using SugarTalk.Messages.Dto.Meetings.Speak;
 using SugarTalk.Messages.Dto.Meetings.Summary;
 using SugarTalk.Messages.Enums.Meeting;
-using SugarTalk.Messages.Enums.Speech;
 using SugarTalk.Messages.Requests.Meetings;
 
 namespace SugarTalk.Core.Services.Meetings;
@@ -109,11 +108,11 @@ public partial class MeetingDataProvider
                 MeetingNumber = x.Meeting.MeetingNumber,
                 RecordNumber = x.Record.RecordNumber,
                 Title = x.Meeting.Title,
-                StartDate = x.Record.StartedAt.ToUnixTimeMilliseconds(),
-                EndDate = x.Record.EndedAt.ToUnixTimeMilliseconds(),
+                StartDate = x.Record.StartedAt.HasValue ? x.Record.StartedAt.Value.ToUnixTimeMilliseconds() : 0,
+                EndDate = x.Record.EndedAt.HasValue ? x.Record.EndedAt.Value.ToUnixTimeMilliseconds() : 0,
                 Timezone = x.Meeting.TimeZone,
                 MeetingCreator = x.User.UserName,
-                Duration = CalculateMeetingDuration(x.Record.StartedAt.ToUnixTimeMilliseconds(), x.Record.EndedAt.ToUnixTimeMilliseconds()),
+                Duration = CalculateMeetingDuration(x.Record.StartedAt.HasValue ? x.Record.StartedAt.Value.ToUnixTimeMilliseconds() : 0, x.Record.EndedAt.HasValue ? x.Record.EndedAt.Value.ToUnixTimeMilliseconds() : 0),
                 Url = x.Record.Url,
                 UrlStatus = x.Record.UrlStatus
             }).ToListAsync(cancellationToken);
@@ -146,6 +145,7 @@ public partial class MeetingDataProvider
             Id = meetingRecordId,
             MeetingId = meetingId,
             EgressId = egressId,
+            StartedAt = DateTimeOffset.Now,
             RecordNumber = GenerateRecordNumber(++meetingRecordTotal)
         }, cancellationToken).ConfigureAwait(false);
     }
@@ -225,6 +225,7 @@ public partial class MeetingDataProvider
         if (meetingRecord == null) return;
 
         meetingRecord.UrlStatus = urlStatus;
+        meetingRecord.EndedAt = DateTimeOffset.Now;
 
         await _unitOfWork.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
     }
