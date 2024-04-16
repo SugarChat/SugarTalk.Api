@@ -8,4 +8,4 @@ ALTER TABLE meeting_chat_room_setting ADD COLUMN `inference_record_id` INT NULL;
 
 ALTER TABLE meeting_chat_room_setting DROP COLUMN `gender`;
 
-ALTER TABLE meeting_chat_voice_record ADD COLUMN `inference_record_id` INT NOT NULL;
+ALTER TABLE meeting_chat_voice_record ADD COLUMN `inference_record_id` INT NULL;
