@@ -109,11 +109,11 @@ public partial class MeetingDataProvider
                 MeetingNumber = x.Meeting.MeetingNumber,
                 RecordNumber = x.Record.RecordNumber,
                 Title = x.Meeting.Title,
-                StartDate = x.Meeting.StartDate,
-                EndDate = x.Meeting.EndDate,
+                StartDate = x.Record.StartedAt.ToUnixTimeMilliseconds(),
+                EndDate = x.Record.EndedAt.ToUnixTimeMilliseconds(),
                 Timezone = x.Meeting.TimeZone,
                 MeetingCreator = x.User.UserName,
-                Duration = CalculateMeetingDuration(x.Meeting.StartDate, x.Meeting.EndDate),
+                Duration = CalculateMeetingDuration(x.Record.StartedAt.ToUnixTimeMilliseconds(), x.Record.EndedAt.ToUnixTimeMilliseconds()),
                 Url = x.Record.Url,
                 UrlStatus = x.Record.UrlStatus
             }).ToListAsync(cancellationToken);

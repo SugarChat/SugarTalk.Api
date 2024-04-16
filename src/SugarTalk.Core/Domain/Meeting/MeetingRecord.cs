@@ -28,6 +28,12 @@ public class MeetingRecord : IEntity
     
     [Column("created_date")]
     public DateTimeOffset CreatedDate { get; set; }
+
+    [Column("started_at")]
+    public DateTimeOffset StartedAt { get; set; }
+
+    [Column("ended_at")]
+    public DateTimeOffset EndedAt { get; set; }
     
     [Column("is_deleted", TypeName = "tinyint(1)")]
     public bool IsDeleted { get; set; }
