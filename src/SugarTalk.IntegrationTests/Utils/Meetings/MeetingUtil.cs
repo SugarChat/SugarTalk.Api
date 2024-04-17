@@ -167,6 +167,9 @@ public class MeetingUtil : TestUtil
                 MeetingId = meetingId,
                 UserId = userId,
                 VoiceId = voiceId,
+                Style = 1,
+                Speed = 1,
+                Transpose = 5,
                 SelfLanguage = selfLanguage,
                 ListeningLanguage = listeningLanguage,
                 LastModifiedDate = lastModifiedDate ?? DateTimeOffset.Now

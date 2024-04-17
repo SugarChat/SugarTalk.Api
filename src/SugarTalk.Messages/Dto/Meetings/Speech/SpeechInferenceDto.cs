@@ -14,10 +14,10 @@ public class SpeechInferenceDto
     public string Text { get; set; }
     
     [JsonProperty("transpose")]
-    public int Transpose { get; set; }
+    public float Transpose { get; set; }
     
     [JsonProperty("speed")]
-    public int Speed { get; set; }
+    public float Speed { get; set; }
     
     [JsonProperty("response_format")]
     public string ResponseFormat { get; set; }

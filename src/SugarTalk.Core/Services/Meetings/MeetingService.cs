@@ -583,20 +583,15 @@ namespace SugarTalk.Core.Services.Meetings
         {
             if (!_currentUser.Id.HasValue) throw new UnauthorizedAccessException();
             
-            var roomSetting = await _meetingDataProvider.GetMeetingChatRoomSettingByMeetingIdAsync(_currentUser.Id.Value, command.MeetingId, cancellationToken).ConfigureAwait(false);
+            var roomSetting = await _meetingDataProvider.GetMeetingChatRoomSettingByMeetingIdAsync(
+                _currentUser.Id.Value, command.MeetingId, cancellationToken).ConfigureAwait(false);
 
             if (roomSetting == null)
             {
-                await _meetingDataProvider.AddMeetingChatRoomSettingAsync(new MeetingChatRoomSetting 
-                {
-                    UserId = _currentUser.Id.Value,
-                    MeetingId = command.MeetingId,
-                    VoiceId = command.VoiceId,
-                    VoiceName = command.VoiceName,
-                    Gender = command.Gender,
-                    SelfLanguage = command.SelfLanguage,
-                    ListeningLanguage = command.ListeningLanguage,
-                }, true, cancellationToken).ConfigureAwait(false);
+                roomSetting = _mapper.Map<MeetingChatRoomSetting>(command);
+                roomSetting.UserId = _currentUser.Id.Value;
+
+                await _meetingDataProvider.AddMeetingChatRoomSettingAsync(roomSetting, true, cancellationToken).ConfigureAwait(false);
             }
             else
             {
@@ -608,14 +603,7 @@ namespace SugarTalk.Core.Services.Meetings
                 }
                 else
                 {
-                    roomSetting.VoiceId = command.VoiceId;
-                    roomSetting.VoiceName = command.VoiceName;
-                    roomSetting.Gender = command.Gender;
-                    roomSetting.SelfLanguage = command.SelfLanguage;
-                    roomSetting.ListeningLanguage = command.ListeningLanguage;
-                    roomSetting.IsSystem = command.IsSystem;
-
-                    await _meetingDataProvider.UpdateMeetingChatRoomSettingAsync(roomSetting, true, cancellationToken).ConfigureAwait(false);
+                    await _meetingDataProvider.UpdateMeetingChatRoomSettingAsync(_mapper.Map(command, roomSetting), true, cancellationToken).ConfigureAwait(false);
                 }
             }
 
@@ -639,10 +627,11 @@ namespace SugarTalk.Core.Services.Meetings
 
             var stringVoiceId = voiceId.ToString();
 
-            if (string.IsNullOrEmpty(stringVoiceId))
+            if (!string.IsNullOrEmpty(stringVoiceId))
             {
                 roomSetting.VoiceId = stringVoiceId;
                 roomSetting.IsSystem = true;
+                roomSetting.Style = voiceId;
             }
             
             await _meetingDataProvider.UpdateMeetingChatRoomSettingAsync(roomSetting, true, cancellationToken).ConfigureAwait(false);
