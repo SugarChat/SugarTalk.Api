@@ -281,7 +281,7 @@ public partial class MeetingDataProvider
             meetingRecordDetailQuery = from speak in meetingRecordDetailQuery
                 join translation in _repository.QueryNoTracking<MeetingSpeakDetailTranslationRecord>() on speak.Id equals translation.MeetingSpeakDetailId into translations
                 from translation in translations.DefaultIfEmpty()
-                where translation.Language == language
+                where translation == null || translation.Language == language
                 select new MeetingSpeakDetailDto
                 {
                     Id = speak.Id,
