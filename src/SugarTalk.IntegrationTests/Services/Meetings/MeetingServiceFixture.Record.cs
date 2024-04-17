@@ -849,7 +849,7 @@ public partial class MeetingServiceFixture
             afterGetRecords.FirstOrDefault(x => x.Id == meetingRecordId)?.Url.ShouldBe("mock url");
             afterGetRecords.FirstOrDefault(x => x.Id == meetingRecordId)?.RecordType.ShouldBe(MeetingRecordType.EndRecord);
             afterGetRecords.FirstOrDefault(x => x.Id == meetingRecordId)?.UrlStatus.ShouldBe(MeetingRecordUrlStatus.Completed);
-            
+
             var afterGetMeetingDetail = await repository.Query<MeetingSpeakDetail>().ToListAsync().ConfigureAwait(false);
             
             afterGetMeetingDetail.ShouldNotBeNull();

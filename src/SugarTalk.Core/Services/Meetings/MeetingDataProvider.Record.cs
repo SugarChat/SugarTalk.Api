@@ -279,9 +279,11 @@ public partial class MeetingDataProvider
         if (language.HasValue)
         {
             meetingRecordDetailQuery = from speak in meetingRecordDetailQuery
-                join translation in _repository.QueryNoTracking<MeetingSpeakDetailTranslationRecord>() on speak.Id equals translation.MeetingSpeakDetailId into translations
+                join translation in _repository.QueryNoTracking<MeetingSpeakDetailTranslationRecord>() 
+                    on new { SpeakId = speak.Id, Language = (TranslationLanguage) language } 
+                    equals new { SpeakId = translation.MeetingSpeakDetailId, Language = translation.Language }  
+                    into translations
                 from translation in translations.DefaultIfEmpty()
-                where translation == null || translation.Language == language
                 select new MeetingSpeakDetailDto
                 {
                     Id = speak.Id,
@@ -293,7 +295,7 @@ public partial class MeetingDataProvider
                     SmartContent = speak.SmartContent,
                     MeetingNumber = speak.MeetingNumber,
                     SpeakStartTime = speak.SpeakStartTime,
-                    TranslationStatus = translation.Status,
+                    TranslationStatus = translation == null ? 0 : translation.Status,
                     OriginalContent = speak.OriginalContent,
                     MeetingRecordId = speak.MeetingRecordId,
                     FileTranscriptionStatus = speak.FileTranscriptionStatus,
