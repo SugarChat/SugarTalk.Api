@@ -354,7 +354,7 @@ public partial class MeetingService
     
     private async Task<string> ProcessSpeechInferenceAsync(MeetingChatRoomSetting roomSetting, MeetingSpeech meetingSpeech, CancellationToken cancellationToken)
     {
-        if(roomSetting.Transpose == null || roomSetting.Speed == null || roomSetting.Style == null)
+        if(!roomSetting.Transpose.HasValue || !roomSetting.Speed.HasValue || !roomSetting.Style.HasValue)
             throw new Exception("Room setting is not valid for speech inference");
         
         var response = await _speechClient.SpeechInferenceAsync(new SpeechInferenceDto
