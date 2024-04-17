@@ -52,6 +52,7 @@ public partial class MeetingService
             Status = SummaryStatus.InProgress,
             RecordId = command.MeetingRecordId,
             MeetingNumber = command.MeetingNumber,
+            TargetLanguage = command.Language,
             OriginText = GenerateOriginRecordText(command.SpeakInfos)
         };
 
