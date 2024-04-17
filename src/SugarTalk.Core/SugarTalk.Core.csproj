@@ -100,6 +100,7 @@
         <EmbeddedResource Include="DbUp\Scripts_2024\Script0021_modify_meeting_chat_room_table.sql" />
         <EmbeddedResource Include="DbUp\Scripts_2024\Script0022_modify_meeting_speech_table.sql" />
         <EmbeddedResource Include="DbUp\Scripts_2024\Script0023_add_translated_text.sql" />
+        <EmbeddedResource Include="DbUp\Scripts_2024\Script0024_alter_room_setting_table.sql" />
         <EmbeddedResource Include="DbUp\Scripts_2024\Script0024_modify_meeting_table.sql" />
         <EmbeddedResource Include="DbUp\Scripts_2024\Script0024_add_guest_name_for_meeting_user_session_table.sql" />
         <EmbeddedResource Include="DbUp\Scripts_2024\Script0025_modify_meeting_record.sql" />

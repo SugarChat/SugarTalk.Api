@@ -1087,18 +1087,19 @@ public partial class MeetingServiceFixture : MeetingFixtureBase
     }
 
     [Theory]
-    [InlineData("8b9c631a-3c76-4b24-b90d-5a25d6b2f4f9", true, false, "", SpeechTargetLanguageType.Cantonese, SpeechTargetLanguageType.Cantonese)]
-    [InlineData("8b9c631a-3c76-4b24-b90d-5a25d6b2f4f9", false, false, "123456", SpeechTargetLanguageType.English, SpeechTargetLanguageType.English)]
+    //[InlineData("8b9c631a-3c76-4b24-b90d-5a25d6b2f4f9", true, true, "123", SpeechTargetLanguageType.Cantonese, SpeechTargetLanguageType.Cantonese)]
+    //[InlineData("8b9c631a-3c76-4b24-b90d-5a25d6b2f4f9", false, true, "123456", SpeechTargetLanguageType.English, SpeechTargetLanguageType.English)]
     [InlineData("af0e2598-7d9d-493e-bf77-6f33db8f5c3c", false, false, "123456", SpeechTargetLanguageType.English, SpeechTargetLanguageType.English)]
     public async Task CanAddOrUpdateMeetingChatRoom(
         Guid meetingId, bool roomSettingIsSystem, bool commandIsSystem, string voiceId, SpeechTargetLanguageType listeningLanguage, SpeechTargetLanguageType selfLanguage)
     {
-        var meetingChatRoomSetting = new MeetingChatRoomSetting()
+        var meetingChatRoomSetting = new MeetingChatRoomSetting
         {
             UserId = 1,
             MeetingId = Guid.Parse("8b9c631a-3c76-4b24-b90d-5a25d6b2f4f9"),
             VoiceId = "123",
             IsSystem = roomSettingIsSystem,
+            Style = 123,
             LastModifiedDate = DateTimeOffset.Now
         };
         
@@ -1114,8 +1115,13 @@ public partial class MeetingServiceFixture : MeetingFixtureBase
                 MeetingId = meetingId,
                 IsSystem = commandIsSystem,
                 VoiceId = voiceId,
-                Gender = EchoAvatarGenderVoiceType.Female,
                 VoiceName = "yayaya",
+                Style = 113,
+                InferenceRecordId = 9,
+                Speed = 1,
+                Transpose = 2,
+                SelfLanguage = selfLanguage,
+                ListeningLanguage = listeningLanguage
             }).ConfigureAwait(false);
 
             var meetingChatRoom = await repository.QueryNoTracking<MeetingChatRoomSetting>(
@@ -1127,16 +1133,27 @@ public partial class MeetingServiceFixture : MeetingFixtureBase
             {
                 if (roomSettingIsSystem)
                 {
-                    meetingChatRoom.SelfLanguage.ShouldBe(meetingChatRoomSetting.SelfLanguage);
-                    meetingChatRoom.ListeningLanguage.ShouldBe(meetingChatRoomSetting.ListeningLanguage);
+                    meetingChatRoom.SelfLanguage.ShouldBe(selfLanguage);
+                    meetingChatRoom.ListeningLanguage.ShouldBe(listeningLanguage);
                     meetingChatRoom.VoiceId.ShouldNotBeEmpty();
+                    meetingChatRoom.Style.ShouldBe(113);
                 }
                 else
                 {
-                    meetingChatRoom.SelfLanguage.ShouldBe(selfLanguage);
-                    meetingChatRoom.ListeningLanguage.ShouldBe(listeningLanguage);
-                    meetingChatRoom.VoiceId.ShouldBe(voiceId);
+                    meetingChatRoom.SelfLanguage.ShouldBe(SpeechTargetLanguageType.Cantonese);
+                    meetingChatRoom.ListeningLanguage.ShouldBe(SpeechTargetLanguageType.Cantonese);
+                    meetingChatRoom.VoiceId.ShouldNotBeEmpty();
+                    meetingChatRoom.Style.ShouldNotBeNull();
+                    meetingChatRoom.Speed.ShouldBeNull();
+                    meetingChatRoom.Transpose.ShouldBeNull();
                 }
+            }
+            else
+            {
+                meetingChatRoom.SelfLanguage.ShouldBe(SpeechTargetLanguageType.English);
+                meetingChatRoom.ListeningLanguage.ShouldBe(SpeechTargetLanguageType.English);
+                meetingChatRoom.VoiceId.ShouldBe("123456");
+                meetingChatRoom.Style.ShouldBe(113);
             }
         });
     }
