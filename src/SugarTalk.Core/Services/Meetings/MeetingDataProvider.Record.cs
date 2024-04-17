@@ -295,7 +295,7 @@ public partial class MeetingDataProvider
                     SmartContent = speak.SmartContent,
                     MeetingNumber = speak.MeetingNumber,
                     SpeakStartTime = speak.SpeakStartTime,
-                    TranslationStatus = translation.Status,
+                    TranslationStatus = translation == null ? 0 : translation.Status,
                     OriginalContent = speak.OriginalContent,
                     MeetingRecordId = speak.MeetingRecordId,
                     FileTranscriptionStatus = speak.FileTranscriptionStatus,
