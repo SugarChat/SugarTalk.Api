@@ -279,7 +279,8 @@ public partial class MeetingDataProvider
         if (language.HasValue)
         {
             meetingRecordDetailQuery = from speak in meetingRecordDetailQuery
-                join translation in _repository.QueryNoTracking<MeetingSpeakDetailTranslationRecord>() on speak.Id equals translation.MeetingSpeakDetailId
+                join translation in _repository.QueryNoTracking<MeetingSpeakDetailTranslationRecord>() on speak.Id equals translation.MeetingSpeakDetailId into translations
+                from translation in translations.DefaultIfEmpty()
                 where translation.Language == language
                 select new MeetingSpeakDetailDto
                 {
