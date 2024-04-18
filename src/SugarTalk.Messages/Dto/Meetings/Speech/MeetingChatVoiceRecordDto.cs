@@ -23,5 +23,7 @@ public class MeetingChatVoiceRecordDto
     
     public string TranslatedText { get; set; }
     
+    public string InferenceRecordId { get; set; }
+
     public ChatRecordGenerationStatus GenerationStatus { get; set; }
 }
