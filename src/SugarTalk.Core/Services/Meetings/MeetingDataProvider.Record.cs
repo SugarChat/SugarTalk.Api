@@ -277,12 +277,9 @@ public partial class MeetingDataProvider
             .ProjectTo<MeetingSpeakDetailDto>(_mapper.ConfigurationProvider);
 
         if (language.HasValue)
-        {
             meetingRecordDetailQuery = from speak in meetingRecordDetailQuery
-                join translation in _repository.QueryNoTracking<MeetingSpeakDetailTranslationRecord>() 
-                    on new { SpeakId = speak.Id, Language = (TranslationLanguage) language } 
-                    equals new { SpeakId = translation.MeetingSpeakDetailId, Language = translation.Language }  
-                    into translations
+                join translation in _repository.QueryNoTracking<MeetingSpeakDetailTranslationRecord>().Where(x => x.Language == language.Value)
+                    on speak.Id equals translation.MeetingSpeakDetailId into translations
                 from translation in translations.DefaultIfEmpty()
                 select new MeetingSpeakDetailDto
                 {
@@ -303,7 +300,6 @@ public partial class MeetingDataProvider
                     OriginalTranslationContent = translation.OriginalTranslationContent,
                     CreatedDate = speak.CreatedDate
                 };
-        }
 
         return await meetingRecordDetailQuery.ToListAsync(cancellationToken).ConfigureAwait(false);
     }
