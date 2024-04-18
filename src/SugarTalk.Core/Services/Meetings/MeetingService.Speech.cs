@@ -280,6 +280,7 @@ public partial class MeetingService
                 SpeechId = speech.Id,
                 IsSelf = false,
                 VoiceId = roomSetting.VoiceId,
+                VoiceLanguage = roomSetting.ListeningLanguage,
                 InferenceRecordId = roomSetting.InferenceRecordId,
                 GenerationStatus = ChatRecordGenerationStatus.InProgress
             }).ToList();
@@ -316,6 +317,7 @@ public partial class MeetingService
             IsSelf = true,
             SpeechId = meetingSpeech.Id,
             VoiceId = roomSetting.VoiceId,
+            InferenceRecordId = roomSetting.InferenceRecordId,
             GenerationStatus = ChatRecordGenerationStatus.InProgress
         };
 
@@ -339,11 +341,9 @@ public partial class MeetingService
         }
         else
         {
-            var voiceUrl = await ProcessSpeechInferenceAsync(roomSetting, meetingSpeech, cancellationToken).ConfigureAwait(false);
-
-            meetingChatVoiceRecord.VoiceUrl = voiceUrl; 
-        
-            meetingChatVoiceRecord.GenerationStatus = !string.IsNullOrEmpty(voiceUrl)
+            meetingChatVoiceRecord.VoiceUrl = await ProcessSpeechInferenceAsync(roomSetting, meetingSpeech, cancellationToken).ConfigureAwait(false);
+            
+            meetingChatVoiceRecord.GenerationStatus = !string.IsNullOrEmpty(meetingChatVoiceRecord.VoiceUrl)
                 ? ChatRecordGenerationStatus.Completed 
                 : ChatRecordGenerationStatus.InProgress;
             
@@ -367,7 +367,7 @@ public partial class MeetingService
             ResponseFormat = "url"
         }, cancellationToken).ConfigureAwait(false);
 
-        Log.Information("Get speech to inference mandarin {@Response}", response);
+        Log.Information("Get speech to inference {@Response}", response);
         
         return response?.Result?.Url;
     }
