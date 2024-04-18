@@ -1087,8 +1087,8 @@ public partial class MeetingServiceFixture : MeetingFixtureBase
     }
 
     [Theory]
-    //[InlineData("8b9c631a-3c76-4b24-b90d-5a25d6b2f4f9", true, true, "123", SpeechTargetLanguageType.Cantonese, SpeechTargetLanguageType.Cantonese)]
-    //[InlineData("8b9c631a-3c76-4b24-b90d-5a25d6b2f4f9", false, true, "123456", SpeechTargetLanguageType.English, SpeechTargetLanguageType.English)]
+    [InlineData("8b9c631a-3c76-4b24-b90d-5a25d6b2f4f9", true, true, "123", SpeechTargetLanguageType.Cantonese, SpeechTargetLanguageType.Cantonese)]
+    [InlineData("8b9c631a-3c76-4b24-b90d-5a25d6b2f4f9", false, true, "123456", SpeechTargetLanguageType.English, SpeechTargetLanguageType.English)]
     [InlineData("af0e2598-7d9d-493e-bf77-6f33db8f5c3c", false, false, "123456", SpeechTargetLanguageType.English, SpeechTargetLanguageType.English)]
     public async Task CanAddOrUpdateMeetingChatRoom(
         Guid meetingId, bool roomSettingIsSystem, bool commandIsSystem, string voiceId, SpeechTargetLanguageType listeningLanguage, SpeechTargetLanguageType selfLanguage)
