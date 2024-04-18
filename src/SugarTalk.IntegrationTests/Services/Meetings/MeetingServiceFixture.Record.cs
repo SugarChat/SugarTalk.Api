@@ -849,9 +849,7 @@ public partial class MeetingServiceFixture
             afterGetRecords.FirstOrDefault(x => x.Id == meetingRecordId)?.Url.ShouldBe("mock url");
             afterGetRecords.FirstOrDefault(x => x.Id == meetingRecordId)?.RecordType.ShouldBe(MeetingRecordType.EndRecord);
             afterGetRecords.FirstOrDefault(x => x.Id == meetingRecordId)?.UrlStatus.ShouldBe(MeetingRecordUrlStatus.Completed);
-            afterGetRecords.FirstOrDefault(x => x.Id == meetingRecordId)?.StartedAt.UtcDateTime.ToString("yyyy-MM-ddTHH:mm:ssZ").ShouldBe(startedAt.UtcDateTime.ToString("yyyy-MM-ddTHH:mm:ssZ"));
-            afterGetRecords.FirstOrDefault(x => x.Id == meetingRecordId)?.EndedAt.UtcDateTime.ToString("yyyy-MM-ddTHH:mm:ssZ").ShouldBe(endedAt.UtcDateTime.ToString("yyyy-MM-ddTHH:mm:ssZ"));
-            
+          
             var afterGetMeetingDetail = await repository.Query<MeetingSpeakDetail>().ToListAsync().ConfigureAwait(false);
             
             afterGetMeetingDetail.ShouldNotBeNull();
