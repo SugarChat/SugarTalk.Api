@@ -124,16 +124,12 @@ public partial class MeetingService
         var speakDetails = await _meetingDataProvider.GetMeetingSpeakDetailsAsync(
             meetingNumber: meeting.MeetingNumber, recordId: command.MeetingRecordId, cancellationToken: cancellationToken).ConfigureAwait(false);
 
-        var lastSpeakDetail = speakDetails.OrderByDescending(x => x.SpeakStartTime).ToList().FirstOrDefault();
-
         foreach (var speakDetail in speakDetails.Where(speakDetail => speakDetail.SpeakEndTime is null or 0))
         {
             speakDetail.SpeakEndTime = DateTimeOffset.Now.ToUnixTimeMilliseconds();
             speakDetail.SpeakStatus = SpeakStatus.End;
         }
-        
-        Log.Information("Last speak detail: {@lastSpeakDetail}", lastSpeakDetail);
-        
+
         if (stopResponse == null) throw new Exception();
 
         var storageCommand = new DelayedMeetingRecordingStorageCommand 
