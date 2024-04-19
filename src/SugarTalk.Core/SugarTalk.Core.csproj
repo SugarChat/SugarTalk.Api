@@ -104,6 +104,7 @@
         <EmbeddedResource Include="DbUp\Scripts_2024\Script0024_modify_meeting_table.sql" />
         <EmbeddedResource Include="DbUp\Scripts_2024\Script0024_add_guest_name_for_meeting_user_session_table.sql" />
         <EmbeddedResource Include="DbUp\Scripts_2024\Script0025_modify_meeting_record.sql" />
+        <EmbeddedResource Include="DbUp\Scripts_2024\Script0026_modify_meeting_table.sql" />
     </ItemGroup>
     
     <ItemGroup>
