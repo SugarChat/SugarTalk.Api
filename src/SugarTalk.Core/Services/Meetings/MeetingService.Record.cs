@@ -126,8 +126,8 @@ public partial class MeetingService
 
         foreach (var speakDetail in speakDetails.Where(speakDetail => speakDetail.SpeakEndTime is null or 0))
         {
-            speakDetail.SpeakEndTime = DateTimeOffset.Now.ToUnixTimeMilliseconds();
             speakDetail.SpeakStatus = SpeakStatus.End;
+            speakDetail.SpeakEndTime = DateTimeOffset.Now.ToUnixTimeMilliseconds();
         }
         
         await _meetingDataProvider.UpdateMeetingSpeakDetailsAsync(speakDetails, true, cancellationToken).ConfigureAwait(false);
