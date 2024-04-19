@@ -126,12 +126,10 @@ public partial class MeetingService
 
         var lastSpeakDetail = speakDetails.OrderByDescending(x => x.SpeakStartTime).ToList().FirstOrDefault();
 
-        if (lastSpeakDetail != null)
+        foreach (var speakDetail in speakDetails.Where(speakDetail => speakDetail.SpeakEndTime is null or 0))
         {
-            lastSpeakDetail.SpeakEndTime = DateTimeOffset.Now.ToUnixTimeMilliseconds();
-            lastSpeakDetail.SpeakStatus = SpeakStatus.End;
-
-            await _meetingDataProvider.UpdateMeetingSpeakDetailAsync(lastSpeakDetail, true, cancellationToken).ConfigureAwait(false);
+            speakDetail.SpeakEndTime = DateTimeOffset.Now.ToUnixTimeMilliseconds();
+            speakDetail.SpeakStatus = SpeakStatus.End;
         }
         
         Log.Information("Last speak detail: {@lastSpeakDetail}", lastSpeakDetail);
