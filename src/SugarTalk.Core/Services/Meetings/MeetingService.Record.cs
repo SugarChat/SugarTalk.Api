@@ -129,6 +129,8 @@ public partial class MeetingService
             speakDetail.SpeakEndTime = DateTimeOffset.Now.ToUnixTimeMilliseconds();
             speakDetail.SpeakStatus = SpeakStatus.End;
         }
+        
+        await _meetingDataProvider.UpdateMeetingSpeakDetailsAsync(speakDetails, true, cancellationToken).ConfigureAwait(false);
 
         if (stopResponse == null) throw new Exception();
 
