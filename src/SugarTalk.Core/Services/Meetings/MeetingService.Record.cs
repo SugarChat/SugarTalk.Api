@@ -94,6 +94,10 @@ public partial class MeetingService
 
         await _meetingDataProvider.PersistMeetingRecordAsync(meeting.Id, meetingRecordId, postResponse.EgressId, cancellationToken).ConfigureAwait(false);
 
+        meeting.IsActiveRecord = true;
+
+        await _meetingDataProvider.UpdateMeetingAsync(meeting, cancellationToken).ConfigureAwait(false);
+        
         return new MeetingRecordingStartedEvent
         {
             MeetingRecordId = meetingRecordId,
@@ -131,7 +135,11 @@ public partial class MeetingService
             MeetingId = command.MeetingId, 
             EgressId = command.EgressId,
             ReTryLimit = command.ReTryLimit
-        }; 
+        };
+
+        meeting.IsActiveRecord = false;
+
+        await _meetingDataProvider.UpdateMeetingAsync(meeting, cancellationToken).ConfigureAwait(false);
         
         _backgroundJobClient.Schedule<IMediator>(m => m.SendAsync(storageCommand, cancellationToken), TimeSpan.FromSeconds(10)); 
       

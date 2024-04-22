@@ -92,7 +92,7 @@ namespace SugarTalk.Core.Services.Meetings
         
         Task HandleMeetingStatusWhenOutMeetingAsync(int userId, Guid meetingId, Guid? meetingSubId = null, CancellationToken cancellationToken = default);
         
-        Task<MeetingSwitchEaResponse> UpdateMeetingChatResponseAsync(MeetingSwitchEaCommand switchEaCommand, CancellationToken cancellationToken);
+        Task<MeetingSwitchEaResponse> UpdateMeetingChatResponseAsync(MeetingSwitchEaCommand command, CancellationToken cancellationToken);
     }
     
     public partial class MeetingService : IMeetingService
@@ -659,18 +659,18 @@ namespace SugarTalk.Core.Services.Meetings
         }
 
         public async Task<MeetingSwitchEaResponse> UpdateMeetingChatResponseAsync(
-            MeetingSwitchEaCommand switchEaCommand, CancellationToken cancellationToken)
+            MeetingSwitchEaCommand command, CancellationToken cancellationToken)
         {
             var user = await _accountDataProvider.CheckCurrentLoggedInUser(cancellationToken).ConfigureAwait(false);
             
-            var meeting = await _meetingDataProvider.GetMeetingByIdAsync(switchEaCommand.Id, cancellationToken).ConfigureAwait(false);
+            var meeting = await _meetingDataProvider.GetMeetingByIdAsync(command.Id, cancellationToken).ConfigureAwait(false);
             
             if (meeting.MeetingMasterUserId != user.Id) 
                 throw new CannotUpdateMeetingWhenMasterUserIdMismatchException();
 
             Log.Information("Meeting master userId:{masterId}, current userId{currentUserId}", meeting.MeetingMasterUserId, _currentUser.Id.Value);
             
-            meeting.IsActiveEa = switchEaCommand.IsActiveEa;
+            meeting.IsActiveEa = command.IsActiveEa;
             
             await _meetingDataProvider.UpdateMeetingAsync(meeting, cancellationToken).ConfigureAwait(false);
 

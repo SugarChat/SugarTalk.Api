@@ -60,9 +60,9 @@ public class MeetingController : ControllerBase
     
     [Route("switch/ea"), HttpPost]
     [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(MeetingSwitchEaResponse))]
-    public async Task<IActionResult> MeetingSwitchEaAsync([FromBody] MeetingSwitchEaCommand switchEaCommand)
+    public async Task<IActionResult> MeetingSwitchEaAsync([FromBody] MeetingSwitchEaCommand command)
     {
-        var response = await _mediator.SendAsync<MeetingSwitchEaCommand, MeetingSwitchEaResponse>(switchEaCommand).ConfigureAwait(false);
+        var response = await _mediator.SendAsync<MeetingSwitchEaCommand, MeetingSwitchEaResponse>(command).ConfigureAwait(false);
 
         return Ok(response);
     }
