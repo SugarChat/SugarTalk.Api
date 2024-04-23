@@ -735,22 +735,21 @@ public partial class MeetingServiceFixture
         {
             Id = 1,
             TrackId = "11",
-            MeetingNumber = "6666",
+            MeetingNumber = meeting.MeetingNumber,
             SpeakStatus = SpeakStatus.End,
             MeetingRecordId = meetingRecordId,
-            SpeakStartTime = DateTimeOffset.Now.ToUnixTimeSeconds(),
-            SpeakEndTime = DateTimeOffset.Now.ToUnixTimeSeconds()
+            SpeakStartTime = DateTimeOffset.Now.ToUnixTimeSeconds() + 1,
+            SpeakEndTime = DateTimeOffset.Now.ToUnixTimeSeconds() + 3
         };
         
         var speakDetail2 = new MeetingSpeakDetail()
         {
             Id = 2,
             TrackId = "22",
-            MeetingNumber = "6666",
-            SpeakStatus = SpeakStatus.End,
+            MeetingNumber = meeting.MeetingNumber,
+            SpeakStatus = SpeakStatus.Speaking,
             MeetingRecordId = meetingRecordId,
-            SpeakStartTime = DateTimeOffset.Now.ToUnixTimeSeconds(),
-            SpeakEndTime = DateTimeOffset.Now.ToUnixTimeSeconds()
+            SpeakStartTime = DateTimeOffset.Now.ToUnixTimeSeconds() + 4,
         };
 
         await RunWithUnitOfWork<IRepository>(async repository =>
@@ -858,6 +857,8 @@ public partial class MeetingServiceFixture
             afterGetMeetingDetail.FirstOrDefault(x => x.Id == 2)?.FileTranscriptionStatus.ShouldBe(FileTranscriptionStatus.Completed);
             afterGetMeetingDetail.FirstOrDefault(x => x.Id == 1)?.OriginalContent.ShouldBe(audioContent);
             afterGetMeetingDetail.FirstOrDefault(x => x.Id == 2)?.OriginalContent.ShouldBe(audioContent);
+            afterGetMeetingDetail.FirstOrDefault(x => x.Id == 2)?.SpeakEndTime.ShouldNotBeNull();
+            afterGetMeetingDetail.FirstOrDefault(x => x.Id == 1)?.SpeakStatus.ShouldBe(SpeakStatus.End);
             afterGetMeetingDetail.FirstOrDefault(x => x.Id == 1)?.SmartContent.ShouldBe("I'm smart content");
         });
     }
