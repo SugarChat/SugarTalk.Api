@@ -58,6 +58,8 @@ public class MeetingBaseDto
     
     public int MeetingMasterUserId { get; set; }
 
+    public Guid? MeetingRecordId { get; set; }
+
     public string MeetingNumber { get; set; }
     
     public long StartDate { get; set; }

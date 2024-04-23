@@ -201,6 +201,13 @@ namespace SugarTalk.Core.Services.Meetings
             {
                 updateMeeting.RepeatType = meetingRule.RepeatType;
             }
+
+            var meetingRecord = await GetMeetingRecordAsync(meeting.Id, cancellationToken).ConfigureAwait(false);
+
+            if (meetingRecord is not null)
+            {
+                updateMeeting.MeetingRecordId = meetingRecord.Id;
+            }
             
             return updateMeeting;
         }
@@ -648,7 +655,7 @@ namespace SugarTalk.Core.Services.Meetings
 
             if (appointmentMeetings is not { Count: > 0 }) return new List<Meeting>();
             
-            return await FilterAppointmentMeetingsWithoutAttendeesAsync(appointmentMeetings, cancellationToken).ConfigureAwait(false);;
+            return await FilterAppointmentMeetingsWithoutAttendeesAsync(appointmentMeetings, cancellationToken).ConfigureAwait(false);
         }
 
         public async Task CheckUserKickedFromMeetingAsync(string meetingNumber, int userId, CancellationToken cancellationToken)
@@ -684,6 +691,12 @@ namespace SugarTalk.Core.Services.Meetings
         public async Task<MeetingChatVoiceRecord> GetMeetingChatVoiceRecordAsync(Guid id, CancellationToken cancellationToken)
         {
             return await _repository.Query<MeetingChatVoiceRecord>(x => x.Id == id)
+                .FirstOrDefaultAsync(cancellationToken).ConfigureAwait(false);
+        }
+
+        public async Task<MeetingRecord> GetMeetingRecordAsync(Guid meetingId, CancellationToken cancellationToken)
+        {
+            return await _repository.QueryNoTracking<MeetingRecord>(x => x.MeetingId == meetingId)
                 .FirstOrDefaultAsync(cancellationToken).ConfigureAwait(false);
         }
 
