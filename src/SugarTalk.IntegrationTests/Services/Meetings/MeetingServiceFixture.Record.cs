@@ -738,8 +738,8 @@ public partial class MeetingServiceFixture
             MeetingNumber = meeting.MeetingNumber,
             SpeakStatus = SpeakStatus.End,
             MeetingRecordId = meetingRecordId,
-            SpeakStartTime = DateTimeOffset.Now.ToUnixTimeSeconds()+1,
-            SpeakEndTime = DateTimeOffset.Now.ToUnixTimeSeconds()+3
+            SpeakStartTime = DateTimeOffset.Now.ToUnixTimeSeconds() + 1,
+            SpeakEndTime = DateTimeOffset.Now.ToUnixTimeSeconds() + 3
         };
         
         var speakDetail2 = new MeetingSpeakDetail()
@@ -749,7 +749,7 @@ public partial class MeetingServiceFixture
             MeetingNumber = meeting.MeetingNumber,
             SpeakStatus = SpeakStatus.Speaking,
             MeetingRecordId = meetingRecordId,
-            SpeakStartTime = DateTimeOffset.Now.ToUnixTimeSeconds()+4,
+            SpeakStartTime = DateTimeOffset.Now.ToUnixTimeSeconds() + 4,
         };
 
         await RunWithUnitOfWork<IRepository>(async repository =>
