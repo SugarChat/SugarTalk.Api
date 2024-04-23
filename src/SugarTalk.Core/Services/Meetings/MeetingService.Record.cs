@@ -118,9 +118,20 @@ public partial class MeetingService
 
         var stopResponse = await _liveKitClient.StopEgressAsync(
             new StopEgressRequestDto { Token = recordMeetingToken, EgressId = command.EgressId }, cancellationToken).ConfigureAwait(false);
-        
+
         Log.Information("stop meeting recording response: {@stopResponse}", stopResponse);
         
+        var speakDetails = await _meetingDataProvider.GetMeetingSpeakDetailsAsync(
+            meetingNumber: meeting.MeetingNumber, recordId: command.MeetingRecordId, cancellationToken: cancellationToken).ConfigureAwait(false);
+
+        foreach (var speakDetail in speakDetails.Where(speakDetail => speakDetail.SpeakEndTime is null or 0))
+        {
+            speakDetail.SpeakStatus = SpeakStatus.End;
+            speakDetail.SpeakEndTime = DateTimeOffset.Now.ToUnixTimeMilliseconds();
+        }
+        
+        await _meetingDataProvider.UpdateMeetingSpeakDetailsAsync(speakDetails, true, cancellationToken).ConfigureAwait(false);
+
         if (stopResponse == null) throw new Exception();
 
         var storageCommand = new DelayedMeetingRecordingStorageCommand 
