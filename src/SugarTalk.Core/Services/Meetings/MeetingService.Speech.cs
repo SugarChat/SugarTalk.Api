@@ -341,7 +341,7 @@ public partial class MeetingService
         }
         else
         {
-            meetingChatVoiceRecord.VoiceUrl = await ProcessSpeechInferenceAsync(roomSetting, meetingSpeech, cancellationToken).ConfigureAwait(false);
+            meetingChatVoiceRecord.VoiceUrl = await ProcessSpeechInferenceAsync(roomSetting, meetingChatVoiceRecord.TranslatedText, cancellationToken).ConfigureAwait(false);
             
             meetingChatVoiceRecord.GenerationStatus = !string.IsNullOrEmpty(meetingChatVoiceRecord.VoiceUrl)
                 ? ChatRecordGenerationStatus.Completed 
@@ -352,7 +352,7 @@ public partial class MeetingService
         }
     }
     
-    private async Task<string> ProcessSpeechInferenceAsync(MeetingChatRoomSetting roomSetting, MeetingSpeech meetingSpeech, CancellationToken cancellationToken)
+    private async Task<string> ProcessSpeechInferenceAsync(MeetingChatRoomSetting roomSetting, string translatedText, CancellationToken cancellationToken)
     {
         if(!roomSetting.Transpose.HasValue || !roomSetting.Speed.HasValue || !roomSetting.Style.HasValue)
             throw new Exception("Room setting is not valid for speech inference");
@@ -360,7 +360,7 @@ public partial class MeetingService
         var response = await _speechClient.SpeechInferenceAsync(new SpeechInferenceDto
         {
             Name = roomSetting.VoiceId,
-            Text = meetingSpeech.OriginalText,
+            Text = translatedText,
             LanguageId = roomSetting.Style.Value,
             Transpose = roomSetting.Transpose.Value,
             Speed = roomSetting.Speed.Value,
