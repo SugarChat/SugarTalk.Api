@@ -341,6 +341,7 @@ public partial class MeetingService
         }
         else
         {
+            meetingChatVoiceRecord.VoiceUrl = await ProcessSpeechInferenceAsync(roomSetting, meetingChatVoiceRecord.TranslatedText, cancellationToken).ConfigureAwait(false);
             
             meetingChatVoiceRecord.GenerationStatus = !string.IsNullOrEmpty(meetingChatVoiceRecord.VoiceUrl)
                 ? ChatRecordGenerationStatus.Completed 
