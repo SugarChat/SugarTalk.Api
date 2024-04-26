@@ -58,6 +58,8 @@ public class MeetingBaseDto
     
     public int MeetingMasterUserId { get; set; }
 
+    public Guid? MeetingRecordId { get; set; }
+
     public string MeetingNumber { get; set; }
     
     public long StartDate { get; set; }
@@ -91,6 +93,8 @@ public class MeetingBaseDto
     public bool IsPasswordEnabled { get; set; } = false;
 
     public bool IsActiveEa { get; set; } = false;
+
+    public bool IsActiveRecord { get; set; } = false;
 }
 
 public class AddOrUpdateMeetingDto

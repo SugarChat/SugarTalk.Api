@@ -67,4 +67,7 @@ public class Meeting : IEntity
 
     [Column("is_active_ea")]
     public bool IsActiveEa { get; set; }
+
+    [Column("is_active_record")]
+    public bool IsActiveRecord { get; set; }
 }
