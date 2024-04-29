@@ -1136,7 +1136,7 @@ public partial class MeetingServiceFixture : MeetingFixtureBase
                     meetingChatRoom.SelfLanguage.ShouldBe(selfLanguage);
                     meetingChatRoom.ListeningLanguage.ShouldBe(listeningLanguage);
                     meetingChatRoom.VoiceId.ShouldNotBeEmpty();
-                    meetingChatRoom.Style.ShouldBe(113);
+                    meetingChatRoom.Style.ShouldBe(123);
                 }
                 else
                 {
