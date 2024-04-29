@@ -297,6 +297,21 @@ namespace SugarTalk.Core.Services.Meetings
 
             Log.Information("SugarTalk get userSetting from JoinMeetingAsync :{userSetting}", JsonConvert.SerializeObject(userSetting));
             
+            await _meetingDataProvider.AddMeetingChatRoomSettingAsync(new MeetingChatRoomSetting
+            {
+                IsSystem = true,
+                UserId = userSetting.UserId,
+                MeetingId = meeting.Id,
+                VoiceId = userSetting.TargetLanguageType switch
+                {
+                    SpeechTargetLanguageType.Cantonese => ((int)userSetting.CantoneseToneType).ToString(),
+                    SpeechTargetLanguageType.Mandarin => ((int)userSetting.MandarinToneType).ToString(),
+                    SpeechTargetLanguageType.English => ((int)userSetting.EnglishToneType).ToString(),
+                    SpeechTargetLanguageType.Spanish => ((int)userSetting.SpanishToneType).ToString(),
+                    _ => string.Empty
+                }
+            }, true, cancellationToken).ConfigureAwait(false);
+            
             return new MeetingJoinedEvent
             {
                 UserId = user.Id,
@@ -588,7 +603,18 @@ namespace SugarTalk.Core.Services.Meetings
                 }
                 else
                 {
-                    await _meetingDataProvider.UpdateMeetingChatRoomSettingAsync(_mapper.Map(command, roomSetting), true, cancellationToken).ConfigureAwait(false);
+                    if (roomSetting.VoiceId == null)
+                    {
+                        await _meetingDataProvider.UpdateMeetingChatRoomSettingAsync(_mapper.Map(command, roomSetting), true, cancellationToken).ConfigureAwait(false);
+                    }
+                    else
+                    {
+                        roomSetting.SelfLanguage = command.SelfLanguage;
+                        roomSetting.ListeningLanguage = command.ListeningLanguage;
+
+                        await _meetingDataProvider.UpdateMeetingChatRoomSettingAsync(roomSetting, true, cancellationToken).ConfigureAwait(false);
+                    }
+                    
                 }
             }
 
