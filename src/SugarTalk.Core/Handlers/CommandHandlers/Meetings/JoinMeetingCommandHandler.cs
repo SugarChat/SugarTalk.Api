@@ -8,7 +8,6 @@ using SugarTalk.Messages.Commands.Meetings;
 
 namespace SugarTalk.Core.Handlers.CommandHandlers.Meetings
 {
-    [AllowGuestAccess]
     public class JoinMeetingCommandHandler : ICommandHandler<JoinMeetingCommand, JoinMeetingResponse>
     {
         private readonly IMeetingService _meetingService;

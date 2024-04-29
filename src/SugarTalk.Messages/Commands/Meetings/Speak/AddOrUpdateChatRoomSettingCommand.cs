@@ -1,10 +1,12 @@
 using System;
 using Mediator.Net.Contracts;
+using SugarTalk.Messages.Attributes;
 using SugarTalk.Messages.Enums.Speech;
 using SugarTalk.Messages.Responses;
 
 namespace SugarTalk.Messages.Commands.Meetings.Speak;
 
+[AllowGuestAccess]
 public class AddOrUpdateChatRoomSettingCommand : ICommand
 {
     public Guid MeetingId { get; set; }
