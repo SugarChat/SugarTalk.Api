@@ -8,7 +8,6 @@ using SugarTalk.Messages.Commands.Meetings.Speak;
 
 namespace SugarTalk.Core.Handlers.CommandHandlers.Meetings.User;
 
-[AllowGuestAccess]
 public class AddOrUpdateChatRoomSettingCommandHandler : ICommandHandler<AddOrUpdateChatRoomSettingCommand, AddOrUpdateChatRoomSettingResponse>
 {
     private readonly IMeetingService _meetingService;
