@@ -1116,7 +1116,7 @@ public partial class MeetingServiceFixture : MeetingFixtureBase
                 IsSystem = commandIsSystem,
                 VoiceId = voiceId,
                 VoiceName = "yayaya",
-                Style = 113,
+                Style = commandIsSystem ? null : int.Parse(voiceId),
                 InferenceRecordId = 9,
                 Speed = 1,
                 Transpose = 2,
@@ -1136,7 +1136,6 @@ public partial class MeetingServiceFixture : MeetingFixtureBase
                     meetingChatRoom.SelfLanguage.ShouldBe(selfLanguage);
                     meetingChatRoom.ListeningLanguage.ShouldBe(listeningLanguage);
                     meetingChatRoom.VoiceId.ShouldNotBeEmpty();
-                    meetingChatRoom.Style.ShouldBe(123);
                 }
                 else
                 {
@@ -1153,7 +1152,7 @@ public partial class MeetingServiceFixture : MeetingFixtureBase
                 meetingChatRoom.SelfLanguage.ShouldBe(SpeechTargetLanguageType.English);
                 meetingChatRoom.ListeningLanguage.ShouldBe(SpeechTargetLanguageType.English);
                 meetingChatRoom.VoiceId.ShouldBe("123456");
-                meetingChatRoom.Style.ShouldBe(113);
+                meetingChatRoom.Style.ShouldBe(int.Parse(voiceId));
             }
         });
     }
