@@ -633,6 +633,7 @@ namespace SugarTalk.Core.Services.Meetings
                 SpeechTargetLanguageType.Mandarin => (int)userSetting.MandarinToneType,
                 SpeechTargetLanguageType.English => (int)userSetting.EnglishToneType,
                 SpeechTargetLanguageType.Spanish => (int)userSetting.SpanishToneType,
+                SpeechTargetLanguageType.Korean => (int)userSetting.KoreanToneType
                 _ => 0
             };
 
