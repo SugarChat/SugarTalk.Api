@@ -56,6 +56,8 @@ public class TextToSpeechDto
                 return (int)EnglishToneType;
             if (SpanishToneType != null)
                 return (int)SpanishToneType;
+            if (KoreanToneType != null)
+                return (int)KoreanToneType;
             return 110;
         }
     }
@@ -73,10 +75,19 @@ public class TextToSpeechDto
     public EnglishToneType? EnglishToneType { get; set; }
     
     [JsonIgnore]
+    public JapaneseToneType? JapaneseToneType { get; set; }
+    
+    [JsonIgnore]
     public CantoneseToneType? CantoneseToneType { get; set; }
     
     [JsonIgnore]
     public SpanishToneType? SpanishToneType { get; set; }
+    
+    [JsonIgnore]
+    public KoreanToneType? KoreanToneType { get; set; }
+    
+    [JsonIgnore]
+    public FrenchToneType? FrenchToneType { get; set; }
 }
 
 public class TextTranslationDto

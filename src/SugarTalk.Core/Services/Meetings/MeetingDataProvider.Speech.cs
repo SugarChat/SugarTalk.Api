@@ -69,6 +69,11 @@ public partial class MeetingDataProvider
         AssignTone(userSettings, x => x.SpanishToneType, meetingUserSetting);
         AssignTone(userSettings, x => x.EnglishToneType, meetingUserSetting);
         AssignTone(userSettings, x => x.MandarinToneType, meetingUserSetting);
+        AssignTone(userSettings, x => x.CantoneseToneType, meetingUserSetting);
+        AssignTone(userSettings, x => x.FrenchToneType, meetingUserSetting);
+        AssignTone(userSettings, x => x.JapaneseToneType, meetingUserSetting);
+        AssignTone(userSettings, x => x.KoreanToneType, meetingUserSetting);
+        
         AssignCantoneseTone(meetingUserSetting);
 
         meetingUserSetting.MeetingId = meetingId;

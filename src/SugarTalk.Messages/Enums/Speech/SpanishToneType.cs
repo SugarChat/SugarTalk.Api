@@ -20,5 +20,7 @@ public enum SpanishToneType
     
     LaiaNeural = 168,
     
-    LiaNeural = 169
+    LiaNeural = 169,
+    
+    Camila = 361
 }
