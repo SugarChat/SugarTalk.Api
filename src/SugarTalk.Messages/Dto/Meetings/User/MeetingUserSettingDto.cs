@@ -15,6 +15,10 @@ public class MeetingUserSettingDto
     
     public EnglishToneType EnglishToneType{ get; set; }
     
+    public KoreanToneType KoreanToneType { get; set; }
+    
+    public FrenchToneType FrenchToneType { get; set; }
+    
     public CantoneseToneType CantoneseToneType { get; set; }
 
     public SpeechTargetLanguageType TargetLanguageType { get; set; } 

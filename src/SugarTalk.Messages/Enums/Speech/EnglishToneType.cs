@@ -20,5 +20,23 @@ public enum EnglishToneType
     
     BrianNeural = 138,
     
-    ChristopherNeural = 139
+    ChristopherNeural = 139,
+    
+    annie = 331,
+    
+    betty = 332,
+    
+    beth = 333,
+    
+    cindy = 334,
+    
+    cally = 335,
+    
+    donna = 336,
+    
+    eva = 337,
+    
+    brian = 338,
+    
+    william = 339,
 }

@@ -189,7 +189,10 @@ public partial class MeetingService
                 SpeechTargetLanguageType.Cantonese => new TextToSpeechDto { Text = meetingSpeech.TranslatedText, CantoneseToneType = userSetting?.CantoneseToneType },
                 SpeechTargetLanguageType.Mandarin => new TextToSpeechDto { Text = meetingSpeech.TranslatedText, MandarinToneType = userSetting?.MandarinToneType },
                 SpeechTargetLanguageType.English => new TextToSpeechDto { Text = meetingSpeech.TranslatedText, EnglishToneType = userSetting?.EnglishToneType },
-                SpeechTargetLanguageType.Spanish => new TextToSpeechDto { Text = meetingSpeech.TranslatedText, SpanishToneType = userSetting?.SpanishToneType }
+                SpeechTargetLanguageType.Japanese => new TextToSpeechDto { Text = meetingSpeech.TranslatedText, JapaneseToneType = userSetting?.JapaneseToneType },
+                SpeechTargetLanguageType.Korean => new TextToSpeechDto { Text = meetingSpeech.TranslatedText, KoreanToneType = userSetting?.KoreanToneType },
+                SpeechTargetLanguageType.Spanish => new TextToSpeechDto { Text = meetingSpeech.TranslatedText, SpanishToneType = userSetting?.SpanishToneType },
+                SpeechTargetLanguageType.French => new TextToSpeechDto { Text = meetingSpeech.TranslatedText, FrenchToneType = userSetting?.FrenchToneType },
             };
             
             meetingSpeech.VoiceUrl = (await _speechClient.GetAudioFromTextAsync(targetLanguage, cancellationToken).ConfigureAwait(false))?.Result;
@@ -216,7 +219,10 @@ public partial class MeetingService
                 SpeechTargetLanguageType.Cantonese => new TextToSpeechDto { Text = record.TranslatedText, CantoneseToneType = (CantoneseToneType)voiceId},
                 SpeechTargetLanguageType.Mandarin => new TextToSpeechDto { Text = record.TranslatedText, MandarinToneType = (MandarinToneType)voiceId },
                 SpeechTargetLanguageType.English => new TextToSpeechDto { Text = record.TranslatedText, EnglishToneType = (EnglishToneType)voiceId },
-                SpeechTargetLanguageType.Spanish => new TextToSpeechDto { Text = record.TranslatedText, SpanishToneType = (SpanishToneType)voiceId }
+                SpeechTargetLanguageType.Japanese => new TextToSpeechDto { Text = record.TranslatedText, JapaneseToneType = (JapaneseToneType)voiceId },
+                SpeechTargetLanguageType.Spanish => new TextToSpeechDto { Text = record.TranslatedText, SpanishToneType = (SpanishToneType)voiceId },
+                SpeechTargetLanguageType.Korean => new TextToSpeechDto { Text = record.TranslatedText, KoreanToneType = (KoreanToneType)voiceId },
+                SpeechTargetLanguageType.French => new TextToSpeechDto { Text = record.TranslatedText, FrenchToneType = (FrenchToneType)voiceId }
             };
             
         record.VoiceUrl = (await _speechClient.GetAudioFromTextAsync(targetLanguage, cancellationToken).ConfigureAwait(false))?.Result;

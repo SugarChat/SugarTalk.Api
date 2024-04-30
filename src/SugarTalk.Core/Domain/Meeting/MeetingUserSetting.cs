@@ -16,6 +16,9 @@ public class MeetingUserSetting : IEntity
         EnglishToneType = EnglishToneType.AmberNeural;
         MandarinToneType = MandarinToneType.XiaochenNeural;
         TargetLanguageType = SpeechTargetLanguageType.Cantonese;
+        JapaneseToneType = JapaneseToneType.AoiNeural;
+        KoreanToneType = KoreanToneType.Kyong;
+        FrenchToneType = FrenchToneType.Clara;
     }
 
     [Key]
@@ -36,9 +39,18 @@ public class MeetingUserSetting : IEntity
     
     [Column("english_tone_type")] 
     public EnglishToneType EnglishToneType{ get; set; }
+
+    [Column("japanese_tone_type")] 
+    public JapaneseToneType JapaneseToneType{ get; set; }
+    
+    [Column("korean_tone_type")] 
+    public KoreanToneType KoreanToneType{ get; set; }
     
     [Column("cantonese_tone_type")] 
     public CantoneseToneType CantoneseToneType { get; set; }
+    
+    [Column("french_tone_type")] 
+    public FrenchToneType FrenchToneType { get; set; }
 
     [Column("target_language_type")] 
     public SpeechTargetLanguageType TargetLanguageType { get; set; } 
