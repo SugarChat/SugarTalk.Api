@@ -585,7 +585,8 @@ namespace SugarTalk.Core.Services.Meetings
             
             var roomSetting = await _meetingDataProvider.GetMeetingChatRoomSettingByMeetingIdAsync(
                 _currentUser.Id.Value, command.MeetingId, cancellationToken).ConfigureAwait(false);
-
+            
+            //这段是不是没有用了，好像打开ea就有一条默认数据了
             if (roomSetting == null)
             {
                 roomSetting = _mapper.Map<MeetingChatRoomSetting>(command);
@@ -609,6 +610,15 @@ namespace SugarTalk.Core.Services.Meetings
                     }
                     else
                     {
+                        var voiceId = await AutoSelectionVoiceIdAsync(roomSetting, command.MeetingId, cancellationToken).ConfigureAwait(false);
+            
+                        if (!string.IsNullOrEmpty(voiceId.ToString()))
+                        {
+                            roomSetting.VoiceId = voiceId.ToString();
+                            roomSetting.IsSystem = true;
+                            roomSetting.Style = voiceId;
+                        }
+                        
                         roomSetting.SelfLanguage = command.SelfLanguage;
                         roomSetting.ListeningLanguage = command.ListeningLanguage;
 
@@ -623,6 +633,20 @@ namespace SugarTalk.Core.Services.Meetings
 
         private async Task AutoAssignAndUpdateVoiceIdAsync(MeetingChatRoomSetting roomSetting, Guid meetingId, CancellationToken cancellationToken)
         {
+            var voiceId = await AutoSelectionVoiceIdAsync(roomSetting, meetingId, cancellationToken).ConfigureAwait(false);
+            
+            if (!string.IsNullOrEmpty(voiceId.ToString()))
+            {
+                roomSetting.VoiceId = voiceId.ToString();
+                roomSetting.IsSystem = true;
+                roomSetting.Style = voiceId;
+            }
+            
+            await _meetingDataProvider.UpdateMeetingChatRoomSettingAsync(roomSetting, true, cancellationToken).ConfigureAwait(false);
+        }
+
+        private async Task<int> AutoSelectionVoiceIdAsync(MeetingChatRoomSetting roomSetting, Guid meetingId, CancellationToken cancellationToken)
+        {
             var userSetting = await _meetingDataProvider.DistributeLanguageForMeetingUserAsync(meetingId, cancellationToken).ConfigureAwait(false);
 
             Log.Information("SugarTalk get userSetting from addOrUpdate roomSetting :{userSetting}", JsonConvert.SerializeObject(userSetting));
@@ -633,19 +657,11 @@ namespace SugarTalk.Core.Services.Meetings
                 SpeechTargetLanguageType.Mandarin => (int)userSetting.MandarinToneType,
                 SpeechTargetLanguageType.English => (int)userSetting.EnglishToneType,
                 SpeechTargetLanguageType.Spanish => (int)userSetting.SpanishToneType,
+                SpeechTargetLanguageType.Korean => (int)userSetting.KoreanToneType,
                 _ => 0
             };
 
-            var stringVoiceId = voiceId.ToString();
-
-            if (!string.IsNullOrEmpty(stringVoiceId))
-            {
-                roomSetting.VoiceId = stringVoiceId;
-                roomSetting.IsSystem = true;
-                roomSetting.Style = voiceId;
-            }
-            
-            await _meetingDataProvider.UpdateMeetingChatRoomSettingAsync(roomSetting, true, cancellationToken).ConfigureAwait(false);
+            return voiceId;
         }
 
         public async Task<GetMeetingUserSettingResponse> GetMeetingUserSettingAsync(GetMeetingUserSettingRequest request, CancellationToken cancellationToken)
