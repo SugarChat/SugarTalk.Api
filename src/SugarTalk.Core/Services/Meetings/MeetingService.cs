@@ -297,22 +297,6 @@ namespace SugarTalk.Core.Services.Meetings
 
             Log.Information("SugarTalk get userSetting from JoinMeetingAsync :{userSetting}", JsonConvert.SerializeObject(userSetting));
             
-            await _meetingDataProvider.AddMeetingChatRoomSettingAsync(new MeetingChatRoomSetting
-            {
-                IsSystem = true,
-                UserId = userSetting.UserId,
-                MeetingId = meeting.Id,
-                VoiceId = userSetting.TargetLanguageType switch
-                {
-                    SpeechTargetLanguageType.Cantonese => ((int)userSetting.CantoneseToneType).ToString(),
-                    SpeechTargetLanguageType.Mandarin => ((int)userSetting.MandarinToneType).ToString(),
-                    SpeechTargetLanguageType.English => ((int)userSetting.EnglishToneType).ToString(),
-                    SpeechTargetLanguageType.Spanish => ((int)userSetting.SpanishToneType).ToString(),
-                    SpeechTargetLanguageType.Korean => ((int)userSetting.KoreanToneType).ToString(),
-                    _ => string.Empty
-                }
-            }, true, cancellationToken).ConfigureAwait(false);
-            
             return new MeetingJoinedEvent
             {
                 UserId = user.Id,
