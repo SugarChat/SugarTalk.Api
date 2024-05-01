@@ -308,6 +308,7 @@ namespace SugarTalk.Core.Services.Meetings
                     SpeechTargetLanguageType.Mandarin => ((int)userSetting.MandarinToneType).ToString(),
                     SpeechTargetLanguageType.English => ((int)userSetting.EnglishToneType).ToString(),
                     SpeechTargetLanguageType.Spanish => ((int)userSetting.SpanishToneType).ToString(),
+                    SpeechTargetLanguageType.Korean => ((int)userSetting.KoreanToneType).ToString(),
                     _ => string.Empty
                 }
             }, true, cancellationToken).ConfigureAwait(false);
@@ -614,7 +615,6 @@ namespace SugarTalk.Core.Services.Meetings
 
                         await _meetingDataProvider.UpdateMeetingChatRoomSettingAsync(roomSetting, true, cancellationToken).ConfigureAwait(false);
                     }
-                    
                 }
             }
 
