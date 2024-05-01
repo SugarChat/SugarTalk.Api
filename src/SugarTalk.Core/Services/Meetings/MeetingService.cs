@@ -593,7 +593,9 @@ namespace SugarTalk.Core.Services.Meetings
                 }
                 else
                 {
-                    await _meetingDataProvider.UpdateMeetingChatRoomSettingAsync(_mapper.Map(command, roomSetting), true, cancellationToken).ConfigureAwait(false);
+                    Log.Information("Update roomSetting {@RoomSetting}", roomSetting);
+                    
+                    await _meetingDataProvider.UpdateMeetingChatRoomSettingAsync(_mapper.Map<MeetingChatRoomSetting>(command), true, cancellationToken).ConfigureAwait(false);
                 }
 
             }
