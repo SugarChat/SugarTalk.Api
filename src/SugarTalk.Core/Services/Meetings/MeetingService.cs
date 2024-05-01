@@ -567,7 +567,7 @@ namespace SugarTalk.Core.Services.Meetings
         public async Task<ChatRoomSettingAddOrUpdateEvent> AddOrUpdateChatRoomSettingAsync(AddOrUpdateChatRoomSettingCommand command, CancellationToken cancellationToken)
         {
             if (!_currentUser.Id.HasValue) throw new UnauthorizedAccessException();
-            
+
             var roomSetting = await _meetingDataProvider.GetMeetingChatRoomSettingByMeetingIdAsync(
                 _currentUser.Id.Value, command.MeetingId, cancellationToken).ConfigureAwait(false);
 
@@ -580,9 +580,14 @@ namespace SugarTalk.Core.Services.Meetings
             }
             else
             {
+                roomSetting.SelfLanguage = command.SelfLanguage;
+                roomSetting.ListeningLanguage = command.ListeningLanguage;
+
+                await _meetingDataProvider.UpdateMeetingChatRoomSettingAsync(roomSetting, true, cancellationToken).ConfigureAwait(false);
+
                 Log.Information("Confirm whether to assign automatically roomSetting {@RoomSetting}", roomSetting);
-                
-                if (command.IsSystem && roomSetting.IsSystem != true)
+
+                if (command.IsSystem)
                 {
                     await AutoAssignAndUpdateVoiceIdAsync(roomSetting, command.MeetingId, cancellationToken);
                 }
@@ -592,14 +597,8 @@ namespace SugarTalk.Core.Services.Meetings
                     {
                         await _meetingDataProvider.UpdateMeetingChatRoomSettingAsync(_mapper.Map(command, roomSetting), true, cancellationToken).ConfigureAwait(false);
                     }
-                    else
-                    {
-                        roomSetting.SelfLanguage = command.SelfLanguage;
-                        roomSetting.ListeningLanguage = command.ListeningLanguage;
-
-                        await _meetingDataProvider.UpdateMeetingChatRoomSettingAsync(roomSetting, true, cancellationToken).ConfigureAwait(false);
-                    }
                 }
+
             }
 
             return new ChatRoomSettingAddOrUpdateEvent();
