@@ -464,7 +464,7 @@ namespace SugarTalk.Core.Services.Meetings
                 
                 meeting.MeetingTokenFromLiveKit = user.Issuer switch
                 {
-                    UserAccountIssuer.Guest => _liveKitServerUtilService.GenerateTokenForGuest(user.UserName, addUserSession.GuestName, meeting.MeetingNumber),
+                    UserAccountIssuer.Guest => _liveKitServerUtilService.GenerateTokenForGuest(addUserSession.GuestName, addUserSession.GuestName, meeting.MeetingNumber),
                     UserAccountIssuer.Self or UserAccountIssuer.Wiltechs => _liveKitServerUtilService.GenerateTokenForJoinMeeting(user, meeting.MeetingNumber),
                     _ => throw new ArgumentOutOfRangeException()
                 };
@@ -497,7 +497,7 @@ namespace SugarTalk.Core.Services.Meetings
 
                 meeting.MeetingTokenFromLiveKit = user.Issuer switch
                 {
-                    UserAccountIssuer.Guest => _liveKitServerUtilService.GenerateTokenForGuest(user.UserName, updateUserSession.GuestName, meeting.MeetingNumber),
+                    UserAccountIssuer.Guest => _liveKitServerUtilService.GenerateTokenForGuest(updateUserSession.GuestName, updateUserSession.GuestName, meeting.MeetingNumber),
                     UserAccountIssuer.Self or UserAccountIssuer.Wiltechs => _liveKitServerUtilService.GenerateTokenForJoinMeeting(user, meeting.MeetingNumber),
                     _ => throw new ArgumentOutOfRangeException()
                 };
