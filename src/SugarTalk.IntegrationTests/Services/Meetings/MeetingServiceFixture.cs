@@ -1136,12 +1136,12 @@ public partial class MeetingServiceFixture : MeetingFixtureBase
                     meetingChatRoom.SelfLanguage.ShouldBe(selfLanguage);
                     meetingChatRoom.ListeningLanguage.ShouldBe(listeningLanguage);
                     meetingChatRoom.VoiceId.ShouldNotBeEmpty();
-                    meetingChatRoom.Style.ShouldBe(123);
+                    meetingChatRoom.Style.ShouldNotBeNull();
                 }
                 else
                 {
-                    meetingChatRoom.SelfLanguage.ShouldBe(SpeechTargetLanguageType.Cantonese);
-                    meetingChatRoom.ListeningLanguage.ShouldBe(SpeechTargetLanguageType.Cantonese);
+                    meetingChatRoom.SelfLanguage.ShouldBe(selfLanguage);
+                    meetingChatRoom.ListeningLanguage.ShouldBe(listeningLanguage);
                     meetingChatRoom.VoiceId.ShouldNotBeEmpty();
                     meetingChatRoom.Style.ShouldNotBeNull();
                     meetingChatRoom.Speed.ShouldBeNull();

@@ -308,6 +308,9 @@ namespace SugarTalk.Core.Services.Meetings
                     SpeechTargetLanguageType.Mandarin => ((int)userSetting.MandarinToneType).ToString(),
                     SpeechTargetLanguageType.English => ((int)userSetting.EnglishToneType).ToString(),
                     SpeechTargetLanguageType.Spanish => ((int)userSetting.SpanishToneType).ToString(),
+                    SpeechTargetLanguageType.French => ((int)userSetting.FrenchToneType).ToString(),
+                    SpeechTargetLanguageType.Korean => ((int)userSetting.KoreanToneType).ToString(),
+                    SpeechTargetLanguageType.Japanese => ((int)userSetting.JapaneseToneType).ToString(),
                     _ => string.Empty
                 }
             }, true, cancellationToken).ConfigureAwait(false);
@@ -582,7 +585,7 @@ namespace SugarTalk.Core.Services.Meetings
         public async Task<ChatRoomSettingAddOrUpdateEvent> AddOrUpdateChatRoomSettingAsync(AddOrUpdateChatRoomSettingCommand command, CancellationToken cancellationToken)
         {
             if (!_currentUser.Id.HasValue) throw new UnauthorizedAccessException();
-            
+
             var roomSetting = await _meetingDataProvider.GetMeetingChatRoomSettingByMeetingIdAsync(
                 _currentUser.Id.Value, command.MeetingId, cancellationToken).ConfigureAwait(false);
 
@@ -595,27 +598,22 @@ namespace SugarTalk.Core.Services.Meetings
             }
             else
             {
+                roomSetting.SelfLanguage = command.SelfLanguage;
+                roomSetting.ListeningLanguage = command.ListeningLanguage;
+
+                await _meetingDataProvider.UpdateMeetingChatRoomSettingAsync(roomSetting, true, cancellationToken).ConfigureAwait(false);
+
                 Log.Information("Confirm whether to assign automatically roomSetting {@RoomSetting}", roomSetting);
-                
-                if (command.IsSystem && roomSetting.IsSystem != true)
+
+                if (command.IsSystem)
                 {
                     await AutoAssignAndUpdateVoiceIdAsync(roomSetting, command.MeetingId, cancellationToken);
                 }
                 else
                 {
-                    if (roomSetting.VoiceId == null)
-                    {
-                        await _meetingDataProvider.UpdateMeetingChatRoomSettingAsync(_mapper.Map(command, roomSetting), true, cancellationToken).ConfigureAwait(false);
-                    }
-                    else
-                    {
-                        roomSetting.SelfLanguage = command.SelfLanguage;
-                        roomSetting.ListeningLanguage = command.ListeningLanguage;
-
-                        await _meetingDataProvider.UpdateMeetingChatRoomSettingAsync(roomSetting, true, cancellationToken).ConfigureAwait(false);
-                    }
-                    
+                    await _meetingDataProvider.UpdateMeetingChatRoomSettingAsync(_mapper.Map(command, roomSetting), true, cancellationToken).ConfigureAwait(false);
                 }
+
             }
 
             return new ChatRoomSettingAddOrUpdateEvent();
@@ -633,6 +631,7 @@ namespace SugarTalk.Core.Services.Meetings
                 SpeechTargetLanguageType.Mandarin => (int)userSetting.MandarinToneType,
                 SpeechTargetLanguageType.English => (int)userSetting.EnglishToneType,
                 SpeechTargetLanguageType.Spanish => (int)userSetting.SpanishToneType,
+                SpeechTargetLanguageType.Korean => (int)userSetting.KoreanToneType,
                 _ => 0
             };
 
