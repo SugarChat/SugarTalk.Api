@@ -5,6 +5,8 @@ using Mediator.Net;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using Microsoft.IdentityModel.Tokens;
+using Newtonsoft.Json;
 using SugarTalk.Messages.Extensions;
 using SugarTalk.Core.Domain.Meeting;
 using SugarTalk.Messages.Dto.Meetings;
@@ -34,7 +36,9 @@ public partial interface IMeetingService
     
     Task<DelayedMeetingRecordingStorageEvent> ExecuteStorageMeetingRecordVideoDelayedJobAsync(DelayedMeetingRecordingStorageCommand command, CancellationToken cancellationToken);
 
-    Task DelayStorageMeetingRecordVideoJobAsync(string egressId, Guid meetingRecordId, string token, int reTryLimit, CancellationToken cancellationToken);
+    Task DelayStorageMeetingRecordVideoJobAsync(Guid meetingId,string egressId, Guid meetingRecordId, string token, int reTryLimit, bool isRestartRecording, CancellationToken cancellationToken);
+
+    Task<GeneralOverRecordingEvent> GeneralRestartRecordAsync(GeneralRestartRecordCommand command, CancellationToken cancellationToken);
     
     Task<TranslatingMeetingSpeakResponse> TranslatingMeetingSpeakAsync(TranslatingMeetingSpeakCommand command, CancellationToken cancellationToken);
 }
@@ -59,7 +63,7 @@ public partial class MeetingService
 
     public async Task<MeetingRecordingStartedEvent> StartMeetingRecordingAsync(StartMeetingRecordingCommand command, CancellationToken cancellationToken)
     {
-        var meetingRecordId = Guid.NewGuid();
+        command.MeetingRecordId ??= Guid.NewGuid();
         
         var meeting = await _meetingDataProvider
             .GetMeetingByIdAsync(command.MeetingId, cancellationToken).ConfigureAwait(false);
@@ -77,7 +81,7 @@ public partial class MeetingService
             RoomName = meeting.MeetingNumber,
             File = new EgressEncodedFileOutPutDto
             {
-                FilePath = $"SugarTalk/{meetingRecordId}.mp4",
+                FilePath = $"SugarTalk/{command.MeetingRecordId}.mp4",
                 AliOssUpload = new EgressAliOssUploadDto
                 {
                     AccessKey = _aliYunOssSetting.AccessKeyId,
@@ -91,20 +95,96 @@ public partial class MeetingService
         Log.Information("start meeting recording response: {@postResponse}", postResponse);
 
         if (postResponse is null) throw new Exception("Start Meeting Recording Failed.");
-
-        await _meetingDataProvider.PersistMeetingRecordAsync(meeting.Id, meetingRecordId, postResponse.EgressId, cancellationToken).ConfigureAwait(false);
-
-        meeting.IsActiveRecord = true;
-
-        await _meetingDataProvider.UpdateMeetingAsync(meeting, cancellationToken).ConfigureAwait(false);
+        
+        if (command.IsRestartRecord)
+            await UpdateMeetingRecordEgressRestartAsync(command.MeetingRecordId.Value, postResponse.EgressId, cancellationToken).ConfigureAwait(false);
+        else
+            await AddMeetingRecordAsync(meeting, command.MeetingRecordId.Value, postResponse.EgressId, cancellationToken).ConfigureAwait(false);
+      
+        _sugarTalkBackgroundJobClient.Schedule<IMediator>(m => m.SendAsync(new GeneralRestartRecordCommand
+        {
+            MeetingId = meeting.Id,
+            MeetingRecordId = command.MeetingRecordId.Value
+        }, cancellationToken), TimeSpan.FromMinutes(30));
         
         return new MeetingRecordingStartedEvent
         {
-            MeetingRecordId = meetingRecordId,
+            MeetingRecordId = command.MeetingRecordId.Value,
             EgressId = postResponse.EgressId
         };
     }
-    
+
+    private async Task AddMeetingRecordAsync(Meeting meeting, Guid meetingRecordId, string egressId, CancellationToken cancellationToken)
+    {
+        await _meetingDataProvider.PersistMeetingRecordAsync(meeting.Id, meetingRecordId, egressId, cancellationToken).ConfigureAwait(false);
+
+        await _meetingDataProvider.AddMeetingRecordVoiceRelayStationAsync(new MeetingRestartRecord
+        {
+            Id = new Guid(),
+            MeetingId = meeting.Id,
+            RecordId = meetingRecordId
+        }, cancellationToken: cancellationToken).ConfigureAwait(false);
+        
+        meeting.IsActiveRecord = true;
+
+        await _meetingDataProvider.UpdateMeetingAsync(meeting, cancellationToken).ConfigureAwait(false);
+    }
+
+    private async Task UpdateMeetingRecordEgressRestartAsync(Guid meetingRecordId, string egressId, CancellationToken cancellationToken)
+    {
+        var record = (await _meetingDataProvider.GetMeetingRecordsAsync(meetingRecordId, cancellationToken).ConfigureAwait(false)).FirstOrDefault();
+        
+        Log.Information("restart meeting recording response: {@record}", record);
+
+        if (record != null)
+        {
+            record.EgressId = egressId;
+
+            await _meetingDataProvider.UpdateMeetingRecordAsync(record, cancellationToken).ConfigureAwait(false);
+        }
+    }
+
+    public async Task<GeneralOverRecordingEvent> GeneralRestartRecordAsync(
+        GeneralRestartRecordCommand command, CancellationToken cancellationToken)
+    {
+        Log.Information("GeneralRestartRecordCommand is: command {@command}",JsonConvert.SerializeObject(command));
+        
+        //获取record，判断是否已经结束，
+        var record = (await _meetingDataProvider.GetMeetingRecordsAsync(
+            command.MeetingRecordId, cancellationToken).ConfigureAwait(false)).FirstOrDefault();
+
+        if (record?.Url == null)
+            return new GeneralOverRecordingEvent();
+        
+        var meeting = await _meetingDataProvider.GetMeetingByIdAsync(command.MeetingId, cancellationToken).ConfigureAwait(false);
+
+        if (_currentUser.Id == null) return new GeneralOverRecordingEvent { };
+        
+        var user = await _accountDataProvider.GetUserAccountAsync(_currentUser.Id.Value, cancellationToken: cancellationToken).ConfigureAwait(false);
+
+        var recordMeetingToken = _liveKitServerUtilService.GenerateTokenForRecordMeeting(user, meeting.MeetingNumber);
+
+        var stopResponse = await _liveKitClient.StopEgressAsync(
+            new StopEgressRequestDto { Token = recordMeetingToken, EgressId = record.EgressId }, cancellationToken).ConfigureAwait(false);
+
+        Log.Information("background job stop meeting recording response: {@stopResponse}", stopResponse);
+        
+        var storageCommand = new DelayedMeetingRecordingStorageCommand 
+        { 
+            StartDate = _clock.Now, 
+            Token = recordMeetingToken, 
+            MeetingRecordId = command.MeetingRecordId,
+            MeetingId = command.MeetingId, 
+            EgressId = record.EgressId,
+            ReTryLimit = command.ReTryLimit,
+            IsRestartRecord = true
+        };
+        
+        _backgroundJobClient.Schedule<IMediator>(m => m.SendAsync(storageCommand, cancellationToken), TimeSpan.FromSeconds(10));
+
+        return new GeneralOverRecordingEvent { };
+    }
+
     public async Task<GetMeetingRecordDetailsResponse> GetMeetingRecordDetailsAsync(GetMeetingRecordDetailsRequest request, CancellationToken cancellationToken)
     {
         return await _meetingDataProvider.GetMeetingRecordDetailsAsync(request.Id, request.Language, cancellationToken).ConfigureAwait(false);
@@ -145,7 +225,8 @@ public partial class MeetingService
             MeetingRecordId = command.MeetingRecordId,
             MeetingId = command.MeetingId, 
             EgressId = command.EgressId,
-            ReTryLimit = command.ReTryLimit
+            ReTryLimit = command.ReTryLimit,
+            IsRestartRecord = false
         };
 
         meeting.IsActiveRecord = false;
@@ -161,16 +242,19 @@ public partial class MeetingService
         DelayedMeetingRecordingStorageCommand command, CancellationToken cancellationToken)
     {
         Log.Information("Starting Execute Storage Meeting Record Video, staring time :{@StartTime}", command.StartDate );
-        
-        var currentTime = _clock.Now;
-        
-        var timeElapsedSinceStart = (currentTime - command.StartDate).TotalMinutes;
-
-        if (timeElapsedSinceStart > 5)
+       
+        if (!command.IsRestartRecord)
         {
-            await _meetingDataProvider.UpdateMeetingRecordUrlStatusAsync(command.MeetingRecordId, MeetingRecordUrlStatus.Failed, cancellationToken).ConfigureAwait(false);
+            var currentTime = _clock.Now;
+        
+            var timeElapsedSinceStart = (currentTime - command.StartDate).TotalMinutes;
+
+            if (timeElapsedSinceStart > 5)
+            {
+                await _meetingDataProvider.UpdateMeetingRecordUrlStatusAsync(command.MeetingRecordId, MeetingRecordUrlStatus.Failed, cancellationToken).ConfigureAwait(false);
             
-            _sugarTalkBackgroundJobClient.RemoveRecurringJobIfExists(nameof(ExecuteStorageMeetingRecordVideoDelayedJobAsync));
+                _sugarTalkBackgroundJobClient.RemoveRecurringJobIfExists(nameof(ExecuteStorageMeetingRecordVideoDelayedJobAsync));
+            }
         }
 
         return new DelayedMeetingRecordingStorageEvent
@@ -179,11 +263,12 @@ public partial class MeetingService
             EgressId = command.EgressId,
             MeetingRecordId = command.MeetingRecordId,
             Token = command.Token,
-            ReTryLimit = command.ReTryLimit
+            ReTryLimit = command.ReTryLimit,
+            IsRestartRecord = command.IsRestartRecord
         };
     }
 
-    public async Task DelayStorageMeetingRecordVideoJobAsync(string egressId, Guid meetingRecordId, string token, int reTryLimit, CancellationToken cancellationToken)
+    public async Task  DelayStorageMeetingRecordVideoJobAsync(Guid meetingId, string egressId, Guid meetingRecordId, string token, int reTryLimit, bool isRestartRecording, CancellationToken cancellationToken)
     {
         var meetingRecord = await _meetingDataProvider.GetMeetingRecordByMeetingRecordIdAsync(meetingRecordId, cancellationToken).ConfigureAwait(false);
         if (meetingRecord == null) throw new MeetingRecordNotFoundException();
@@ -200,14 +285,96 @@ public partial class MeetingService
                 case true:
                     reTryLimit--;
                     _sugarTalkBackgroundJobClient.Enqueue<IMeetingService>(x =>
-                        x.DelayStorageMeetingRecordVideoJobAsync(egressId, meetingRecordId, token, reTryLimit, cancellationToken));
+                        x.DelayStorageMeetingRecordVideoJobAsync(meetingId, egressId, meetingRecordId, token, reTryLimit, false, cancellationToken));
                     return;
                 default:
+                    if (isRestartRecording) break;
+                    
                     meetingRecord.UrlStatus = MeetingRecordUrlStatus.Failed;
                     await _meetingDataProvider.UpdateMeetingRecordAsync(meetingRecord, cancellationToken).ConfigureAwait(false);
                     return;
             }
 
+        if (isRestartRecording)
+        {
+            await HandleMeetingRecordRestartAsync(meetingId, meetingRecordId, egressItem, cancellationToken).ConfigureAwait(false);
+            
+            return;
+        }
+        
+        egressItem.File.Location = await CombineMeetingRecordVideoAsync(meetingId, meetingRecordId, cancellationToken).ConfigureAwait(false);
+        
+        await UpdateMeetingRecordAsync(meetingRecord, egressItem, cancellationToken).ConfigureAwait(false);
+    }
+
+    private async Task<string> CombineMeetingRecordVideoAsync(Guid meetingId, Guid meetingRecordId, CancellationToken cancellationToken)
+    {
+        var urls = (await _meetingDataProvider.GetMeetingRecordVoiceRelayStationAsync(
+                meetingId, meetingRecordId, cancellationToken).ConfigureAwait(false))
+            .Where(x => !x.Url.IsNullOrEmpty())
+            .Select(x => x.Url);
+        
+        var urlBytes = new List<byte[]>();
+        
+        foreach (var url in urls)
+        {
+            var urlContent = await _httpClientFactory.GetAsync<byte[]>(url, cancellationToken).ConfigureAwait(false);
+
+            urlBytes.Add(urlContent);
+        }
+        
+        try
+        {
+            var response = await _ffmpegService.CombineMp4VideosAsync(urlBytes, cancellationToken).ConfigureAwait(false);
+
+            var fileName = $"SugarTalk/{Guid.NewGuid()}.mp4";
+            
+            _aliYunOssService.UploadFile(fileName, response);
+
+            return _aliYunOssService.GetFileUrl(fileName);
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, @"Combine url upload failed, {urls}", JsonConvert.SerializeObject(urls)); 
+            throw;
+        }
+    }
+
+    private async Task HandleMeetingRecordRestartAsync(Guid meetingId, Guid meetingRecordId, EgressItemDto egressItem, CancellationToken cancellationToken)
+    {
+        var meetingRecordRestart = (await _meetingDataProvider.GetMeetingRecordVoiceRelayStationAsync(
+            meetingId, meetingRecordId, cancellationToken).ConfigureAwait(false)).MaxBy(x => x.CreatedDate);
+
+        await UpdateMeetingRestartRecordAsync(meetingRecordRestart, egressItem, cancellationToken).ConfigureAwait(false);
+            
+        await _meetingDataProvider.AddMeetingRecordVoiceRelayStationAsync(new MeetingRestartRecord
+        {
+            Id = new Guid(),
+            MeetingId = meetingId,
+            RecordId = meetingRecordId
+        }, cancellationToken: cancellationToken).ConfigureAwait(false);
+
+        var restartRecordCommand = new StartMeetingRecordingCommand
+        {
+            MeetingId = meetingId,
+            MeetingRecordId = meetingRecordId,
+            IsRestartRecord = true
+        };
+            
+        _backgroundJobClient.Enqueue<IMediator>(m => m.SendAsync(restartRecordCommand, cancellationToken).ConfigureAwait(false));
+    }
+
+    private async Task UpdateMeetingRestartRecordAsync(MeetingRestartRecord meetingRestartRecord, EgressItemDto egressItem, CancellationToken cancellationToken)
+    {
+        meetingRestartRecord.Url = egressItem.File.Location;
+        
+        Log.Information(@"Complete restart meeting record: {@recordRestart}", meetingRestartRecord);
+        
+        await _meetingDataProvider.UpdateMeetingRecordVoiceRelayStationAsync(meetingRestartRecord, cancellationToken).ConfigureAwait(false);
+    }
+
+    private async Task UpdateMeetingRecordAsync(MeetingRecord meetingRecord, EgressItemDto egressItem, CancellationToken cancellationToken)
+    {
         meetingRecord.Url = egressItem.File.Location;
         meetingRecord.RecordType = MeetingRecordType.EndRecord;
         meetingRecord.UrlStatus = MeetingRecordUrlStatus.Completed;
@@ -216,7 +383,7 @@ public partial class MeetingService
     
         await _meetingDataProvider.UpdateMeetingRecordAsync(meetingRecord, cancellationToken).ConfigureAwait(false);
 
-        var meetingDetails = await _meetingDataProvider.GetMeetingDetailsByRecordIdAsync(meetingRecordId, cancellationToken).ConfigureAwait(false);
+        var meetingDetails = await _meetingDataProvider.GetMeetingDetailsByRecordIdAsync(meetingRecord.Id, cancellationToken).ConfigureAwait(false);
         
         if (!string.IsNullOrEmpty(meetingRecord.Url))
         {   
@@ -252,7 +419,7 @@ public partial class MeetingService
             Data = (await _meetingDataProvider.GetMeetingRecordDetailsAsync(command.MeetingRecordId, command.Language, cancellationToken).ConfigureAwait(false)).Data
         };
     }
-    
+
     public async Task GenerateProcessSpeakTranslationAsync(List<MeetingSpeakDetailTranslationRecord> meetingSpeeches, List<MeetingSpeakDetail> meetingRecordDetails, TranslationLanguage language, CancellationToken cancellationToken)
     {
         foreach (var speak in meetingRecordDetails)

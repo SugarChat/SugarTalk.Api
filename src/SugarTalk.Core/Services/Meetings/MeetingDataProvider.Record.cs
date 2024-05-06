@@ -48,6 +48,13 @@ public partial interface IMeetingDataProvider
     Task UpdateMeetingDetailTranslationRecordAsync(MeetingSpeakDetailTranslationRecord meetingSpeakDetail, CancellationToken cancellationToken);
     
     Task UpdateMeetingChatVoiceRecordAsync(MeetingChatVoiceRecord meetingChatVoiceRecord, bool forSave = true, CancellationToken cancellationToken = default);
+    
+    Task AddMeetingRecordVoiceRelayStationAsync(
+        MeetingRestartRecord meetingRestartRecord, bool forSave = true, CancellationToken cancellationToken = default);
+    
+    Task<List<MeetingRestartRecord>> GetMeetingRecordVoiceRelayStationAsync(Guid meetingId, Guid recordId, CancellationToken cancellationToken);
+    
+    Task UpdateMeetingRecordVoiceRelayStationAsync(MeetingRestartRecord entity, CancellationToken cancellationToken);
 }
 
 public partial class MeetingDataProvider
@@ -270,6 +277,29 @@ public partial class MeetingDataProvider
         if (forSave) await _unitOfWork.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
     }
 
+    public async Task AddMeetingRecordVoiceRelayStationAsync(
+        MeetingRestartRecord meetingRestartRecord, bool forSave = true, CancellationToken cancellationToken = default)
+    {
+        await _repository.InsertAsync(meetingRestartRecord, cancellationToken).ConfigureAwait(false);
+
+        if (forSave)
+            await _unitOfWork.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+    }
+
+    public async Task<List<MeetingRestartRecord>> GetMeetingRecordVoiceRelayStationAsync(
+        Guid meetingId, Guid recordId, CancellationToken cancellationToken)
+    {
+        return await _repository.Query<MeetingRestartRecord>()
+            .Where(x => x.MeetingId == meetingId && x.RecordId == recordId)
+            .ToListAsync(cancellationToken).ConfigureAwait(false);
+    }
+
+    public async Task UpdateMeetingRecordVoiceRelayStationAsync(
+        MeetingRestartRecord entity, CancellationToken cancellationToken)
+    {
+        await _repository.UpdateAsync(entity, cancellationToken).ConfigureAwait(false);
+    }
+    
     private async Task<List<MeetingSpeakDetailDto>> GetMeetingRecordDetailsTranslationAsync(Guid recordId, TranslationLanguage? language, CancellationToken cancellationToken)
     {
         var meetingRecordDetailQuery =  _repository.QueryNoTracking<MeetingSpeakDetail>()

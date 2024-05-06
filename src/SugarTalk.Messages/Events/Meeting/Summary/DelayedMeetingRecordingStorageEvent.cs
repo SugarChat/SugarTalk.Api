@@ -14,4 +14,6 @@ public class DelayedMeetingRecordingStorageEvent : IEvent
     public string Token { get; set; }
     
     public int ReTryLimit { get; set; } = 5;
+
+    public bool IsRestartRecord { get; set; }
 }

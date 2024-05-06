@@ -29,6 +29,8 @@ using SugarTalk.Messages.Dto.Meetings.User;
 using SugarTalk.Messages.Dto.Users;
 using SugarTalk.Messages.Enums.Account;
 using SugarTalk.Core.Domain.Meeting;
+using SugarTalk.Core.Services.Aliyun;
+using SugarTalk.Core.Services.Ffmpeg;
 using SugarTalk.Core.Services.Http;
 using SugarTalk.Core.Services.OpenAi;
 using SugarTalk.Core.Settings.Meeting;
@@ -103,9 +105,11 @@ namespace SugarTalk.Core.Services.Meetings
         private readonly IMapper _mapper;
         private readonly IUnitOfWork _unitOfWork;
         private readonly ICurrentUser _currentUser;
-        private readonly IOpenAiService _openAiService;
         private readonly ISpeechClient _speechClient;
         private readonly ILiveKitClient _liveKitClient;
+        private readonly IFfmpegService _ffmpegService;
+        private readonly IOpenAiService _openAiService;
+        private readonly IAliYunOssService _aliYunOssService;
         private readonly TranslationClient _translationClient;
         private readonly IMeetingUtilService _meetingUtilService;
         private readonly IAccountDataProvider _accountDataProvider;
@@ -128,8 +132,10 @@ namespace SugarTalk.Core.Services.Meetings
             IOpenAiService openAiService,
             ISpeechClient speechClient,
             ILiveKitClient liveKitClient,
+            IFfmpegService ffmpegService,
             AliYunOssSettings aliYunOssSetting,
             TranslationClient translationClient,
+            IAliYunOssService aliYunOssService,
             IMeetingUtilService meetingUtilService,
             IMeetingDataProvider meetingDataProvider,
             IAccountDataProvider accountDataProvider,
@@ -148,9 +154,11 @@ namespace SugarTalk.Core.Services.Meetings
             _openAiService = openAiService;
             _speechClient = speechClient;
             _liveKitClient = liveKitClient;
+            _ffmpegService = ffmpegService;
             _aliYunOssSetting = aliYunOssSetting;
             _httpClientFactory = httpClientFactory;
             _translationClient = translationClient;
+            _aliYunOssService = aliYunOssService;
             _meetingUtilService = meetingUtilService;
             _accountDataProvider = accountDataProvider;
             _meetingDataProvider = meetingDataProvider;
