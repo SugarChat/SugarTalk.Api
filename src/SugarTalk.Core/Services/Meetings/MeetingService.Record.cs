@@ -105,7 +105,7 @@ public partial class MeetingService
         {
             MeetingId = meeting.Id,
             MeetingRecordId = command.MeetingRecordId.Value
-        }, cancellationToken), TimeSpan.FromMinutes(30));
+        }, cancellationToken), TimeSpan.FromMinutes(5));
         
         return new MeetingRecordingStartedEvent
         {
