@@ -14,6 +14,7 @@ using System.Threading.Tasks;
 using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
 using SugarTalk.Core.Domain.Meeting;
+using SugarTalk.Core.Services.Aliyun;
 using SugarTalk.Core.Services.Http;
 using SugarTalk.Core.Services.Utils;
 using SugarTalk.Core.Services.LiveKit;
@@ -776,6 +777,7 @@ public partial class MeetingServiceFixture
             var openAiService = Substitute.For<IOpenAiService>();
             var liveKitServerUtilService = Substitute.For<ILiveKitServerUtilService>();
             var sugarTalkHttpClientFactory = Substitute.For<ISugarTalkHttpClientFactory>();
+            var aliYun = Substitute.For<IAliYunOssService>();
 
             liveKitClient.GetEgressInfoListAsync(Arg.Any<GetEgressRequestDto>(), Arg.Any<CancellationToken>())
                 .Returns(new GetEgressInfoListResponseDto()
@@ -832,7 +834,10 @@ public partial class MeetingServiceFixture
             openAiService.TranscriptionAsync(Arg.Any<byte[]>(), Arg.Any<TranscriptionLanguage?>(),
                 Arg.Any<long>(), Arg.Any<long>(), Arg.Any<TranscriptionFileType>(), Arg.Any<TranscriptionResponseFormat>(),
                 Arg.Any<CancellationToken>()).Returns(audioContent);
-            
+
+            aliYun.GetFileUrl(Arg.Any<string>()).Returns("moke url");
+
+            builder.RegisterInstance(aliYun);
             builder.RegisterInstance(liveKitClient);
             builder.RegisterInstance(openAiService);
             builder.RegisterInstance(liveKitServerUtilService);

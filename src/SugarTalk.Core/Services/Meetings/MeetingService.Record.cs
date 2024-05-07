@@ -301,7 +301,10 @@ public partial class MeetingService
             return;
         }
         
-        egressItem.File.Location = await CombineMeetingRecordVideoAsync(meetingId, meetingRecordId, cancellationToken).ConfigureAwait(false);
+        var combineUrl = await CombineMeetingRecordVideoAsync(meetingId, meetingRecordId, cancellationToken).ConfigureAwait(false);
+
+        if (!combineUrl.IsNullOrEmpty())
+            egressItem.File.Location = combineUrl;
         
         await UpdateMeetingRecordAsync(meetingRecord, egressItem, cancellationToken).ConfigureAwait(false);
     }
@@ -311,7 +314,10 @@ public partial class MeetingService
         var urls = (await _meetingDataProvider.GetMeetingRecordVoiceRelayStationAsync(
                 meetingId, meetingRecordId, cancellationToken).ConfigureAwait(false))
             .Where(x => !x.Url.IsNullOrEmpty())
-            .Select(x => x.Url);
+            .Select(x => x.Url).ToList();
+
+        if (urls is { Count: 0 }) 
+            return null;
         
         var urlBytes = new List<byte[]>();
         
