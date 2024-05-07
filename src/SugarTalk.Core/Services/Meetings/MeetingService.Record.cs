@@ -96,7 +96,7 @@ public partial class MeetingService
 
         if (postResponse is null) throw new Exception("Start Meeting Recording Failed.");
         
-        if (command.IsRestartRecord)
+        if (command.IsRestartRecord.HasValue && command.IsRestartRecord.Value)
             await UpdateMeetingRecordEgressRestartAsync(command.MeetingRecordId.Value, postResponse.EgressId, cancellationToken).ConfigureAwait(false);
         else
             await AddMeetingRecordAsync(meeting, command.MeetingRecordId.Value, postResponse.EgressId, cancellationToken).ConfigureAwait(false);
