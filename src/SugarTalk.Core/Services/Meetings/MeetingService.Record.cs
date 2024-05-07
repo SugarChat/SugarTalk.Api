@@ -149,7 +149,6 @@ public partial class MeetingService
     {
         Log.Information("GeneralRestartRecordCommand is: command {@command}",JsonConvert.SerializeObject(command));
         
-        //获取record，判断是否已经结束，
         var record = (await _meetingDataProvider.GetMeetingRecordsAsync(
             command.MeetingRecordId, cancellationToken).ConfigureAwait(false)).FirstOrDefault();
 
@@ -158,7 +157,7 @@ public partial class MeetingService
         
         var meeting = await _meetingDataProvider.GetMeetingByIdAsync(command.MeetingId, cancellationToken).ConfigureAwait(false);
 
-        if (_currentUser.Id == null) return new GeneralOverRecordingEvent { };
+        if (_currentUser.Id == null) return new GeneralOverRecordingEvent();
         
         var user = await _accountDataProvider.GetUserAccountAsync(_currentUser.Id.Value, cancellationToken: cancellationToken).ConfigureAwait(false);
 
@@ -180,7 +179,7 @@ public partial class MeetingService
             IsRestartRecord = true
         };
         
-        _backgroundJobClient.Schedule<IMediator>(m => m.SendAsync(storageCommand, cancellationToken), TimeSpan.FromSeconds(10));
+        _sugarTalkBackgroundJobClient.Schedule<IMediator>(m => m.SendAsync(storageCommand, cancellationToken), TimeSpan.FromSeconds(10));
 
         return new GeneralOverRecordingEvent();
     }
@@ -361,7 +360,7 @@ public partial class MeetingService
             IsRestartRecord = true
         };
             
-        _backgroundJobClient.Enqueue<IMediator>(m => m.SendAsync(restartRecordCommand, cancellationToken).ConfigureAwait(false));
+        _sugarTalkBackgroundJobClient.Enqueue<IMediator>(m => m.SendAsync(restartRecordCommand, cancellationToken).ConfigureAwait(false));
     }
 
     private async Task UpdateMeetingRestartRecordAsync(MeetingRestartRecord meetingRestartRecord, EgressItemDto egressItem, CancellationToken cancellationToken)
