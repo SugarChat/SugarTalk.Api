@@ -153,7 +153,7 @@ public partial class MeetingService
         var record = (await _meetingDataProvider.GetMeetingRecordsAsync(
             command.MeetingRecordId, cancellationToken).ConfigureAwait(false)).FirstOrDefault();
 
-        if (record?.Url == null)
+        if (record?.UrlStatus != MeetingRecordUrlStatus.Pending)
             return new GeneralOverRecordingEvent();
         
         var meeting = await _meetingDataProvider.GetMeetingByIdAsync(command.MeetingId, cancellationToken).ConfigureAwait(false);
@@ -182,7 +182,7 @@ public partial class MeetingService
         
         _backgroundJobClient.Schedule<IMediator>(m => m.SendAsync(storageCommand, cancellationToken), TimeSpan.FromSeconds(10));
 
-        return new GeneralOverRecordingEvent { };
+        return new GeneralOverRecordingEvent();
     }
 
     public async Task<GetMeetingRecordDetailsResponse> GetMeetingRecordDetailsAsync(GetMeetingRecordDetailsRequest request, CancellationToken cancellationToken)
