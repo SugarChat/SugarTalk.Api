@@ -68,6 +68,7 @@ public partial class BaseFixture
         _sugarTalkBackgroundJobClient = Substitute.For<ISugarTalkBackgroundJobClient>();
         _accountDataProvider = MockAccountDataProvider(_mapper, _repository, _unitOfWork, _currentUser);
         _meetingDataProvider = MockMeetingDataProvider(_clock, _mapper, _repository, _unitOfWork, _currentUser, _accountDataProvider);
+        _aliYunOssService = Substitute.For<IAliYunOssService>();
         _meetingService = MockMeetingService(_clock, _mapper, _unitOfWork, _currentUser, _openAiService, _speechClient,
             _liveKitClient, _ffmpegService, _aliYunOssSetting, _translationClient, _aliYunOssService, _meetingUtilService, _meetingDataProvider, _accountDataProvider, _liveKitServerSetting,
             _httpClientFactory, _backgroundJobClient, _liveKitServerUtilService, _antMediaServerUtilService, _sugarTalkBackgroundJobClient); 
