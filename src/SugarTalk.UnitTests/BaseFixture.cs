@@ -50,7 +50,7 @@ public partial class BaseFixture
     protected readonly IMeetingUtilService _meetingUtilService;
     protected readonly TranslationClient _translationClient;
     protected readonly ISugarTalkBackgroundJobClient _sugarTalkBackgroundJobClient;
-    protected readonly IAliYunOssService _aliYunOssService;
+    protected readonly IAliYunOssService _aliYunOssService = Substitute.For<IAliYunOssService>();
 
     public BaseFixture()
     {
@@ -69,7 +69,6 @@ public partial class BaseFixture
         _sugarTalkBackgroundJobClient = Substitute.For<ISugarTalkBackgroundJobClient>();
         _accountDataProvider = MockAccountDataProvider(_mapper, _repository, _unitOfWork, _currentUser);
         _meetingDataProvider = MockMeetingDataProvider(_clock, _mapper, _repository, _unitOfWork, _currentUser, _accountDataProvider);
-        _aliYunOssService = MockAliYunOssService(Substitute.For<OssClient>(), Substitute.For<AliYunOssSettings>());
         _meetingService = MockMeetingService(_clock, _mapper, _unitOfWork, _currentUser, _openAiService, _speechClient,
             _liveKitClient, _ffmpegService, _aliYunOssSetting, _translationClient, _aliYunOssService, _meetingUtilService, _meetingDataProvider, _accountDataProvider, _liveKitServerSetting,
             _httpClientFactory, _backgroundJobClient, _liveKitServerUtilService, _antMediaServerUtilService, _sugarTalkBackgroundJobClient); 
@@ -124,13 +123,6 @@ public partial class BaseFixture
         IAccountDataProvider accountDataProvider)
     {
         return new MeetingDataProvider(clock, mapper, repository, unitOfWork, currentUser, accountDataProvider);
-    }
-
-    protected IAliYunOssService MockAliYunOssService(
-        OssClient ossClient,
-        AliYunOssSettings ossSettings)
-    {
-        return new AliYunOssService(ossClient, ossSettings);
     }
 
     protected IMapper CreateMapper()
