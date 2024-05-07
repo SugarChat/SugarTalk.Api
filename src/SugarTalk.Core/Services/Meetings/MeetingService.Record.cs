@@ -165,6 +165,8 @@ public partial class MeetingService
 
         var recordMeetingToken = _liveKitServerUtilService.GenerateTokenForRecordMeeting(user, meeting.MeetingNumber);
 
+        Log.Information("reocordMeetingToken:{@recordMeetingToken}, egressId:{@egressId}",recordMeetingToken, record.EgressId);
+        
         var stopResponse = await _liveKitClient.StopEgressAsync(
             new StopEgressRequestDto { Token = recordMeetingToken, EgressId = record.EgressId }, cancellationToken).ConfigureAwait(false);
 
@@ -243,19 +245,16 @@ public partial class MeetingService
         DelayedMeetingRecordingStorageCommand command, CancellationToken cancellationToken)
     {
         Log.Information("Starting Execute Storage Meeting Record Video, staring time :{@StartTime}", command.StartDate );
-       
-        if (!command.IsRestartRecord)
-        {
-            var currentTime = _clock.Now;
-        
-            var timeElapsedSinceStart = (currentTime - command.StartDate).TotalMinutes;
 
-            if (timeElapsedSinceStart > 5)
-            {
-                await _meetingDataProvider.UpdateMeetingRecordUrlStatusAsync(command.MeetingRecordId, MeetingRecordUrlStatus.Failed, cancellationToken).ConfigureAwait(false);
-            
-                _sugarTalkBackgroundJobClient.RemoveRecurringJobIfExists(nameof(ExecuteStorageMeetingRecordVideoDelayedJobAsync));
-            }
+        var currentTime = _clock.Now;
+
+        var timeElapsedSinceStart = (currentTime - command.StartDate).TotalMinutes;
+
+        if (timeElapsedSinceStart > 5)
+        {
+            await _meetingDataProvider.UpdateMeetingRecordUrlStatusAsync(command.MeetingRecordId, MeetingRecordUrlStatus.Failed, cancellationToken).ConfigureAwait(false);
+
+            _sugarTalkBackgroundJobClient.RemoveRecurringJobIfExists(nameof(ExecuteStorageMeetingRecordVideoDelayedJobAsync));
         }
 
         return new DelayedMeetingRecordingStorageEvent
