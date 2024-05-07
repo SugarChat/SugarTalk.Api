@@ -63,6 +63,8 @@ public partial class MeetingService
 
     public async Task<MeetingRecordingStartedEvent> StartMeetingRecordingAsync(StartMeetingRecordingCommand command, CancellationToken cancellationToken)
     {
+        Log.Information("Start meeting recording command : {@command}", command);
+        
         command.MeetingRecordId ??= Guid.NewGuid();
         
         var meeting = await _meetingDataProvider
@@ -81,7 +83,7 @@ public partial class MeetingService
             RoomName = meeting.MeetingNumber,
             File = new EgressEncodedFileOutPutDto
             {
-                FilePath = $"SugarTalk/{command.MeetingRecordId}.mp4",
+                FilePath = $"SugarTalk/{command.MeetingRestartRecordId ?? command.MeetingRecordId}.mp4",
                 AliOssUpload = new EgressAliOssUploadDto
                 {
                     AccessKey = _aliYunOssSetting.AccessKeyId,
@@ -97,7 +99,7 @@ public partial class MeetingService
         if (postResponse is null) throw new Exception("Start Meeting Recording Failed.");
         
         if (command.IsRestartRecord.HasValue && command.IsRestartRecord.Value)
-            await UpdateMeetingRecordEgressRestartAsync(command.MeetingRecordId.Value, postResponse.EgressId, cancellationToken).ConfigureAwait(false);
+            await UpdateMeetingRecordEgressRestartAsync(command.MeetingRecordId, postResponse.EgressId, cancellationToken).ConfigureAwait(false);
         else
             await AddMeetingRecordAsync(meeting, command.MeetingRecordId.Value, postResponse.EgressId, cancellationToken).ConfigureAwait(false);
       
@@ -105,7 +107,7 @@ public partial class MeetingService
         {
             MeetingId = meeting.Id,
             MeetingRecordId = command.MeetingRecordId.Value
-        }, cancellationToken), TimeSpan.FromMinutes(5));
+        }, cancellationToken), TimeSpan.FromMinutes(1));
         
         return new MeetingRecordingStartedEvent
         {
@@ -130,7 +132,7 @@ public partial class MeetingService
         await _meetingDataProvider.UpdateMeetingAsync(meeting, cancellationToken).ConfigureAwait(false);
     }
 
-    private async Task UpdateMeetingRecordEgressRestartAsync(Guid meetingRecordId, string egressId, CancellationToken cancellationToken)
+    private async Task UpdateMeetingRecordEgressRestartAsync(Guid? meetingRecordId, string egressId, CancellationToken cancellationToken)
     {
         var record = (await _meetingDataProvider.GetMeetingRecordsAsync(meetingRecordId, cancellationToken).ConfigureAwait(false)).FirstOrDefault();
         
@@ -179,7 +181,7 @@ public partial class MeetingService
             IsRestartRecord = true
         };
         
-        _sugarTalkBackgroundJobClient.Schedule<IMediator>(m => m.SendAsync(storageCommand, cancellationToken), TimeSpan.FromSeconds(10));
+        _backgroundJobClient.Schedule<IMediator>(m => m.SendAsync(storageCommand, cancellationToken), TimeSpan.FromSeconds(10));
 
         return new GeneralOverRecordingEvent();
     }
@@ -351,21 +353,24 @@ public partial class MeetingService
             meetingId, meetingRecordId, cancellationToken).ConfigureAwait(false)).MaxBy(x => x.CreatedDate);
 
         await UpdateMeetingRestartRecordAsync(meetingRecordRestart, egressItem, cancellationToken).ConfigureAwait(false);
-            
-        await _meetingDataProvider.AddMeetingRecordVoiceRelayStationAsync(new MeetingRestartRecord
+
+        var addRestartRecord = new MeetingRestartRecord
         {
             Id = new Guid(),
             MeetingId = meetingId,
             RecordId = meetingRecordId
-        }, cancellationToken: cancellationToken).ConfigureAwait(false);
+        };
+        
+        await _meetingDataProvider.AddMeetingRecordVoiceRelayStationAsync(addRestartRecord, cancellationToken: cancellationToken).ConfigureAwait(false);
 
         var restartRecordCommand = new StartMeetingRecordingCommand
         {
             MeetingId = meetingId,
             MeetingRecordId = meetingRecordId,
-            IsRestartRecord = true
+            IsRestartRecord = true,
+            MeetingRestartRecordId = addRestartRecord.Id
         };
-            
+        
         _sugarTalkBackgroundJobClient.Enqueue<IMediator>(m => m.SendAsync(restartRecordCommand, cancellationToken).ConfigureAwait(false));
     }
 

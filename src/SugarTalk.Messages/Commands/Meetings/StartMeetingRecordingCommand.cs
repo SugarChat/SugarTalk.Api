@@ -10,6 +10,8 @@ public class StartMeetingRecordingCommand : ICommand
     
     public Guid? MeetingRecordId { get; set; }
     
+    public Guid? MeetingRestartRecordId { get; set; }
+    
     public bool? IsRestartRecord { get; set; } = false;
 }
 
