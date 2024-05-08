@@ -385,7 +385,7 @@ public partial class MeetingService
 
     private async Task HandleMeetingRecordRestartAsync(Guid meetingId, Guid meetingRecordId, EgressItemDto egressItem, UserAccountDto user, CancellationToken cancellationToken)
     {
-        Log.Information("meetingId: {meetingId}, meetingRecordId:{meetingRecordId}, egressItem:{egressItem}, user:{user} ",meetingId, meetingRecordId, egressItem, user);
+        Log.Information("meetingId: {meetingId}, meetingRecordId:{meetingRecordId}, egressItem:{@egressItem}, user:{@user} ",meetingId, meetingRecordId, egressItem, user);
         
         var meetingRecordRestart = (await _meetingDataProvider.GetMeetingRecordVoiceRelayStationAsync(
             meetingId, meetingRecordId, cancellationToken).ConfigureAwait(false)).MaxBy(x => x.CreatedDate);
