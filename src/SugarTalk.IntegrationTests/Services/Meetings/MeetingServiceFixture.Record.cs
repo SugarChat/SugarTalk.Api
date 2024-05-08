@@ -728,6 +728,7 @@ public partial class MeetingServiceFixture
             RecordType = MeetingRecordType.OnRecord,
             CreatedDate = startedAt,
             IsDeleted = false,
+            EgressId = "5555",
             UrlStatus = MeetingRecordUrlStatus.Pending,
             MeetingId = meetingId
         };

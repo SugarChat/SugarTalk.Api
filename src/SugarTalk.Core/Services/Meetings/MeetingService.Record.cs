@@ -358,13 +358,13 @@ public partial class MeetingService
                 meetingId, meetingRecordId, cancellationToken).ConfigureAwait(false))
             .Where(x => !x.Url.IsNullOrEmpty())
             .Select(x => x.Url).ToList();
-
-        Log.Information("Combine urls: url {@urls}", urls);
         
         if (urls is { Count: 0 }) 
             return null;
         
         urls.Add(egressUrl);
+        
+        Log.Information("Combine urls: url {@urls}", urls);
         
         var urlBytes = new List<byte[]>();
         

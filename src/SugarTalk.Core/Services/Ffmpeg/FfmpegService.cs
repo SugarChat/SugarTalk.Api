@@ -243,6 +243,7 @@ public class FfmpegService : IFfmpegService
     {
         try
         {
+            /*
             var outputFileName = $"{Guid.NewGuid()}.mp4";
             var downloadedVideoFiles = new List<string>();
             
@@ -254,28 +255,55 @@ public class FfmpegService : IFfmpegService
                 
                 downloadedVideoFiles.Add(videoFileName);
             }
-            
-            var combineArguments = $"-i \"concat:{string.Join("|", downloadedVideoFiles)}\" -c copy \"{outputFileName}\"";
+            //-i "input1.mp4" -i "input2.mp4" -filter_complex "[0:v:0][0:a:0][1:v:0][1:a:0]concat=n=2:v=1:a=1[outv][outa]" -map "[outv]" -map "[outa]" "output.mp4"
+            var combineArguments = $"-i \"concat:{string.Join("|", downloadedVideoFiles)}|\" -c copy {outputFileName}";
 
             Log.Information("Combine command arguments: {combineArguments}", combineArguments);
+            */
 
-            using var proc = new Process();
-            
-            proc.StartInfo = new ProcessStartInfo
+            var outputFileName = $"{Guid.NewGuid()}.mp4";
+            var inputFiles = "";
+
+            // 创建临时文件
+            var downloadedVideoFiles = new List<string>();
+            foreach (var videoData in videoDataList)
             {
-                FileName = "ffmpeg",
-                RedirectStandardError = true,
-                RedirectStandardOutput = true,
-                Arguments = combineArguments
-            };
+                var videoFileName = $"{Guid.NewGuid()}.mp4";
+                await File.WriteAllBytesAsync(videoFileName, videoData, cancellationToken).ConfigureAwait(false);
+                downloadedVideoFiles.Add(videoFileName);
+                inputFiles += $"-i \"{videoFileName}\" ";
+            }
+
+            var filterComplex = $"-filter_complex \"";
+
+            // 构建视频流连接
+            for (int i = 0; i < downloadedVideoFiles.Count; i++)
+            {
+                filterComplex += $"[{i}:v:0]";
+            }
+            filterComplex += $"concat=n={downloadedVideoFiles.Count}:v=1:a=0[outv]\"";
+
+            var combineArguments = $"{inputFiles} {filterComplex} -map \"[outv]\" {outputFileName}";
+            Log.Information("Combine command arguments: {combineArguments}", combineArguments);
             
-            proc.OutputDataReceived += (_, e) => Log.Information("Combine audio, {@Output}", e);
+            using (var proc = new Process())
+            {
+                proc.StartInfo = new ProcessStartInfo
+                {
+                    FileName = "ffmpeg",
+                    RedirectStandardError = true,
+                    RedirectStandardOutput = true,
+                    Arguments = combineArguments
+                };
+            
+                proc.OutputDataReceived += (_, e) => Log.Information("Combine audio, {@Output}", e);
 
-            proc.Start();
-            proc.BeginErrorReadLine();
-            proc.BeginOutputReadLine();
+                proc.Start();
+                proc.BeginErrorReadLine();
+                proc.BeginOutputReadLine();
 
-            await proc.WaitForExitAsync(cancellationToken).ConfigureAwait(false);
+                await proc.WaitForExitAsync(cancellationToken).ConfigureAwait(false);
+            }
             
             if (File.Exists(outputFileName))
             {
