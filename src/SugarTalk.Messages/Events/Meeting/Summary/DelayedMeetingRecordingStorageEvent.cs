@@ -1,10 +1,13 @@
 using System;
 using Mediator.Net.Contracts;
+using SugarTalk.Messages.Dto.Users;
 
 namespace SugarTalk.Messages.Events.Meeting.Summary;
 
 public class DelayedMeetingRecordingStorageEvent : IEvent
 {
+    public UserAccountDto User { get; set; }
+    
     public Guid MeetingId { get; set; }
 
     public string EgressId { get; set; }

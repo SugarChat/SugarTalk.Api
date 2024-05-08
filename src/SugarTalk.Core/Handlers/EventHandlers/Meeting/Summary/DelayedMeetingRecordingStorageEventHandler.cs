@@ -24,7 +24,7 @@ public class DelayedMeetingRecordingStorageEventHandler : IEventHandler<DelayedM
         
         _sugarTalkBackgroundJobClient.Enqueue<IMeetingService>(x =>
             x.DelayStorageMeetingRecordVideoJobAsync(
-                context.Message.MeetingId, context.Message.EgressId, context.Message.MeetingRecordId, context.Message.Token, context.Message.ReTryLimit, context.Message.IsRestartRecord,cancellationToken));
+                context.Message.MeetingId, context.Message.EgressId, context.Message.MeetingRecordId, context.Message.Token, context.Message.ReTryLimit, context.Message.IsRestartRecord, context.Message.User, cancellationToken));
 
         return Task.CompletedTask;
     }

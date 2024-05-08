@@ -1,5 +1,6 @@
 using System;
 using Mediator.Net.Contracts;
+using SugarTalk.Messages.Dto.Users;
 
 namespace SugarTalk.Messages.Commands.Meetings;
 
@@ -18,4 +19,6 @@ public class DelayedMeetingRecordingStorageCommand : ICommand
     public int ReTryLimit { get; set; } = 5;
 
     public bool IsRestartRecord { get; set; } = false;
+
+    public UserAccountDto User { get; set; }
 }
