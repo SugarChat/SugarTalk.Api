@@ -7,7 +7,7 @@ using SugarTalk.Messages.Commands.Meetings;
 
 namespace SugarTalk.Core.Handlers.CommandHandlers.Meetings.Summary;
 
-public class ReStartMeetingRecordingCommandHandler : ICommandHandler<ReStartMeetingRecordingCommand, ReStartMeetingRecordingResponse>
+public class ReStartMeetingRecordingCommandHandler : ICommandHandler<ReStartMeetingRecordingCommand>
 {
     private readonly IMeetingService _meetingService;
 
@@ -16,8 +16,8 @@ public class ReStartMeetingRecordingCommandHandler : ICommandHandler<ReStartMeet
         _meetingService = meetingService;
     }
     
-    public async Task<ReStartMeetingRecordingResponse> Handle(IReceiveContext<ReStartMeetingRecordingCommand> context, CancellationToken cancellationToken)
+    public async Task Handle(IReceiveContext<ReStartMeetingRecordingCommand> context, CancellationToken cancellationToken)
     {
-        return await _meetingService.ReStartMeetingRecordingAsync(context.Message, cancellationToken).ConfigureAwait(false);
+        await _meetingService.ReStartMeetingRecordingAsync(context.Message, cancellationToken).ConfigureAwait(false);
     }
 }

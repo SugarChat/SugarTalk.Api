@@ -16,7 +16,3 @@ public class ReStartMeetingRecordingCommand : ICommand
     
     public bool IsRestartRecord { get; set; } = false;
 }
-
-public class ReStartMeetingRecordingResponse : IResponse
-{
-}

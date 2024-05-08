@@ -31,7 +31,7 @@ public partial interface IMeetingService
 
     Task<MeetingRecordingStartedEvent> StartMeetingRecordingAsync(StartMeetingRecordingCommand command, CancellationToken cancellationToken);
 
-    Task<ReStartMeetingRecordingResponse> ReStartMeetingRecordingAsync(ReStartMeetingRecordingCommand command, CancellationToken cancellationToken);
+    Task ReStartMeetingRecordingAsync(ReStartMeetingRecordingCommand command, CancellationToken cancellationToken);
     
     Task<GetMeetingRecordDetailsResponse> GetMeetingRecordDetailsAsync(GetMeetingRecordDetailsRequest request, CancellationToken cancellationToken);
     
@@ -115,8 +115,10 @@ public partial class MeetingService
         };
     }
 
-    public async Task<ReStartMeetingRecordingResponse> ReStartMeetingRecordingAsync(ReStartMeetingRecordingCommand command, CancellationToken cancellationToken)
+    public async Task ReStartMeetingRecordingAsync(ReStartMeetingRecordingCommand command, CancellationToken cancellationToken)
     {
+        Log.Information("ReStartMeetingRecordingCommand: {@command}", command);
+        
         var meeting = await _meetingDataProvider
             .GetMeetingByIdAsync(command.MeetingId, cancellationToken).ConfigureAwait(false);
 
@@ -151,8 +153,6 @@ public partial class MeetingService
             MeetingId = meeting.Id,
             MeetingRecordId = command.MeetingRecordId
         }, cancellationToken), TimeSpan.FromMinutes(5));
-
-        return new ReStartMeetingRecordingResponse();
     }
 
     private async Task AddMeetingRecordAsync(Meeting meeting, Guid meetingRecordId, string egressId, CancellationToken cancellationToken)
@@ -410,7 +410,7 @@ public partial class MeetingService
             MeetingRestartRecordId = addRestartRecord.Id
         };
         
-        _sugarTalkBackgroundJobClient.Enqueue<IMediator>(m => m.SendAsync(restartRecordCommand, cancellationToken).ConfigureAwait(false));
+        _backgroundJobClient.Schedule<IMediator>(m => m.SendAsync(restartRecordCommand, cancellationToken), TimeSpan.FromSeconds(10)); 
     }
 
     private async Task UpdateMeetingRestartRecordAsync(MeetingRestartRecord meetingRestartRecord, EgressItemDto egressItem, CancellationToken cancellationToken)
