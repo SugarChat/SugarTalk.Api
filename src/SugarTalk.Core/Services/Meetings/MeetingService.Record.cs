@@ -173,7 +173,7 @@ public partial class MeetingService
 
     private async Task UpdateMeetingRecordEgressRestartAsync(Guid? meetingRecordId, string egressId, CancellationToken cancellationToken)
     {
-        var record = (await _meetingDataProvider.GetMeetingRecordsAsync(meetingRecordId, cancellationToken).ConfigureAwait(false)).FirstOrDefault();
+        var record = (await _meetingDataProvider.GetMeetingRecordsAsync(meetingRecordId, cancellationToken: cancellationToken).ConfigureAwait(false)).FirstOrDefault();
         
         Log.Information("restart meeting recording response: {@record}", record);
 
@@ -191,7 +191,7 @@ public partial class MeetingService
         Log.Information("GeneralRestartRecordCommand is: command {@command}",JsonConvert.SerializeObject(command));
         
         var record = (await _meetingDataProvider.GetMeetingRecordsAsync(
-            command.MeetingRecordId, cancellationToken).ConfigureAwait(false)).FirstOrDefault();
+            command.MeetingRecordId, cancellationToken: cancellationToken).ConfigureAwait(false)).FirstOrDefault();
 
         if (record?.UrlStatus != MeetingRecordUrlStatus.Pending)
             return new GeneralOverRecordingEvent();
@@ -234,13 +234,16 @@ public partial class MeetingService
         var meeting = await _meetingDataProvider.GetMeetingByIdAsync(command.MeetingId, cancellationToken).ConfigureAwait(false);
 
         var user = await _accountDataProvider.GetUserAccountAsync(_currentUser.Id.Value, cancellationToken: cancellationToken).ConfigureAwait(false);
+        
+        var record = (await _meetingDataProvider.GetMeetingRecordsAsync(
+            command.MeetingRecordId, cancellationToken: cancellationToken).ConfigureAwait(false)).MaxBy(x => x.CreatedDate);
 
         var recordMeetingToken = _liveKitServerUtilService.GenerateTokenForRecordMeeting(user, meeting.MeetingNumber);
         
         await _meetingDataProvider.UpdateMeetingRecordUrlStatusAsync(command.MeetingRecordId, MeetingRecordUrlStatus.InProgress, cancellationToken).ConfigureAwait(false);
 
         var stopResponse = await _liveKitClient.StopEgressAsync(
-            new StopEgressRequestDto { Token = recordMeetingToken, EgressId = command.EgressId }, cancellationToken).ConfigureAwait(false);
+            new StopEgressRequestDto { Token = recordMeetingToken, EgressId = record.EgressId }, cancellationToken).ConfigureAwait(false);
 
         Log.Information("stop meeting recording response: {@stopResponse}", stopResponse);
         
@@ -263,7 +266,7 @@ public partial class MeetingService
             Token = recordMeetingToken, 
             MeetingRecordId = command.MeetingRecordId,
             MeetingId = command.MeetingId, 
-            EgressId = command.EgressId,
+            EgressId = record.EgressId,
             ReTryLimit = command.ReTryLimit,
             IsRestartRecord = false
         };
