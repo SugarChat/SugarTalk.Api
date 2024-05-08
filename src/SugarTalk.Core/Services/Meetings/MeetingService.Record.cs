@@ -342,7 +342,9 @@ public partial class MeetingService
             return;
         }
         
-        var combineUrl = await CombineMeetingRecordVideoAsync(meetingId, meetingRecordId, cancellationToken).ConfigureAwait(false);
+        var combineUrl = await CombineMeetingRecordVideoAsync(meetingId, meetingRecordId, egressItem.File.Location, cancellationToken).ConfigureAwait(false);
+        
+        Log.Information("combineUrl : {combineUrl}", combineUrl);
 
         if (!combineUrl.IsNullOrEmpty())
             egressItem.File.Location = combineUrl;
@@ -350,15 +352,19 @@ public partial class MeetingService
         await UpdateMeetingRecordAsync(meetingRecord, egressItem, cancellationToken).ConfigureAwait(false);
     }
 
-    private async Task<string> CombineMeetingRecordVideoAsync(Guid meetingId, Guid meetingRecordId, CancellationToken cancellationToken)
+    private async Task<string> CombineMeetingRecordVideoAsync(Guid meetingId, Guid meetingRecordId, string egressUrl, CancellationToken cancellationToken)
     {
         var urls = (await _meetingDataProvider.GetMeetingRecordVoiceRelayStationAsync(
                 meetingId, meetingRecordId, cancellationToken).ConfigureAwait(false))
             .Where(x => !x.Url.IsNullOrEmpty())
             .Select(x => x.Url).ToList();
 
+        Log.Information("Combine urls: url {@urls}", urls);
+        
         if (urls is { Count: 0 }) 
             return null;
+        
+        urls.Add(egressUrl);
         
         var urlBytes = new List<byte[]>();
         
@@ -376,8 +382,15 @@ public partial class MeetingService
             var fileName = $"SugarTalk/{Guid.NewGuid()}.mp4";
             
             _aliYunOssService.UploadFile(fileName, response);
+            
+            var url = _aliYunOssService.GetFileUrl(fileName);
+            var indexOfQuestionMark = url.IndexOf('?');
 
-            return _aliYunOssService.GetFileUrl(fileName);
+            if (indexOfQuestionMark == -1) return null;
+            
+            var extractedUrl = url[..indexOfQuestionMark];
+            
+            return extractedUrl;
         }
         catch (Exception ex)
         {
