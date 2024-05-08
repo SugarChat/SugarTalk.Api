@@ -378,6 +378,8 @@ public partial class MeetingService
         try
         {
             var response = await _ffmpegService.CombineMp4VideosAsync(urlBytes, cancellationToken).ConfigureAwait(false);
+            
+            Log.Information("Combined Videos response : {@response}", response);
 
             var fileName = $"SugarTalk/{Guid.NewGuid()}.mp4";
             
