@@ -279,11 +279,11 @@ public class FfmpegService : IFfmpegService
             // 构建视频流连接
             for (int i = 0; i < downloadedVideoFiles.Count; i++)
             {
-                filterComplex += $"[{i}:v:0]";
+                filterComplex += $"[{i}:v:0][{i}:a:0]";
             }
-            filterComplex += $"concat=n={downloadedVideoFiles.Count}:v=1:a=0[outv]\"";
+            filterComplex += $"concat=n={downloadedVideoFiles.Count}:v=1:a=1[outv][outa]\"";
 
-            var combineArguments = $"{inputFiles} {filterComplex} -map \"[outv]\" {outputFileName}";
+            var combineArguments = $"{inputFiles} {filterComplex} -map \"[outv]\" -map \"[outa]\" {outputFileName}";
             Log.Information("Combine command arguments: {combineArguments}", combineArguments);
             
             using (var proc = new Process())
