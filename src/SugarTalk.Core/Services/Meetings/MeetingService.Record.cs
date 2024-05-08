@@ -282,18 +282,15 @@ public partial class MeetingService
     {
         Log.Information("Starting Execute Storage Meeting Record Video, staring time :{@StartTime}", command.StartDate );
 
-        if (!command.IsRestartRecord)
+        var currentTime = _clock.Now;
+
+        var timeElapsedSinceStart = (currentTime - command.StartDate).TotalMinutes;
+
+        if (timeElapsedSinceStart > 5)
         {
-            var currentTime = _clock.Now;
+            await _meetingDataProvider.UpdateMeetingRecordUrlStatusAsync(command.MeetingRecordId, MeetingRecordUrlStatus.Failed, cancellationToken).ConfigureAwait(false);
 
-            var timeElapsedSinceStart = (currentTime - command.StartDate).TotalMinutes;
-
-            if (timeElapsedSinceStart > 5)
-            {
-                await _meetingDataProvider.UpdateMeetingRecordUrlStatusAsync(command.MeetingRecordId, MeetingRecordUrlStatus.Failed, cancellationToken).ConfigureAwait(false);
-
-                _sugarTalkBackgroundJobClient.RemoveRecurringJobIfExists(nameof(ExecuteStorageMeetingRecordVideoDelayedJobAsync));
-            }
+            _sugarTalkBackgroundJobClient.RemoveRecurringJobIfExists(nameof(ExecuteStorageMeetingRecordVideoDelayedJobAsync));
         }
         
         return new DelayedMeetingRecordingStorageEvent
@@ -388,6 +385,8 @@ public partial class MeetingService
 
     private async Task HandleMeetingRecordRestartAsync(Guid meetingId, Guid meetingRecordId, EgressItemDto egressItem, UserAccountDto user, CancellationToken cancellationToken)
     {
+        Log.Information("meetingId: {meetingId}, meetingRecordId:{meetingRecordId}, egressItem:{egressItem}, user:{user} ",meetingId, meetingRecordId, egressItem, user);
+        
         var meetingRecordRestart = (await _meetingDataProvider.GetMeetingRecordVoiceRelayStationAsync(
             meetingId, meetingRecordId, cancellationToken).ConfigureAwait(false)).MaxBy(x => x.CreatedDate);
 
