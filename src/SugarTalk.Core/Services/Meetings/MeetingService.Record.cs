@@ -106,7 +106,7 @@ public partial class MeetingService
             User = user,
             MeetingId = meeting.Id,
             MeetingRecordId = meetingRecordId
-        }, cancellationToken), TimeSpan.FromMinutes(5));
+        }, cancellationToken), TimeSpan.FromMinutes(30));
         
         return new MeetingRecordingStartedEvent
         {
@@ -152,7 +152,7 @@ public partial class MeetingService
             User = command.User,
             MeetingId = meeting.Id,
             MeetingRecordId = command.MeetingRecordId
-        }, cancellationToken), TimeSpan.FromMinutes(5));
+        }, cancellationToken), TimeSpan.FromMinutes(30));
     }
 
     private async Task AddMeetingRecordAsync(Meeting meeting, Guid meetingRecordId, string egressId, CancellationToken cancellationToken)
