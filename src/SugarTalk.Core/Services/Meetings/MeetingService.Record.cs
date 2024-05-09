@@ -159,12 +159,14 @@ public partial class MeetingService
     {
         await _meetingDataProvider.PersistMeetingRecordAsync(meeting.Id, meetingRecordId, egressId, cancellationToken).ConfigureAwait(false);
 
-        await _meetingDataProvider.AddMeetingRecordVoiceRelayStationAsync(new MeetingRestartRecord
+        var restart = new MeetingRestartRecord
         {
             Id = new Guid(),
             MeetingId = meeting.Id,
             RecordId = meetingRecordId
-        }, cancellationToken: cancellationToken).ConfigureAwait(false);
+        };
+        
+        await _meetingDataProvider.AddMeetingRecordVoiceRelayStationAsync(restart, cancellationToken: cancellationToken).ConfigureAwait(false);
         
         meeting.IsActiveRecord = true;
 
