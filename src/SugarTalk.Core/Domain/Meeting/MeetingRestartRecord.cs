@@ -15,15 +15,15 @@ public class MeetingRestartRecord : IEntity
     [Key]
     [Column("id")]
     public Guid Id { get; set; }
+    
+    [Column("url")]
+    public string Url { get; set; }
 
     [Column("meeting_id")]
     public Guid MeetingId { get; set; }
 
     [Column("record_id")]
     public Guid RecordId { get; set; }
-
-    [Column("url")]
-    public string Url { get; set; }
 
     [Column("created_date")]
     public DateTimeOffset CreatedDate { get; set; }

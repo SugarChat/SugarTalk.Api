@@ -4,7 +4,7 @@ using SugarTalk.Messages.Dto.Users;
 
 namespace SugarTalk.Messages.Commands.Meetings;
 
-public class GeneralRestartRecordCommand : ICommand
+public class MeetingRecordRestartCommand : ICommand
 {
     public Guid MeetingId { get; set; }
 

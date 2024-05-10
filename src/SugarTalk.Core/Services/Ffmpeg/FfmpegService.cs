@@ -243,28 +243,9 @@ public class FfmpegService : IFfmpegService
     {
         try
         {
-            /*
-            var outputFileName = $"{Guid.NewGuid()}.mp4";
-            var downloadedVideoFiles = new List<string>();
-            
-            foreach (var t in videoDataList)
-            {
-                var videoFileName = $"{Guid.NewGuid()}.mp4";
-                
-                await File.WriteAllBytesAsync(videoFileName, t, cancellationToken).ConfigureAwait(false);
-                
-                downloadedVideoFiles.Add(videoFileName);
-            }
-            //-i "input1.mp4" -i "input2.mp4" -filter_complex "[0:v:0][0:a:0][1:v:0][1:a:0]concat=n=2:v=1:a=1[outv][outa]" -map "[outv]" -map "[outa]" "output.mp4"
-            var combineArguments = $"-i \"concat:{string.Join("|", downloadedVideoFiles)}|\" -c copy {outputFileName}";
-
-            Log.Information("Combine command arguments: {combineArguments}", combineArguments);
-            */
-
             var outputFileName = $"{Guid.NewGuid()}.mp4";
             var inputFiles = "";
-
-            // 创建临时文件
+            
             var downloadedVideoFiles = new List<string>();
             foreach (var videoData in videoDataList)
             {
@@ -276,11 +257,11 @@ public class FfmpegService : IFfmpegService
 
             var filterComplex = $"-filter_complex \"";
 
-            // 构建视频流连接
             for (int i = 0; i < downloadedVideoFiles.Count; i++)
             {
                 filterComplex += $"[{i}:v:0][{i}:a:0]";
             }
+            
             filterComplex += $"concat=n={downloadedVideoFiles.Count}:v=1:a=1[outv][outa]\"";
 
             var combineArguments = $"{inputFiles} {filterComplex} -map \"[outv]\" -map \"[outa]\" {outputFileName}";
