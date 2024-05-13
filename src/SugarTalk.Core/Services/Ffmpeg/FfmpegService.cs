@@ -253,14 +253,14 @@ public class FfmpegService : IFfmpegService
             
                 filterComplex += $"[{i}:v:0][{i}:a:0]";
             }
-            var videoParameters = "[outv]scale=1280:720[outv_scaled]";
+            /*var videoParameters = "[outv]scale=1280:720[outv_scaled]";*/
             
-            filterComplex += $"concat=n={videoDataList.Count}:v=1:a=1[outv][outa]; {videoParameters}\"";
+            filterComplex += $"concat=n={videoDataList.Count}:v=1:a=1[outv][outa]\"";
 
            
-            var audioParameters = "-c:a aac -b:a 125k -ac 2 -ar 44100";
+            /*var audioParameters = "-c:a aac -b:a 125k -ac 2 -ar 44100";*/
 
-            var combineArguments = $"{inputFiles} {filterComplex} {audioParameters} -map \"[outv_scaled]\" -map \"[outa]\" {outputFileName}";
+            var combineArguments = $"{inputFiles} {filterComplex} -map \"[outv_scaled]\" -map \"[outa]\" {outputFileName}";
             
             Log.Information("Combine command arguments: {combineArguments}", combineArguments);
             
