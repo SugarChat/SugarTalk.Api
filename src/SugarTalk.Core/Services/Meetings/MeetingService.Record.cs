@@ -419,18 +419,9 @@ public partial class MeetingService
         
         Log.Information("Combine urls: {@urls}", urls);
         
-        var urlBytes = new List<byte[]>();
-        
-        foreach (var url in urls)
-        {
-            var urlContent = await _httpClientFactory.GetAsync<byte[]>(url, cancellationToken).ConfigureAwait(false);
-
-            urlBytes.Add(urlContent);
-        }
-        
         try
         {
-            var response = await _ffmpegService.CombineMp4VideosAsync(urlBytes, cancellationToken).ConfigureAwait(false);
+            var response = await _ffmpegService.CombineMp4VideosAsync(urls, cancellationToken).ConfigureAwait(false);
             
             Log.Information("Combined Videos response : {@response}", response);
 
@@ -474,8 +465,8 @@ public partial class MeetingService
         {
             User = user,
             MeetingId = meetingId,
-            MeetingRecordId = meetingRecordId,
             IsRestartRecord = true,
+            MeetingRecordId = meetingRecordId,
             MeetingRestartRecordId = addRestartRecord.Id
         };
         
