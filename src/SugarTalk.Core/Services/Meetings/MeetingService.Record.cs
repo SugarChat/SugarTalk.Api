@@ -296,7 +296,7 @@ public partial class MeetingService
                 case true:
                     reTryLimit--;
                     _sugarTalkBackgroundJobClient.Schedule<IMeetingService>(x =>
-                        x.DelayStorageMeetingRecordVideoJobAsync(meetingId, egressId, meetingRecordId, token, reTryLimit, false, user, cancellationToken), TimeSpan.FromSeconds(10));
+                        x.DelayStorageMeetingRecordVideoJobAsync(meetingId, egressId, meetingRecordId, token, reTryLimit, isRestartRecording, user, cancellationToken), TimeSpan.FromSeconds(10));
                     return;
                 default:
                     if (isRestartRecording) break;
