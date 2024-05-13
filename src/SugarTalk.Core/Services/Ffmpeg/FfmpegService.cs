@@ -260,7 +260,9 @@ public class FfmpegService : IFfmpegService
            
             /*var audioParameters = "-c:a aac -b:a 125k -ac 2 -ar 44100";*/
 
-            var combineArguments = $"{inputFiles} {filterComplex} -map \"[outv_scaled]\" -map \"[outa]\" {outputFileName}";
+            /*var combineArguments = $"{inputFiles} {filterComplex} -map \"[outv_scaled]\" -map \"[outa]\" {outputFileName}";*/
+            
+            var combineArguments = $"{inputFiles} {filterComplex} -map \"[outv]\" -map \"[outa]\" {outputFileName}";
             
             Log.Information("Combine command arguments: {combineArguments}", combineArguments);
             
