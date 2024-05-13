@@ -299,8 +299,6 @@ public partial class MeetingService
                         x.DelayStorageMeetingRecordVideoJobAsync(meetingId, egressId, meetingRecordId, token, reTryLimit, isRestartRecording, user, cancellationToken), TimeSpan.FromSeconds(10));
                     return;
                 default:
-                    if (isRestartRecording) break;
-                    
                     meetingRecord.UrlStatus = MeetingRecordUrlStatus.Failed;
                     await _meetingDataProvider.UpdateMeetingRecordAsync(meetingRecord, cancellationToken).ConfigureAwait(false);
                     return;
