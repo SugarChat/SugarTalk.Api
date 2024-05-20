@@ -111,7 +111,6 @@ namespace SugarTalk.Core.Services.Meetings
         private readonly ILiveKitClient _liveKitClient;
         private readonly IFfmpegService _ffmpegService;
         private readonly IOpenAiService _openAiService;
-        private readonly IAliYunOssService _aliYunOssService;
         private readonly IAwsS3Service _awsS3Service;
         private readonly AwsS3Settings _awsS3Settings;
         private readonly TranslationClient _translationClient;
@@ -123,7 +122,6 @@ namespace SugarTalk.Core.Services.Meetings
         private readonly ILiveKitServerUtilService _liveKitServerUtilService;
         private readonly IAntMediaServerUtilService _antMediaServerUtilService;
         private readonly ISugarTalkBackgroundJobClient _sugarTalkBackgroundJobClient;
-        private readonly AliYunOssSettings _aliYunOssSetting;
         private readonly LiveKitServerSetting _liveKitServerSetting;
         private readonly MeetingInfoSettings _meetingInfoSettings;
         
@@ -136,7 +134,6 @@ namespace SugarTalk.Core.Services.Meetings
             ISpeechClient speechClient,
             ILiveKitClient liveKitClient,
             IFfmpegService ffmpegService,
-            AliYunOssSettings aliYunOssSetting,
             AwsS3Settings awsS3Settings,
             IAwsS3Service awsS3Service,
             TranslationClient translationClient,
@@ -159,7 +156,6 @@ namespace SugarTalk.Core.Services.Meetings
             _speechClient = speechClient;
             _liveKitClient = liveKitClient;
             _ffmpegService = ffmpegService;
-            _aliYunOssSetting = aliYunOssSetting;
             _awsS3Service = awsS3Service;
             _awsS3Settings = awsS3Settings;
             _httpClientFactory = httpClientFactory;

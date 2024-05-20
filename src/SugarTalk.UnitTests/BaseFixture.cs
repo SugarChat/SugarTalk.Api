@@ -43,7 +43,6 @@ public partial class BaseFixture
     protected readonly IAntMediaServerUtilService _antMediaServerUtilService;
     protected readonly ILiveKitServerUtilService _liveKitServerUtilService;
     protected readonly LiveKitServerSetting _liveKitServerSetting;
-    protected readonly AliYunOssSettings _aliYunOssSetting;
     protected readonly AwsS3Settings _awsS3Settings;
     protected readonly IAwsS3Service _awsS3Service;
     protected readonly ISpeechClient _speechClient;
@@ -76,7 +75,7 @@ public partial class BaseFixture
         _accountDataProvider = MockAccountDataProvider(_mapper, _repository, _unitOfWork, _currentUser);
         _meetingDataProvider = MockMeetingDataProvider(_clock, _mapper, _repository, _unitOfWork, _currentUser, _accountDataProvider);
         _meetingService = MockMeetingService(_clock, _mapper, _unitOfWork, _currentUser, _openAiService, _speechClient,
-            _liveKitClient, _ffmpegService, _aliYunOssSetting, _awsS3Settings, _awsS3Service, _translationClient, _meetingUtilService,
+            _liveKitClient, _ffmpegService, _awsS3Settings, _awsS3Service, _translationClient, _meetingUtilService,
             _meetingDataProvider, _accountDataProvider, _liveKitServerSetting, _httpClientFactory, _backgroundJobClient,
             _liveKitServerUtilService, _antMediaServerUtilService, _sugarTalkBackgroundJobClient, _meetingInfoSettings); 
         _meetingProcessJobService = MockMeetingProcessJobService(_clock, _unitOfWork, _meetingDataProvider);
@@ -101,7 +100,6 @@ public partial class BaseFixture
         ISpeechClient speechClient,
         ILiveKitClient liveKitClient,
         IFfmpegService ffmpegService,
-        AliYunOssSettings aliYunOssSetting,
         AwsS3Settings awsS3Settings,
         IAwsS3Service awsS3Service,
         TranslationClient translationClient,
@@ -117,7 +115,7 @@ public partial class BaseFixture
         MeetingInfoSettings meetingInfoSettings)
     {
         return new MeetingService(
-            clock, mapper, unitOfWork, currentUser, openAiService, speechClient, liveKitClient, ffmpegService, aliYunOssSetting, awsS3Settings, awsS3Service, 
+            clock, mapper, unitOfWork, currentUser, openAiService, speechClient, liveKitClient, ffmpegService, awsS3Settings, awsS3Service, 
             translationClient, meetingUtilService, meetingDataProvider, accountDataProvider, liveKitServerSetting, 
             httpClientFactory, backgroundJobClient, liveKitServerUtilService, antMediaServerUtilService, sugarTalkBackgroundJobClient, meetingInfoSettings);
     }

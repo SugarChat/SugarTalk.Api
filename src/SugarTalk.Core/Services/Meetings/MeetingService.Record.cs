@@ -5,6 +5,7 @@ using Mediator.Net;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using System.Text;
 using Microsoft.IdentityModel.Tokens;
 using Newtonsoft.Json;
 using SugarTalk.Messages.Extensions;
@@ -89,10 +90,10 @@ public partial class MeetingService
                 FilePath = $"SugarTalk/{meetingRecordId}.mp4",
                 AliOssUpload = new EgressAliOssUploadDto
                 {
-                    AccessKey = _aliYunOssSetting.AccessKeyId,
-                    Secret = _aliYunOssSetting.AccessKeySecret,
-                    Bucket = _aliYunOssSetting.BucketName,
-                    Endpoint = _aliYunOssSetting.Endpoint
+                    AccessKey = _awsS3Settings.AccessKeyId,
+                    Secret = _awsS3Settings.AccessKeySecret,
+                    Bucket = _awsS3Settings.BucketName,
+                    Endpoint = _awsS3Settings.Endpoint
                 }
             }
         }, cancellationToken).ConfigureAwait(false);
@@ -108,7 +109,7 @@ public partial class MeetingService
             User = user,
             MeetingId = meeting.Id,
             MeetingRecordId = meetingRecordId
-        }, cancellationToken), TimeSpan.FromMinutes(30));
+        }, cancellationToken), TimeSpan.FromMinutes(6));
         
         return new MeetingRecordingStartedEvent
         {
@@ -135,10 +136,10 @@ public partial class MeetingService
                 FilePath = $"SugarTalk/{command.MeetingRestartRecordId}.mp4",
                 AliOssUpload = new EgressAliOssUploadDto
                 {
-                    AccessKey = _aliYunOssSetting.AccessKeyId,
-                    Secret = _aliYunOssSetting.AccessKeySecret,
-                    Bucket = _aliYunOssSetting.BucketName,
-                    Endpoint = _aliYunOssSetting.Endpoint
+                    AccessKey = _awsS3Settings.AccessKeyId,
+                    Secret = _awsS3Settings.AccessKeySecret,
+                    Bucket = _awsS3Settings.BucketName,
+                    Endpoint = _awsS3Settings.Endpoint
                 }
             }
         }, cancellationToken).ConfigureAwait(false);
@@ -419,22 +420,19 @@ public partial class MeetingService
         
         try
         {
-            var response = await _ffmpegService.CombineMp4VideosAsync(urls, cancellationToken).ConfigureAwait(false);
+            List<byte[]> byteArrayList = urls.Select(s => Encoding.UTF8.GetBytes(s)).ToList();
+            
+            var response = await _ffmpegService.CombineMp4VideosAsync(byteArrayList, cancellationToken).ConfigureAwait(false);
             
             Log.Information("Combined Videos response : {@response}", response);
 
             var fileName = $"SugarTalk/{Guid.NewGuid()}.mp4";
             
-            _aliYunOssService.UploadFile(fileName, response);
+            await _awsS3Service.UploadFileAsync(fileName, response, cancellationToken);
             
-            var url = _aliYunOssService.GetFileUrl(fileName);
-            var indexOfQuestionMark = url.IndexOf('?');
-
-            if (indexOfQuestionMark == -1) return null;
+            var url = _awsS3Service.GetFileUrl(fileName);
             
-            var extractedUrl = url[..indexOfQuestionMark];
-            
-            return extractedUrl;
+            return url;
         }
         catch (Exception ex)
         {

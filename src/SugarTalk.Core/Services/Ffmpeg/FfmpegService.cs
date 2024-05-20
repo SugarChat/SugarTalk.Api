@@ -18,7 +18,7 @@ public interface IFfmpegService : IScopedDependency
 
     Task<byte[]> ConvertFileFormatAsync(byte[] file, TranscriptionFileType fileType, CancellationToken cancellationToken);
     
-    Task<byte[]> CombineMp4VideosAsync(List<string>  videoUrls, CancellationToken cancellationToken = default);
+    Task<byte[]> CombineMp4VideosAsync(List<byte[]>  videoUrls, CancellationToken cancellationToken = default);
 }
 
 public class FfmpegService : IFfmpegService
@@ -239,9 +239,9 @@ public class FfmpegService : IFfmpegService
         };
     }
 
-    public async Task<byte[]> CombineMp4VideosAsync(List<string> videoDataList, CancellationToken cancellationToken = default)
+    public async Task<byte[]> CombineMp4VideosAsync(List<byte[]> videoDataList, CancellationToken cancellationToken = default)
     {
-        try
+        /*try
         {
             var outputFileName = $"{Guid.NewGuid()}.mp4";
             var inputFiles = "";
@@ -253,16 +253,15 @@ public class FfmpegService : IFfmpegService
             
                 filterComplex += $"[{i}:v:0][{i}:a:0]";
             }
-            /*var videoParameters = "[outv]scale=1280:720[outv_scaled]";*/
+            var videoParameters = "[outv]scale=1280:720[outv_scaled]";
             
             filterComplex += $"concat=n={videoDataList.Count}:v=1:a=1[outv][outa]\"";
-
-           
-            /*var audioParameters = "-c:a aac -b:a 125k -ac 2 -ar 44100";*/
-
-            /*var combineArguments = $"{inputFiles} {filterComplex} -map \"[outv_scaled]\" -map \"[outa]\" {outputFileName}";*/
             
-            var combineArguments = $"{inputFiles} {filterComplex} -map \"[outv]\" -map \"[outa]\" {outputFileName}";
+            var audioParameters = "-c:a aac -b:a 125k -ac 2 -ar 44100";
+
+            var combineArguments = $"{inputFiles} {filterComplex} -map \"[outv_scaled]\" -map \"[outa]\" {outputFileName}";
+            
+            /*var combineArguments = $"{inputFiles} {filterComplex} -map \"[outv]\" -map \"[outa]\" {outputFileName}";#1#
             
             Log.Information("Combine command arguments: {combineArguments}", combineArguments);
             
@@ -301,9 +300,9 @@ public class FfmpegService : IFfmpegService
         {
             Log.Error(ex, "Error occurred while combining MP4 videos.");
             return Array.Empty<byte>();
-        }
+        }*/
         
-          /*try
+          try
         {
             var outputFileName = $"{Guid.NewGuid()}.mp4";
             var inputFiles = "";
@@ -330,6 +329,7 @@ public class FfmpegService : IFfmpegService
             var audioParameters = "-c:a aac -b:a 125k -ac 2 -ar 44100";
 
             var combineArguments = $"{inputFiles} {filterComplex} {videoParameters} {audioParameters} -map \"[outv]\" -map \"[outa]\" {outputFileName}";
+            
             Log.Information("Combine command arguments: {combineArguments}", combineArguments);
             
             using (var proc = new Process())
@@ -372,6 +372,6 @@ public class FfmpegService : IFfmpegService
         {
             Log.Error(ex, "Error occurred while combining MP4 videos.");
             return Array.Empty<byte>();
-        }*/
+        }
     }
 }
