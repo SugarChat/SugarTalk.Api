@@ -18,6 +18,7 @@ using StackExchange.Redis;
 using SugarTalk.Core.DbUp;
 using SugarTalk.Core.Hubs;
 using SugarTalk.Core.Services.Aliyun;
+using SugarTalk.Core.Services.Aws;
 using SugarTalk.Core.Services.Jobs;
 using SugarTalk.Core.Settings.System;
 using SugarTalk.Core.Settings.Caching;
@@ -54,6 +55,7 @@ public partial class TestBase
         containerBuilder.RegisterInstance(Substitute.For<IHttpContextAccessor>()).AsImplementedInterfaces();
         containerBuilder.RegisterInstance(Substitute.For<IHubContext<MeetingHub>>()).AsImplementedInterfaces();
         containerBuilder.RegisterInstance(Substitute.For<IAliYunOssService>()).AsImplementedInterfaces();
+        containerBuilder.RegisterInstance(Substitute.For<IAwsS3Service>()).AsImplementedInterfaces();
         
         RegisterRedis(containerBuilder);
         RegisterSugarTalkBackgroundJobClient(containerBuilder);

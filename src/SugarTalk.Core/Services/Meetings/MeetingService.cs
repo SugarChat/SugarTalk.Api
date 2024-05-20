@@ -31,8 +31,10 @@ using SugarTalk.Messages.Enums.Account;
 using SugarTalk.Core.Domain.Meeting;
 using SugarTalk.Core.Services.Aliyun;
 using SugarTalk.Core.Services.Ffmpeg;
+using SugarTalk.Core.Services.Aws;
 using SugarTalk.Core.Services.Http;
 using SugarTalk.Core.Services.OpenAi;
+using SugarTalk.Core.Settings.Aws;
 using SugarTalk.Core.Settings.Meeting;
 using SugarTalk.Messages.Commands.Meetings.Speak;
 using SugarTalk.Messages.Dto.LiveKit.Egress;
@@ -110,6 +112,8 @@ namespace SugarTalk.Core.Services.Meetings
         private readonly IFfmpegService _ffmpegService;
         private readonly IOpenAiService _openAiService;
         private readonly IAliYunOssService _aliYunOssService;
+        private readonly IAwsS3Service _awsS3Service;
+        private readonly AwsS3Settings _awsS3Settings;
         private readonly TranslationClient _translationClient;
         private readonly IMeetingUtilService _meetingUtilService;
         private readonly IAccountDataProvider _accountDataProvider;
@@ -119,7 +123,6 @@ namespace SugarTalk.Core.Services.Meetings
         private readonly ILiveKitServerUtilService _liveKitServerUtilService;
         private readonly IAntMediaServerUtilService _antMediaServerUtilService;
         private readonly ISugarTalkBackgroundJobClient _sugarTalkBackgroundJobClient;
-
         private readonly AliYunOssSettings _aliYunOssSetting;
         private readonly LiveKitServerSetting _liveKitServerSetting;
         private readonly MeetingInfoSettings _meetingInfoSettings;
@@ -134,8 +137,9 @@ namespace SugarTalk.Core.Services.Meetings
             ILiveKitClient liveKitClient,
             IFfmpegService ffmpegService,
             AliYunOssSettings aliYunOssSetting,
+            AwsS3Settings awsS3Settings,
+            IAwsS3Service awsS3Service,
             TranslationClient translationClient,
-            IAliYunOssService aliYunOssService,
             IMeetingUtilService meetingUtilService,
             IMeetingDataProvider meetingDataProvider,
             IAccountDataProvider accountDataProvider,
@@ -156,9 +160,10 @@ namespace SugarTalk.Core.Services.Meetings
             _liveKitClient = liveKitClient;
             _ffmpegService = ffmpegService;
             _aliYunOssSetting = aliYunOssSetting;
+            _awsS3Service = awsS3Service;
+            _awsS3Settings = awsS3Settings;
             _httpClientFactory = httpClientFactory;
             _translationClient = translationClient;
-            _aliYunOssService = aliYunOssService;
             _meetingUtilService = meetingUtilService;
             _accountDataProvider = accountDataProvider;
             _meetingDataProvider = meetingDataProvider;
