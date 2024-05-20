@@ -500,6 +500,8 @@ namespace SugarTalk.Core.Services.Meetings
         {
             var maxQueryDate = _clock.Now.AddMonths(1).ToUnixTimeSeconds();
             var startOfDay = new DateTimeOffset(_clock.Now.Year, _clock.Now.Month, _clock.Now.Day, 0, 0, 0, TimeSpan.Zero).ToUnixTimeSeconds();
+            
+            Log.Information("GetAppointmentMeetingsByUserIdAsync maxQueryDate:{@maxQueryDate},startOfDay:{@startofDay}", maxQueryDate, startOfDay);
 
             var query =
                 from meeting in _repository.Query<Meeting>()
