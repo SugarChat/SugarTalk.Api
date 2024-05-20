@@ -155,7 +155,7 @@ public partial class MeetingService
             User = command.User,
             MeetingId = meeting.Id,
             MeetingRecordId = command.MeetingRecordId
-        }, cancellationToken), TimeSpan.FromMinutes(30));
+        }, cancellationToken), TimeSpan.FromMinutes(6));
     }
 
     public async Task GeneralMeetingRecordRestartAsync(
