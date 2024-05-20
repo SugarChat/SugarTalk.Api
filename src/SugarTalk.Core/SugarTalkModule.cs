@@ -2,6 +2,8 @@
 using System.Linq;
 using System.Reflection;
 using Aliyun.OSS;
+using Amazon;
+using Amazon.S3;
 using Autofac;
 using AutoMapper.Contrib.Autofac.DependencyInjection;
 using Google.Cloud.Translation.V2;
@@ -14,7 +16,6 @@ using Serilog;
 using SugarTalk.Core.Data;
 using SugarTalk.Core.Ioc;
 using SugarTalk.Core.Masstransit;
-using SugarTalk.Core.Middlewares;
 using SugarTalk.Core.Middlewares.FluentMessageValidator;
 using SugarTalk.Core.Middlewares.GuestValidator;
 using SugarTalk.Core.Middlewares.UnifyResponse;
@@ -23,6 +24,7 @@ using SugarTalk.Core.Services.Caching;
 using SugarTalk.Core.Settings;
 using SugarTalk.Core.Settings.Google;
 using SugarTalk.Core.Settings.Aliyun;
+using SugarTalk.Core.Settings.Aws;
 using Module = Autofac.Module;
 
 namespace SugarTalk.Core
@@ -58,6 +60,7 @@ namespace SugarTalk.Core
             RegisterTranslationClient(builder);
             RegisterAliYunOssClient(builder);
             RegisterMultiBus(builder, _configuration);
+            RegisterAwsOssClient(builder);
         }
 
         private void RegisterMultiBus(ContainerBuilder builder, IConfiguration configuration)
@@ -148,6 +151,15 @@ namespace SugarTalk.Core
             }).AsSelf().InstancePerLifetimeScope();
         }
 
+        private void RegisterAwsOssClient(ContainerBuilder builder)
+        {
+            builder.Register(c =>
+            {
+                var settings = c.Resolve<AwsS3Settings>();
+                return new AmazonS3Client(settings.AccessKeyId, settings.AccessKeySecret, RegionEndpoint.GetBySystemName(settings.Endpoint));
+            }).AsSelf().InstancePerLifetimeScope();
+        }
+        
         private void RegisterAutoMapper(ContainerBuilder builder)
         {
             builder.RegisterAutoMapper(typeof(SugarTalkModule).Assembly);
