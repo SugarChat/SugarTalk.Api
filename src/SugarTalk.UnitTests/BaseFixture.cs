@@ -14,9 +14,11 @@ using SugarTalk.Core.Services.Meetings;
 using SugarTalk.Core.Settings.LiveKit;
 using SugarTalk.Core.Services.Http.Clients;
 using SugarTalk.Core.Services.AntMediaServer;
+using SugarTalk.Core.Services.Aws;
 using SugarTalk.Core.Services.Jobs;
 using SugarTalk.Core.Services.OpenAi;
 using SugarTalk.Core.Settings.Aliyun;
+using SugarTalk.Core.Settings.Aws;
 
 namespace SugarTalk.UnitTests;
 
@@ -37,6 +39,8 @@ public partial class BaseFixture
     protected readonly ILiveKitServerUtilService _liveKitServerUtilService;
     protected readonly LiveKitServerSetting _liveKitServerSetting;
     protected readonly AliYunOssSettings _aliYunOssSetting;
+    protected readonly AwsS3Settings _awsS3Settings;
+    protected readonly IAwsS3Service _awsS3Service;
     protected readonly ISpeechClient _speechClient;
     protected readonly ILiveKitClient _liveKitClient;
     protected readonly ISugarTalkHttpClientFactory _httpClientFactory;
@@ -65,8 +69,9 @@ public partial class BaseFixture
         _accountDataProvider = MockAccountDataProvider(_mapper, _repository, _unitOfWork, _currentUser);
         _meetingDataProvider = MockMeetingDataProvider(_clock, _mapper, _repository, _unitOfWork, _currentUser, _accountDataProvider);
         _meetingService = MockMeetingService(_clock, _mapper, _unitOfWork, _currentUser, _openAiService, _speechClient,
-            _liveKitClient, _aliYunOssSetting, _translationClient, _meetingUtilService, _meetingDataProvider, _accountDataProvider, _liveKitServerSetting,
-            _httpClientFactory, _backgroundJobClient, _liveKitServerUtilService, _antMediaServerUtilService, _sugarTalkBackgroundJobClient); 
+            _liveKitClient, _aliYunOssSetting, _awsS3Settings, _awsS3Service, _translationClient, _meetingUtilService,
+            _meetingDataProvider, _accountDataProvider, _liveKitServerSetting, _httpClientFactory, _backgroundJobClient,
+            _liveKitServerUtilService, _antMediaServerUtilService, _sugarTalkBackgroundJobClient); 
         _meetingProcessJobService = MockMeetingProcessJobService(_clock, _unitOfWork, _meetingDataProvider);
     }
 
@@ -89,6 +94,8 @@ public partial class BaseFixture
         ISpeechClient speechClient,
         ILiveKitClient liveKitClient,
         AliYunOssSettings aliYunOssSetting,
+        AwsS3Settings awsS3Settings,
+        IAwsS3Service awsS3Service,
         TranslationClient translationClient,
         IMeetingUtilService meetingUtilService,
         IMeetingDataProvider meetingDataProvider,
@@ -101,8 +108,7 @@ public partial class BaseFixture
         ISugarTalkBackgroundJobClient sugarTalkBackgroundJobClient)
     {
         return new MeetingService(
-
-            clock, mapper, unitOfWork, currentUser, openAiService, speechClient, liveKitClient, aliYunOssSetting,
+            clock, mapper, unitOfWork, currentUser, openAiService, speechClient, liveKitClient, aliYunOssSetting, awsS3Settings, awsS3Service, 
             translationClient, meetingUtilService, meetingDataProvider, accountDataProvider, liveKitServerSetting, 
             httpClientFactory, backgroundJobClient, liveKitServerUtilService, antMediaServerUtilService, sugarTalkBackgroundJobClient, null);
     }
