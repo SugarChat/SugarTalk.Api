@@ -29,8 +29,10 @@ using SugarTalk.Messages.Dto.Meetings.User;
 using SugarTalk.Messages.Dto.Users;
 using SugarTalk.Messages.Enums.Account;
 using SugarTalk.Core.Domain.Meeting;
+using SugarTalk.Core.Services.Aws;
 using SugarTalk.Core.Services.Http;
 using SugarTalk.Core.Services.OpenAi;
+using SugarTalk.Core.Settings.Aws;
 using SugarTalk.Core.Settings.Meeting;
 using SugarTalk.Messages.Commands.Meetings.Speak;
 using SugarTalk.Messages.Dto.LiveKit.Egress;
@@ -106,6 +108,8 @@ namespace SugarTalk.Core.Services.Meetings
         private readonly IOpenAiService _openAiService;
         private readonly ISpeechClient _speechClient;
         private readonly ILiveKitClient _liveKitClient;
+        private readonly IAwsS3Service _awsS3Service;
+        private readonly AwsS3Settings _awsS3Settings;
         private readonly TranslationClient _translationClient;
         private readonly IMeetingUtilService _meetingUtilService;
         private readonly IAccountDataProvider _accountDataProvider;
@@ -129,6 +133,8 @@ namespace SugarTalk.Core.Services.Meetings
             ISpeechClient speechClient,
             ILiveKitClient liveKitClient,
             AliYunOssSettings aliYunOssSetting,
+            AwsS3Settings awsS3Settings,
+            IAwsS3Service awsS3Service,
             TranslationClient translationClient,
             IMeetingUtilService meetingUtilService,
             IMeetingDataProvider meetingDataProvider,
@@ -149,6 +155,8 @@ namespace SugarTalk.Core.Services.Meetings
             _speechClient = speechClient;
             _liveKitClient = liveKitClient;
             _aliYunOssSetting = aliYunOssSetting;
+            _awsS3Service = awsS3Service;
+            _awsS3Settings = awsS3Settings;
             _httpClientFactory = httpClientFactory;
             _translationClient = translationClient;
             _meetingUtilService = meetingUtilService;
