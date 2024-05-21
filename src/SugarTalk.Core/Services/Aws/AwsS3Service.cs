@@ -39,8 +39,7 @@ public class AwsS3Service : IAwsS3Service
         {
             Key = fileName,
             BucketName = _awsOssSettings.BucketName,
-            InputStream = new MemoryStream(fileContent),
-            CannedACL = S3CannedACL.PublicRead
+            InputStream = new MemoryStream(fileContent)
         };
         
         await _amazonS3.PutObjectAsync(request, cancellationToken);

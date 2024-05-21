@@ -5,7 +5,6 @@ using Mediator.Net;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Collections.Generic;
-using System.Text;
 using Microsoft.IdentityModel.Tokens;
 using Newtonsoft.Json;
 using SugarTalk.Messages.Extensions;
@@ -314,10 +313,10 @@ public partial class MeetingService
             return;
         }
         
-        var combineUrl = await CombineMeetingRecordVideoAsync(meetingId, meetingRecordId, egressItem.File.Filename, cancellationToken).ConfigureAwait(false);
+        var fileName = await CombineMeetingRecordVideoAsync(meetingId, meetingRecordId, egressItem.File.Filename, cancellationToken).ConfigureAwait(false);
 
-        if (!combineUrl.IsNullOrEmpty())
-            egressItem.File.Filename = combineUrl;
+        if (!fileName.IsNullOrEmpty())
+            egressItem.File.Filename = fileName;
         
         await UpdateMeetingRecordAsync(meetingRecord, egressItem, cancellationToken).ConfigureAwait(false);
     }
@@ -422,7 +421,6 @@ public partial class MeetingService
         
         try
         {
-            //获取字节
             List<byte[]> bytesList = new List<byte[]>();
             
             foreach (var url in urls)
@@ -440,12 +438,7 @@ public partial class MeetingService
             
             await _awsS3Service.UploadFileAsync(fileName, response, cancellationToken);
             
-            var urlStirng = _awsS3Service.GetFileUrl(fileName);
-            
-            /*List<byte[]> byteArrayList = urls.Select(s => Encoding.UTF8.GetBytes(s)).ToList();
-           */
-            
-            return urlStirng;
+            return fileName;
         }
         catch (Exception ex)
         {
