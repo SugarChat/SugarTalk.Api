@@ -88,11 +88,12 @@ public partial class MeetingService
             File = new EgressEncodedFileOutPutDto
             {
                 FilePath = $"SugarTalk/{meetingRecordId}.mp4",
-                AliOssUpload = new EgressAwsS3UploadDto
+                S3Upload = new EgressS3UploadDto
                 {
                     AccessKey = _awsS3Settings.AccessKeyId,
                     Secret = _awsS3Settings.AccessKeySecret,
                     Bucket = _awsS3Settings.BucketName,
+                    Region = _awsS3Settings.Region,
                     Endpoint = _awsS3Settings.Endpoint
                 }
             }
@@ -134,11 +135,12 @@ public partial class MeetingService
             File = new EgressEncodedFileOutPutDto
             {
                 FilePath = $"SugarTalk/{command.MeetingRestartRecordId}.mp4",
-                AliOssUpload = new EgressAwsS3UploadDto
+                S3Upload = new EgressS3UploadDto
                 {
                     AccessKey = _awsS3Settings.AccessKeyId,
                     Secret = _awsS3Settings.AccessKeySecret,
                     Bucket = _awsS3Settings.BucketName,
+                    Region = _awsS3Settings.Region,
                     Endpoint = _awsS3Settings.Endpoint
                 }
             }
