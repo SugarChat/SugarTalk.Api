@@ -314,10 +314,10 @@ public partial class MeetingService
             return;
         }
         
-        var combineUrl = await CombineMeetingRecordVideoAsync(meetingId, meetingRecordId, egressItem.File.Location, cancellationToken).ConfigureAwait(false);
+        var combineUrl = await CombineMeetingRecordVideoAsync(meetingId, meetingRecordId, egressItem.File.Filename, cancellationToken).ConfigureAwait(false);
 
         if (!combineUrl.IsNullOrEmpty())
-            egressItem.File.Location = combineUrl;
+            egressItem.File.Filename = combineUrl;
         
         await UpdateMeetingRecordAsync(meetingRecord, egressItem, cancellationToken).ConfigureAwait(false);
     }
@@ -422,9 +422,17 @@ public partial class MeetingService
         
         try
         {
-            List<byte[]> byteArrayList = urls.Select(s => Encoding.UTF8.GetBytes(s)).ToList();
+            //获取字节
+            List<byte[]> bytesList = new List<byte[]>();
             
-            var response = await _ffmpegService.CombineMp4VideosAsync(byteArrayList, cancellationToken).ConfigureAwait(false);
+            foreach (var url in urls)
+            {
+                var urlStream = await _awsS3Service.GetFileStreamAsync(url, cancellationToken).ConfigureAwait(false);
+                
+                bytesList.Add(urlStream);
+            }
+            
+            var response = await _ffmpegService.CombineMp4VideosAsync(bytesList, cancellationToken).ConfigureAwait(false);
             
             Log.Information("Combined Videos response : {@response}", response);
 
@@ -432,9 +440,12 @@ public partial class MeetingService
             
             await _awsS3Service.UploadFileAsync(fileName, response, cancellationToken);
             
-            var url = _awsS3Service.GetFileUrl(fileName);
+            var urlStirng = _awsS3Service.GetFileUrl(fileName);
             
-            return url;
+            /*List<byte[]> byteArrayList = urls.Select(s => Encoding.UTF8.GetBytes(s)).ToList();
+           */
+            
+            return urlStirng;
         }
         catch (Exception ex)
         {
@@ -452,7 +463,7 @@ public partial class MeetingService
             Id = new Guid(),
             MeetingId = meetingId,
             RecordId = meetingRecordId,
-            Url = egressItem.File.Location
+            Url = egressItem.File.Filename
         };
         
         Log.Information(@"Complete restart meeting record: {@recordRestart}", addRestartRecord);
@@ -473,7 +484,7 @@ public partial class MeetingService
 
     private async Task UpdateMeetingRecordAsync(MeetingRecord meetingRecord, EgressItemDto egressItem, CancellationToken cancellationToken)
     {
-        meetingRecord.Url = egressItem.File.Location;
+        meetingRecord.Url = egressItem.File.Filename;
         meetingRecord.RecordType = MeetingRecordType.EndRecord;
         meetingRecord.UrlStatus = MeetingRecordUrlStatus.Completed;
     

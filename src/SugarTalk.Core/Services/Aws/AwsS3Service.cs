@@ -13,6 +13,8 @@ public interface IAwsS3Service : IScopedDependency
     string GetFileUrl(string fileName);
     
     Task UploadFileAsync(string fileName, byte[] fileContent, CancellationToken cancellationToken);
+
+    Task<byte[]> GetFileStreamAsync(string fileName, CancellationToken cancellationToken = default);
 }
 
 public class AwsS3Service : IAwsS3Service
@@ -42,5 +44,22 @@ public class AwsS3Service : IAwsS3Service
         };
         
         await _amazonS3.PutObjectAsync(request, cancellationToken);
+    }
+
+    public async Task<byte[]> GetFileStreamAsync(string fileName, CancellationToken cancellationToken = default) 
+    {
+        var request = new GetObjectRequest
+        {
+            BucketName = _awsOssSettings.BucketName,
+            Key = fileName
+        };
+
+        using (GetObjectResponse response = await _amazonS3.GetObjectAsync(request, cancellationToken).ConfigureAwait(false))
+        using (MemoryStream memoryStream = new MemoryStream())
+        {
+            await response.ResponseStream.CopyToAsync(memoryStream, cancellationToken).ConfigureAwait(false);
+            byte[] byteArray = memoryStream.ToArray();
+            return byteArray;
+        }
     }
 }

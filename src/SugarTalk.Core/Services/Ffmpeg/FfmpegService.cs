@@ -325,10 +325,10 @@ public class FfmpegService : IFfmpegService
             
             filterComplex += $"concat=n={downloadedVideoFiles.Count}:v=1:a=1[outv][outa]\"";
 
-            var videoParameters = "-vf scale=1280:720,fps=30";
-            var audioParameters = "-c:a aac -b:a 125k -ac 2 -ar 44100";
+            /*var videoParameters = "-vf scale=1280:720,fps=30";
+            var audioParameters = "-c:a aac -b:a 125k -ac 2 -ar 44100";*/
 
-            var combineArguments = $"{inputFiles} {filterComplex} {videoParameters} {audioParameters} -map \"[outv]\" -map \"[outa]\" {outputFileName}";
+            var combineArguments = $"{inputFiles} {filterComplex} -map \"[outv]\" -map \"[outa]\" {outputFileName}";
             
             Log.Information("Combine command arguments: {combineArguments}", combineArguments);
             
