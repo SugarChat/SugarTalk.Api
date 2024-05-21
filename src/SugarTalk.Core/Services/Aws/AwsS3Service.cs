@@ -28,7 +28,7 @@ public class AwsS3Service : IAwsS3Service
     
     public string GetFileUrl(string fileName)
     {
-        return $"https://{_awsOssSettings.BucketName}.s3.{_awsOssSettings.Endpoint}.amazonaws.com/{fileName}";
+        return $"https://{_awsOssSettings.BucketName}.{_awsOssSettings.Endpoint}/{fileName}";
     }
 
     public async Task UploadFileAsync(string fileName, byte[] fileContent, CancellationToken cancellationToken)

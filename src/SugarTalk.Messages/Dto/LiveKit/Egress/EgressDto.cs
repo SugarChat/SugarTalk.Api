@@ -24,7 +24,7 @@ public class EgressEncodedFileOutPutDto
     public EgressAzureBlobUploadDto AzureBlobUpload { get; set; }
     
     [JsonProperty("aliOSS", NullValueHandling = NullValueHandling.Ignore)]
-    public EgressAliOssUploadDto AliOssUpload { get; set; }
+    public EgressAwsS3UploadDto AliOssUpload { get; set; }
 }
 
 public class EgressEncodingOptionsDto
@@ -108,7 +108,7 @@ public class EgressAzureBlobUploadDto
     public string ContainerName { get; set; }
 }
 
-public class EgressAliOssUploadDto
+public class EgressAwsS3UploadDto
 {
     [JsonProperty("access_key")]
     public string AccessKey { get; set; }
