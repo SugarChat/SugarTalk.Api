@@ -58,7 +58,7 @@ public partial class MeetingService
         items = items.Select(x =>
         {
             if (!x.Url.IsNullOrEmpty())
-                x.Url = x.Url.StartsWith("https") ? x.Url : _awsS3Service.GetFileUrl(x.Url);
+                x.Url = x.Url.StartsWith("https") ? x.Url : _awsS3Service.GeneratePresignedUrl(x.Url);
 
             return x;
         }).ToList();
