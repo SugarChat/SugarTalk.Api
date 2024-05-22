@@ -791,7 +791,7 @@ public partial class MeetingServiceFixture
                             EndedAt = endedAt.ToString(),
                             StartedAt = startedAt.ToString(),
                             Status = "EGRESS_COMPLETE",
-                            File = new FileDetails { Location = "mock url" }
+                            File = new FileDetails { Filename = "mock url" }
                         }
                     }
                 });
@@ -804,7 +804,7 @@ public partial class MeetingServiceFixture
                 {
                     EgressId = "mock egressId",
                     EndedAt = "mock end at",
-                    File = new FileDetails { Location = "mock url" },
+                    File = new FileDetails { Filename = "mock url" },
                     Status = "mock status",
                     Error = "mock error",
                 });
