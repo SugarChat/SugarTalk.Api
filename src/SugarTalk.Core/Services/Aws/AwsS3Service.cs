@@ -1,3 +1,4 @@
+using System;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
@@ -15,6 +16,8 @@ public interface IAwsS3Service : IScopedDependency
     Task UploadFileAsync(string fileName, byte[] fileContent, CancellationToken cancellationToken);
 
     Task<byte[]> GetFileStreamAsync(string fileName, CancellationToken cancellationToken = default);
+
+    string GeneratePresignedUrl(string fileName, double durationInHours = 12);
 }
 
 public class AwsS3Service : IAwsS3Service
@@ -60,5 +63,17 @@ public class AwsS3Service : IAwsS3Service
             byte[] byteArray = memoryStream.ToArray();
             return byteArray;
         }
+    }
+
+    public string GeneratePresignedUrl(string fileName, double durationInHours = 12)
+    {
+        var request = new GetPreSignedUrlRequest
+        {
+            Key = fileName,
+            BucketName = _awsOssSettings.BucketName,
+            Expires = DateTime.UtcNow.AddHours(durationInHours)
+        };
+        
+        return _amazonS3.GetPreSignedURL(request);
     }
 }

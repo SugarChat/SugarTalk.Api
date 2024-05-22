@@ -2,26 +2,27 @@ using System;
 using Serilog;
 using System.Linq;
 using Mediator.Net;
+using Newtonsoft.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Collections.Generic;
-using Microsoft.IdentityModel.Tokens;
-using Newtonsoft.Json;
+using SugarTalk.Messages.Dto.Users;
 using SugarTalk.Messages.Extensions;
 using SugarTalk.Core.Domain.Meeting;
+using Microsoft.IdentityModel.Tokens;
+using SugarTalk.Messages.Enums.Speech;
 using SugarTalk.Messages.Dto.Meetings;
 using SugarTalk.Messages.Enums.Meeting;
-using SugarTalk.Messages.Enums.Meeting.Speak;
-using SugarTalk.Messages.Enums.Speech;
-using SugarTalk.Core.Services.Exceptions;
 using SugarTalk.Messages.Events.Meeting;
+using SugarTalk.Core.Services.Exceptions;
 using SugarTalk.Messages.Dto.Translation;
 using SugarTalk.Messages.Commands.Meetings;
-using SugarTalk.Messages.Dto.LiveKit.Egress;
-using SugarTalk.Messages.Dto.Users;
 using SugarTalk.Messages.Requests.Meetings;
-namespace SugarTalk.Core.Services.Meetings;
+using SugarTalk.Messages.Dto.LiveKit.Egress;
+using SugarTalk.Messages.Enums.Meeting.Speak;
 using SugarTalk.Messages.Events.Meeting.Summary;
+
+namespace SugarTalk.Core.Services.Meetings;
 
 public partial interface IMeetingService
 {
