@@ -82,7 +82,7 @@ public partial class MeetingService
     {
         foreach (var speakDetail in speakDetails)
         {
-            var recordFile = await _httpClientFactory.GetAsync<byte[]>(meetingRecord.Url, cancellationToken).ConfigureAwait(false);
+            var recordFile = await _awsS3Service.GetFileStreamAsync(meetingRecord.Url, cancellationToken).ConfigureAwait(false);
 
             var speakStartTimeVideo = speakDetail.SpeakStartTime - meetingRecord.CreatedDate.ToUnixTimeMilliseconds();
             var speakEndTimeVideo = (speakDetail.SpeakEndTime ?? 0) - meetingRecord.CreatedDate.ToUnixTimeMilliseconds();

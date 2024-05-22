@@ -55,6 +55,14 @@ public partial class MeetingService
     {
         var (total, items) = await _meetingDataProvider.GetMeetingRecordsByUserIdAsync(_currentUser.Id, request, cancellationToken).ConfigureAwait(false);
 
+        items = items.Select(x =>
+        {
+            if (!x.Url.IsNullOrEmpty())
+                x.Url = x.Url.StartsWith("https") ? x.Url : _awsS3Service.GetFileUrl(x.Url);
+
+            return x;
+        }).ToList();
+
         var response = new GetCurrentUserMeetingRecordResponse
         {
            Data = new GetCurrentUserMeetingRecordResponseDto
