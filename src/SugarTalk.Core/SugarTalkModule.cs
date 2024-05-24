@@ -156,7 +156,7 @@ namespace SugarTalk.Core
             builder.Register(c =>
             {
                 var settings = c.Resolve<AwsS3Settings>();
-                return new AmazonS3Client(settings.AccessKeyId, settings.AccessKeySecret, RegionEndpoint.GetBySystemName(settings.Endpoint));
+                return new AmazonS3Client(settings.AccessKeyId, settings.AccessKeySecret, RegionEndpoint.GetBySystemName(settings.Region));
             }).AsSelf().InstancePerLifetimeScope();
         }
         

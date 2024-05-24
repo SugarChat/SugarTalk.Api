@@ -37,6 +37,8 @@ public partial interface IMeetingService
     Task DelayStorageMeetingRecordVideoJobAsync(string egressId, Guid meetingRecordId, string token, int reTryLimit, CancellationToken cancellationToken);
     
     Task<TranslatingMeetingSpeakResponse> TranslatingMeetingSpeakAsync(TranslatingMeetingSpeakCommand command, CancellationToken cancellationToken);
+
+    Task<GenerateMeetingRecordTemporaryUrlResponse> GenerateMeetingRecordTemporaryUrlAsync(GenerateMeetingRecordTemporaryUrlCommand command);
 }
 
 public partial class MeetingService
@@ -284,5 +286,22 @@ public partial class MeetingService
                 }).FirstOrDefault(), cancellationToken).ConfigureAwait(false);
             }
         }
+    }
+    
+    public async Task<GenerateMeetingRecordTemporaryUrlResponse> GenerateMeetingRecordTemporaryUrlAsync(GenerateMeetingRecordTemporaryUrlCommand command)
+    {
+        for (int i = 0; i < command.Urls.Count; i++)
+        {
+            if (command.Urls[i].StartsWith("https")) continue;
+            
+            var response = await _awsS3Service.GeneratePresignedUrlAsync(command.Urls[i]).ConfigureAwait(false);
+           
+            command.Urls[i] = response;
+        }
+
+        return new GenerateMeetingRecordTemporaryUrlResponse
+        {
+            Urls = command.Urls
+        };
     }
 }
