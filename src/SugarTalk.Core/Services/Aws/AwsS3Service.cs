@@ -17,7 +17,7 @@ public interface IAwsS3Service : IScopedDependency
 
     Task<byte[]> GetFileStreamAsync(string fileName, CancellationToken cancellationToken = default);
 
-    string GeneratePresignedUrl(string fileName, double durationInHours = 12);
+    Task<string> GeneratePresignedUrlAsync(string fileName, double durationInMinutes = 1);
 }
 
 public class AwsS3Service : IAwsS3Service
@@ -65,15 +65,15 @@ public class AwsS3Service : IAwsS3Service
         }
     }
 
-    public string GeneratePresignedUrl(string fileName, double durationInHours = 12)
+    public async Task<string> GeneratePresignedUrlAsync(string fileName, double durationInMinutes = 1)
     {
         var request = new GetPreSignedUrlRequest
         {
             Key = fileName,
             BucketName = _awsOssSettings.BucketName,
-            Expires = DateTime.UtcNow.AddHours(durationInHours)
+            Expires = DateTime.UtcNow.AddMinutes(durationInMinutes)
         };
         
-        return _amazonS3.GetPreSignedURL(request);
+        return await _amazonS3.GetPreSignedURLAsync(request).ConfigureAwait(false);
     }
 }

@@ -47,6 +47,8 @@ public partial interface IMeetingService
     Task GeneralMeetingRecordRestartAsync(MeetingRecordRestartCommand command, CancellationToken cancellationToken);
     
     Task<TranslatingMeetingSpeakResponse> TranslatingMeetingSpeakAsync(TranslatingMeetingSpeakCommand command, CancellationToken cancellationToken);
+
+    Task<GenerateMeetingRecordTemporaryUrlResponse> GenerateMeetingRecordTemporaryUrlAsync(GenerateMeetingRecordTemporaryUrlCommand command);
 }
 
 public partial class MeetingService
@@ -55,14 +57,20 @@ public partial class MeetingService
     {
         var (total, items) = await _meetingDataProvider.GetMeetingRecordsByUserIdAsync(_currentUser.Id, request, cancellationToken).ConfigureAwait(false);
 
-        items = items.Select(x =>
+        var tasks = items.Select(async x =>
         {
             if (!x.Url.IsNullOrEmpty())
-                x.Url = x.Url.StartsWith("https") ? x.Url : _awsS3Service.GeneratePresignedUrl(x.Url);
+            {
+                x.Url = x.Url.StartsWith("https")
+                    ? x.Url
+                    : await _awsS3Service.GeneratePresignedUrlAsync(x.Url).ConfigureAwait(false);
+            }
 
             return x;
-        }).ToList();
-
+        });
+        
+        items = (await Task.WhenAll(tasks)).ToList();
+        
         var response = new GetCurrentUserMeetingRecordResponse
         {
            Data = new GetCurrentUserMeetingRecordResponseDto
@@ -390,6 +398,23 @@ public partial class MeetingService
         }
     }
     
+    public async Task<GenerateMeetingRecordTemporaryUrlResponse> GenerateMeetingRecordTemporaryUrlAsync(GenerateMeetingRecordTemporaryUrlCommand command)
+    {
+        for (int i = 0; i < command.Urls.Count; i++)
+        {
+            if (command.Urls[i].StartsWith("https")) continue;
+            
+            var response = await _awsS3Service.GeneratePresignedUrlAsync(command.Urls[i]).ConfigureAwait(false);
+           
+            command.Urls[i] = response;
+        }
+
+        return new GenerateMeetingRecordTemporaryUrlResponse
+        {
+            Urls = command.Urls
+        };
+
+    }
     
     private async Task AddMeetingRecordAsync(Meeting meeting, Guid meetingRecordId, string egressId, CancellationToken cancellationToken)
     {
@@ -484,23 +509,26 @@ public partial class MeetingService
         _backgroundJobClient.Schedule<IMediator>(m => m.SendAsync(restartRecordCommand, cancellationToken), TimeSpan.FromSeconds(10)); 
     }
 
-    private async Task UpdateMeetingRecordAsync(MeetingRecord meetingRecord, EgressItemDto egressItem, CancellationToken cancellationToken)
-    {
-        meetingRecord.Url = egressItem.File.Filename;
-        meetingRecord.RecordType = MeetingRecordType.EndRecord;
-        meetingRecord.UrlStatus = MeetingRecordUrlStatus.Completed;
-    
-        Log.Information("Complete storage meeting record url");
-    
-        await _meetingDataProvider.UpdateMeetingRecordAsync(meetingRecord, cancellationToken).ConfigureAwait(false);
+     private async Task UpdateMeetingRecordAsync(MeetingRecord meetingRecord, EgressItemDto egressItem,
+         CancellationToken cancellationToken)
+     {
+         meetingRecord.Url = egressItem.File.Filename;
+         meetingRecord.RecordType = MeetingRecordType.EndRecord;
+         meetingRecord.UrlStatus = MeetingRecordUrlStatus.Completed;
 
-        var meetingDetails = await _meetingDataProvider.GetMeetingDetailsByRecordIdAsync(meetingRecord.Id, cancellationToken).ConfigureAwait(false);
-        
-        if (!string.IsNullOrEmpty(meetingRecord.Url))
-        {   
-            await MarkSpeakTranscriptAsSpecifiedStatusAsync(meetingDetails, FileTranscriptionStatus.InProcess, cancellationToken).ConfigureAwait(false);
+         Log.Information("Complete storage meeting record url");
 
-            await TranscriptionMeetingAsync(meetingDetails, meetingRecord, cancellationToken);
-        }
-    }
+         await _meetingDataProvider.UpdateMeetingRecordAsync(meetingRecord, cancellationToken).ConfigureAwait(false);
+
+         var meetingDetails = await _meetingDataProvider
+             .GetMeetingDetailsByRecordIdAsync(meetingRecord.Id, cancellationToken).ConfigureAwait(false);
+
+         if (!string.IsNullOrEmpty(meetingRecord.Url))
+         {
+             await MarkSpeakTranscriptAsSpecifiedStatusAsync(meetingDetails, FileTranscriptionStatus.InProcess,
+                 cancellationToken).ConfigureAwait(false);
+
+             await TranscriptionMeetingAsync(meetingDetails, meetingRecord, cancellationToken);
+         }
+     }
 }

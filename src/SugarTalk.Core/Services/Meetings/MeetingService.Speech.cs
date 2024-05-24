@@ -25,7 +25,7 @@ public partial interface IMeetingService
     
     Task<MeetingSpeechUpdatedEvent> UpdateMeetingSpeechAsync(UpdateMeetingSpeechCommand command, CancellationToken cancellationToken);
 
-    Task<GetMeetingChatVoiceRecordEvent> GetMeetingChatVoiceRecordAsync(GetMeetingChatVoiceRecordRequest request, CancellationToken cancellationToken);
+    Task<GetMeetingChatVoiceRecordResponse> GetMeetingChatVoiceRecordAsync(GetMeetingChatVoiceRecordRequest request, CancellationToken cancellationToken);
     
     Task ProcessGenerateMeetingChatVoiceRecordAsync(MeetingChatVoiceRecordDto meetingChatVoiceRecord, CancellationToken cancellationToken);
 }
@@ -72,7 +72,7 @@ public partial class MeetingService
     public async Task<GetMeetingAudioListResponse> GetMeetingAudioListAsync(GetMeetingAudioListRequest request, CancellationToken cancellationToken)
     {
         var meetingSpeeches = await _meetingDataProvider
-            .GetMeetingSpeechesAsync(request.MeetingId, cancellationToken, request.FilterHasCanceledAudio).ConfigureAwait(false);
+            .GetMeetingSpeechesAsync(request.MeetingId, cancellationToken: cancellationToken, filterHasCanceledAudio: request.FilterHasCanceledAudio).ConfigureAwait(false);
 
         if (meetingSpeeches is not { Count: > 0 }) return new GetMeetingAudioListResponse();
 
@@ -251,7 +251,7 @@ public partial class MeetingService
         return new MeetingSpeechUpdatedEvent { Result = "success" };
     }
 
-    public async Task<GetMeetingChatVoiceRecordEvent> GetMeetingChatVoiceRecordAsync(GetMeetingChatVoiceRecordRequest request, CancellationToken cancellationToken)
+    public async Task<GetMeetingChatVoiceRecordResponse> GetMeetingChatVoiceRecordAsync(GetMeetingChatVoiceRecordRequest request, CancellationToken cancellationToken)
     {
         if (!_currentUser.Id.HasValue) throw new UnauthorizedAccessException();
         
@@ -265,12 +265,12 @@ public partial class MeetingService
         var meetingSpeeches = await _meetingDataProvider.GetMeetingSpeechesAsync(
             request.MeetingId, cancellationToken, request.FilterHasCanceledAudio).ConfigureAwait(false);
 
-        if (meetingSpeeches is null || meetingSpeeches.Count == 0) { return new GetMeetingChatVoiceRecordEvent(); }
+        if (meetingSpeeches is null || meetingSpeeches.Count == 0) return null;
         
         Log.Information("Get meeting chat voice record meetingSpeeches {@MeetingSpeeches}", meetingSpeeches);
 
         var allSpeech = await _meetingDataProvider.GetMeetingSpeechWithVoiceRecordAsync(
-            meetingSpeeches.Select(x => x.Id).ToList(), roomSetting.ListeningLanguage, cancellationToken).ConfigureAwait(false);
+            meetingSpeeches.Select(x => x.Id).ToList(), cancellationToken).ConfigureAwait(false);
         
         Log.Information("Get meeting chat voice record allSpeech {@AllSpeech}", allSpeech);
         
@@ -279,7 +279,7 @@ public partial class MeetingService
 
         Log.Information("Get meeting chat voice record speechWithName {@SpeechWithName}", speechWithName);
         
-        var shouldGenerateVoiceRecords = speechWithName
+        /*var shouldGenerateVoiceRecords = speechWithName
             .Where(speech => speech.VoiceRecord == null)
             .Select(speech => new MeetingChatVoiceRecord
             {
@@ -289,14 +289,15 @@ public partial class MeetingService
                 VoiceLanguage = roomSetting.ListeningLanguage,
                 InferenceRecordId = roomSetting.InferenceRecordId,
                 GenerationStatus = ChatRecordGenerationStatus.InProgress
-            }).ToList();
+            }).ToList();*/
         
-        await _meetingDataProvider.AddMeetingChatVoiceRecordAsync(shouldGenerateVoiceRecords, true, cancellationToken).ConfigureAwait(false);
+        /*await _meetingDataProvider.AddMeetingChatVoiceRecordAsync(shouldGenerateVoiceRecords, true, cancellationToken).ConfigureAwait(false);*/
 
-        return new GetMeetingChatVoiceRecordEvent
+        return new GetMeetingChatVoiceRecordResponse
         {
-            MeetingSpeech = speechWithName,
-            ShouldGenerateVoiceRecords = _mapper.Map<List<MeetingChatVoiceRecordDto>>(shouldGenerateVoiceRecords)
+            // MeetingSpeech = speechWithName,
+            /*ShouldGenerateVoiceRecords = _mapper.Map<List<MeetingChatVoiceRecordDto>>(shouldGenerateVoiceRecords)*/
+            Data = speechWithName
         };
     }
     
