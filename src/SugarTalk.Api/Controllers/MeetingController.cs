@@ -227,7 +227,16 @@ public class MeetingController : ControllerBase
 
         return Ok(response);
     }
-    
+
+    [Route("recording/url"), HttpPost]
+    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(GenerateMeetingRecordTemporaryUrlResponse))]
+    public async Task<IActionResult> GenerateMeetingRecordTemporaryUrlAsync([FromBody] GenerateMeetingRecordTemporaryUrlCommand command)
+    {
+        var response = await _mediator.SendAsync<GenerateMeetingRecordTemporaryUrlCommand, GenerateMeetingRecordTemporaryUrlResponse>(command).ConfigureAwait(false);
+
+        return Ok(response);
+    }
+
     #endregion
     
     #region MeetingUserSession
