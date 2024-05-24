@@ -263,7 +263,7 @@ public partial class MeetingService
         Log.Information("Get meeting chat voice record roomSetting {@RoomSetting}", roomSetting);
         
         var meetingSpeeches = await _meetingDataProvider.GetMeetingSpeechesAsync(
-            request.MeetingId, request.SpeechId, cancellationToken, request.FilterHasCanceledAudio).ConfigureAwait(false);
+            request.MeetingId, cancellationToken, request.FilterHasCanceledAudio).ConfigureAwait(false);
 
         if (meetingSpeeches is null || meetingSpeeches.Count == 0) return null;
         

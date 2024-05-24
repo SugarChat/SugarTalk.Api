@@ -12,8 +12,6 @@ public class GetMeetingChatVoiceRecordRequest : IRequest
 {
     public Guid MeetingId { get; set; }
 
-    public Guid? SpeechId { get; set; }
-
     public bool FilterHasCanceledAudio { get; set; } = true;
 }
 

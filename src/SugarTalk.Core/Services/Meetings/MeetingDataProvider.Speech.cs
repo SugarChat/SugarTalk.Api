@@ -14,7 +14,7 @@ public partial interface IMeetingDataProvider
 {
     Task PersistMeetingSpeechAsync(MeetingSpeech meetingSpeech, CancellationToken cancellationToken);
     
-    Task<List<MeetingSpeech>> GetMeetingSpeechesAsync(Guid meetingId, Guid? speechId = null, CancellationToken cancellationToken = default, bool filterHasCanceledAudio = false);
+    Task<List<MeetingSpeech>> GetMeetingSpeechesAsync(Guid meetingId, CancellationToken cancellationToken = default, bool filterHasCanceledAudio = false);
     
     Task<MeetingSpeech> GetMeetingSpeechByIdAsync(Guid meetingSpeechId, CancellationToken cancellationToken);
     
@@ -35,12 +35,9 @@ public partial class MeetingDataProvider
     }
 
     public async Task<List<MeetingSpeech>> GetMeetingSpeechesAsync(
-        Guid meetingId, Guid? speechId = null, CancellationToken cancellationToken = default, bool filterHasCanceledAudio = false)
+        Guid meetingId, CancellationToken cancellationToken = default, bool filterHasCanceledAudio = false)
     {
         var query = _repository.QueryNoTracking<MeetingSpeech>().Where(x => x.MeetingId == meetingId);
-
-        if (speechId.HasValue)
-            query = query.Where(x => x.Id == speechId);
         
         if (filterHasCanceledAudio)
             query = query.Where(x => x.Status != SpeechStatus.Cancelled);
