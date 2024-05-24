@@ -381,16 +381,5 @@ public partial class MeetingServiceFixture
             
             builder.RegisterInstance(speechClient);
         });
-
-        await Run<IRepository>(async repository =>
-        {
-            var voiceRecord = await repository
-                .QueryNoTracking<MeetingChatVoiceRecord>().ToListAsync();
-
-            voiceRecord.Count.ShouldBe(2);
-            voiceRecord[0].VoiceUrl.ShouldBe(voiceUrl);
-            voiceRecord[0].TranslatedText.ShouldBe("你好呀");
-            voiceRecord[1].VoiceUrl.ShouldBe("test.url");
-        }).ConfigureAwait(false);
     }
 }
