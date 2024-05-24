@@ -1,6 +1,7 @@
 using System;
 using Mediator.Net.Contracts;
 using SugarTalk.Messages.Attributes;
+using SugarTalk.Messages.Events.Meeting.Speech;
 using SugarTalk.Messages.Responses;
 
 namespace SugarTalk.Messages.Commands.Speech;
@@ -13,6 +14,6 @@ public class SaveMeetingAudioCommand : ICommand
     public string AudioForBase64 { get; set; }
 }
 
-public class SaveMeetingAudioResponse : SugarTalkResponse<string>
+public class SaveMeetingAudioResponse : SugarTalkResponse<MeetingAudioSavedEvent>
 {
 }

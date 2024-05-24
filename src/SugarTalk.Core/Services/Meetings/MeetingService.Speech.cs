@@ -66,13 +66,13 @@ public partial class MeetingService
         
         await GenerateChatRecordAsync(command.MeetingId, meetingSpeech, cancellationToken).ConfigureAwait(false);
         
-        return new MeetingAudioSavedEvent();
+        return new MeetingAudioSavedEvent{ SpeechId = meetingSpeech.Id };
     }
 
     public async Task<GetMeetingAudioListResponse> GetMeetingAudioListAsync(GetMeetingAudioListRequest request, CancellationToken cancellationToken)
     {
         var meetingSpeeches = await _meetingDataProvider
-            .GetMeetingSpeechesAsync(request.MeetingId, cancellationToken, request.FilterHasCanceledAudio).ConfigureAwait(false);
+            .GetMeetingSpeechesAsync(request.MeetingId, cancellationToken: cancellationToken, filterHasCanceledAudio: request.FilterHasCanceledAudio).ConfigureAwait(false);
 
         if (meetingSpeeches is not { Count: > 0 }) return new GetMeetingAudioListResponse();
 
@@ -263,7 +263,7 @@ public partial class MeetingService
         Log.Information("Get meeting chat voice record roomSetting {@RoomSetting}", roomSetting);
         
         var meetingSpeeches = await _meetingDataProvider.GetMeetingSpeechesAsync(
-            request.MeetingId, cancellationToken, request.FilterHasCanceledAudio).ConfigureAwait(false);
+            request.MeetingId, request.SpeechId, cancellationToken, request.FilterHasCanceledAudio).ConfigureAwait(false);
 
         if (meetingSpeeches is null || meetingSpeeches.Count == 0) { return new GetMeetingChatVoiceRecordEvent(); }
         
