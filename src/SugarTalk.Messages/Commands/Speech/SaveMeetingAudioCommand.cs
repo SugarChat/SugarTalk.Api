@@ -14,6 +14,6 @@ public class SaveMeetingAudioCommand : ICommand
     public string AudioForBase64 { get; set; }
 }
 
-public class SaveMeetingAudioResponse : SugarTalkResponse<MeetingAudioSavedEvent>
+public class SaveMeetingAudioResponse : SugarTalkResponse<string>
 {
 }

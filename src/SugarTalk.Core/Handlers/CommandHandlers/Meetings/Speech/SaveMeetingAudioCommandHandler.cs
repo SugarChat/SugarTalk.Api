@@ -24,7 +24,7 @@ public class SaveMeetingAudioCommandHandler : ICommandHandler<SaveMeetingAudioCo
 
         return new SaveMeetingAudioResponse
         {
-            Data = @event
+            Data = @event.Result
         };
     }
 }
