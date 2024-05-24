@@ -1,7 +1,6 @@
 using System;
 using Mediator.Net.Contracts;
 using SugarTalk.Messages.Attributes;
-using SugarTalk.Messages.Events.Meeting.Speech;
 using SugarTalk.Messages.Responses;
 
 namespace SugarTalk.Messages.Commands.Speech;
