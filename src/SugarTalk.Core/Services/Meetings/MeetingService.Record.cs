@@ -56,20 +56,6 @@ public partial class MeetingService
     public async Task<GetCurrentUserMeetingRecordResponse> GetCurrentUserMeetingRecordsAsync(GetCurrentUserMeetingRecordRequest request, CancellationToken cancellationToken)
     {
         var (total, items) = await _meetingDataProvider.GetMeetingRecordsByUserIdAsync(_currentUser.Id, request, cancellationToken).ConfigureAwait(false);
-
-        var tasks = items.Select(async x =>
-        {
-            if (!x.Url.IsNullOrEmpty())
-            {
-                x.Url = x.Url.StartsWith("https")
-                    ? x.Url
-                    : await _awsS3Service.GeneratePresignedUrlAsync(x.Url).ConfigureAwait(false);
-            }
-
-            return x;
-        });
-        
-        items = (await Task.WhenAll(tasks)).ToList();
         
         var response = new GetCurrentUserMeetingRecordResponse
         {
