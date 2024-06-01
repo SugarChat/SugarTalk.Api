@@ -8,5 +8,5 @@ public class GetMeetingChatVoiceRecordEvent : IEvent
 {
     public List<MeetingSpeechDto> MeetingSpeech { get; set; }
     
-    /*public List<MeetingChatVoiceRecordDto> ShouldGenerateVoiceRecords { get; set; }*/
+    public List<MeetingChatVoiceRecordDto> ShouldGenerateVoiceRecords { get; set; }
 }
