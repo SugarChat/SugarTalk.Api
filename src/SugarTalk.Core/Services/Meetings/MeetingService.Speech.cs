@@ -295,6 +295,7 @@ public partial class MeetingService
             .Where(speech => speech.VoiceRecord == null)
             .Select(speech => new MeetingChatVoiceRecord
             {
+                Id = Guid.NewGuid(),
                 SpeechId = speech.Id,
                 IsSelf = false,
                 VoiceId = roomSetting.VoiceId,
@@ -304,7 +305,11 @@ public partial class MeetingService
             }).ToList();
         
         await _meetingDataProvider.AddMeetingChatVoiceRecordAsync(shouldGenerateVoiceRecords, true, cancellationToken).ConfigureAwait(false);
-        context.PreviousSpeechIds = allSpeech.Select(x => x.Id).ToList();
+        context.PreviousSpeechs = allSpeech.Select(x => new SpeechWithVoiceRecord
+        {
+            SpeechId = x.Id,
+            VoiceRecordId = x.VoiceRecord?.Id ?? shouldGenerateVoiceRecords.FirstOrDefault(record => record.SpeechId == x.Id)?.Id ?? new Guid()
+        }).ToList();
         await _cacheManager.SetAsync(context.ContextId, context, CachingType.RedisCache, expiry: TimeSpan.FromDays(30), cancellationToken).ConfigureAwait(false);
         
         return new GetMeetingChatVoiceRecordEvent
