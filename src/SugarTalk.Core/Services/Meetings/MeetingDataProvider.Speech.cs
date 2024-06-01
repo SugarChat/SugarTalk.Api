@@ -20,7 +20,7 @@ public partial interface IMeetingDataProvider
     
     Task<MeetingUserSetting> DistributeLanguageForMeetingUserAsync(Guid meetingId, CancellationToken cancellationToken);
 
-    Task<List<MeetingSpeechDto>> GetMeetingSpeechWithVoiceRecordAsync(List<Guid> speechIds, SpeechTargetLanguageType targetLanguageType, CancellationToken cancellationToken);
+    Task<List<MeetingSpeechDto>> GetMeetingSpeechWithVoiceRecordAsync(List<Guid> speechIds, SpeechTargetLanguageType? targetLanguageType = null, CancellationToken cancellationToken = default);
 }
 
 public partial class MeetingDataProvider
@@ -86,11 +86,16 @@ public partial class MeetingDataProvider
         return meetingUserSetting;
     }
 
-    public async Task<List<MeetingSpeechDto>> GetMeetingSpeechWithVoiceRecordAsync(List<Guid> speechIds, SpeechTargetLanguageType targetLanguageType, CancellationToken cancellationToken)
+    public async Task<List<MeetingSpeechDto>> GetMeetingSpeechWithVoiceRecordAsync(List<Guid> speechIds = null, SpeechTargetLanguageType? targetLanguageType = null, CancellationToken cancellationToken = default)
     {
+        var voiceRecordQuery = _repository.Query<MeetingChatVoiceRecord>();
+
+        if (targetLanguageType.HasValue)
+            voiceRecordQuery = voiceRecordQuery.Where(x => x.VoiceLanguage == targetLanguageType.Value);
+        
         var query =
             from speech in _repository.Query<MeetingSpeech>()
-            join record in _repository.Query<MeetingChatVoiceRecord>().Where(x => x.VoiceLanguage == targetLanguageType)
+            join record in voiceRecordQuery
                 on speech.Id equals record.SpeechId into voiceRecordGroup
             from record in voiceRecordGroup.DefaultIfEmpty()
             where speechIds.Contains(speech.Id)
