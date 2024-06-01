@@ -276,11 +276,11 @@ public partial class MeetingService
         Log.Information("Get meeting chat voice record meetingSpeeches {@MeetingSpeeches}", meetingSpeeches);
         
         var historySpeeches = await _meetingDataProvider.GetMeetingSpeechWithVoiceRecordAsync(
-            context.PreviousSpeechIds, cancellationToken: cancellationToken).ConfigureAwait(false);
+            context.PreviousSpeechs.Select(x => x.SpeechId).ToList(), context.PreviousSpeechs.Select(x => x.VoiceRecordId).ToList(), cancellationToken: cancellationToken).ConfigureAwait(false);
         Log.Information("Get meeting chat voice record historySpeeches {@HistorySpeeches}", historySpeeches);
         
         var currentSpeeches = await _meetingDataProvider.GetMeetingSpeechWithVoiceRecordAsync(
-            meetingSpeeches.Select(x => x.Id).Except(context.PreviousSpeechIds).ToList(), roomSetting.ListeningLanguage, cancellationToken).ConfigureAwait(false);
+            meetingSpeeches.Select(x => x.Id).Except(context.PreviousSpeechs.Select(x => x.SpeechId)).ToList(), targetLanguageType: roomSetting.ListeningLanguage, cancellationToken: cancellationToken).ConfigureAwait(false);
         Log.Information("Get meeting chat voice record currentSpeeches {@CurrentSpeeches}", currentSpeeches);
         
         var allSpeech = historySpeeches.Concat(currentSpeeches).ToList();

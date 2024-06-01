@@ -11,16 +11,23 @@ public partial class MeetingService
         
         return contextId;
     }
-    
+
     public class MeetingSpeechContext
     {
         public MeetingSpeechContext(string contextId)
         {
             ContextId = contextId;
         }
-        
+
         public string ContextId { get; set; }
+
+        public List<SpeechWithVoiceRecord> PreviousSpeechs { get; set; } = new();
+    }
+    
+    public class SpeechWithVoiceRecord
+    {
+        public Guid SpeechId { get; set; }
         
-        public List<Guid> PreviousSpeechIds { get; set; } = new();
+        public Guid VoiceRecordId { get; set; }
     }
 }

@@ -20,7 +20,8 @@ public partial interface IMeetingDataProvider
     
     Task<MeetingUserSetting> DistributeLanguageForMeetingUserAsync(Guid meetingId, CancellationToken cancellationToken);
 
-    Task<List<MeetingSpeechDto>> GetMeetingSpeechWithVoiceRecordAsync(List<Guid> speechIds, SpeechTargetLanguageType? targetLanguageType = null, CancellationToken cancellationToken = default);
+    Task<List<MeetingSpeechDto>> GetMeetingSpeechWithVoiceRecordAsync(
+        List<Guid> speechIds, List<Guid> recordIds = null, SpeechTargetLanguageType? targetLanguageType = null, CancellationToken cancellationToken = default);
 }
 
 public partial class MeetingDataProvider
@@ -86,10 +87,12 @@ public partial class MeetingDataProvider
         return meetingUserSetting;
     }
 
-    public async Task<List<MeetingSpeechDto>> GetMeetingSpeechWithVoiceRecordAsync(List<Guid> speechIds = null, SpeechTargetLanguageType? targetLanguageType = null, CancellationToken cancellationToken = default)
+    public async Task<List<MeetingSpeechDto>> GetMeetingSpeechWithVoiceRecordAsync(List<Guid> speechIds, List<Guid> recordIds = null, SpeechTargetLanguageType? targetLanguageType = null, CancellationToken cancellationToken = default)
     {
         var voiceRecordQuery = _repository.Query<MeetingChatVoiceRecord>();
 
+        if (recordIds != null) voiceRecordQuery = voiceRecordQuery.Where(x => recordIds.Contains(x.Id));
+        
         if (targetLanguageType.HasValue)
             voiceRecordQuery = voiceRecordQuery.Where(x => x.VoiceLanguage == targetLanguageType.Value);
         
