@@ -342,6 +342,7 @@ public partial class MeetingService
             IsSelf = true,
             SpeechId = meetingSpeech.Id,
             VoiceId = roomSetting.VoiceId,
+            VoiceLanguage = roomSetting.ListeningLanguage,
             InferenceRecordId = roomSetting.InferenceRecordId,
             GenerationStatus = ChatRecordGenerationStatus.InProgress
         };
@@ -354,7 +355,7 @@ public partial class MeetingService
     }
 
     public async Task GenerateChatRecordProcessAsync(
-        MeetingChatVoiceRecord meetingChatVoiceRecord, MeetingChatRoomSetting roomSetting, MeetingSpeech meetingSpeech, CancellationToken cancellationToken)
+        MeetingChatVoiceRecord meetingChatVoiceRecord, MeetingChatRoomSetting roomSetting, MeetingSpeech meetingSpeech, CancellationToken cancellationToken = default)
     {
         Log.Information("Generate Chat Record Process Room setting: {@RoomSetting}", roomSetting);
         
