@@ -111,6 +111,7 @@ public partial class MeetingDataProvider
                 OriginalText = speech.OriginalText,
                 Status = speech.Status,
                 CreatedDate = speech.CreatedDate,
+                VoiceId = speech.VoiceId,
                 VoiceRecord = record == null ? null : _mapper.Map<MeetingChatVoiceRecordDto>(record),
             };
 

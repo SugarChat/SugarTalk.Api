@@ -11,6 +11,8 @@ public class SaveMeetingAudioCommand : ICommand
     public Guid MeetingId { get; set; }
 
     public string AudioForBase64 { get; set; }
+
+    public string VoiceId { get; set; }
 }
 
 public class SaveMeetingAudioResponse : SugarTalkResponse<string>

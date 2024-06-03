@@ -58,6 +58,7 @@ public partial class MeetingService
 
         var meetingSpeech = new MeetingSpeech
         {
+            VoiceId = command.VoiceId,
             MeetingId = command.MeetingId,
             UserId = _currentUser.Id.Value,
             OriginalText = responseToText.Result
@@ -298,7 +299,7 @@ public partial class MeetingService
                 Id = Guid.NewGuid(),
                 SpeechId = speech.Id,
                 IsSelf = false,
-                VoiceId = roomSetting.VoiceId,
+                VoiceId = speech.VoiceId,
                 VoiceLanguage = roomSetting.ListeningLanguage,
                 InferenceRecordId = roomSetting.InferenceRecordId,
                 GenerationStatus = ChatRecordGenerationStatus.InProgress
