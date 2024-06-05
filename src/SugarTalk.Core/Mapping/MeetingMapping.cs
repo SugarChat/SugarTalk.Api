@@ -35,5 +35,7 @@ public class MeetingMapping: Profile
         CreateMap<AddOrUpdateChatRoomSettingCommand, MeetingChatRoomSetting>();
 
         CreateMap<MeetingChatVoiceRecordDto, MeetingChatVoiceRecord>().ReverseMap();
+
+        CreateMap<MeetingChatRoomSetting, MeetingChatRoomSettingDto>().ReverseMap();
     }
 }
