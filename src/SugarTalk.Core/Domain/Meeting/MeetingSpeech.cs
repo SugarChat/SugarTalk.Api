@@ -22,7 +22,8 @@ public class MeetingSpeech : IEntity
     [Column("meeting_id", TypeName = "char(36)")]
     public Guid MeetingId { get; set; }
 
-    [Column("voice_id", TypeName = "varchar(48)")]
+    [StringLength(48)]
+    [Column("voice_id")]
     public string VoiceId { get; set; }
 
     [Column("user_id")] 
