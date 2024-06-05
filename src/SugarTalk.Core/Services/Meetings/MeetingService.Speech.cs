@@ -56,9 +56,11 @@ public partial class MeetingService
 
         if (responseToText is null) return new MeetingAudioSavedEvent { Result = "Ai does not recognize the audio content" };
 
+        var meetingSetting = await _meetingDataProvider.GetMeetingChatRoomSettingByMeetingIdAsync(_currentUser.Id.Value, command.MeetingId, cancellationToken).ConfigureAwait(false);
+        
         var meetingSpeech = new MeetingSpeech
         {
-            VoiceId = command.VoiceId,
+            VoiceId = meetingSetting.VoiceId,
             MeetingId = command.MeetingId,
             UserId = _currentUser.Id.Value,
             OriginalText = responseToText.Result
