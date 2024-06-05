@@ -18,13 +18,13 @@ public class GetMeetingChatVoiceRecordRequestHandler : IRequestHandler<GetMeetin
 
     public async Task<GetMeetingChatVoiceRecordResponse> Handle(IReceiveContext<GetMeetingChatVoiceRecordRequest> context, CancellationToken cancellationToken)
     {
-        return await _meetingService.GetMeetingChatVoiceRecordAsync(context.Message, cancellationToken).ConfigureAwait(false);
+        var @event = await _meetingService.GetMeetingChatVoiceRecordAsync(context.Message, cancellationToken).ConfigureAwait(false);
         
-        /*await context.PublishAsync(@event, cancellationToken).ConfigureAwait(false);
+        await context.PublishAsync(@event, cancellationToken).ConfigureAwait(false);
 
         return new GetMeetingChatVoiceRecordResponse
         {
             Data = @event.MeetingSpeech
-        };*/
+        };
     }
 }

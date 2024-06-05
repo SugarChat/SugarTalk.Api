@@ -30,6 +30,7 @@ using SugarTalk.Messages.Dto.Users;
 using SugarTalk.Messages.Enums.Account;
 using SugarTalk.Core.Domain.Meeting;
 using SugarTalk.Core.Services.Aws;
+using SugarTalk.Core.Services.Caching;
 using SugarTalk.Core.Services.Http;
 using SugarTalk.Core.Services.OpenAi;
 using SugarTalk.Core.Settings.Aws;
@@ -110,6 +111,7 @@ namespace SugarTalk.Core.Services.Meetings
         private readonly ILiveKitClient _liveKitClient;
         private readonly IAwsS3Service _awsS3Service;
         private readonly AwsS3Settings _awsS3Settings;
+        private readonly ICacheManager _cacheManager;
         private readonly TranslationClient _translationClient;
         private readonly IMeetingUtilService _meetingUtilService;
         private readonly IAccountDataProvider _accountDataProvider;
@@ -145,7 +147,7 @@ namespace SugarTalk.Core.Services.Meetings
             ILiveKitServerUtilService liveKitServerUtilService,
             IAntMediaServerUtilService antMediaServerUtilService,
             ISugarTalkBackgroundJobClient sugarTalkBackgroundJobClient, 
-            MeetingInfoSettings meetingInfoSettings)
+            MeetingInfoSettings meetingInfoSettings, ICacheManager cacheManager)
         {
             _clock = clock;
             _mapper = mapper;
@@ -156,6 +158,7 @@ namespace SugarTalk.Core.Services.Meetings
             _liveKitClient = liveKitClient;
             _aliYunOssSetting = aliYunOssSetting;
             _awsS3Service = awsS3Service;
+            _cacheManager = cacheManager;
             _awsS3Settings = awsS3Settings;
             _httpClientFactory = httpClientFactory;
             _translationClient = translationClient;

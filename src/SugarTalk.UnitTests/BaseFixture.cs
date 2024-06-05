@@ -15,6 +15,7 @@ using SugarTalk.Core.Settings.LiveKit;
 using SugarTalk.Core.Services.Http.Clients;
 using SugarTalk.Core.Services.AntMediaServer;
 using SugarTalk.Core.Services.Aws;
+using SugarTalk.Core.Services.Caching;
 using SugarTalk.Core.Services.Jobs;
 using SugarTalk.Core.Services.OpenAi;
 using SugarTalk.Core.Settings.Aliyun;
@@ -49,6 +50,7 @@ public partial class BaseFixture
     protected readonly ISugarTalkBackgroundJobClient _backgroundJobClient;
     protected readonly IMeetingUtilService _meetingUtilService;
     protected readonly TranslationClient _translationClient;
+    protected readonly ICacheManager _cacheManager;
     protected readonly ISugarTalkBackgroundJobClient _sugarTalkBackgroundJobClient;
 
     public BaseFixture()
@@ -64,11 +66,12 @@ public partial class BaseFixture
         _currentUser = Substitute.For<ICurrentUser>();
         _openAiService = Substitute.For<IOpenAiService>();
         _currentUser.Id.Returns(1);
+        _cacheManager = Substitute.For<ICacheManager>();
         _liveKitServerUtilService = Substitute.For<ILiveKitServerUtilService>();
         _sugarTalkBackgroundJobClient = Substitute.For<ISugarTalkBackgroundJobClient>();
         _accountDataProvider = MockAccountDataProvider(_mapper, _repository, _unitOfWork, _currentUser);
         _meetingDataProvider = MockMeetingDataProvider(_clock, _mapper, _repository, _unitOfWork, _currentUser, _accountDataProvider);
-        _meetingService = MockMeetingService(_clock, _mapper, _unitOfWork, _currentUser, _openAiService, _speechClient,
+        _meetingService = MockMeetingService(_clock, _mapper, _unitOfWork, _currentUser, _cacheManager, _openAiService, _speechClient,
             _liveKitClient, _aliYunOssSetting, _awsS3Settings, _awsS3Service, _translationClient, _meetingUtilService,
             _meetingDataProvider, _accountDataProvider, _liveKitServerSetting, _httpClientFactory, _backgroundJobClient,
             _liveKitServerUtilService, _antMediaServerUtilService, _sugarTalkBackgroundJobClient); 
@@ -90,6 +93,7 @@ public partial class BaseFixture
         IMapper mapper, 
         IUnitOfWork unitOfWork,
         ICurrentUser currentUser,
+        ICacheManager cacheManager,
         IOpenAiService openAiService,
         ISpeechClient speechClient,
         ILiveKitClient liveKitClient,
@@ -110,7 +114,7 @@ public partial class BaseFixture
         return new MeetingService(
             clock, mapper, unitOfWork, currentUser, openAiService, speechClient, liveKitClient, aliYunOssSetting, awsS3Settings, awsS3Service, 
             translationClient, meetingUtilService, meetingDataProvider, accountDataProvider, liveKitServerSetting, 
-            httpClientFactory, backgroundJobClient, liveKitServerUtilService, antMediaServerUtilService, sugarTalkBackgroundJobClient, null);
+            httpClientFactory, backgroundJobClient, liveKitServerUtilService, antMediaServerUtilService, sugarTalkBackgroundJobClient, null, cacheManager);
     }
     
     protected IMeetingDataProvider MockMeetingDataProvider(
