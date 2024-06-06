@@ -329,8 +329,8 @@ public partial class MeetingService
         
         var meetingRecord = await _meetingDataProvider.GetMeetingChatVoiceRecordAsync(meetingChatVoiceRecord.Id, cancellationToken).ConfigureAwait(false);
         
-        var meetingChatRoomSetting = _mapper.Map<MeetingChatRoomSetting>(roomSetting);
-        meetingChatVoiceRecord.VoiceId = shouldGenerateSpeech.VoiceId;
+        var meetingChatRoomSetting = await _meetingDataProvider.GetMeetingChatRoomSettingByVoiceIdAsync(meetingChatVoiceRecord.VoiceId, cancellationToken).ConfigureAwait(false);
+        meetingChatVoiceRecord.VoiceLanguage = meetingChatVoiceRecord.VoiceLanguage;
 
         await GenerateChatRecordProcessAsync(meetingRecord, meetingChatRoomSetting, shouldGenerateSpeech, cancellationToken).ConfigureAwait(false);
     }
