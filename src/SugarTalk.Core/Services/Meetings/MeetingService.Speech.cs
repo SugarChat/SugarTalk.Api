@@ -10,6 +10,7 @@ using Newtonsoft.Json;
 using SugarTalk.Messages.Commands.Speech;
 using SugarTalk.Messages.Requests.Speech;
 using SugarTalk.Messages.Dto.Meetings.Speech;
+using SugarTalk.Messages.Dto.Smarties;
 using SugarTalk.Messages.Enums.Account;
 using SugarTalk.Messages.Enums.Caching;
 using SugarTalk.Messages.Enums.Speech;
@@ -388,11 +389,21 @@ public partial class MeetingService
         if(!roomSetting.Transpose.HasValue || !roomSetting.Speed.HasValue || !roomSetting.Style.HasValue)
             throw new Exception("Room setting is not valid for speech inference");
         
+        var users = await _accountDataProvider.GetUserAccountsAsync(roomSetting.UserId, cancellationToken).ConfigureAwait(false);
+
+        var languageType = SpeechTargetLanguageTypeMappingToEchoAvatarLanguageType(roomSetting.ListeningLanguage);
+        var voiceSetting = await _smartiesClient.GetEchoAvatarVoiceSettingAsync(new GetEchoAvatarVoiceSettingRequestDto
+        {
+            UserName = users.First().UserName,
+            VoiceUuid = Guid.Parse(roomSetting.VoiceId),
+            LanguageType = languageType
+        }, cancellationToken).ConfigureAwait(false);
+
         var response = await _speechClient.SpeechInferenceAsync(new SpeechInferenceDto
         {
             Name = roomSetting.VoiceId,
             Text = translatedText,
-            LanguageId = roomSetting.Style.Value,
+            LanguageId = voiceSetting.Data.InferenceRecords.First(x => x.Language == languageType).Style,
             Transpose = roomSetting.Transpose.Value,
             Speed = roomSetting.Speed.Value,
             ResponseFormat = "url"
@@ -406,5 +417,17 @@ public partial class MeetingService
     private static string HandleToBase64(string base64)
     {
         return Regex.Replace(base64, @"^data:[^;]+;[^,]+,", "");
+    }
+
+    private static EchoAvatarLanguageType SpeechTargetLanguageTypeMappingToEchoAvatarLanguageType(SpeechTargetLanguageType speechTargetLanguageType)
+    {
+        return speechTargetLanguageType switch
+        {
+            SpeechTargetLanguageType.Cantonese => EchoAvatarLanguageType.Cantonese,
+            SpeechTargetLanguageType.Mandarin => EchoAvatarLanguageType.Mandarin,
+            SpeechTargetLanguageType.English => EchoAvatarLanguageType.English,
+            SpeechTargetLanguageType.Korean => EchoAvatarLanguageType.Korean,
+            SpeechTargetLanguageType.Spanish => EchoAvatarLanguageType.Spanish
+        };
     }
 }
