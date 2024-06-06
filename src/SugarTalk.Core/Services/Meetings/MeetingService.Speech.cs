@@ -328,8 +328,11 @@ public partial class MeetingService
         var shouldGenerateSpeech = await _meetingDataProvider.GetMeetingSpeechByIdAsync(meetingChatVoiceRecord.SpeechId, cancellationToken).ConfigureAwait(false);
         
         var meetingRecord = await _meetingDataProvider.GetMeetingChatVoiceRecordAsync(meetingChatVoiceRecord.Id, cancellationToken).ConfigureAwait(false);
+        
+        var meetingChatRoomSetting = _mapper.Map<MeetingChatRoomSetting>(roomSetting);
+        meetingChatVoiceRecord.VoiceId = shouldGenerateSpeech.VoiceId;
 
-        await GenerateChatRecordProcessAsync(meetingRecord, _mapper.Map<MeetingChatRoomSetting>(roomSetting), shouldGenerateSpeech, cancellationToken).ConfigureAwait(false);
+        await GenerateChatRecordProcessAsync(meetingRecord, meetingChatRoomSetting, shouldGenerateSpeech, cancellationToken).ConfigureAwait(false);
     }
 
     public async Task GenerateChatRecordAsync(Guid meetingId, MeetingSpeech meetingSpeech, CancellationToken cancellationToken)
