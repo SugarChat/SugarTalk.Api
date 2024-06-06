@@ -31,7 +31,7 @@ public class SmartiesClient : ISmartiesClient
 
     public async Task<GetEchoAvatarUserToneResponse> GetEchoAvatarVoiceSettingAsync(GetEchoAvatarVoiceSettingRequestDto request, CancellationToken cancellationToken)
     {
-        return await _httpClientFactory.PostAsJsonAsync<GetEchoAvatarUserToneResponse>(
-            $"{_smartiesSettings.BaseUrl}/api/EchoAvatar/voice/setting", request, cancellationToken, headers: _headers).ConfigureAwait(false);
+        return await _httpClientFactory.GetAsync<GetEchoAvatarUserToneResponse>(
+            $"{_smartiesSettings.BaseUrl}/api/EchoAvatar/voice/setting?UserName={request.UserName}&VoiceUuid={request.VoiceUuid}&LanguageType={request.LanguageType}", cancellationToken, headers: _headers).ConfigureAwait(false);
     }
 }
