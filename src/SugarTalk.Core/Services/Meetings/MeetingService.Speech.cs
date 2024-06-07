@@ -10,6 +10,7 @@ using Newtonsoft.Json;
 using SugarTalk.Messages.Commands.Speech;
 using SugarTalk.Messages.Requests.Speech;
 using SugarTalk.Messages.Dto.Meetings.Speech;
+using SugarTalk.Messages.Dto.Smarties;
 using SugarTalk.Messages.Enums.Account;
 using SugarTalk.Messages.Enums.Caching;
 using SugarTalk.Messages.Enums.Speech;
@@ -208,7 +209,7 @@ public partial class MeetingService
         record.TranslatedText = (await _speechClient.TranslateTextAsync(new TextTranslationDto
         {
             Text = speech.OriginalText,
-            TargetLanguageType = languageType
+            TargetLanguageType = languageType == SpeechTargetLanguageType.Cantonese ? SpeechTargetLanguageType.Mandarin : languageType
         }, cancellationToken).ConfigureAwait(false))?.Result;
 
         await _meetingDataProvider.UpdateMeetingChatVoiceRecordAsync(record, true, cancellationToken).ConfigureAwait(false);
@@ -219,15 +220,15 @@ public partial class MeetingService
         Log.Information("Start generating system voice url");
         
         var targetLanguage = record.VoiceLanguage switch
-            {
-                SpeechTargetLanguageType.Cantonese => new TextToSpeechDto { Text = record.TranslatedText, CantoneseToneType = (CantoneseToneType)voiceId},
-                SpeechTargetLanguageType.Mandarin => new TextToSpeechDto { Text = record.TranslatedText, MandarinToneType = (MandarinToneType)voiceId },
-                SpeechTargetLanguageType.English => new TextToSpeechDto { Text = record.TranslatedText, EnglishToneType = (EnglishToneType)voiceId },
-                SpeechTargetLanguageType.Japanese => new TextToSpeechDto { Text = record.TranslatedText, JapaneseToneType = (JapaneseToneType)voiceId },
-                SpeechTargetLanguageType.Spanish => new TextToSpeechDto { Text = record.TranslatedText, SpanishToneType = (SpanishToneType)voiceId },
-                SpeechTargetLanguageType.Korean => new TextToSpeechDto { Text = record.TranslatedText, KoreanToneType = (KoreanToneType)voiceId },
-                SpeechTargetLanguageType.French => new TextToSpeechDto { Text = record.TranslatedText, FrenchToneType = (FrenchToneType)voiceId }
-            };
+        {
+            SpeechTargetLanguageType.Cantonese => new TextToSpeechDto { Text = record.TranslatedText, CantoneseToneType = (CantoneseToneType)voiceId},
+            SpeechTargetLanguageType.Mandarin => new TextToSpeechDto { Text = record.TranslatedText, MandarinToneType = (MandarinToneType)voiceId },
+            SpeechTargetLanguageType.English => new TextToSpeechDto { Text = record.TranslatedText, EnglishToneType = (EnglishToneType)voiceId },
+            SpeechTargetLanguageType.Japanese => new TextToSpeechDto { Text = record.TranslatedText, JapaneseToneType = (JapaneseToneType)voiceId },
+            SpeechTargetLanguageType.Spanish => new TextToSpeechDto { Text = record.TranslatedText, SpanishToneType = (SpanishToneType)voiceId },
+            SpeechTargetLanguageType.Korean => new TextToSpeechDto { Text = record.TranslatedText, KoreanToneType = (KoreanToneType)voiceId },
+            SpeechTargetLanguageType.French => new TextToSpeechDto { Text = record.TranslatedText, FrenchToneType = (FrenchToneType)voiceId }
+        };
             
         record.VoiceUrl = (await _speechClient.GetAudioFromTextAsync(targetLanguage, cancellationToken).ConfigureAwait(false))?.Result;
         
@@ -328,8 +329,11 @@ public partial class MeetingService
         var shouldGenerateSpeech = await _meetingDataProvider.GetMeetingSpeechByIdAsync(meetingChatVoiceRecord.SpeechId, cancellationToken).ConfigureAwait(false);
         
         var meetingRecord = await _meetingDataProvider.GetMeetingChatVoiceRecordAsync(meetingChatVoiceRecord.Id, cancellationToken).ConfigureAwait(false);
+        
+        var meetingChatRoomSetting = await _meetingDataProvider.GetMeetingChatRoomSettingByVoiceIdAsync(meetingChatVoiceRecord.VoiceId, cancellationToken).ConfigureAwait(false);
+        meetingChatRoomSetting.ListeningLanguage = meetingChatVoiceRecord.VoiceLanguage;
 
-        await GenerateChatRecordProcessAsync(meetingRecord, _mapper.Map<MeetingChatRoomSetting>(roomSetting), shouldGenerateSpeech, cancellationToken).ConfigureAwait(false);
+        await GenerateChatRecordProcessAsync(meetingRecord, meetingChatRoomSetting, shouldGenerateSpeech, cancellationToken).ConfigureAwait(false);
     }
 
     public async Task GenerateChatRecordAsync(Guid meetingId, MeetingSpeech meetingSpeech, CancellationToken cancellationToken)
@@ -385,11 +389,21 @@ public partial class MeetingService
         if(!roomSetting.Transpose.HasValue || !roomSetting.Speed.HasValue || !roomSetting.Style.HasValue)
             throw new Exception("Room setting is not valid for speech inference");
         
+        var users = await _accountDataProvider.GetUserAccountsAsync(roomSetting.UserId, cancellationToken).ConfigureAwait(false);
+
+        var languageType = SpeechTargetLanguageTypeMappingToEchoAvatarLanguageType(roomSetting.ListeningLanguage);
+        var voiceSetting = await _smartiesClient.GetEchoAvatarVoiceSettingAsync(new GetEchoAvatarVoiceSettingRequestDto
+        {
+            UserName = users.First().UserName,
+            VoiceUuid = Guid.Parse(roomSetting.VoiceId),
+            LanguageType = languageType
+        }, cancellationToken).ConfigureAwait(false);
+
         var response = await _speechClient.SpeechInferenceAsync(new SpeechInferenceDto
         {
             Name = roomSetting.VoiceId,
             Text = translatedText,
-            LanguageId = roomSetting.Style.Value,
+            LanguageId = voiceSetting.Data.InferenceRecords.First(x => x.Language == languageType).Style,
             Transpose = roomSetting.Transpose.Value,
             Speed = roomSetting.Speed.Value,
             ResponseFormat = "url"
@@ -403,5 +417,17 @@ public partial class MeetingService
     private static string HandleToBase64(string base64)
     {
         return Regex.Replace(base64, @"^data:[^;]+;[^,]+,", "");
+    }
+
+    private static EchoAvatarLanguageType SpeechTargetLanguageTypeMappingToEchoAvatarLanguageType(SpeechTargetLanguageType speechTargetLanguageType)
+    {
+        return speechTargetLanguageType switch
+        {
+            SpeechTargetLanguageType.Cantonese => EchoAvatarLanguageType.Cantonese,
+            SpeechTargetLanguageType.Mandarin => EchoAvatarLanguageType.Mandarin,
+            SpeechTargetLanguageType.English => EchoAvatarLanguageType.English,
+            SpeechTargetLanguageType.Korean => EchoAvatarLanguageType.Korean,
+            SpeechTargetLanguageType.Spanish => EchoAvatarLanguageType.Spanish
+        };
     }
 }
