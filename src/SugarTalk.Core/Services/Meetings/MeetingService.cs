@@ -20,7 +20,6 @@ using SugarTalk.Core.Services.Http.Clients;
 using SugarTalk.Core.Services.Identity;
 using SugarTalk.Core.Services.LiveKit;
 using SugarTalk.Core.Services.Utils;
-using SugarTalk.Core.Settings.Aliyun;
 using SugarTalk.Core.Settings.LiveKit;
 using SugarTalk.Messages.Commands.Meetings;
 using SugarTalk.Messages.Commands.Speech;
@@ -29,8 +28,6 @@ using SugarTalk.Messages.Dto.Meetings.User;
 using SugarTalk.Messages.Dto.Users;
 using SugarTalk.Messages.Enums.Account;
 using SugarTalk.Core.Domain.Meeting;
-using SugarTalk.Core.Services.Aliyun;
-using SugarTalk.Core.Services.Ffmpeg;
 using SugarTalk.Core.Services.Aws;
 using SugarTalk.Core.Services.Http;
 using SugarTalk.Core.Services.OpenAi;
@@ -109,7 +106,7 @@ namespace SugarTalk.Core.Services.Meetings
         private readonly ICurrentUser _currentUser;
         private readonly ISpeechClient _speechClient;
         private readonly ILiveKitClient _liveKitClient;
-        private readonly IFfmpegService _ffmpegService;
+        private readonly IFClubClient _fclubClient;
         private readonly IOpenAiService _openAiService;
         private readonly IAwsS3Service _awsS3Service;
         private readonly AwsS3Settings _awsS3Settings;
@@ -133,7 +130,7 @@ namespace SugarTalk.Core.Services.Meetings
             IOpenAiService openAiService,
             ISpeechClient speechClient,
             ILiveKitClient liveKitClient,
-            IFfmpegService ffmpegService,
+            IFClubClient fclubClient,
             AwsS3Settings awsS3Settings,
             IAwsS3Service awsS3Service,
             TranslationClient translationClient,
@@ -155,7 +152,7 @@ namespace SugarTalk.Core.Services.Meetings
             _openAiService = openAiService;
             _speechClient = speechClient;
             _liveKitClient = liveKitClient;
-            _ffmpegService = ffmpegService;
+            _fclubClient = fclubClient;
             _awsS3Service = awsS3Service;
             _awsS3Settings = awsS3Settings;
             _httpClientFactory = httpClientFactory;

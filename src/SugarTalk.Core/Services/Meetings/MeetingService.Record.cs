@@ -7,6 +7,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using SugarTalk.Messages.Dto.Users;
+using SugarTalk.Messages.Dto.FClub;
 using SugarTalk.Messages.Extensions;
 using SugarTalk.Core.Domain.Meeting;
 using Microsoft.IdentityModel.Tokens;
@@ -49,6 +50,8 @@ public partial interface IMeetingService
     Task<TranslatingMeetingSpeakResponse> TranslatingMeetingSpeakAsync(TranslatingMeetingSpeakCommand command, CancellationToken cancellationToken);
 
     Task<GenerateMeetingRecordTemporaryUrlResponse> GenerateMeetingRecordTemporaryUrlAsync(GenerateMeetingRecordTemporaryUrlCommand command);
+
+    Task UpdateMeetingRecordUrlAsync(UpdateMeetingRecordUrlCommand command, CancellationToken cancellationToken);
 }
 
 public partial class MeetingService
@@ -112,7 +115,7 @@ public partial class MeetingService
             User = user,
             MeetingId = meeting.Id,
             MeetingRecordId = meetingRecordId
-        }, cancellationToken), TimeSpan.FromMinutes(55));
+        }, cancellationToken), TimeSpan.FromMinutes(5));
         
         return new MeetingRecordingStartedEvent
         {
@@ -159,7 +162,7 @@ public partial class MeetingService
             User = command.User,
             MeetingId = meeting.Id,
             MeetingRecordId = command.MeetingRecordId
-        }, cancellationToken), TimeSpan.FromMinutes(55));
+        }, cancellationToken), TimeSpan.FromMinutes(5));
     }
 
     public async Task GeneralMeetingRecordRestartAsync(
@@ -301,7 +304,9 @@ public partial class MeetingService
                 case true:
                     reTryLimit--;
                     _sugarTalkBackgroundJobClient.Schedule<IMeetingService>(x =>
-                        x.DelayStorageMeetingRecordVideoJobAsync(meetingId, egressId, meetingRecordId, token, reTryLimit, isRestartRecording, user, cancellationToken), TimeSpan.FromSeconds(10));
+                        x.DelayStorageMeetingRecordVideoJobAsync(
+                            meetingId, egressId, meetingRecordId, token, reTryLimit, isRestartRecording, user, 
+                            cancellationToken), TimeSpan.FromSeconds(10));
                     return;
                 default:
                     meetingRecord.UrlStatus = MeetingRecordUrlStatus.Failed;
@@ -316,10 +321,12 @@ public partial class MeetingService
             return;
         }
         
-        var fileName = await CombineMeetingRecordVideoAsync(meetingId, meetingRecordId, egressItem.File.Filename, cancellationToken).ConfigureAwait(false);
+        var taskId = await CombineMeetingRecordVideoAsync(meetingId, meetingRecordId, egressItem.File.Filename, cancellationToken).ConfigureAwait(false);
 
-        if (!fileName.IsNullOrEmpty())
-            egressItem.File.Filename = fileName;
+        Log.Information($"Combine video taskId: {taskId}", taskId);
+        
+        if (!taskId.IsNullOrEmpty())
+            egressItem.File.Filename = null;
         
         await UpdateMeetingRecordAsync(meetingRecord, egressItem, cancellationToken).ConfigureAwait(false);
     }
@@ -401,6 +408,24 @@ public partial class MeetingService
         };
 
     }
+
+    public async Task UpdateMeetingRecordUrlAsync(
+        UpdateMeetingRecordUrlCommand command, CancellationToken cancellationToken)
+    {
+        var record = await _meetingDataProvider.GetMeetingRecordByRecordIdAsync(command.Id, cancellationToken).ConfigureAwait(false);
+        
+        record.UrlStatus = MeetingRecordUrlStatus.Failed;
+
+        if ( !command.Url.IsNullOrEmpty() )
+        {
+            record.Url = command.Url;
+            record.UrlStatus = MeetingRecordUrlStatus.Completed;
+        }
+        
+        Log.Information($"Add url for record: record: {record}", record);
+        
+        await _meetingDataProvider.UpdateMeetingRecordAsync(record, cancellationToken).ConfigureAwait(false);
+    }
     
     private async Task AddMeetingRecordAsync(Meeting meeting, Guid meetingRecordId, string egressId, CancellationToken cancellationToken)
     {
@@ -439,26 +464,14 @@ public partial class MeetingService
         
         Log.Information("Combine urls: {@urls}", urls);
         
-        try
-        {
-            List<byte[]> bytesList = new List<byte[]>();
-            
-            foreach (var url in urls)
+        try{
+            var response = await _fclubClient.CombineMp4VideosTaskAsync(new CombineMp4VideosTaskDto
             {
-                var urlStream = await _awsS3Service.GetFileStreamAsync(url, cancellationToken).ConfigureAwait(false);
-                
-                bytesList.Add(urlStream);
-            }
+                urls = urls,
+                filePath = $"SugarTalk/{meetingRecordId}.mp4"
+            }, cancellationToken).ConfigureAwait(false);
             
-            var response = await _ffmpegService.CombineMp4VideosAsync(bytesList, cancellationToken).ConfigureAwait(false);
-            
-            Log.Information("Combined Videos response : {@response}", response);
-
-            var fileName = $"SugarTalk/{Guid.NewGuid()}.mp4";
-            
-            await _awsS3Service.UploadFileAsync(fileName, response, cancellationToken);
-            
-            return fileName;
+            return response.Data.ToString();
         }
         catch (Exception ex)
         {

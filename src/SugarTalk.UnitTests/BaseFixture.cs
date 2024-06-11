@@ -16,11 +16,9 @@ using SugarTalk.Core.Services.Meetings;
 using SugarTalk.Core.Settings.LiveKit;
 using SugarTalk.Core.Services.Http.Clients;
 using SugarTalk.Core.Services.AntMediaServer;
-using SugarTalk.Core.Services.Ffmpeg;
 using SugarTalk.Core.Services.Aws;
 using SugarTalk.Core.Services.Jobs;
 using SugarTalk.Core.Services.OpenAi;
-using SugarTalk.Core.Settings.Aliyun;
 using SugarTalk.Core.Settings.Aws;
 using SugarTalk.Core.Settings.Meeting;
 
@@ -35,7 +33,7 @@ public partial class BaseFixture
     protected readonly IClock _clock;
     protected readonly IMapper _mapper;
     protected readonly IUnitOfWork _unitOfWork;
-    protected readonly IFfmpegService _ffmpegService;
+    protected readonly IFClubClient _fclubClient;
     protected readonly ICurrentUser _currentUser;
     protected readonly IOpenAiService _openAiService;
     protected readonly IConfiguration _configuration;
@@ -75,7 +73,7 @@ public partial class BaseFixture
         _accountDataProvider = MockAccountDataProvider(_mapper, _repository, _unitOfWork, _currentUser);
         _meetingDataProvider = MockMeetingDataProvider(_clock, _mapper, _repository, _unitOfWork, _currentUser, _accountDataProvider);
         _meetingService = MockMeetingService(_clock, _mapper, _unitOfWork, _currentUser, _openAiService, _speechClient,
-            _liveKitClient, _ffmpegService, _awsS3Settings, _awsS3Service, _translationClient, _meetingUtilService,
+            _liveKitClient, _fclubClient, _awsS3Settings, _awsS3Service, _translationClient, _meetingUtilService,
             _meetingDataProvider, _accountDataProvider, _liveKitServerSetting, _httpClientFactory, _backgroundJobClient,
             _liveKitServerUtilService, _antMediaServerUtilService, _sugarTalkBackgroundJobClient, _meetingInfoSettings); 
         _meetingProcessJobService = MockMeetingProcessJobService(_clock, _unitOfWork, _meetingDataProvider);
@@ -99,7 +97,7 @@ public partial class BaseFixture
         IOpenAiService openAiService,
         ISpeechClient speechClient,
         ILiveKitClient liveKitClient,
-        IFfmpegService ffmpegService,
+        IFClubClient fclubClient,
         AwsS3Settings awsS3Settings,
         IAwsS3Service awsS3Service,
         TranslationClient translationClient,
@@ -115,7 +113,7 @@ public partial class BaseFixture
         MeetingInfoSettings meetingInfoSettings)
     {
         return new MeetingService(
-            clock, mapper, unitOfWork, currentUser, openAiService, speechClient, liveKitClient, ffmpegService, awsS3Settings, awsS3Service, 
+            clock, mapper, unitOfWork, currentUser, openAiService, speechClient, liveKitClient, fclubClient, awsS3Settings, awsS3Service, 
             translationClient, meetingUtilService, meetingDataProvider, accountDataProvider, liveKitServerSetting, 
             httpClientFactory, backgroundJobClient, liveKitServerUtilService, antMediaServerUtilService, sugarTalkBackgroundJobClient, meetingInfoSettings);
     }
