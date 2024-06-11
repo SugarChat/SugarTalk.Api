@@ -108,6 +108,7 @@
         <EmbeddedResource Include="DbUp\Scripts_2024\Script0026_modify_meeting_table.sql" />
         <EmbeddedResource Include="DbUp\Scripts_2024\Script0027_modify_user_setting_table.sql" />
         <EmbeddedResource Include="DbUp\Scripts_2024\Script0028_modify_meeting_speech.sql" />
+        <EmbeddedResource Include="DbUp\Scripts_2024\Script0029_add_user_account_api_key.sql" />
     </ItemGroup>
     
     <ItemGroup>
