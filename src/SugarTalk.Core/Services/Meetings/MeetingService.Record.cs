@@ -468,6 +468,7 @@ public partial class MeetingService
             var response = await _fclubClient.CombineMp4VideosTaskAsync(new CombineMp4VideosTaskDto
             {
                 urls = urls,
+                UpdateId = meetingRecordId,
                 filePath = $"SugarTalk/{meetingRecordId}.mp4"
             }, cancellationToken).ConfigureAwait(false);
             
