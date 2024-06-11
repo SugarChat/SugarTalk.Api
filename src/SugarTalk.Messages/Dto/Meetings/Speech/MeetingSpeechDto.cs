@@ -15,6 +15,8 @@ public class MeetingSpeechDto
     public string UserName { get; set; }
     
     public string VoiceUrl { get; set; }
+
+    public string VoiceId { get; set; }
     
     public string OriginalText { get; set; }
 

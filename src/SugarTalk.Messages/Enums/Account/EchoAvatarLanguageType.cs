@@ -4,9 +4,6 @@ namespace SugarTalk.Messages.Enums.Account;
 
 public enum EchoAvatarLanguageType
 {
-    [Description("未设置")]
-    None,
-    
     [Description("粤语")]
     Cantonese,
     
