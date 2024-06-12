@@ -7,7 +7,7 @@ public class CombineMp4VideosTaskDto : CombineMp4VideosDto
 {
     public Guid? TaskId { get; set; }
 
-    public Guid UpdateId { get; set; }
+    public Guid UploadId { get; set; }
 }
 
 public class CombineMp4VideosTaskResponse : SugarTalkResponse<Guid>
