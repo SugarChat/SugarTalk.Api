@@ -115,7 +115,7 @@ public partial class MeetingService
             User = user,
             MeetingId = meeting.Id,
             MeetingRecordId = meetingRecordId
-        }, cancellationToken), TimeSpan.FromMinutes(5));
+        }, cancellationToken), TimeSpan.FromMinutes(55));
         
         return new MeetingRecordingStartedEvent
         {
@@ -162,7 +162,7 @@ public partial class MeetingService
             User = command.User,
             MeetingId = meeting.Id,
             MeetingRecordId = command.MeetingRecordId
-        }, cancellationToken), TimeSpan.FromMinutes(5));
+        }, cancellationToken), TimeSpan.FromMinutes(55));
     }
 
     public async Task GeneralMeetingRecordRestartAsync(
@@ -393,7 +393,7 @@ public partial class MeetingService
     
     public async Task<GenerateMeetingRecordTemporaryUrlResponse> GenerateMeetingRecordTemporaryUrlAsync(GenerateMeetingRecordTemporaryUrlCommand command)
     {
-        for (int i = 0; i < command.Urls.Count; i++)
+        for (var i = 0; i < command.Urls.Count; i++)
         {
             if (command.Urls[i].StartsWith("https")) continue;
             
@@ -406,7 +406,6 @@ public partial class MeetingService
         {
             Urls = command.Urls
         };
-
     }
 
     public async Task UpdateMeetingRecordUrlAsync(
