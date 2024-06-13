@@ -1,10 +1,11 @@
+using Serilog;
 using System;
-using System.IO;
-using System.Threading;
-using System.Threading.Tasks;
 using Amazon.S3;
+using System.IO;
 using Amazon.S3.Model;
+using System.Threading;
 using SugarTalk.Core.Ioc;
+using System.Threading.Tasks;
 using SugarTalk.Core.Settings.Aws;
 
 namespace SugarTalk.Core.Services.Aws;
@@ -57,6 +58,8 @@ public class AwsS3Service : IAwsS3Service
         };
 
         using var response = await _amazonS3.GetObjectAsync(request, cancellationToken).ConfigureAwait(false);
+        
+        Log.Information($"Start reading stream");
         
         using var memoryStream = new MemoryStream();
         var buffer = new byte[81920];
