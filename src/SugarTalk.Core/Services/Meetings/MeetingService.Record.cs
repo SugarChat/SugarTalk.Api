@@ -324,7 +324,7 @@ public partial class MeetingService
         var taskId = await CombineMeetingRecordVideoAsync(meetingId, meetingRecordId, egressItem.File.Filename, cancellationToken).ConfigureAwait(false);
 
         Log.Information($"Combine video taskId: {taskId}", taskId);
-        
+
         if (!taskId.IsNullOrEmpty())
             egressItem.File.Filename = null;
         
@@ -424,6 +424,17 @@ public partial class MeetingService
         Log.Information($"Add url for record: record: {record}", record);
         
         await _meetingDataProvider.UpdateMeetingRecordAsync(record, cancellationToken).ConfigureAwait(false);
+        
+        if (!string.IsNullOrEmpty(record.Url))
+        {
+            var meetingDetails = await _meetingDataProvider
+                .GetMeetingDetailsByRecordIdAsync(record.Id, cancellationToken).ConfigureAwait(false);
+             
+            await MarkSpeakTranscriptAsSpecifiedStatusAsync(meetingDetails, FileTranscriptionStatus.InProcess,
+                cancellationToken).ConfigureAwait(false);
+
+            await TranscriptionMeetingAsync(meetingDetails, record, cancellationToken);
+        }
     }
     
     private async Task AddMeetingRecordAsync(Meeting meeting, Guid meetingRecordId, string egressId, CancellationToken cancellationToken)
@@ -513,17 +524,17 @@ public partial class MeetingService
      {
          meetingRecord.Url = egressItem.File.Filename;
          meetingRecord.RecordType = MeetingRecordType.EndRecord;
-         meetingRecord.UrlStatus = MeetingRecordUrlStatus.Completed;
+         meetingRecord.UrlStatus = egressItem.File.Filename == null ? MeetingRecordUrlStatus.InProgress : MeetingRecordUrlStatus.Completed;
 
          Log.Information("Complete storage meeting record url");
 
          await _meetingDataProvider.UpdateMeetingRecordAsync(meetingRecord, cancellationToken).ConfigureAwait(false);
-
-         var meetingDetails = await _meetingDataProvider
-             .GetMeetingDetailsByRecordIdAsync(meetingRecord.Id, cancellationToken).ConfigureAwait(false);
-
+         
          if (!string.IsNullOrEmpty(meetingRecord.Url))
          {
+             var meetingDetails = await _meetingDataProvider
+                 .GetMeetingDetailsByRecordIdAsync(meetingRecord.Id, cancellationToken).ConfigureAwait(false);
+             
              await MarkSpeakTranscriptAsSpecifiedStatusAsync(meetingDetails, FileTranscriptionStatus.InProcess,
                  cancellationToken).ConfigureAwait(false);
 
