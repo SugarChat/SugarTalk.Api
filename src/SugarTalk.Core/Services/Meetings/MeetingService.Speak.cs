@@ -109,7 +109,7 @@ public partial class MeetingService
         
         await _meetingDataProvider.UpdateMeetingSpeakDetailsAsync(speakDetails, true, cancellationToken).ConfigureAwait(false);
         
-        _backgroundJobClient.Enqueue<IMeetingService>(x => x.OptimizeTranscribedContent(speakDetails, cancellationToken));
+        /*_backgroundJobClient.Enqueue<IMeetingService>(x => x.OptimizeTranscribedContent(speakDetails, cancellationToken));*/
     }
 
     public async Task OptimizeTranscribedContent(List<MeetingSpeakDetail> speakDetails, CancellationToken cancellationToken)
