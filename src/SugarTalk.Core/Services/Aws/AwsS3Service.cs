@@ -16,7 +16,7 @@ public interface IAwsS3Service : IScopedDependency
     
     Task UploadFileAsync(string fileName, byte[] fileContent, CancellationToken cancellationToken);
 
-    Task<byte[]> GetFileStreamAsync(string fileName, CancellationToken cancellationToken = default);
+    Task<Stream> GetFileStreamAsync(string fileName, CancellationToken cancellationToken = default);
 
     Task<string> GeneratePresignedUrlAsync(string fileName, double durationInMinutes = 1);
 }
@@ -49,7 +49,7 @@ public class AwsS3Service : IAwsS3Service
         await _amazonS3.PutObjectAsync(request, cancellationToken);
     }
 
-    public async Task<byte[]> GetFileStreamAsync(string fileName, CancellationToken cancellationToken = default) 
+    public async Task<Stream> GetFileStreamAsync(string fileName, CancellationToken cancellationToken = default) 
     {
         var request = new GetObjectRequest
         {
@@ -58,19 +58,12 @@ public class AwsS3Service : IAwsS3Service
         };
 
         using var response = await _amazonS3.GetObjectAsync(request, cancellationToken).ConfigureAwait(false);
-        
-        Log.Information($"Start reading stream");
-        
-        using var memoryStream = new MemoryStream();
-        var buffer = new byte[81920];
-        int bytesRead;
 
-        while ((bytesRead = await response.ResponseStream.ReadAsync(buffer, cancellationToken).ConfigureAwait(false)) > 0)
-        {
-            await memoryStream.WriteAsync(buffer.AsMemory(0, bytesRead), cancellationToken).ConfigureAwait(false);
-        }
+        var memoryStream = new MemoryStream();
+        await response.ResponseStream.CopyToAsync(memoryStream, cancellationToken);
+        memoryStream.Position = 0;
 
-        return memoryStream.ToArray();
+        return memoryStream;
     }
 
     public async Task<string> GeneratePresignedUrlAsync(string fileName, double durationInMinutes = 1)
