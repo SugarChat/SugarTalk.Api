@@ -60,8 +60,14 @@ public class AwsS3Service : IAwsS3Service
         using var response = await _amazonS3.GetObjectAsync(request, cancellationToken).ConfigureAwait(false);
 
         var memoryStream = new MemoryStream();
-        await response.ResponseStream.CopyToAsync(memoryStream, cancellationToken);
-        memoryStream.Position = 0;
+        
+        var buffer = new byte[81920];
+        
+        int bytesRead;
+        while ((bytesRead = await response.ResponseStream.ReadAsync(buffer.AsMemory(0, 81920), cancellationToken)) > 0)
+        {
+            await memoryStream.WriteAsync(buffer.AsMemory(0, bytesRead), cancellationToken);
+        }
 
         return memoryStream;
     }
