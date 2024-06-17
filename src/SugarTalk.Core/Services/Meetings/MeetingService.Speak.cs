@@ -82,7 +82,7 @@ public partial class MeetingService
     {
         foreach (var speakDetail in speakDetails)
         {
-            var presignedUrl = await _awsS3Service.GeneratePresignedUrlAsync(meetingRecord.Url).ConfigureAwait(false);
+            var presignedUrl = await _awsS3Service.GeneratePresignedUrlAsync(meetingRecord.Url, 10).ConfigureAwait(false);
             
             var audio = await _ffmpegService.VideoToAudioConverterAsync(presignedUrl, cancellationToken);
             
