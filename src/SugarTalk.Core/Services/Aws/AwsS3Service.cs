@@ -58,18 +58,12 @@ public class AwsS3Service : IAwsS3Service
         };
 
         using var response = await _amazonS3.GetObjectAsync(request, cancellationToken).ConfigureAwait(false);
-
-        var memoryStream = new MemoryStream();
         
-        var buffer = new byte[81920];
+        var contentStream = response.ResponseStream;
         
-        int bytesRead;
-        while ((bytesRead = await response.ResponseStream.ReadAsync(buffer.AsMemory(0, 81920), cancellationToken)) > 0)
-        {
-            await memoryStream.WriteAsync(buffer.AsMemory(0, bytesRead), cancellationToken);
-        }
+        var bufferedStream = new BufferedStream(contentStream);
 
-        return memoryStream;
+        return bufferedStream;
     }
 
     public async Task<string> GeneratePresignedUrlAsync(string fileName, double durationInMinutes = 1)

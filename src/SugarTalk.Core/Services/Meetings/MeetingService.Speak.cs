@@ -82,8 +82,10 @@ public partial class MeetingService
     {
         foreach (var speakDetail in speakDetails)
         {
-            var recordFile = await _awsS3Service.GetFileStreamAsync(meetingRecord.Url, cancellationToken).ConfigureAwait(false);
-
+            var presignedUrl = await _awsS3Service.GeneratePresignedUrlAsync(meetingRecord.Url).ConfigureAwait(false);
+            
+            var audio = await _ffmpegService.VideoToAudioConverterAsync(presignedUrl, cancellationToken);
+            
             var speakStartTimeVideo = speakDetail.SpeakStartTime - meetingRecord.CreatedDate.ToUnixTimeMilliseconds();
             var speakEndTimeVideo = (speakDetail.SpeakEndTime ?? 0) - meetingRecord.CreatedDate.ToUnixTimeMilliseconds();
 
@@ -92,8 +94,8 @@ public partial class MeetingService
             try
             {
                 speakDetail.OriginalContent = await _openAiService.TranscriptionAsync(
-                    recordFile, TranscriptionLanguage.Chinese, speakStartTimeVideo, speakEndTimeVideo,
-                    TranscriptionFileType.Mp4, TranscriptionResponseFormat.Text, cancellationToken: cancellationToken).ConfigureAwait(false);
+                    audio, TranscriptionLanguage.Chinese, speakStartTimeVideo, speakEndTimeVideo,
+                    TranscriptionFileType.Mp3, TranscriptionResponseFormat.Text, cancellationToken: cancellationToken).ConfigureAwait(false);
                 
                 Log.Information("Complete transcribed content optimization" );
             

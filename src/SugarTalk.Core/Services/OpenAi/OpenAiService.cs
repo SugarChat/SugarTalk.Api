@@ -34,10 +34,6 @@ public interface IOpenAiService : IScopedDependency
     Task<string> TranscriptionAsync(
         byte[] file, TranscriptionLanguage? language, long speakStartTimeVideo, long speakEndTimeVideo, TranscriptionFileType fileType = TranscriptionFileType.Wav, 
         TranscriptionResponseFormat responseFormat = TranscriptionResponseFormat.Vtt, CancellationToken cancellationToken = default);
-    
-    Task<string> TranscriptionAsync(
-        Stream file, TranscriptionLanguage? language, long speakStartTimeVideo, long speakEndTimeVideo, TranscriptionFileType fileType = TranscriptionFileType.Wav, 
-        TranscriptionResponseFormat responseFormat = TranscriptionResponseFormat.Vtt, CancellationToken cancellationToken = default);
 }
 
 public class OpenAiService : IOpenAiService
@@ -93,41 +89,6 @@ public class OpenAiService : IOpenAiService
         foreach (var reSplitAudio in reSplitAudios)
         {
             var transcriptionResponse = await CreateTranscriptionAsync(reSplitAudio, language, fileType, responseFormat, cancellationToken).ConfigureAwait(false);
-            
-            transcriptionResult.Append(transcriptionResponse?.Text);
-        }
-    
-        Log.Information("Transcription result {Transcription}", transcriptionResult.ToString());
-        
-        return transcriptionResult.ToString();
-    }
-    
-    public async Task<string> TranscriptionAsync(
-        Stream file, TranscriptionLanguage? language, long speakStartTimeVideo, long speakEndTimeVideo, TranscriptionFileType fileType = TranscriptionFileType.Wav, 
-        TranscriptionResponseFormat responseFormat = TranscriptionResponseFormat.Vtt, CancellationToken cancellationToken = default)
-    {
-        if (file == null) return null;
-        
-        var audioBytes = await _ffmpegService.ConvertFileFormatAsync(file, fileType, cancellationToken).ConfigureAwait(false);
-    
-        var splitAudios = await _ffmpegService.SpiltAudioAsync(audioBytes, speakStartTimeVideo, speakEndTimeVideo, cancellationToken).ConfigureAwait(false);
-
-        var reSplitAudios = await _ffmpegService.SplitAudioAsync(splitAudios.FirstOrDefault(), secondsPerAudio: 60 * 2, cancellationToken: cancellationToken).ConfigureAwait(false);
-        
-        var transcriptionResult = new StringBuilder();
-    
-        foreach (var reSplitAudio in reSplitAudios)
-        {
-            using var memoryStream = new MemoryStream();
-            var buffer = new byte[81920];
-            int bytesRead;
-
-            while ((bytesRead = await reSplitAudio.ReadAsync(buffer, cancellationToken).ConfigureAwait(false)) > 0)
-            {
-                await memoryStream.WriteAsync(buffer.AsMemory(0, bytesRead), cancellationToken).ConfigureAwait(false);
-            }
-            
-            var transcriptionResponse = await CreateTranscriptionAsync(memoryStream.ToArray(), language, fileType, responseFormat, cancellationToken).ConfigureAwait(false);
             
             transcriptionResult.Append(transcriptionResponse?.Text);
         }

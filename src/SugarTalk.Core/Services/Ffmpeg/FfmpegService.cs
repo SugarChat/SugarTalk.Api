@@ -14,15 +14,11 @@ public interface IFfmpegService : IScopedDependency
 {
     Task<List<byte[]>> SplitAudioAsync(byte[] audioBytes, long secondsPerAudio, CancellationToken cancellationToken);
     
-    Task<List<Stream>> SplitAudioAsync(Stream audioBytes, long secondsPerAudio, CancellationToken cancellationToken);
-    
     Task<List<byte[]>> SpiltAudioAsync(byte[] audioBytes, long startTime, long endTime, CancellationToken cancellationToken);
-    
-    Task<List<Stream>> SpiltAudioAsync(Stream audioBytes, long startTime, long endTime, CancellationToken cancellationToken);
 
     Task<byte[]> ConvertFileFormatAsync(byte[] file, TranscriptionFileType fileType, CancellationToken cancellationToken);
-    
-    Task<Stream> ConvertFileFormatAsync(Stream file, TranscriptionFileType fileType, CancellationToken cancellationToken);
+
+    Task<byte[]> VideoToAudioConverterAsync(string url, CancellationToken cancellationToken);
 }
 
 public class FfmpegService : IFfmpegService
@@ -95,31 +91,23 @@ public class FfmpegService : IFfmpegService
         }
     }
     
-    public async Task<Stream> ConvertMp4ToWavAsync(Stream mp4Bytes, CancellationToken cancellationToken)
+    public async Task<byte[]> ConvertMp3ToWavAsync(byte[] mp3Bytes, int? samplingRate = null, CancellationToken cancellationToken = default)
     {
         var baseFileName = Guid.NewGuid().ToString();
-        var inputFileName = $"{baseFileName}.mp4";
+        var inputFileName = $"{baseFileName}.mp3";
         var outputFileName = $"{baseFileName}.wav";
-
+    
         try
         {
-            Log.Information("Converting mp4 to wav, the mp4 length is {Length}", mp4Bytes.Length);
+            Log.Information("Converting mp3 to wav, the mp3 length is {Length}", mp3Bytes.Length);
 
-            /*await File.WriteAllBytesAsync(inputFileName, mp4Bytes, cancellationToken).ConfigureAwait(false);*/
-            
-            await using var fileStream = new FileStream(inputFileName, FileMode.Create, FileAccess.Write);
-               
-            await mp4Bytes.CopyToAsync(fileStream, 8192, cancellationToken).ConfigureAwait(false);
+            await File.WriteAllBytesAsync(inputFileName, mp3Bytes, cancellationToken).ConfigureAwait(false);
 
             if (!File.Exists(inputFileName))
             {
-                Log.Information("Converting mp4 to wav, persisted mp4 file failed");
-                return Stream.Null;
+                Log.Information("Converting mp3 to wav, persisted mp3 file failed");
+                return Array.Empty<byte>();
             }
-
-            var ffmpegArguments = $"-i {inputFileName} -vn -acodec pcm_s16le {outputFileName}";
-
-            Log.Information("Ffmpeg convert command arguments: {FfmpegArguments}", ffmpegArguments);
 
             using (var proc = new Process())
             {
@@ -128,14 +116,16 @@ public class FfmpegService : IFfmpegService
                     FileName = "ffmpeg",
                     RedirectStandardError = true,
                     RedirectStandardOutput = true,
-                    Arguments = ffmpegArguments
+                    Arguments = samplingRate.HasValue
+                        ? $"-i {inputFileName} -vn -acodec pcm_s16le -ar {samplingRate.Value} {outputFileName}"
+                        : $"-i {inputFileName} -vn -acodec pcm_s16le {outputFileName}"
                 };
 
-                proc.OutputDataReceived += (_, e) =>
+                proc.ErrorDataReceived += (_, e) =>
                 {
-                    if (e.Data != null)
+                    if (!string.IsNullOrEmpty(e.Data))
                     {
-                        Log.Information("Converting mp4 to wav, {@Output}", e);
+                        Log.Information("Converting mp3 to wav: {Output}", e.Data);
                     }
                 };
 
@@ -147,21 +137,21 @@ public class FfmpegService : IFfmpegService
             }
 
             if (File.Exists(outputFileName))
-                return new FileStream(outputFileName, FileMode.Open, FileAccess.Read, FileShare.Read, 4096, useAsync: true);
-
-            Log.Information("Converting mp4 to wav, failed to generate wav");
-
-            return Stream.Null;
+                return await File.ReadAllBytesAsync(outputFileName, cancellationToken).ConfigureAwait(false);
+            
+            Log.Information("Converting mp3 to wav, failed to generate wav");
+            
+            return Array.Empty<byte>();
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "Converting mp4 to wav error occurred");
-            return Stream.Null;
+            Log.Error(ex, "Converting mp3 to wav error occurred");
+            return Array.Empty<byte>();
         }
         finally
         {
-            Log.Information("Converting mp4 to wav finally deleting files");
-
+            Log.Information("Converting mp3 to wav finally deleting files");
+            
             if (File.Exists(inputFileName)) File.Delete(inputFileName);
             if (File.Exists(outputFileName)) File.Delete(outputFileName);
         }
@@ -233,76 +223,6 @@ public class FfmpegService : IFfmpegService
         return audioDataList;
     }
     
-    public async Task<List<Stream>> SplitAudioAsync(Stream audioBytes, long secondsPerAudio,
-        CancellationToken cancellationToken)
-    {
-        var audioDataList = new List<Stream>();
-        var baseFileName = Guid.NewGuid().ToString();
-        var inputFileName = $"{baseFileName}.wav";
-
-        try
-        {
-            Log.Information("Splitting audio, the audio length is {Length}", audioBytes.Length);
-
-            await using var fileStream = new FileStream(inputFileName, FileMode.Create, FileAccess.Write);
-               
-            await audioBytes.CopyToAsync(fileStream, 8192, cancellationToken).ConfigureAwait(false);
-            
-            /*await File.WriteAllBytesAsync(inputFileName, audioBytes, cancellationToken).ConfigureAwait(false);*/
-
-            if (!File.Exists(inputFileName))
-            {
-                Log.Error("Splitting audio, persisted failed");
-                return audioDataList;
-            }
-
-            using (var proc = new Process())
-            {
-                proc.StartInfo = new ProcessStartInfo
-                {
-                    FileName = "ffmpeg",
-                    RedirectStandardError = true,
-                    RedirectStandardOutput = true,
-                    Arguments =
-                        $"-i {inputFileName} -segment_time {secondsPerAudio} -f segment -c copy {baseFileName}-split-%03d.wav"
-                };
-
-                proc.OutputDataReceived += (_, e) => Log.Information("Splitting audio, {@Output}", e);
-
-                proc.Start();
-                proc.BeginErrorReadLine();
-                proc.BeginOutputReadLine();
-
-                await proc.WaitForExitAsync(cancellationToken).ConfigureAwait(false);
-            }
-
-            var index = 0;
-            string splitFileName;
-
-            while (File.Exists(splitFileName = $"{baseFileName}-split-{index:D3}.wav"))
-            {
-                audioDataList.Add(new FileStream(splitFileName, FileMode.Open, FileAccess.Read, FileShare.Read, 4096, useAsync: true));
-
-                File.Delete(splitFileName);
-
-                index++;
-            }
-        }
-        catch (Exception ex)
-        {
-            Log.Error(ex, "Splitting audio error.");
-        }
-        finally
-        {
-            Log.Information("Splitting audio finally deleting files");
-
-            if (File.Exists(inputFileName))
-                File.Delete(inputFileName);
-        }
-
-        return audioDataList;
-    }
-
     public async Task<List<byte[]>> SpiltAudioAsync(byte[] audioBytes, long startTime, long endTime, CancellationToken cancellationToken)
     {
         var audioDataList = new List<byte[]>();
@@ -374,39 +294,25 @@ public class FfmpegService : IFfmpegService
         return audioDataList;
     }
     
-    public async Task<List<Stream>> SpiltAudioAsync(Stream audioBytes, long startTime, long endTime, CancellationToken cancellationToken)
+    public async Task<byte[]> ConvertFileFormatAsync(byte[] file, TranscriptionFileType fileType,
+        CancellationToken cancellationToken)
     {
-        var audioDataList = new List<Stream>();
-        var baseFileName = Guid.NewGuid().ToString();
-        var inputFileName = $"{baseFileName}.wav";
-        var outputFileName = $"{baseFileName}-spilt.wav";
-
-        var startTimeSpan = TimeSpan.FromMilliseconds(startTime);
-        var endTimeSpan = TimeSpan.FromMilliseconds(endTime);
-
-        var startTimeFormatted = startTimeSpan.ToString(@"hh\:mm\:ss\.fff");
-        var endTimeFormatted = endTimeSpan.ToString(@"hh\:mm\:ss\.fff");
-
+        return fileType switch
+        {
+            TranscriptionFileType.Wav => file,
+            TranscriptionFileType.Mp4 => await ConvertMp4ToWavAsync(file, cancellationToken).ConfigureAwait(false),
+            TranscriptionFileType.Mp3 => await ConvertMp3ToWavAsync(file,cancellationToken: cancellationToken).ConfigureAwait(false),
+            _ => Array.Empty<byte>()
+        };
+    }
+    
+    public async Task<byte[]> VideoToAudioConverterAsync(string url, CancellationToken cancellationToken)
+    {
+        var outputFileName = $"{Guid.NewGuid()}.mp3";
+        
         try
         {
-            Log.Information("According stareTime Splitting audio, the audio length is {Length}", audioBytes.Length);
-            
-            await using var fileStream = new FileStream(inputFileName, FileMode.Create, FileAccess.Write);
-               
-            await audioBytes.CopyToAsync(fileStream, 8192, cancellationToken).ConfigureAwait(false);
-            
-            /*await File.WriteAllBytesAsync(inputFileName, audioBytes, cancellationToken).ConfigureAwait(false);*/
-
-            if (!File.Exists(inputFileName))
-            {
-                Log.Error("Splitting audio, persisted failed");
-                return audioDataList;
-            }
-
-            var spiltArguments =
-                $"-i {inputFileName} -ss {startTimeFormatted} -to {endTimeFormatted} -c copy {outputFileName}";
-
-            Log.Information("spilt command arguments: {spiltArguments}", spiltArguments);
+            var arguments = $"-i {url} -vn -acodec libmp3lame -ac 1 {outputFileName}";
 
             using (var proc = new Process())
             {
@@ -415,9 +321,16 @@ public class FfmpegService : IFfmpegService
                     FileName = "ffmpeg",
                     RedirectStandardError = true,
                     RedirectStandardOutput = true,
-                    Arguments = spiltArguments
+                    Arguments = arguments
                 };
-                proc.OutputDataReceived += (_, e) => Log.Information("Splitting audio, {@Output}", e);
+
+                proc.ErrorDataReceived += (_, e) =>
+                {
+                    if (!string.IsNullOrEmpty(e.Data))
+                    {
+                        Log.Information("FFmpeg Output: {Output}", e.Data);
+                    }
+                };
 
                 proc.Start();
                 proc.BeginErrorReadLine();
@@ -425,50 +338,25 @@ public class FfmpegService : IFfmpegService
 
                 await proc.WaitForExitAsync(cancellationToken).ConfigureAwait(false);
             }
-
+            
             if (File.Exists(outputFileName))
-            {
-                /*audioDataList.Add(await File.ReadAllBytesAsync(outputFileName, cancellationToken)
-                    .ConfigureAwait(false));*/
-                audioDataList.Add(new FileStream(inputFileName, FileMode.Open, FileAccess.Read, FileShare.Read, 4096, useAsync: true));
-
-                File.Delete(outputFileName);
-            }
+                return await File.ReadAllBytesAsync(outputFileName, cancellationToken).ConfigureAwait(false);
+            
+            Log.Error("Failed to generate the combined video file.");
+            return Array.Empty<byte>();
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "Splitting audio error.");
+            Log.Error(ex, "Video to audio error.");
+
+            return Array.Empty<byte>();
         }
         finally
         {
-            Log.Information("Splitting audio finally deleting files");
+            Log.Information("Video to audio file finally deleting files");
 
-            if (File.Exists(inputFileName))
-                File.Delete(inputFileName);
+            if (File.Exists(outputFileName))
+                File.Delete(outputFileName);
         }
-
-        return audioDataList;
-    }
-
-    public async Task<byte[]> ConvertFileFormatAsync(byte[] file, TranscriptionFileType fileType,
-        CancellationToken cancellationToken)
-    {
-        return fileType switch
-        {
-            TranscriptionFileType.Wav => file,
-            TranscriptionFileType.Mp4 => await ConvertMp4ToWavAsync(file, cancellationToken).ConfigureAwait(false),
-            _ => Array.Empty<byte>()
-        };
-    }
-    
-    public async Task<Stream> ConvertFileFormatAsync(Stream file, TranscriptionFileType fileType,
-        CancellationToken cancellationToken)
-    {
-        return fileType switch
-        {
-            TranscriptionFileType.Wav => file,
-            TranscriptionFileType.Mp4 => await ConvertMp4ToWavAsync(file, cancellationToken).ConfigureAwait(false),
-            _ => Stream.Null
-        };
     }
 }

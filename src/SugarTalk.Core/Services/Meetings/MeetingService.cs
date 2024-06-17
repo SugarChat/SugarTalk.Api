@@ -30,6 +30,7 @@ using SugarTalk.Messages.Enums.Account;
 using SugarTalk.Core.Domain.Meeting;
 using SugarTalk.Core.Services.Aws;
 using SugarTalk.Core.Services.Caching;
+using SugarTalk.Core.Services.Ffmpeg;
 using SugarTalk.Core.Services.Http;
 using SugarTalk.Core.Services.OpenAi;
 using SugarTalk.Core.Settings.Aws;
@@ -105,6 +106,7 @@ namespace SugarTalk.Core.Services.Meetings
         private readonly IMapper _mapper;
         private readonly IUnitOfWork _unitOfWork;
         private readonly ICurrentUser _currentUser;
+        private readonly IFfmpegService _ffmpegService;
         private readonly ISpeechClient _speechClient;
         private readonly ILiveKitClient _liveKitClient;
         private readonly IFClubClient _fclubClient;
@@ -130,6 +132,7 @@ namespace SugarTalk.Core.Services.Meetings
             IMapper mapper,
             IUnitOfWork unitOfWork,
             ICurrentUser currentUser,
+            IFfmpegService ffmpegService,
             IOpenAiService openAiService,
             ISpeechClient speechClient,
             ILiveKitClient liveKitClient,
@@ -153,6 +156,7 @@ namespace SugarTalk.Core.Services.Meetings
             _mapper = mapper;
             _unitOfWork = unitOfWork;
             _currentUser = currentUser;
+            _ffmpegService = ffmpegService;
             _openAiService = openAiService;
             _speechClient = speechClient;
             _liveKitClient = liveKitClient;
