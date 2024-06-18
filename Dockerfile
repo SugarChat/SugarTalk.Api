@@ -20,7 +20,7 @@ RUN apt-get update && apt-get install -y bzip2 make gcc yasm libopencore-amrnb-d
 RUN wget https://ffmpeg.org/releases/ffmpeg-snapshot.tar.bz2 && \
  tar -jxvf ffmpeg-snapshot.tar.bz2 && \
 cd ffmpeg && \
- ./configure --enable-gpl --enable-libopencore-amrnb --enable-libopencore-amrwb --prefix=/usr/local/ffmpeg --enable-version3 && \
+ ./configure --enable-gpl --enable-libopencore-amrnb --enable-libopencore-amrwb --prefix=/usr/local/ffmpeg --enable-version3 --enable-openssl && \
 make -j8 && make install && \
  ln -s /usr/local/ffmpeg/bin/ffmpeg /usr/local/bin/
 
