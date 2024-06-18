@@ -18,8 +18,8 @@ FROM mcr.microsoft.com/dotnet/aspnet:7.0
 RUN apt-get update && \
     apt-get install -y perl
 
-RUN wget -O - https://www.openssl.org/source/openssl-3.3.1.tar.gz | tar zxf - && \
-    cd openssl-3.3.1 && \
+RUN wget -O - https://www.openssl.org/source/openssl-3.0.9.tar.gz | tar zxf - && \
+    cd openssl-3.0.9 && \
     ./config --prefix=/usr/local && \
     make -j$(nproc) && \
     make install_sw install_ssldirs
