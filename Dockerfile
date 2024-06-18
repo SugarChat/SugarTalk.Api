@@ -24,6 +24,10 @@ cd ffmpeg && \
 make -j8 && make install && \
  ln -s /usr/local/ffmpeg/bin/ffmpeg /usr/local/bin/
 
+# fontconfig
+RUN apt-get update; apt-get install -y fontconfig fonts-liberation fonts-noto-cjk
+RUN fc-cache -f -v
+
 # open lls
 RUN apt-get update && \
     apt-get install -y perl
