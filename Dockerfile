@@ -24,6 +24,9 @@ cd ffmpeg && \
 make -j8 && make install && \
  ln -s /usr/local/ffmpeg/bin/ffmpeg /usr/local/bin/
 
+# open lls
+RUN apt-get update && \
+    apt-get install -y perl
 
 RUN wget -O - https://www.openssl.org/source/openssl-1.1.1u.tar.gz | tar zxf - && \
     cd openssl-1.1.1u && \
