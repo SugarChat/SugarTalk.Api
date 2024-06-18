@@ -30,7 +30,7 @@ RUN apt-get update && apt-get install -y \
     perl \
     pkg-config
 
-# Install OpenSSL 3.0.0 or higher
+# Install OpenSSL 3.0.14
 RUN wget https://www.openssl.org/source/openssl-3.0.14.tar.gz && \
     tar -xzf openssl-3.0.14.tar.gz && \
     cd openssl-3.0.14 && \
@@ -42,14 +42,11 @@ RUN wget https://www.openssl.org/source/openssl-3.0.14.tar.gz && \
 
 RUN ldconfig -v
 
-# ffmpeg
-RUN apt-get update && apt-get install -y bzip2 make gcc yasm libopencore-amrnb-dev libopencore-amrwb-dev wget
-
 # Install FFmpeg with OpenSSL support
 RUN wget https://ffmpeg.org/releases/ffmpeg-snapshot.tar.bz2 && \
     tar -jxvf ffmpeg-snapshot.tar.bz2 && \
     cd ffmpeg && \
-    ./configure --enable-gpl --enable-libopencore-amrnb --enable-libopencore-amrwb --enable-version3 --enable-openssl --extra-cflags="-I/usr/local/openssl/include" --extra-ldflags="-L/usr/local/openssl/lib" && \
+    PKG_CONFIG_PATH=/usr/local/lib/pkgconfig ./configure --enable-gpl --enable-libopencore-amrnb --enable-libopencore-amrwb --enable-version3 --enable-openssl --extra-cflags="-I/usr/local/openssl/include" --extra-ldflags="-L/usr/local/openssl/lib" && \
     make -j8 && make install && \
     ln -s /usr/local/ffmpeg/bin/ffmpeg /usr/local/bin/ && \
     cd .. && \
