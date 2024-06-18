@@ -80,12 +80,12 @@ public partial class MeetingService
     
     private async Task TranscriptionMeetingAsync(List<MeetingSpeakDetail> speakDetails, MeetingRecord meetingRecord, CancellationToken cancellationToken)
     {
+        var presignedUrl = await _awsS3Service.GeneratePresignedUrlAsync(meetingRecord.Url, 30).ConfigureAwait(false);
+            
+        var audio = await _ffmpegService.VideoToAudioConverterAsync(presignedUrl, cancellationToken);
+        
         foreach (var speakDetail in speakDetails)
         {
-            var presignedUrl = await _awsS3Service.GeneratePresignedUrlAsync(meetingRecord.Url, 10).ConfigureAwait(false);
-            
-            var audio = await _ffmpegService.VideoToAudioConverterAsync(presignedUrl, cancellationToken);
-            
             var speakStartTimeVideo = speakDetail.SpeakStartTime - meetingRecord.CreatedDate.ToUnixTimeMilliseconds();
             var speakEndTimeVideo = (speakDetail.SpeakEndTime ?? 0) - meetingRecord.CreatedDate.ToUnixTimeMilliseconds();
 
