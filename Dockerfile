@@ -27,17 +27,18 @@ RUN apt-get update && apt-get install -y \
     libopencore-amrnb-dev \
     libopencore-amrwb-dev \
     wget \
-    perl
+    perl \
+    pkg-config
 
-# open lls
-RUN apt-get update && \
-    apt-get install -y perl
-
-RUN wget -O - https://www.openssl.org/source/openssl-3.0.14.tar.gz | tar zxf - && \
+# Install OpenSSL 3.0.0 or higher
+RUN wget https://www.openssl.org/source/openssl-3.0.14.tar.gz && \
+    tar -xzf openssl-3.0.14.tar.gz && \
     cd openssl-3.0.14 && \
-    ./config --prefix=/usr/local && \
+    ./config --prefix=/usr/local --openssldir=/usr/local/openssl && \
     make -j$(nproc) && \
-    make install_sw install_ssldirs
+    make install_sw install_ssldirs && \
+    cd .. && \
+    rm -rf openssl-3.0.14.tar.gz openssl-3.0.14
 
 RUN ldconfig -v
 
@@ -48,11 +49,13 @@ RUN apt-get update && apt-get install -y bzip2 make gcc yasm libopencore-amrnb-d
 RUN wget https://ffmpeg.org/releases/ffmpeg-snapshot.tar.bz2 && \
     tar -jxvf ffmpeg-snapshot.tar.bz2 && \
     cd ffmpeg && \
-    ./configure --enable-gpl --enable-libopencore-amrnb --enable-libopencore-amrwb --enable-version3 --enable-openssl && \
+    ./configure --enable-gpl --enable-libopencore-amrnb --enable-libopencore-amrwb --enable-version3 --enable-openssl --extra-cflags="-I/usr/local/openssl/include" --extra-ldflags="-L/usr/local/openssl/lib" && \
     make -j8 && make install && \
-    ln -s /usr/local/ffmpeg/bin/ffmpeg /usr/local/bin/
+    ln -s /usr/local/ffmpeg/bin/ffmpeg /usr/local/bin/ && \
+    cd .. && \
+    rm -rf ffmpeg-snapshot.tar.bz2 ffmpeg
 
-ENV SSL_CERT_DIR=/etc/ssl/certs
+ENV SSL_CERT_DIR=/usr/local/openssl/certs
 ENV LD_LIBRARY_PATH=/usr/local/lib
 
 WORKDIR /app
