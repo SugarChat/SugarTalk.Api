@@ -14,36 +14,26 @@ RUN dotnet publish build/SugarTalk.Api -c Release -o out
 # Build runtime image
 FROM mcr.microsoft.com/dotnet/aspnet:7.0
 
-# Install necessary packages for ffmpeg including libssl-dev for HTTPS support
-RUN apt-get update && apt-get install -y \
-    bzip2 \
-    make \
-    gcc \
-    yasm \
-    libopencore-amrnb-dev \
-    libopencore-amrwb-dev \
-    libssl-dev \
-    wget \
-    pkg-config \
-    libavcodec-dev \
-    libavformat-dev \
-    libavfilter-dev \
-    libavdevice-dev
+# ffmpeg
+RUN apt-get update && apt-get install -y bzip2 make gcc yasm libopencore-amrnb-dev libopencore-amrwb-dev wget
 
-# Download ffmpeg source code
-RUN wget https://ffmpeg.org/releases/ffmpeg-snapshot.tar.bz2
+RUN wget https://ffmpeg.org/releases/ffmpeg-snapshot.tar.bz2 && \
+ tar -jxvf ffmpeg-snapshot.tar.bz2 && \
+cd ffmpeg && \
+ ./configure --enable-gpl --enable-libopencore-amrnb --enable-libopencore-amrwb --prefix=/usr/local/ffmpeg --enable-version3 && \
+make -j8 && make install && \
+ ln -s /usr/local/ffmpeg/bin/ffmpeg /usr/local/bin/
 
-# Extract ffmpeg source code
-RUN tar -jxvf ffmpeg-snapshot.tar.bz2
 
-# Build and install ffmpeg
-RUN cd ffmpeg && \
-    ./configure --enable-gpl --enable-libopencore-amrnb --enable-libopencore-amrwb --enable-version3 --enable-openssl && \
-    make -j8 && \
-    make install
+RUN wget -O - https://www.openssl.org/source/openssl-1.1.1u.tar.gz | tar zxf - && \
+    cd openssl-1.1.1u && \
+    ./config --prefix=/usr/local && \
+    make -j$(nproc) && \
+    make install_sw install_ssldirs
 
-# Create symbolic link
-RUN ln -s /usr/local/ffmpeg/bin/ffmpeg /usr/local/bin/
+RUN ldconfig -v
+
+ENV SSL_CERT_DIR=/etc/ssl/certs
 
 WORKDIR /app
 COPY --from=build-env /app/out .
