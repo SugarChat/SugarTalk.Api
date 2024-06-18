@@ -14,7 +14,6 @@ RUN dotnet publish build/SugarTalk.Api -c Release -o out
 # Build runtime image
 FROM mcr.microsoft.com/dotnet/aspnet:7.0
 
-
 # ffmpeg
 RUN apt-get update && apt-get install -y bzip2 make gcc yasm libopencore-amrnb-dev libopencore-amrwb-dev wget
 
@@ -24,20 +23,6 @@ cd ffmpeg && \
  ./configure --enable-gpl --enable-libopencore-amrnb --enable-libopencore-amrwb --prefix=/usr/local/ffmpeg --enable-version3 && \
 make -j8 && make install && \
  ln -s /usr/local/ffmpeg/bin/ffmpeg /usr/local/bin/
-
-# open lls
-RUN apt-get update && \
-    apt-get install -y perl
-
-RUN wget -O - https://www.openssl.org/source/openssl-3.0.9.tar.gz | tar zxf - && \
-    cd openssl-3.0.9 && \
-    ./config --prefix=/usr/local && \
-    make -j$(nproc) && \
-    make install_sw install_ssldirs
-
-RUN ldconfig -v
-
-ENV SSL_CERT_DIR=/etc/ssl/certs
 
 WORKDIR /app
 COPY --from=build-env /app/out .
