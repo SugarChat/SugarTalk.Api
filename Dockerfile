@@ -15,27 +15,18 @@ RUN dotnet publish build/SugarTalk.Api -c Release -o out
 FROM mcr.microsoft.com/dotnet/aspnet:7.0
 
 # ffmpeg
-RUN apt-get update && apt-get install -y \
-    bzip2 \
-    make \
-    gcc \
-    yasm \
-    libopencore-amrnb-dev \
-    libopencore-amrwb-dev \
-    wget \
-    libssl-dev \
-    pkg-config
+RUN apt-get update && apt-get install -y bzip2 make gcc yasm libopencore-amrnb-dev libopencore-amrwb-dev wget
 
 RUN wget https://ffmpeg.org/releases/ffmpeg-snapshot.tar.bz2 && \
-    tar -jxvf ffmpeg-snapshot.tar.bz2 && \
-    cd ffmpeg && \
-    ./configure --enable-gpl --enable-libopencore-amrnb --enable-libopencore-amrwb --prefix=/usr/local/ffmpeg --enable-version3 --enable-openssl && \
-    make -j$(nproc) && \
-    make install && \
-    ln -s /usr/local/ffmpeg/bin/ffmpeg /usr/local/bin/
+ tar -jxvf ffmpeg-snapshot.tar.bz2 && \
+cd ffmpeg && \
+ ./configure --enable-gpl --enable-libopencore-amrnb --enable-libopencore-amrwb --prefix=/usr/local/ffmpeg --enable-version3 && \
+make -j8 && make install && \
+ ln -s /usr/local/ffmpeg/bin/ffmpeg /usr/local/bin/
 
 # open lls
-RUN apt-get update && apt-get install -y perl
+RUN apt-get update && \
+    apt-get install -y perl
 
 RUN wget -O - https://www.openssl.org/source/openssl-1.1.1u.tar.gz | tar zxf - && \
     cd openssl-1.1.1u && \
