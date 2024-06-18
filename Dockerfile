@@ -33,8 +33,8 @@ RUN apt-get update && apt-get install -y \
 RUN apt-get update && \
     apt-get install -y perl
 
-RUN wget -O - https://www.openssl.org/source/openssl-3.0.0.tar.gz | tar zxf - && \
-    cd openssl-3.0.0 && \
+RUN wget -O - https://www.openssl.org/source/openssl-3.0.14.tar.gz | tar zxf - && \
+    cd openssl-3.0.14 && \
     ./config --prefix=/usr/local && \
     make -j$(nproc) && \
     make install_sw install_ssldirs
