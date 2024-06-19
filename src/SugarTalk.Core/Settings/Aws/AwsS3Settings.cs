@@ -14,7 +14,7 @@ public class AwsS3Settings : IConfigurationSetting
     }
 
     public string Region { get; set; }
-    
+
     public string Endpoint { get; set; }
 
     public string BucketName { get; set; }

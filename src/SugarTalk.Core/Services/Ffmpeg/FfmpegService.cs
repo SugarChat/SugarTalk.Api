@@ -124,9 +124,7 @@ public class FfmpegService : IFfmpegService
                 proc.ErrorDataReceived += (_, e) =>
                 {
                     if (!string.IsNullOrEmpty(e.Data))
-                    {
                         Log.Information("Converting mp3 to wav: {Output}", e.Data);
-                    }
                 };
 
                 proc.Start();
@@ -222,7 +220,7 @@ public class FfmpegService : IFfmpegService
 
         return audioDataList;
     }
-    
+
     public async Task<List<byte[]>> SpiltAudioAsync(byte[] audioBytes, long startTime, long endTime, CancellationToken cancellationToken)
     {
         var audioDataList = new List<byte[]>();
@@ -293,7 +291,7 @@ public class FfmpegService : IFfmpegService
 
         return audioDataList;
     }
-    
+
     public async Task<byte[]> ConvertFileFormatAsync(byte[] file, TranscriptionFileType fileType,
         CancellationToken cancellationToken)
     {
@@ -327,9 +325,7 @@ public class FfmpegService : IFfmpegService
                 proc.ErrorDataReceived += (_, e) =>
                 {
                     if (!string.IsNullOrEmpty(e.Data))
-                    {
                         Log.Information("FFmpeg Output: {Output}", e.Data);
-                    }
                 };
 
                 proc.Start();
@@ -343,6 +339,7 @@ public class FfmpegService : IFfmpegService
                 return await File.ReadAllBytesAsync(outputFileName, cancellationToken).ConfigureAwait(false);
             
             Log.Error("Failed to generate the combined video file.");
+            
             return Array.Empty<byte>();
         }
         catch (Exception ex)

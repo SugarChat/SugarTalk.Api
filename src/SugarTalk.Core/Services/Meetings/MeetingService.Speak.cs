@@ -1,22 +1,22 @@
 using System;
-using System.Collections.Generic;
-using System.IO;
 using Serilog;
+using System.IO;
 using System.Linq;
+using Newtonsoft.Json;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
-using Newtonsoft.Json;
+using System.Collections.Generic;
+using SugarTalk.Messages.Dto.OpenAi;
 using SugarTalk.Core.Domain.Meeting;
+using SugarTalk.Messages.Enums.OpenAi;
 using SugarTalk.Messages.Dto.Meetings.Speak;
 using SugarTalk.Messages.Enums.Meeting.Speak;
 using SugarTalk.Messages.Events.Meeting.Speak;
 using SugarTalk.Messages.Commands.Meetings.Speak;
 using SugarTalk.Core.Services.Meetings.Exceptions;
-using SugarTalk.Messages.Dto.OpenAi;
-using SugarTalk.Messages.Enums.OpenAi;
-using CompletionsRequestMessageDto = SugarTalk.Messages.Dto.OpenAi.CompletionsRequestMessageDto;
 using OpenAiModel = SugarTalk.Messages.Enums.OpenAi.OpenAiModel;
+using CompletionsRequestMessageDto = SugarTalk.Messages.Dto.OpenAi.CompletionsRequestMessageDto;
 
 namespace SugarTalk.Core.Services.Meetings;
 
@@ -94,14 +94,10 @@ public partial class MeetingService
             
             foreach (var speakDetail in speakDetails)
             {
-                var speakStartTimeVideo =
-                    speakDetail.SpeakStartTime - meetingRecord.CreatedDate.ToUnixTimeMilliseconds();
-                var speakEndTimeVideo =
-                    (speakDetail.SpeakEndTime ?? 0) - meetingRecord.CreatedDate.ToUnixTimeMilliseconds();
+                var speakStartTimeVideo = speakDetail.SpeakStartTime - meetingRecord.CreatedDate.ToUnixTimeMilliseconds();
+                var speakEndTimeVideo = (speakDetail.SpeakEndTime ?? 0) - meetingRecord.CreatedDate.ToUnixTimeMilliseconds();
 
-                Log.Information(
-                    "Start time of speak in video: {SpeakStartTimeVideo}, End time of speak in video: {SpeakEndTimeVideo}",
-                    speakStartTimeVideo, speakEndTimeVideo);
+                Log.Information("Start time of speak in video: {SpeakStartTimeVideo}, End time of speak in video: {SpeakEndTimeVideo}", speakStartTimeVideo, speakEndTimeVideo);
 
                 try
                 {
@@ -134,7 +130,6 @@ public partial class MeetingService
             if (File.Exists(localhostUrl))
                 File.Delete(localhostUrl);
         }
-       
         
         /*_backgroundJobClient.Enqueue<IMeetingService>(x => x.OptimizeTranscribedContent(speakDetails, cancellationToken));*/
     }
@@ -178,7 +173,7 @@ public partial class MeetingService
         await _meetingDataProvider.UpdateMeetingSpeakDetailsAsync(details, cancellationToken: cancellationToken).ConfigureAwait(false);
     }
     
-        private async Task<string> DownloadWithRetryAsync(string url, int maxRetries = 5, CancellationToken cancellationToken = default)
+    private async Task<string> DownloadWithRetryAsync(string url, int maxRetries = 5, CancellationToken cancellationToken = default)
     {
         for (var i = 0; i < maxRetries; i++)
         {
@@ -189,7 +184,7 @@ public partial class MeetingService
                 
                 Log.Information("Uploading url: {url}, temporaryFile: {temporaryFile}", uploadUrl, temporaryFile);
 
-                using var response = await client.GetAsync(
+                using var response = await Client.GetAsync(
                     uploadUrl, HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
                 
                 response.EnsureSuccessStatusCode();
@@ -229,5 +224,5 @@ public partial class MeetingService
         return url;
     }
     
-    private static readonly HttpClient client = new HttpClient { Timeout = TimeSpan.FromSeconds(300) };
+    private static readonly HttpClient Client = new HttpClient { Timeout = TimeSpan.FromSeconds(300) };
 }

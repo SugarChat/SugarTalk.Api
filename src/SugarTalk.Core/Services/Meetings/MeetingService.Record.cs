@@ -56,10 +56,12 @@ public partial interface IMeetingService
 
 public partial class MeetingService
 {
-    public async Task<GetCurrentUserMeetingRecordResponse> GetCurrentUserMeetingRecordsAsync(GetCurrentUserMeetingRecordRequest request, CancellationToken cancellationToken)
+    public async Task<GetCurrentUserMeetingRecordResponse> GetCurrentUserMeetingRecordsAsync(
+        GetCurrentUserMeetingRecordRequest request, CancellationToken cancellationToken)
     {
-        var (total, items) = await _meetingDataProvider.GetMeetingRecordsByUserIdAsync(_currentUser.Id, request, cancellationToken).ConfigureAwait(false);
-        
+        var (total, items) = await _meetingDataProvider.GetMeetingRecordsByUserIdAsync(
+            _currentUser.Id, request, cancellationToken).ConfigureAwait(false);
+
         var response = new GetCurrentUserMeetingRecordResponse
         {
            Data = new GetCurrentUserMeetingRecordResponseDto
@@ -271,7 +273,7 @@ public partial class MeetingService
 
             _sugarTalkBackgroundJobClient.RemoveRecurringJobIfExists(nameof(ExecuteStorageMeetingRecordVideoDelayedJobAsync));
         }
-        
+
         return new DelayedMeetingRecordingStorageEvent
         {
             User = command.User,
