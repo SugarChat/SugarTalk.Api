@@ -16,8 +16,6 @@ public interface IAwsS3Service : IScopedDependency
     
     Task UploadFileAsync(string fileName, byte[] fileContent, CancellationToken cancellationToken);
 
-    Task<Stream> GetFileStreamAsync(string fileName, CancellationToken cancellationToken = default);
-
     Task<string> GeneratePresignedUrlAsync(string fileName, double durationInMinutes = 1);
 }
 
@@ -47,23 +45,6 @@ public class AwsS3Service : IAwsS3Service
         };
         
         await _amazonS3.PutObjectAsync(request, cancellationToken);
-    }
-
-    public async Task<Stream> GetFileStreamAsync(string fileName, CancellationToken cancellationToken = default) 
-    {
-        var request = new GetObjectRequest
-        {
-            BucketName = _awsOssSettings.BucketName,
-            Key = fileName
-        };
-
-        using var response = await _amazonS3.GetObjectAsync(request, cancellationToken).ConfigureAwait(false);
-        
-        var contentStream = response.ResponseStream;
-        
-        var bufferedStream = new BufferedStream(contentStream);
-
-        return bufferedStream;
     }
 
     public async Task<string> GeneratePresignedUrlAsync(string fileName, double durationInMinutes = 1)
