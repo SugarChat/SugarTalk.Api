@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using SugarTalk.Messages.Enums.Meeting;
 
 namespace SugarTalk.Messages.Dto.Meetings;
 
@@ -28,4 +29,6 @@ public class MeetingHistoryDto
     public string MeetingCreator { get; set; }
     
     public List<string> attendees { get; set; }
+    
+    public MeetingAppointmentType? AppointmentType { get; set; }
 }

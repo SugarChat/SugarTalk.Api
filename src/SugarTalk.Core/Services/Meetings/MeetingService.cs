@@ -20,7 +20,6 @@ using SugarTalk.Core.Services.Http.Clients;
 using SugarTalk.Core.Services.Identity;
 using SugarTalk.Core.Services.LiveKit;
 using SugarTalk.Core.Services.Utils;
-using SugarTalk.Core.Settings.Aliyun;
 using SugarTalk.Core.Settings.LiveKit;
 using SugarTalk.Messages.Commands.Meetings;
 using SugarTalk.Messages.Commands.Speech;
@@ -30,6 +29,8 @@ using SugarTalk.Messages.Dto.Users;
 using SugarTalk.Messages.Enums.Account;
 using SugarTalk.Core.Domain.Meeting;
 using SugarTalk.Core.Services.Aws;
+using SugarTalk.Core.Services.Caching;
+using SugarTalk.Core.Services.Ffmpeg;
 using SugarTalk.Core.Services.Http;
 using SugarTalk.Core.Services.OpenAi;
 using SugarTalk.Core.Settings.Aws;
@@ -105,11 +106,15 @@ namespace SugarTalk.Core.Services.Meetings
         private readonly IMapper _mapper;
         private readonly IUnitOfWork _unitOfWork;
         private readonly ICurrentUser _currentUser;
-        private readonly IOpenAiService _openAiService;
+        private readonly IFfmpegService _ffmpegService;
         private readonly ISpeechClient _speechClient;
         private readonly ILiveKitClient _liveKitClient;
+        private readonly IFClubClient _fclubClient;
+        private readonly IOpenAiService _openAiService;
         private readonly IAwsS3Service _awsS3Service;
         private readonly AwsS3Settings _awsS3Settings;
+        private readonly ICacheManager _cacheManager;
+        private readonly ISmartiesClient _smartiesClient;
         private readonly TranslationClient _translationClient;
         private readonly IMeetingUtilService _meetingUtilService;
         private readonly IAccountDataProvider _accountDataProvider;
@@ -119,8 +124,6 @@ namespace SugarTalk.Core.Services.Meetings
         private readonly ILiveKitServerUtilService _liveKitServerUtilService;
         private readonly IAntMediaServerUtilService _antMediaServerUtilService;
         private readonly ISugarTalkBackgroundJobClient _sugarTalkBackgroundJobClient;
-
-        private readonly AliYunOssSettings _aliYunOssSetting;
         private readonly LiveKitServerSetting _liveKitServerSetting;
         private readonly MeetingInfoSettings _meetingInfoSettings;
         
@@ -129,12 +132,14 @@ namespace SugarTalk.Core.Services.Meetings
             IMapper mapper,
             IUnitOfWork unitOfWork,
             ICurrentUser currentUser,
+            IFfmpegService ffmpegService,
             IOpenAiService openAiService,
             ISpeechClient speechClient,
             ILiveKitClient liveKitClient,
-            AliYunOssSettings aliYunOssSetting,
+            IFClubClient fclubClient,
             AwsS3Settings awsS3Settings,
             IAwsS3Service awsS3Service,
+            ISmartiesClient smartiesClient,
             TranslationClient translationClient,
             IMeetingUtilService meetingUtilService,
             IMeetingDataProvider meetingDataProvider,
@@ -145,17 +150,20 @@ namespace SugarTalk.Core.Services.Meetings
             ILiveKitServerUtilService liveKitServerUtilService,
             IAntMediaServerUtilService antMediaServerUtilService,
             ISugarTalkBackgroundJobClient sugarTalkBackgroundJobClient, 
-            MeetingInfoSettings meetingInfoSettings)
+            MeetingInfoSettings meetingInfoSettings, ICacheManager cacheManager)
         {
             _clock = clock;
             _mapper = mapper;
             _unitOfWork = unitOfWork;
             _currentUser = currentUser;
+            _ffmpegService = ffmpegService;
             _openAiService = openAiService;
             _speechClient = speechClient;
             _liveKitClient = liveKitClient;
-            _aliYunOssSetting = aliYunOssSetting;
+            _fclubClient = fclubClient;
             _awsS3Service = awsS3Service;
+            _cacheManager = cacheManager;
+            _smartiesClient = smartiesClient;
             _awsS3Settings = awsS3Settings;
             _httpClientFactory = httpClientFactory;
             _translationClient = translationClient;
@@ -305,22 +313,15 @@ namespace SugarTalk.Core.Services.Meetings
 
             Log.Information("SugarTalk get userSetting from JoinMeetingAsync :{userSetting}", JsonConvert.SerializeObject(userSetting));
             
+            var randomTone = GetRandomToneType();
+            var voiceId = (int)randomTone;
+            
             await _meetingDataProvider.AddMeetingChatRoomSettingAsync(new MeetingChatRoomSetting
             {
                 IsSystem = true,
                 UserId = userSetting.UserId,
                 MeetingId = meeting.Id,
-                VoiceId = userSetting.TargetLanguageType switch
-                {
-                    SpeechTargetLanguageType.Cantonese => ((int)userSetting.CantoneseToneType).ToString(),
-                    SpeechTargetLanguageType.Mandarin => ((int)userSetting.MandarinToneType).ToString(),
-                    SpeechTargetLanguageType.English => ((int)userSetting.EnglishToneType).ToString(),
-                    SpeechTargetLanguageType.Spanish => ((int)userSetting.SpanishToneType).ToString(),
-                    SpeechTargetLanguageType.French => ((int)userSetting.FrenchToneType).ToString(),
-                    SpeechTargetLanguageType.Korean => ((int)userSetting.KoreanToneType).ToString(),
-                    SpeechTargetLanguageType.Japanese => ((int)userSetting.JapaneseToneType).ToString(),
-                    _ => string.Empty
-                }
+                VoiceId = voiceId.ToString()
             }, true, cancellationToken).ConfigureAwait(false);
             
             return new MeetingJoinedEvent
@@ -626,28 +627,27 @@ namespace SugarTalk.Core.Services.Meetings
 
             return new ChatRoomSettingAddOrUpdateEvent();
         }
-
+        
+        private static GeneralToneType GetRandomToneType()
+        {
+            var random = new Random();
+            var values = Enum.GetValues(typeof(GeneralToneType));
+            var randomTone = (GeneralToneType)values.GetValue(random.Next(values.Length));
+            return randomTone;
+        }
+        
         private async Task AutoAssignAndUpdateVoiceIdAsync(MeetingChatRoomSetting roomSetting, Guid meetingId, CancellationToken cancellationToken)
         {
             var userSetting = await _meetingDataProvider.DistributeLanguageForMeetingUserAsync(meetingId, cancellationToken).ConfigureAwait(false);
 
             Log.Information("SugarTalk get userSetting from addOrUpdate roomSetting :{userSetting}", JsonConvert.SerializeObject(userSetting));
 
-            var voiceId = roomSetting.ListeningLanguage switch
-            {
-                SpeechTargetLanguageType.Cantonese => (int)userSetting.CantoneseToneType,
-                SpeechTargetLanguageType.Mandarin => (int)userSetting.MandarinToneType,
-                SpeechTargetLanguageType.English => (int)userSetting.EnglishToneType,
-                SpeechTargetLanguageType.Spanish => (int)userSetting.SpanishToneType,
-                SpeechTargetLanguageType.Korean => (int)userSetting.KoreanToneType,
-                _ => 0
-            };
+            var randomTone = GetRandomToneType();
+            var voiceId = (int)randomTone;
 
-            var stringVoiceId = voiceId.ToString();
-
-            if (!string.IsNullOrEmpty(stringVoiceId))
+            if (!string.IsNullOrEmpty(voiceId.ToString()))
             {
-                roomSetting.VoiceId = stringVoiceId;
+                roomSetting.VoiceId = voiceId.ToString();
                 roomSetting.IsSystem = true;
                 roomSetting.Style = voiceId;
             }

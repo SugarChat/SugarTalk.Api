@@ -7,11 +7,11 @@ using SugarTalk.Messages.Requests.Meetings;
 
 namespace SugarTalk.Core.Handlers.RequestHandlers.Meetings;
 
-public class GenerateMeetingRecordTemporaryUrlRequestHandler : ICommandHandler<GenerateMeetingRecordTemporaryUrlCommand, GenerateMeetingRecordTemporaryUrlResponse>
+public class GenerateMeetingRecordTemporaryUrlCommandHandler : ICommandHandler<GenerateMeetingRecordTemporaryUrlCommand, GenerateMeetingRecordTemporaryUrlResponse>
 {
     private readonly IMeetingService _meetingService;
 
-    public GenerateMeetingRecordTemporaryUrlRequestHandler(IMeetingService meetingService)
+    public GenerateMeetingRecordTemporaryUrlCommandHandler(IMeetingService meetingService)
     {
         _meetingService = meetingService;
     }

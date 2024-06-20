@@ -353,15 +353,14 @@ public partial class MeetingServiceFixture
             response.Data.First().MeetingId.ShouldBe(meetingId);
             response.Data[0].OriginalText.ShouldBe("你好呀");
             response.Data[0].VoiceRecord.VoiceUrl.ShouldBe("test.url");
-            response.Data.First().UserName.ShouldBe("TEST_USER");
 
-            /*var voiceRecord = await repository
+            var voiceRecord = await repository
                 .QueryNoTracking<MeetingChatVoiceRecord>().ToListAsync();
             
             voiceRecord.Count.ShouldBe(2);
             voiceRecord[0].VoiceUrl.ShouldBe(voiceUrl);
             voiceRecord[0].TranslatedText.ShouldBe("你好呀");
-            voiceRecord[1].VoiceUrl.ShouldBe("test.url");*/
+            voiceRecord[1].VoiceUrl.ShouldBe("test.url");
 
         }, builder =>
         {

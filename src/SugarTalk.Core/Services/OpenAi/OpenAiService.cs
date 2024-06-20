@@ -6,6 +6,7 @@ using System.Threading;
 using SugarTalk.Core.Ioc;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using System.IO;
 using System.Net.Http;
 using System.Text;
 using Autofac;

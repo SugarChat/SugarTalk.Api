@@ -236,6 +236,15 @@ public class MeetingController : ControllerBase
 
         return Ok(response);
     }
+    
+    [Route("record/update"), HttpPost]
+    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(UpdateMeetingRecordUrlResponse))]
+    public async Task<IActionResult> UpdateMeetingRecordUrlAsync([FromBody] UpdateMeetingRecordUrlCommand command)
+    {
+        var response = await _mediator.SendAsync<UpdateMeetingRecordUrlCommand, UpdateMeetingRecordUrlResponse>(command).ConfigureAwait(false);
+
+        return Ok(response);
+    }
 
     #endregion
     
