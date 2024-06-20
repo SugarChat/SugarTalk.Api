@@ -17,8 +17,7 @@ namespace SugarTalk.Api
                 .AddJsonFile("appsettings.json")
                 .AddEnvironmentVariables()
                 .Build();
-
-            var apikey = new SerilogApiKeySetting(configuration).Value;
+            
             var serverUrl = new SerilogServerUrlSetting(configuration).Value;
             var application = new SerilogApplicationSetting(configuration).Value;
             
@@ -27,7 +26,7 @@ namespace SugarTalk.Api
                 .Enrich.FromLogContext()
                 .Enrich.WithProperty("Application", application)
                 .WriteTo.Console()
-                .WriteTo.Seq(serverUrl, apiKey: apikey)
+                .WriteTo.Seq(serverUrl)
                 .CreateLogger();
             
             try
