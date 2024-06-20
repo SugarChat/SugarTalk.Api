@@ -1,3 +1,4 @@
+using Aliyun.OSS;
 using AutoMapper;
 using NSubstitute;
 using SugarTalk.Core.Data;
@@ -8,6 +9,7 @@ using Microsoft.AspNetCore.Http;
 using SugarTalk.Core.Services.Http;
 using SugarTalk.Core.Services.Utils;
 using SugarTalk.Core.Services.Account;
+using SugarTalk.Core.Services.Aliyun;
 using SugarTalk.Core.Services.Identity;
 using SugarTalk.Core.Services.LiveKit;
 using SugarTalk.Core.Services.Meetings;
@@ -16,10 +18,11 @@ using SugarTalk.Core.Services.Http.Clients;
 using SugarTalk.Core.Services.AntMediaServer;
 using SugarTalk.Core.Services.Aws;
 using SugarTalk.Core.Services.Caching;
+using SugarTalk.Core.Services.Ffmpeg;
 using SugarTalk.Core.Services.Jobs;
 using SugarTalk.Core.Services.OpenAi;
-using SugarTalk.Core.Settings.Aliyun;
 using SugarTalk.Core.Settings.Aws;
+using SugarTalk.Core.Settings.Meeting;
 
 namespace SugarTalk.UnitTests;
 
@@ -32,6 +35,7 @@ public partial class BaseFixture
     protected readonly IClock _clock;
     protected readonly IMapper _mapper;
     protected readonly IUnitOfWork _unitOfWork;
+    protected readonly IFClubClient _fclubClient;
     protected readonly ICurrentUser _currentUser;
     protected readonly IOpenAiService _openAiService;
     protected readonly IConfiguration _configuration;
@@ -39,7 +43,6 @@ public partial class BaseFixture
     protected readonly IAntMediaServerUtilService _antMediaServerUtilService;
     protected readonly ILiveKitServerUtilService _liveKitServerUtilService;
     protected readonly LiveKitServerSetting _liveKitServerSetting;
-    protected readonly AliYunOssSettings _aliYunOssSetting;
     protected readonly AwsS3Settings _awsS3Settings;
     protected readonly IAwsS3Service _awsS3Service;
     protected readonly ISpeechClient _speechClient;
@@ -53,6 +56,9 @@ public partial class BaseFixture
     protected readonly ICacheManager _cacheManager;
     protected readonly ISmartiesClient _smartiesClient;
     protected readonly ISugarTalkBackgroundJobClient _sugarTalkBackgroundJobClient;
+    protected readonly IAliYunOssService _aliYunOssService = Substitute.For<IAliYunOssService>();
+    private readonly MeetingInfoSettings _meetingInfoSettings;
+    private readonly IFfmpegService _ffmpegService;
 
     public BaseFixture()
     {
@@ -73,10 +79,10 @@ public partial class BaseFixture
         _sugarTalkBackgroundJobClient = Substitute.For<ISugarTalkBackgroundJobClient>();
         _accountDataProvider = MockAccountDataProvider(_mapper, _repository, _unitOfWork, _currentUser);
         _meetingDataProvider = MockMeetingDataProvider(_clock, _mapper, _repository, _unitOfWork, _currentUser, _accountDataProvider);
-        _meetingService = MockMeetingService(_clock, _mapper, _unitOfWork, _currentUser, _cacheManager, _openAiService, _speechClient,
-            _liveKitClient, _aliYunOssSetting, _awsS3Settings, _awsS3Service, _smartiesClient, _translationClient, _meetingUtilService,
+        _meetingService = MockMeetingService(_clock, _mapper, _unitOfWork, _currentUser, _ffmpegService, _cacheManager, _openAiService, _speechClient,
+            _liveKitClient, _fclubClient, _awsS3Settings, _awsS3Service, _smartiesClient, _translationClient, _meetingUtilService,
             _meetingDataProvider, _accountDataProvider, _liveKitServerSetting, _httpClientFactory, _backgroundJobClient,
-            _liveKitServerUtilService, _antMediaServerUtilService, _sugarTalkBackgroundJobClient); 
+            _liveKitServerUtilService, _antMediaServerUtilService, _sugarTalkBackgroundJobClient, _meetingInfoSettings); 
         _meetingProcessJobService = MockMeetingProcessJobService(_clock, _unitOfWork, _meetingDataProvider);
     }
 
@@ -92,14 +98,15 @@ public partial class BaseFixture
 
     protected IMeetingService MockMeetingService(
         IClock clock,
-        IMapper mapper, 
+        IMapper mapper,
         IUnitOfWork unitOfWork,
         ICurrentUser currentUser,
+        IFfmpegService ffmpegService,
         ICacheManager cacheManager,
         IOpenAiService openAiService,
         ISpeechClient speechClient,
         ILiveKitClient liveKitClient,
-        AliYunOssSettings aliYunOssSetting,
+        IFClubClient fclubClient,
         AwsS3Settings awsS3Settings,
         IAwsS3Service awsS3Service,
         ISmartiesClient smartiesClient,
@@ -112,10 +119,11 @@ public partial class BaseFixture
         ISugarTalkBackgroundJobClient backgroundJobClient,
         ILiveKitServerUtilService liveKitServerUtilService,
         IAntMediaServerUtilService antMediaServerUtilService,
-        ISugarTalkBackgroundJobClient sugarTalkBackgroundJobClient)
+        ISugarTalkBackgroundJobClient sugarTalkBackgroundJobClient, 
+        MeetingInfoSettings meetingInfoSettings)
     {
         return new MeetingService(
-            clock, mapper, unitOfWork, currentUser, openAiService, speechClient, liveKitClient, aliYunOssSetting, awsS3Settings, awsS3Service, smartiesClient,
+            clock, mapper, unitOfWork, currentUser, ffmpegService, openAiService, speechClient, liveKitClient, fclubClient, awsS3Settings, awsS3Service, smartiesClient,
             translationClient, meetingUtilService, meetingDataProvider, accountDataProvider, liveKitServerSetting, 
             httpClientFactory, backgroundJobClient, liveKitServerUtilService, antMediaServerUtilService, sugarTalkBackgroundJobClient, null, cacheManager);
     }
@@ -130,7 +138,7 @@ public partial class BaseFixture
     {
         return new MeetingDataProvider(clock, mapper, repository, unitOfWork, currentUser, accountDataProvider);
     }
-    
+
     protected IMapper CreateMapper()
     {
         var config = new MapperConfiguration(cfg =>

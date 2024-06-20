@@ -1,20 +1,22 @@
 using System;
-using System.Collections.Generic;
 using Serilog;
+using System.IO;
 using System.Linq;
+using Newtonsoft.Json;
+using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
-using Newtonsoft.Json;
+using System.Collections.Generic;
+using SugarTalk.Messages.Dto.OpenAi;
 using SugarTalk.Core.Domain.Meeting;
+using SugarTalk.Messages.Enums.OpenAi;
 using SugarTalk.Messages.Dto.Meetings.Speak;
 using SugarTalk.Messages.Enums.Meeting.Speak;
 using SugarTalk.Messages.Events.Meeting.Speak;
 using SugarTalk.Messages.Commands.Meetings.Speak;
 using SugarTalk.Core.Services.Meetings.Exceptions;
-using SugarTalk.Messages.Dto.OpenAi;
-using SugarTalk.Messages.Enums.OpenAi;
-using CompletionsRequestMessageDto = SugarTalk.Messages.Dto.OpenAi.CompletionsRequestMessageDto;
 using OpenAiModel = SugarTalk.Messages.Enums.OpenAi.OpenAiModel;
+using CompletionsRequestMessageDto = SugarTalk.Messages.Dto.OpenAi.CompletionsRequestMessageDto;
 
 namespace SugarTalk.Core.Services.Meetings;
 
@@ -80,36 +82,56 @@ public partial class MeetingService
     
     private async Task TranscriptionMeetingAsync(List<MeetingSpeakDetail> speakDetails, MeetingRecord meetingRecord, CancellationToken cancellationToken)
     {
-        foreach (var speakDetail in speakDetails)
-        {
-            var recordFile = await _httpClientFactory.GetAsync<byte[]>(meetingRecord.Url, cancellationToken).ConfigureAwait(false);
-
-            var speakStartTimeVideo = speakDetail.SpeakStartTime - meetingRecord.CreatedDate.ToUnixTimeMilliseconds();
-            var speakEndTimeVideo = (speakDetail.SpeakEndTime ?? 0) - meetingRecord.CreatedDate.ToUnixTimeMilliseconds();
-
-            Log.Information("Start time of speak in video: {SpeakStartTimeVideo}, End time of speak in video: {SpeakEndTimeVideo}", speakStartTimeVideo, speakEndTimeVideo);
+        var localhostUrl = "";
         
-            try
-            {
-                speakDetail.OriginalContent = await _openAiService.TranscriptionAsync(
-                    recordFile, TranscriptionLanguage.Chinese, speakStartTimeVideo, speakEndTimeVideo,
-                    TranscriptionFileType.Mp4, TranscriptionResponseFormat.Text, cancellationToken: cancellationToken).ConfigureAwait(false);
-                
-                Log.Information("Complete transcribed content optimization" );
+        try
+        {
+            var presignedUrl = await _awsS3Service.GeneratePresignedUrlAsync(meetingRecord.Url, 30).ConfigureAwait(false);
+
+            localhostUrl = await DownloadWithRetryAsync(presignedUrl, cancellationToken: cancellationToken).ConfigureAwait(false);
+
+            var audio = await _ffmpegService.VideoToAudioConverterAsync(localhostUrl, cancellationToken);
             
-                speakDetail.FileTranscriptionStatus = FileTranscriptionStatus.Completed;
-            }
-            catch (Exception ex)
+            foreach (var speakDetail in speakDetails)
             {
-                speakDetail.FileTranscriptionStatus = FileTranscriptionStatus.Exception;
-            
-                Log.Information("transcription error: {ErrorMessage}", ex.Message);
+                var speakStartTimeVideo = speakDetail.SpeakStartTime - meetingRecord.CreatedDate.ToUnixTimeMilliseconds();
+                var speakEndTimeVideo = (speakDetail.SpeakEndTime ?? 0) - meetingRecord.CreatedDate.ToUnixTimeMilliseconds();
+
+                Log.Information("Start time of speak in video: {SpeakStartTimeVideo}, End time of speak in video: {SpeakEndTimeVideo}", speakStartTimeVideo, speakEndTimeVideo);
+
+                try
+                {
+                    speakDetail.OriginalContent = await _openAiService.TranscriptionAsync(
+                        audio, TranscriptionLanguage.Chinese, speakStartTimeVideo, speakEndTimeVideo,
+                        TranscriptionFileType.Mp3, TranscriptionResponseFormat.Text,
+                        cancellationToken: cancellationToken).ConfigureAwait(false);
+
+                    Log.Information("Complete transcribed content optimization");
+
+                    speakDetail.FileTranscriptionStatus = FileTranscriptionStatus.Completed;
+                }
+                catch (Exception ex)
+                {
+                    speakDetail.FileTranscriptionStatus = FileTranscriptionStatus.Exception;
+
+                    Log.Information("transcription error: {ErrorMessage}", ex.Message);
+                }
             }
+
+            await _meetingDataProvider.UpdateMeetingSpeakDetailsAsync(speakDetails, true, cancellationToken)
+                .ConfigureAwait(false);
+        }
+        catch (Exception ex)
+        {
+            Log.Information(ex.Message);
+        }
+        finally
+        {
+            if (File.Exists(localhostUrl))
+                File.Delete(localhostUrl);
         }
         
-        await _meetingDataProvider.UpdateMeetingSpeakDetailsAsync(speakDetails, true, cancellationToken).ConfigureAwait(false);
-        
-        _backgroundJobClient.Enqueue<IMeetingService>(x => x.OptimizeTranscribedContent(speakDetails, cancellationToken));
+        /*_backgroundJobClient.Enqueue<IMeetingService>(x => x.OptimizeTranscribedContent(speakDetails, cancellationToken));*/
     }
 
     public async Task OptimizeTranscribedContent(List<MeetingSpeakDetail> speakDetails, CancellationToken cancellationToken)
@@ -150,4 +172,57 @@ public partial class MeetingService
         
         await _meetingDataProvider.UpdateMeetingSpeakDetailsAsync(details, cancellationToken: cancellationToken).ConfigureAwait(false);
     }
+    
+    private async Task<string> DownloadWithRetryAsync(string url, int maxRetries = 5, CancellationToken cancellationToken = default)
+    {
+        for (var i = 0; i < maxRetries; i++)
+        {
+            try
+            {
+                var temporaryFile = $"{Guid.NewGuid()}.mp4";
+                var uploadUrl = await GetUrlAsync(url, cancellationToken).ConfigureAwait(false);
+                
+                Log.Information("Uploading url: {url}, temporaryFile: {temporaryFile}", uploadUrl, temporaryFile);
+
+                using var response = await Client.GetAsync(
+                    uploadUrl, HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
+                
+                response.EnsureSuccessStatusCode();
+
+                await using var contentStream = await response.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false);
+
+                await using var fileStream = new FileStream(temporaryFile, FileMode.Create, FileAccess.Write);
+               
+                await contentStream.CopyToAsync(fileStream, 8192, cancellationToken).ConfigureAwait(false);
+
+                return temporaryFile;
+            }
+            catch (TaskCanceledException ex) when (ex.InnerException is TimeoutException)
+            {
+                Log.Warning($"Timeout occurred while downloading {url}, retrying... ({i + 1}/{maxRetries})");
+                
+                if (i != maxRetries - 1) continue;
+                
+                Log.Error($"Failed to download {url} after {maxRetries} retries.");
+                throw;
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, $"Error occurred while downloading {url}");
+                throw;
+            }
+        }
+
+        return null!;
+    }
+    
+    private async Task<string> GetUrlAsync(string url, CancellationToken cancellationToken)
+    {
+        if (!url.StartsWith("http"))
+            return await _awsS3Service.GeneratePresignedUrlAsync(url, 30).ConfigureAwait(false);
+        
+        return url;
+    }
+    
+    private static readonly HttpClient Client = new HttpClient { Timeout = TimeSpan.FromSeconds(300) };
 }

@@ -215,22 +215,13 @@ public partial class MeetingService
         await _meetingDataProvider.UpdateMeetingChatVoiceRecordAsync(record, true, cancellationToken).ConfigureAwait(false);
     }
     
-    private async Task GenerateSystemVoiceUrlAsync(MeetingChatVoiceRecord record, int voiceId, CancellationToken cancellationToken)
+    private async Task GenerateSystemVoiceUrlAsync(MeetingChatVoiceRecord record, int voiceId, bool isSpecifyVoice, CancellationToken cancellationToken)
     {
         Log.Information("Start generating system voice url");
+
+        var textToSpeech = BuildTextToSpeech(record, voiceId, isSpecifyVoice);
         
-        var targetLanguage = record.VoiceLanguage switch
-        {
-            SpeechTargetLanguageType.Cantonese => new TextToSpeechDto { Text = record.TranslatedText, CantoneseToneType = (CantoneseToneType)voiceId},
-            SpeechTargetLanguageType.Mandarin => new TextToSpeechDto { Text = record.TranslatedText, MandarinToneType = (MandarinToneType)voiceId },
-            SpeechTargetLanguageType.English => new TextToSpeechDto { Text = record.TranslatedText, EnglishToneType = (EnglishToneType)voiceId },
-            SpeechTargetLanguageType.Japanese => new TextToSpeechDto { Text = record.TranslatedText, JapaneseToneType = (JapaneseToneType)voiceId },
-            SpeechTargetLanguageType.Spanish => new TextToSpeechDto { Text = record.TranslatedText, SpanishToneType = (SpanishToneType)voiceId },
-            SpeechTargetLanguageType.Korean => new TextToSpeechDto { Text = record.TranslatedText, KoreanToneType = (KoreanToneType)voiceId },
-            SpeechTargetLanguageType.French => new TextToSpeechDto { Text = record.TranslatedText, FrenchToneType = (FrenchToneType)voiceId }
-        };
-            
-        record.VoiceUrl = (await _speechClient.GetAudioFromTextAsync(targetLanguage, cancellationToken).ConfigureAwait(false))?.Result;
+        record.VoiceUrl = (await _speechClient.GetAudioFromTextAsync(textToSpeech, cancellationToken).ConfigureAwait(false))?.Result;
         
         record.GenerationStatus = !string.IsNullOrEmpty(record.VoiceUrl)
             ? ChatRecordGenerationStatus.Completed 
@@ -239,6 +230,26 @@ public partial class MeetingService
         Log.Information("Generated system voice url{@MeetingChatVoiceRecord}", record);
         
         await _meetingDataProvider.UpdateMeetingChatVoiceRecordAsync(record, true, cancellationToken).ConfigureAwait(false);
+    }
+
+    private static TextToSpeechDto BuildTextToSpeech(MeetingChatVoiceRecord record, int voiceId, bool isSpecifyVoice) =>
+        record.VoiceLanguage switch
+        {
+            SpeechTargetLanguageType.Cantonese => new TextToSpeechDto { Text = record.TranslatedText, CantoneseToneType = isSpecifyVoice ? (CantoneseToneType)voiceId : GetRandomEnumValue<CantoneseToneType>() },
+            SpeechTargetLanguageType.Mandarin => new TextToSpeechDto { Text = record.TranslatedText, MandarinToneType = isSpecifyVoice ? (MandarinToneType)voiceId : GetRandomEnumValue<MandarinToneType>() },
+            SpeechTargetLanguageType.English => new TextToSpeechDto { Text = record.TranslatedText, EnglishToneType = isSpecifyVoice ? (EnglishToneType)voiceId : GetRandomEnumValue<EnglishToneType>() },
+            SpeechTargetLanguageType.Japanese => new TextToSpeechDto { Text = record.TranslatedText, JapaneseToneType = isSpecifyVoice ? (JapaneseToneType)voiceId : GetRandomEnumValue<JapaneseToneType>() },
+            SpeechTargetLanguageType.Spanish => new TextToSpeechDto { Text = record.TranslatedText, SpanishToneType = isSpecifyVoice ? (SpanishToneType)voiceId : GetRandomEnumValue<SpanishToneType>() },
+            SpeechTargetLanguageType.Korean => new TextToSpeechDto { Text = record.TranslatedText, KoreanToneType = isSpecifyVoice ? (KoreanToneType)voiceId : GetRandomEnumValue<KoreanToneType>() },
+            SpeechTargetLanguageType.French => new TextToSpeechDto { Text = record.TranslatedText, FrenchToneType = isSpecifyVoice ? (FrenchToneType)voiceId : GetRandomEnumValue<FrenchToneType>() }
+        };
+    
+    private static T GetRandomEnumValue<T>() where T : Enum
+    {
+        var random = new Random();
+        var values = Enum.GetValues(typeof(T));
+        var randomValue = (T)values.GetValue(random.Next(values.Length));
+        return randomValue;
     }
 
     public async Task<MeetingSpeechUpdatedEvent> UpdateMeetingSpeechAsync(
@@ -333,7 +344,7 @@ public partial class MeetingService
         var meetingChatRoomSetting = await _meetingDataProvider.GetMeetingChatRoomSettingByVoiceIdAsync(meetingChatVoiceRecord.VoiceId, cancellationToken).ConfigureAwait(false);
         meetingChatRoomSetting.ListeningLanguage = meetingChatVoiceRecord.VoiceLanguage;
 
-        await GenerateChatRecordProcessAsync(meetingRecord, meetingChatRoomSetting, shouldGenerateSpeech, cancellationToken).ConfigureAwait(false);
+        await GenerateChatRecordProcessAsync(meetingRecord, meetingChatRoomSetting, shouldGenerateSpeech, false, cancellationToken).ConfigureAwait(false);
     }
 
     public async Task GenerateChatRecordAsync(Guid meetingId, MeetingSpeech meetingSpeech, CancellationToken cancellationToken)
@@ -357,11 +368,11 @@ public partial class MeetingService
         
         await _meetingDataProvider.AddMeetingChatVoiceRecordAsync(new List<MeetingChatVoiceRecord> { meetingRecord }, true, cancellationToken).ConfigureAwait(false);
 
-        _backgroundJobClient.Enqueue(() => GenerateChatRecordProcessAsync(meetingRecord, roomSetting, meetingSpeech, cancellationToken));
+        _backgroundJobClient.Enqueue(() => GenerateChatRecordProcessAsync(meetingRecord, roomSetting, meetingSpeech, true,  cancellationToken));
     }
 
     public async Task GenerateChatRecordProcessAsync(
-        MeetingChatVoiceRecord meetingChatVoiceRecord, MeetingChatRoomSetting roomSetting, MeetingSpeech meetingSpeech, CancellationToken cancellationToken = default)
+        MeetingChatVoiceRecord meetingChatVoiceRecord, MeetingChatRoomSetting roomSetting, MeetingSpeech meetingSpeech, bool isSpeacifyVoice, CancellationToken cancellationToken = default)
     {
         Log.Information("Generate Chat Record Process Room setting: {@RoomSetting}", roomSetting);
         
@@ -369,7 +380,7 @@ public partial class MeetingService
         
         if (roomSetting.IsSystem)
         {
-            await GenerateSystemVoiceUrlAsync(meetingChatVoiceRecord, int.Parse(roomSetting.VoiceId), cancellationToken).ConfigureAwait(false);
+            await GenerateSystemVoiceUrlAsync(meetingChatVoiceRecord, int.Parse(roomSetting.VoiceId), isSpeacifyVoice, cancellationToken).ConfigureAwait(false);
         }
         else
         {
