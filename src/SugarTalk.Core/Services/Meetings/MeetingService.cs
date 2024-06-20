@@ -311,22 +311,15 @@ namespace SugarTalk.Core.Services.Meetings
 
             Log.Information("SugarTalk get userSetting from JoinMeetingAsync :{userSetting}", JsonConvert.SerializeObject(userSetting));
             
+            var randomTone = GetRandomToneType();
+            var voiceId = (int)randomTone;
+            
             await _meetingDataProvider.AddMeetingChatRoomSettingAsync(new MeetingChatRoomSetting
             {
                 IsSystem = true,
                 UserId = userSetting.UserId,
                 MeetingId = meeting.Id,
-                VoiceId = userSetting.TargetLanguageType switch
-                {
-                    SpeechTargetLanguageType.Cantonese => ((int)userSetting.CantoneseToneType).ToString(),
-                    SpeechTargetLanguageType.Mandarin => ((int)userSetting.MandarinToneType).ToString(),
-                    SpeechTargetLanguageType.English => ((int)userSetting.EnglishToneType).ToString(),
-                    SpeechTargetLanguageType.Spanish => ((int)userSetting.SpanishToneType).ToString(),
-                    SpeechTargetLanguageType.French => ((int)userSetting.FrenchToneType).ToString(),
-                    SpeechTargetLanguageType.Korean => ((int)userSetting.KoreanToneType).ToString(),
-                    SpeechTargetLanguageType.Japanese => ((int)userSetting.JapaneseToneType).ToString(),
-                    _ => string.Empty
-                }
+                VoiceId = voiceId.ToString()
             }, true, cancellationToken).ConfigureAwait(false);
             
             return new MeetingJoinedEvent
@@ -632,28 +625,27 @@ namespace SugarTalk.Core.Services.Meetings
 
             return new ChatRoomSettingAddOrUpdateEvent();
         }
-
+        
+        private static GeneralToneType GetRandomToneType()
+        {
+            var random = new Random();
+            var values = Enum.GetValues(typeof(GeneralToneType));
+            var randomTone = (GeneralToneType)values.GetValue(random.Next(values.Length));
+            return randomTone;
+        }
+        
         private async Task AutoAssignAndUpdateVoiceIdAsync(MeetingChatRoomSetting roomSetting, Guid meetingId, CancellationToken cancellationToken)
         {
             var userSetting = await _meetingDataProvider.DistributeLanguageForMeetingUserAsync(meetingId, cancellationToken).ConfigureAwait(false);
 
             Log.Information("SugarTalk get userSetting from addOrUpdate roomSetting :{userSetting}", JsonConvert.SerializeObject(userSetting));
 
-            var voiceId = roomSetting.ListeningLanguage switch
-            {
-                SpeechTargetLanguageType.Cantonese => (int)userSetting.CantoneseToneType,
-                SpeechTargetLanguageType.Mandarin => (int)userSetting.MandarinToneType,
-                SpeechTargetLanguageType.English => (int)userSetting.EnglishToneType,
-                SpeechTargetLanguageType.Spanish => (int)userSetting.SpanishToneType,
-                SpeechTargetLanguageType.Korean => (int)userSetting.KoreanToneType,
-                _ => 0
-            };
+            var randomTone = GetRandomToneType();
+            var voiceId = (int)randomTone;
 
-            var stringVoiceId = voiceId.ToString();
-
-            if (!string.IsNullOrEmpty(stringVoiceId))
+            if (!string.IsNullOrEmpty(voiceId.ToString()))
             {
-                roomSetting.VoiceId = stringVoiceId;
+                roomSetting.VoiceId = voiceId.ToString();
                 roomSetting.IsSystem = true;
                 roomSetting.Style = voiceId;
             }

@@ -1135,15 +1135,15 @@ public partial class MeetingServiceFixture : MeetingFixtureBase
                 {
                     meetingChatRoom.SelfLanguage.ShouldBe(selfLanguage);
                     meetingChatRoom.ListeningLanguage.ShouldBe(listeningLanguage);
-                    meetingChatRoom.VoiceId.ShouldNotBeEmpty();
-                    meetingChatRoom.Style.ShouldNotBeNull();
+                    meetingChatRoom.VoiceId.ShouldNotBe("123");
+                    meetingChatRoom.Style.ShouldNotBe(123);
                 }
                 else
                 {
                     meetingChatRoom.SelfLanguage.ShouldBe(selfLanguage);
                     meetingChatRoom.ListeningLanguage.ShouldBe(listeningLanguage);
-                    meetingChatRoom.VoiceId.ShouldNotBeEmpty();
-                    meetingChatRoom.Style.ShouldNotBeNull();
+                    meetingChatRoom.VoiceId.ShouldNotBe("123456");
+                    meetingChatRoom.Style.ShouldNotBe(123456);
                     meetingChatRoom.Speed.ShouldBeNull();
                     meetingChatRoom.Transpose.ShouldBeNull();
                 }
