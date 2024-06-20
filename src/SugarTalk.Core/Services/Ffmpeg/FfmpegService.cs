@@ -17,6 +17,8 @@ public interface IFfmpegService : IScopedDependency
     Task<List<byte[]>> SpiltAudioAsync(byte[] audioBytes, long startTime, long endTime, CancellationToken cancellationToken);
 
     Task<byte[]> ConvertFileFormatAsync(byte[] file, TranscriptionFileType fileType, CancellationToken cancellationToken);
+
+    Task<byte[]> VideoToAudioConverterAsync(string url, CancellationToken cancellationToken);
 }
 
 public class FfmpegService : IFfmpegService
@@ -88,7 +90,71 @@ public class FfmpegService : IFfmpegService
             if (File.Exists(outputFileName)) File.Delete(outputFileName);
         }
     }
+    
+    public async Task<byte[]> ConvertMp3ToWavAsync(byte[] mp3Bytes, int? samplingRate = null, CancellationToken cancellationToken = default)
+    {
+        var baseFileName = Guid.NewGuid().ToString();
+        var inputFileName = $"{baseFileName}.mp3";
+        var outputFileName = $"{baseFileName}.wav";
+    
+        try
+        {
+            Log.Information("Converting mp3 to wav, the mp3 length is {Length}", mp3Bytes.Length);
 
+            await File.WriteAllBytesAsync(inputFileName, mp3Bytes, cancellationToken).ConfigureAwait(false);
+
+            if (!File.Exists(inputFileName))
+            {
+                Log.Information("Converting mp3 to wav, persisted mp3 file failed");
+                return Array.Empty<byte>();
+            }
+
+            using (var proc = new Process())
+            {
+                proc.StartInfo = new ProcessStartInfo
+                {
+                    FileName = "ffmpeg",
+                    RedirectStandardError = true,
+                    RedirectStandardOutput = true,
+                    Arguments = samplingRate.HasValue
+                        ? $"-i {inputFileName} -vn -acodec pcm_s16le -ar {samplingRate.Value} {outputFileName}"
+                        : $"-i {inputFileName} -vn -acodec pcm_s16le {outputFileName}"
+                };
+
+                proc.ErrorDataReceived += (_, e) =>
+                {
+                    if (!string.IsNullOrEmpty(e.Data))
+                        Log.Information("Converting mp3 to wav: {Output}", e.Data);
+                };
+
+                proc.Start();
+                proc.BeginErrorReadLine();
+                proc.BeginOutputReadLine();
+
+                await proc.WaitForExitAsync(cancellationToken).ConfigureAwait(false);
+            }
+
+            if (File.Exists(outputFileName))
+                return await File.ReadAllBytesAsync(outputFileName, cancellationToken).ConfigureAwait(false);
+            
+            Log.Information("Converting mp3 to wav, failed to generate wav");
+            
+            return Array.Empty<byte>();
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Converting mp3 to wav error occurred");
+            return Array.Empty<byte>();
+        }
+        finally
+        {
+            Log.Information("Converting mp3 to wav finally deleting files");
+            
+            if (File.Exists(inputFileName)) File.Delete(inputFileName);
+            if (File.Exists(outputFileName)) File.Delete(outputFileName);
+        }
+    }
+    
     public async Task<List<byte[]>> SplitAudioAsync(byte[] audioBytes, long secondsPerAudio,
         CancellationToken cancellationToken)
     {
@@ -233,7 +299,61 @@ public class FfmpegService : IFfmpegService
         {
             TranscriptionFileType.Wav => file,
             TranscriptionFileType.Mp4 => await ConvertMp4ToWavAsync(file, cancellationToken).ConfigureAwait(false),
+            TranscriptionFileType.Mp3 => await ConvertMp3ToWavAsync(file,cancellationToken: cancellationToken).ConfigureAwait(false),
             _ => Array.Empty<byte>()
         };
+    }
+    
+    public async Task<byte[]> VideoToAudioConverterAsync(string url, CancellationToken cancellationToken)
+    {
+        var outputFileName = $"{Guid.NewGuid()}.mp3";
+        
+        try
+        {
+            var arguments = $"-i {url} -vn -acodec libmp3lame -ac 1 {outputFileName}";
+
+            using (var proc = new Process())
+            {
+                proc.StartInfo = new ProcessStartInfo
+                {
+                    FileName = "ffmpeg",
+                    RedirectStandardError = true,
+                    RedirectStandardOutput = true,
+                    Arguments = arguments
+                };
+
+                proc.ErrorDataReceived += (_, e) =>
+                {
+                    if (!string.IsNullOrEmpty(e.Data))
+                        Log.Information("FFmpeg Output: {Output}", e.Data);
+                };
+
+                proc.Start();
+                proc.BeginErrorReadLine();
+                proc.BeginOutputReadLine();
+
+                await proc.WaitForExitAsync(cancellationToken).ConfigureAwait(false);
+            }
+            
+            if (File.Exists(outputFileName))
+                return await File.ReadAllBytesAsync(outputFileName, cancellationToken).ConfigureAwait(false);
+            
+            Log.Error("Failed to generate the combined video file.");
+            
+            return Array.Empty<byte>();
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Video to audio error.");
+
+            return Array.Empty<byte>();
+        }
+        finally
+        {
+            Log.Information("Video to audio file finally deleting files");
+
+            if (File.Exists(outputFileName))
+                File.Delete(outputFileName);
+        }
     }
 }

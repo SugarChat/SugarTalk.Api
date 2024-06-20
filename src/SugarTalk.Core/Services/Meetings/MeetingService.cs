@@ -20,7 +20,6 @@ using SugarTalk.Core.Services.Http.Clients;
 using SugarTalk.Core.Services.Identity;
 using SugarTalk.Core.Services.LiveKit;
 using SugarTalk.Core.Services.Utils;
-using SugarTalk.Core.Settings.Aliyun;
 using SugarTalk.Core.Settings.LiveKit;
 using SugarTalk.Messages.Commands.Meetings;
 using SugarTalk.Messages.Commands.Speech;
@@ -31,6 +30,7 @@ using SugarTalk.Messages.Enums.Account;
 using SugarTalk.Core.Domain.Meeting;
 using SugarTalk.Core.Services.Aws;
 using SugarTalk.Core.Services.Caching;
+using SugarTalk.Core.Services.Ffmpeg;
 using SugarTalk.Core.Services.Http;
 using SugarTalk.Core.Services.OpenAi;
 using SugarTalk.Core.Settings.Aws;
@@ -106,9 +106,11 @@ namespace SugarTalk.Core.Services.Meetings
         private readonly IMapper _mapper;
         private readonly IUnitOfWork _unitOfWork;
         private readonly ICurrentUser _currentUser;
-        private readonly IOpenAiService _openAiService;
+        private readonly IFfmpegService _ffmpegService;
         private readonly ISpeechClient _speechClient;
         private readonly ILiveKitClient _liveKitClient;
+        private readonly IFClubClient _fclubClient;
+        private readonly IOpenAiService _openAiService;
         private readonly IAwsS3Service _awsS3Service;
         private readonly AwsS3Settings _awsS3Settings;
         private readonly ICacheManager _cacheManager;
@@ -122,8 +124,6 @@ namespace SugarTalk.Core.Services.Meetings
         private readonly ILiveKitServerUtilService _liveKitServerUtilService;
         private readonly IAntMediaServerUtilService _antMediaServerUtilService;
         private readonly ISugarTalkBackgroundJobClient _sugarTalkBackgroundJobClient;
-
-        private readonly AliYunOssSettings _aliYunOssSetting;
         private readonly LiveKitServerSetting _liveKitServerSetting;
         private readonly MeetingInfoSettings _meetingInfoSettings;
         
@@ -132,10 +132,11 @@ namespace SugarTalk.Core.Services.Meetings
             IMapper mapper,
             IUnitOfWork unitOfWork,
             ICurrentUser currentUser,
+            IFfmpegService ffmpegService,
             IOpenAiService openAiService,
             ISpeechClient speechClient,
             ILiveKitClient liveKitClient,
-            AliYunOssSettings aliYunOssSetting,
+            IFClubClient fclubClient,
             AwsS3Settings awsS3Settings,
             IAwsS3Service awsS3Service,
             ISmartiesClient smartiesClient,
@@ -155,10 +156,11 @@ namespace SugarTalk.Core.Services.Meetings
             _mapper = mapper;
             _unitOfWork = unitOfWork;
             _currentUser = currentUser;
+            _ffmpegService = ffmpegService;
             _openAiService = openAiService;
             _speechClient = speechClient;
             _liveKitClient = liveKitClient;
-            _aliYunOssSetting = aliYunOssSetting;
+            _fclubClient = fclubClient;
             _awsS3Service = awsS3Service;
             _cacheManager = cacheManager;
             _smartiesClient = smartiesClient;
