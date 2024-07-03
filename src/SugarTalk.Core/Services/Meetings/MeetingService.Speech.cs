@@ -383,7 +383,7 @@ public partial class MeetingService
     public async Task GenerateChatRecordProcessAsync(
         MeetingChatVoiceRecord meetingChatVoiceRecord, MeetingChatRoomSetting roomSetting, MeetingSpeech meetingSpeech, bool isSpeacifyVoice, CancellationToken cancellationToken = default)
     {
-        Log.Information("Generate Chat Record Process Room setting: {@RoomSetting}", roomSetting);
+        Log.Information($"Generate Chat Record Process Room setting and record: {@roomSetting}, record: {@meetingChatVoiceRecord}", roomSetting, meetingChatVoiceRecord);
         
         await TranslateAndGenerateTextAsync(roomSetting.ListeningLanguage, meetingChatVoiceRecord, meetingSpeech, cancellationToken).ConfigureAwait(false);
         
