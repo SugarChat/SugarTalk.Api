@@ -52,7 +52,7 @@ public partial class MeetingDataProvider
     public async Task<MeetingSummaryBaseInfoDto> GetMeetingSummaryBaseBySummaryIdInfoAsync(int meetingSummaryId, CancellationToken cancellationToken)
     {
         var query =
-            from summary in _repository.Query<MeetingSummary>()
+            from summary in _repository.Query<MeetingSummary>().Where(x => x.Id == meetingSummaryId)
             join record in _repository.Query<MeetingRecord>() on summary.RecordId equals record.Id
             join meeting in _repository.Query<Meeting>() on record.MeetingId equals meeting.Id
             join user in _repository.Query<UserAccount>() on meeting.MeetingMasterUserId equals user.Id
