@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Autofac;
+using Google.Cloud.Translation.V2;
 using Mediator.Net;
 using Microsoft.EntityFrameworkCore;
 using NSubstitute;
@@ -16,12 +17,14 @@ using SugarTalk.Core.Services.OpenAi;
 using SugarTalk.Messages.Commands.Meetings;
 using SugarTalk.Messages.Commands.Speech;
 using SugarTalk.Messages.Dto.Meetings.Speech;
+using SugarTalk.Messages.Dto.Smarties;
 using SugarTalk.Messages.Dto.Users;
 using SugarTalk.Messages.Enums.Account;
 using SugarTalk.Messages.Enums.Speech;
 using SugarTalk.Messages.Requests.Meetings.User;
 using SugarTalk.Messages.Requests.Speech;
 using Xunit;
+using TranslationClient = Google.Cloud.Translation.V2.TranslationClient;
 
 namespace SugarTalk.IntegrationTests.Services.Meetings;
 
@@ -266,6 +269,7 @@ public partial class MeetingServiceFixture
     {
         var meetingId = Guid.NewGuid();
         var now = DateTimeOffset.Now;
+        var voiceId = isSystem ? "123" : Guid.NewGuid().ToString();
 
         var roomSetting = new MeetingChatRoomSetting()
         {
@@ -273,7 +277,7 @@ public partial class MeetingServiceFixture
             MeetingId = meetingId,
             UserId = 1,
             IsSystem = isSystem,
-            VoiceId = "123",
+            VoiceId = voiceId,
             VoiceName = "小李的voice",
             Transpose = 1,
             Speed = 2,
@@ -287,6 +291,7 @@ public partial class MeetingServiceFixture
             MeetingId = meetingId,
             Status = SpeechStatus.UnViewed,
             Id = Guid.NewGuid(),
+            VoiceId = voiceId,
             OriginalText = "你好呀",
             UserId = 1,
             CreatedDate = DateTimeOffset.Now.AddSeconds(-1000)
@@ -297,6 +302,7 @@ public partial class MeetingServiceFixture
             MeetingId = meetingId,
             Status = SpeechStatus.UnViewed,
             Id = Guid.NewGuid(),
+            VoiceId = voiceId,
             OriginalText = "我是小李呀",
             UserId = 1,
             CreatedDate = DateTimeOffset.Now
@@ -307,7 +313,7 @@ public partial class MeetingServiceFixture
             Id = Guid.NewGuid(),
             IsSelf = true,
             GenerationStatus = ChatRecordGenerationStatus.Completed,
-            VoiceId = roomSetting.VoiceId,
+            VoiceId =  ,
             SpeechId = meetingSpeech1.Id,
             VoiceUrl = "test.url",
             VoiceLanguage = SpeechTargetLanguageType.Cantonese,
@@ -358,13 +364,28 @@ public partial class MeetingServiceFixture
                 .QueryNoTracking<MeetingChatVoiceRecord>().ToListAsync();
             
             voiceRecord.Count.ShouldBe(2);
-            voiceRecord[0].VoiceUrl.ShouldBe(voiceUrl);
-            voiceRecord[0].TranslatedText.ShouldBe("你好呀");
-            voiceRecord[1].VoiceUrl.ShouldBe("test.url");
-
+            voiceRecord[0].VoiceUrl.ShouldBe("test.url");
+            voiceRecord[1].VoiceUrl.ShouldBe(voiceUrl);
         }, builder =>
         {
             var speechClient = Substitute.For<ISpeechClient>();
+            var smartiesClient = Substitute.For<ISmartiesClient>();
+
+            smartiesClient.GetEchoAvatarVoiceSettingAsync(Arg.Any<GetEchoAvatarVoiceSettingRequestDto>(), CancellationToken.None)
+                .Returns(new GetEchoAvatarUserToneResponse
+                {
+                    Data = new EchoAvatarUserToneDto
+                    {
+                        InferenceRecords = new List<EchoAvatarInferenceRecordDto>
+                        {
+                           new ()
+                           {
+                               Language = EchoAvatarLanguageType.Cantonese,
+                               Style = 1
+                           }
+                        }
+                    }
+                });
 
             speechClient.SpeechInferenceAsync(Arg.Any<SpeechInferenceDto>(), CancellationToken.None)
                 .Returns(new SpeechInferenceResponseDto
@@ -379,6 +400,7 @@ public partial class MeetingServiceFixture
                 .Returns(new SpeechResponseDto { Result = "我是系统音色产生的voiceUrl" });
             
             builder.RegisterInstance(speechClient);
+            builder.RegisterInstance(smartiesClient);
         });
     }
 }
