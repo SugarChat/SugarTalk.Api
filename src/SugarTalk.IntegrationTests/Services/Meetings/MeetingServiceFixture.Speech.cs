@@ -313,7 +313,7 @@ public partial class MeetingServiceFixture
             Id = Guid.NewGuid(),
             IsSelf = true,
             GenerationStatus = ChatRecordGenerationStatus.Completed,
-            VoiceId =  ,
+            VoiceId = roomSetting.VoiceId,
             SpeechId = meetingSpeech1.Id,
             VoiceUrl = "test.url",
             VoiceLanguage = SpeechTargetLanguageType.Cantonese,
