@@ -363,6 +363,8 @@ public partial class MeetingServiceFixture
             var voiceRecord = await repository
                 .QueryNoTracking<MeetingChatVoiceRecord>().ToListAsync();
             
+            voiceRecord = voiceRecord.OrderBy(x => x.CreatedDate).ToList();
+            
             voiceRecord.Count.ShouldBe(2);
             voiceRecord[0].VoiceUrl.ShouldBe("test.url");
             voiceRecord[1].VoiceUrl.ShouldBe(voiceUrl);
