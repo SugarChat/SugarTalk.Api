@@ -313,7 +313,7 @@ namespace SugarTalk.Core.Services.Meetings
 
             Log.Information("SugarTalk get userSetting from JoinMeetingAsync :{userSetting}", JsonConvert.SerializeObject(userSetting));
             
-            var randomTone = GetRandomToneType<CantoneseToneType>();
+            var randomTone = GetRandomEnumValue<CantoneseToneType>();
             var voiceId = (int)randomTone;
             
             await _meetingDataProvider.AddMeetingChatRoomSettingAsync(new MeetingChatRoomSetting
@@ -628,14 +628,6 @@ namespace SugarTalk.Core.Services.Meetings
             return new ChatRoomSettingAddOrUpdateEvent();
         }
         
-        private static T GetRandomToneType<T>()
-        {
-            var random = new Random();
-            var values = Enum.GetValues(typeof(T));
-            var randomTone = (T)values.GetValue(random.Next(values.Length));
-            return randomTone;
-        }
-        
         private async Task AutoAssignAndUpdateVoiceIdAsync(MeetingChatRoomSetting roomSetting, Guid meetingId, CancellationToken cancellationToken)
         {
             var userSetting = await _meetingDataProvider.DistributeLanguageForMeetingUserAsync(meetingId, cancellationToken).ConfigureAwait(false);
@@ -644,8 +636,8 @@ namespace SugarTalk.Core.Services.Meetings
             
             var voiceId = roomSetting.ListeningLanguage switch
             {
-                SpeechTargetLanguageType.Cantonese => (int)GetRandomToneType<CantoneseToneType>(),
-                _ => (int)GetRandomToneType<GeneralToneType>()
+                SpeechTargetLanguageType.Cantonese => (int)GetRandomEnumValue<CantoneseToneType>(),
+                _ => (int)GetRandomEnumValue<GeneralToneType>()
             };
 
             if (!string.IsNullOrEmpty(voiceId.ToString()))
