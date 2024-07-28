@@ -235,7 +235,7 @@ public partial class MeetingService
     private static TextToSpeechDto BuildTextToSpeech(MeetingChatVoiceRecord record, int voiceId, bool isSpecifyVoice) =>
         record.VoiceLanguage switch
         {
-            SpeechTargetLanguageType.Cantonese => new TextToSpeechDto { Text = record.TranslatedText, CantoneseToneType = GetRandomEnumValue<CantoneseToneType>() },
+            SpeechTargetLanguageType.Cantonese => new TextToSpeechDto { Text = record.TranslatedText, CantoneseToneType = isSpecifyVoice ? (CantoneseToneType)voiceId : GetRandomEnumValue<CantoneseToneType>() },
             SpeechTargetLanguageType.Mandarin => new TextToSpeechDto { Text = record.TranslatedText, MandarinToneType = isSpecifyVoice ? (MandarinToneType)voiceId : GetRandomEnumValue<MandarinToneType>() },
             SpeechTargetLanguageType.English => new TextToSpeechDto { Text = record.TranslatedText, EnglishToneType = isSpecifyVoice ? (EnglishToneType)voiceId : GetRandomEnumValue<EnglishToneType>() },
             SpeechTargetLanguageType.Japanese => new TextToSpeechDto { Text = record.TranslatedText, JapaneseToneType = isSpecifyVoice ? (JapaneseToneType)voiceId : GetRandomEnumValue<JapaneseToneType>() },
