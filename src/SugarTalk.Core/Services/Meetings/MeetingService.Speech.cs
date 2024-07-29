@@ -51,7 +51,7 @@ public partial class MeetingService
                         FileFormat = "wav"
                     }
                 },
-                LanguageId = (int) meetingSetting.SelfLanguage,
+                LanguageId = (int)meetingSetting.SelfLanguage,
                 ResponseFormat = "text"
             }, cancellationToken).ConfigureAwait(false);
 
