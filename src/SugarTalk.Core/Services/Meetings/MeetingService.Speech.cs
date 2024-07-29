@@ -38,6 +38,8 @@ public partial class MeetingService
     {
         if (!_currentUser.Id.HasValue) throw new UnauthorizedAccessException();
 
+        var meetingSetting = await _meetingDataProvider.GetMeetingChatRoomSettingByMeetingIdAsync(_currentUser.Id.Value, command.MeetingId, cancellationToken).ConfigureAwait(false);
+        
         var responseToText = await _speechClient.GetTextFromAudioAsync(
             new SpeechToTextDto
             {
@@ -49,15 +51,13 @@ public partial class MeetingService
                         FileFormat = "wav"
                     }
                 },
-                LanguageId = 20,
+                LanguageId = (int) meetingSetting.SelfLanguage,
                 ResponseFormat = "text"
             }, cancellationToken).ConfigureAwait(false);
 
         Log.Information("SugarTalk response to text :{responseToText}", JsonConvert.SerializeObject(responseToText));
 
         if (responseToText is null) return new MeetingAudioSavedEvent { Result = "Ai does not recognize the audio content" };
-
-        var meetingSetting = await _meetingDataProvider.GetMeetingChatRoomSettingByMeetingIdAsync(_currentUser.Id.Value, command.MeetingId, cancellationToken).ConfigureAwait(false);
         
         var meetingSpeech = new MeetingSpeech
         {
