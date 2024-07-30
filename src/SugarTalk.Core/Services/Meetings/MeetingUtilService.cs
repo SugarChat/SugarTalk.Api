@@ -8,6 +8,8 @@ using System.Collections.Generic;
 using SugarTalk.Messages.Dto.OpenAi;
 using SugarTalk.Core.Services.OpenAi;
 using SugarTalk.Messages.Enums.OpenAi;
+using SugarTalk.Messages.Dto.Smarties;
+using SugarTalk.Core.Services.Http.Clients;
 using SugarTalk.Messages.Dto.Meetings.Summary;
 
 namespace SugarTalk.Core.Services.Meetings;
@@ -21,10 +23,12 @@ public interface IMeetingUtilService : IScopedDependency
 public class MeetingUtilService : IMeetingUtilService
 {
     private readonly IOpenAiService _openAiService;
+    private readonly ISmartiesClient _smartiesClient;
 
-    public MeetingUtilService(IOpenAiService openAiService)
+    public MeetingUtilService(IOpenAiService openAiService, ISmartiesClient smartiesClient)
     {
         _openAiService = openAiService;
+        _smartiesClient = smartiesClient;
     }
 
     public async Task<string> SummarizeAsync(
@@ -101,12 +105,18 @@ public class MeetingUtilService : IMeetingUtilService
             }
         };
 
-        var summary = 
-            await _openAiService.ChatCompletionsAsync(messages, model: OpenAiModel.Gpt40Turbo, cancellationToken: cancellationToken).ConfigureAwait(false);
+        /*var summary = 
+            await _openAiService.ChatCompletionsAsync(messages, model: OpenAiModel.Gpt40Turbo, cancellationToken: cancellationToken).ConfigureAwait(false);*/
+        
+        var summary = await _smartiesClient.PerformQueryAsync(new AskGptRequestDto()
+            {
+                Model = OpenAiModel.Gpt40Turbo,
+                Messages = messages
+            }, cancellationToken).ConfigureAwait(false);
         
         Log.Information("OriginRecord: {OriginRecord},\n SummaryContent: {Summary}", originalRecord, summary);
 
-        return summary.Response ?? string.Empty;
+        return summary.Data.Response ?? string.Empty;
     }
     
     private async Task<string> SummarizeMeetingTodoAsync(string originalRecord, CancellationToken cancellationToken)
@@ -125,12 +135,18 @@ public class MeetingUtilService : IMeetingUtilService
             }
         };
 
-        var todo = 
-            await _openAiService.ChatCompletionsAsync(messages, model: OpenAiModel.Gpt40Turbo, cancellationToken: cancellationToken).ConfigureAwait(false);
+        /*var todo = 
+            await _openAiService.ChatCompletionsAsync(messages, model: OpenAiModel.Gpt40Turbo, cancellationToken: cancellationToken).ConfigureAwait(false);*/
+       
+        var todo = await _smartiesClient.PerformQueryAsync(new AskGptRequestDto()
+        {
+            Model = OpenAiModel.Gpt40Turbo,
+            Messages = messages
+        }, cancellationToken).ConfigureAwait(false);
         
         Log.Information("OriginRecord: {OriginRecord},\n Todo: {Todo}", originalRecord, todo);
 
-        return todo.Response ?? string.Empty;
+        return todo.Data.Response ?? string.Empty;
     }
     
     private async Task<string> SummarizeMeetingSummaryAsync(string originalRecord, CancellationToken cancellationToken)
@@ -149,12 +165,18 @@ public class MeetingUtilService : IMeetingUtilService
             }
         };
 
-        var summary = 
-            await _openAiService.ChatCompletionsAsync(messages, model: OpenAiModel.Gpt40Turbo, cancellationToken: cancellationToken).ConfigureAwait(false);
+        /*var summary = 
+            await _openAiService.ChatCompletionsAsync(messages, model: OpenAiModel.Gpt40Turbo, cancellationToken: cancellationToken).ConfigureAwait(false);*/
+        
+        var summary = await _smartiesClient.PerformQueryAsync(new AskGptRequestDto()
+        {
+            Model = OpenAiModel.Gpt40Turbo,
+            Messages = messages
+        }, cancellationToken).ConfigureAwait(false);
         
         Log.Information("OriginRecord: {OriginRecord},\n Summary: {Summary}", originalRecord, summary);
 
-        return summary.Response ?? string.Empty;
+        return summary.Data.Response ?? string.Empty;
     }
     
     private async Task<string> IntegrationMeetingSummariesAsync(IEnumerable<string> summaries, CancellationToken cancellationToken)
@@ -177,12 +199,18 @@ public class MeetingUtilService : IMeetingUtilService
             }
         };
 
-        var integratedResponse = 
-            await _openAiService.ChatCompletionsAsync(messages, model: OpenAiModel.Gpt40Turbo, cancellationToken: cancellationToken).ConfigureAwait(false);
+        /*var integratedResponse = 
+            await _openAiService.ChatCompletionsAsync(messages, model: OpenAiModel.Gpt40Turbo, cancellationToken: cancellationToken).ConfigureAwait(false);*/
+        
+        var integratedResponse = await _smartiesClient.PerformQueryAsync(new AskGptRequestDto()
+        {
+            Model = OpenAiModel.Gpt40Turbo,
+            Messages = messages
+        }, cancellationToken).ConfigureAwait(false);
 
         Log.Information("Summaries: {Summaries},\n IntegrationSummary: {IntegrationSummary}", concatenatedSummaries, integratedResponse);
 
-        return integratedResponse.Response ?? string.Empty;
+        return integratedResponse.Data.Response ?? string.Empty;
     }
     
     public static (List<string> DividedRecords, int IntegrationCount) SplitOriginalRecord(string originalRecord, int maxRecordLength, int maxSummarySegmentsCount)
