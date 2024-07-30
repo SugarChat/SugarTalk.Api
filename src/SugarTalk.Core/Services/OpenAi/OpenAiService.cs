@@ -1,27 +1,26 @@
 using System;
 using Serilog;
-using System.Linq;
-using TiktokenSharp;
-using System.Threading;
-using SugarTalk.Core.Ioc;
-using System.Threading.Tasks;
-using System.Collections.Generic;
-using System.IO;
-using System.Net.Http;
-using System.Text;
 using Autofac;
 using AutoMapper;
+using System.Text;
+using System.Linq;
+using TiktokenSharp;
 using Newtonsoft.Json;
+using System.Threading;
 using OpenAI.Interfaces;
+using SugarTalk.Core.Ioc;
 using OpenAI.ObjectModels;
-using OpenAI.ObjectModels.RequestModels;
+using System.Threading.Tasks;
 using SugarTalk.Core.Extensions;
-using SugarTalk.Core.Services.Ffmpeg;
+using System.Collections.Generic;
 using Exception = System.Exception;
 using SugarTalk.Messages.Dto.OpenAi;
 using SugarTalk.Core.Settings.OpenAi;
+using SugarTalk.Core.Services.Ffmpeg;
 using SugarTalk.Messages.Enums.OpenAi;
+using OpenAI.ObjectModels.RequestModels;
 using SugarTalk.Core.Services.Http.Clients;
+using SugarTalk.Messages.Dto.Meetings.Speech;
 
 namespace SugarTalk.Core.Services.OpenAi;
 
@@ -41,18 +40,20 @@ public class OpenAiService : IOpenAiService
     private readonly IMapper _mapper;
     private readonly ILifetimeScope _scope;
     private readonly IOpenAiClient _openAiClient;
+    private readonly ISpeechClient _speechClient;
     private readonly IOpenAIService _openAiService;
-    private readonly OpenAiSettings _openAiSettings;
     private readonly IFfmpegService _ffmpegService;
+    private readonly OpenAiSettings _openAiSettings;
     
-    public OpenAiService(ILifetimeScope scope, IOpenAiClient openAiClient, OpenAiSettings openAiSettings, IOpenAIService openAiService, IMapper mapper,IFfmpegService ffmpegService)
+    public OpenAiService(ILifetimeScope scope, IOpenAiClient openAiClient, OpenAiSettings openAiSettings, IOpenAIService openAiService, IMapper mapper,IFfmpegService ffmpegService, ISpeechClient speechClient)
     {
         _scope = scope;
         _mapper = mapper;
         _openAiClient = openAiClient;
-        _openAiSettings = openAiSettings;
+        _speechClient = speechClient;
         _ffmpegService = ffmpegService; 
         _openAiService = openAiService;
+        _openAiSettings = openAiSettings;
     }
 
     public async Task<CompletionsResponseDto> ChatCompletionsAsync(
@@ -88,14 +89,37 @@ public class OpenAiService : IOpenAiService
     
         foreach (var reSplitAudio in reSplitAudios)
         {
-            var transcriptionResponse = await CreateTranscriptionAsync(reSplitAudio, language, fileType, responseFormat, cancellationToken).ConfigureAwait(false);
+            /*var transcriptionResponse = await CreateTranscriptionAsync(reSplitAudio, language, fileType, responseFormat, cancellationToken).ConfigureAwait(false);*/
+            var transcriptionResponse = await TransferAsync(reSplitAudio, cancellationToken).ConfigureAwait(false);
             
-            transcriptionResult.Append(transcriptionResponse?.Text);
+            transcriptionResult.Append(transcriptionResponse);
         }
     
         Log.Information("Transcription result {Transcription}", transcriptionResult.ToString());
         
         return transcriptionResult.ToString();
+    }
+    
+    private async Task<string> TransferAsync(byte[] audio, CancellationToken cancellationToken)
+    {
+        var responseToText = await _speechClient.GetTextFromAudioAsync(
+            new SpeechToTextDto
+            {
+                Source = new Source
+                {
+                    Base64 = new Base64EncodedAudio
+                    {
+                        Encoded = Convert.ToBase64String(audio),
+                        FileFormat = "wav"
+                    }
+                },
+                LanguageId = 20,
+                ResponseFormat = "text"
+            }, cancellationToken).ConfigureAwait(false);
+
+        Log.Information("Sugartalk Openai response to text :{responseToText}", JsonConvert.SerializeObject(responseToText));
+
+        return responseToText.Result;
     }
     
     private async Task<AudioTranscriptionResponseDto> CreateTranscriptionAsync(
