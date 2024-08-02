@@ -369,13 +369,13 @@ public partial class MeetingService
                 var originalTranslationContent = (await _translationClient.TranslateTextAsync(
                         speak.OriginalContent, language.GetDescription(), cancellationToken: cancellationToken).ConfigureAwait(false)).TranslatedText;
 
-                var smartTranslationContent = (await _translationClient.TranslateTextAsync(
-                        speak.SmartContent, language.GetDescription(), cancellationToken: cancellationToken).ConfigureAwait(false)).TranslatedText;
+                /*var smartTranslationContent = (await _translationClient.TranslateTextAsync(
+                        speak.SmartContent, language.GetDescription(), cancellationToken: cancellationToken).ConfigureAwait(false)).TranslatedText;*/
 
                 await _meetingDataProvider.UpdateMeetingDetailTranslationRecordAsync(meetingSpeeches.Where(x => x.MeetingSpeakDetailId == speak.Id).Select(x =>
                 {
                     x.Status = MeetingSpeakTranslatingStatus.Completed;
-                    x.SmartTranslationContent = smartTranslationContent;
+                    /*x.SmartTranslationContent = smartTranslationContent;*/
                     x.OriginalTranslationContent = originalTranslationContent;
 
                     return x;

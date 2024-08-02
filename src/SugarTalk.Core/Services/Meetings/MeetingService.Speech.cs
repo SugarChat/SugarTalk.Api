@@ -206,15 +206,24 @@ public partial class MeetingService
     
     private async Task TranslateAndGenerateTextAsync(SpeechTargetLanguageType languageType, MeetingChatVoiceRecord record, MeetingSpeech speech, CancellationToken cancellationToken)
     {
-        record.TranslatedText = (await _speechClient.TranslateTextAsync(new TextTranslationDto
-        {
-            Text = speech.OriginalText,
-            TargetLanguageType = languageType == SpeechTargetLanguageType.Cantonese ? SpeechTargetLanguageType.Mandarin : languageType
-        }, cancellationToken).ConfigureAwait(false))?.Result;
+        record.TranslatedText = await GenerateTranslateAsync(languageType, speech, cancellationToken).ConfigureAwait(false);
 
         await _meetingDataProvider.UpdateMeetingChatVoiceRecordAsync(record, true, cancellationToken).ConfigureAwait(false);
     }
-    
+
+    private async Task<string> GenerateTranslateAsync(SpeechTargetLanguageType languageType, MeetingSpeech speech, CancellationToken cancellationToken)
+    {
+        return languageType switch
+        {
+            SpeechTargetLanguageType.Cantonese => (await _translationClient.TranslateTextAsync(speech.OriginalText, "zh-CN", cancellationToken: cancellationToken).ConfigureAwait(false))?.TranslatedText,
+            _ => (await _speechClient.TranslateTextAsync(new TextTranslationDto
+            {
+                Text = speech.OriginalText,
+                TargetLanguageType = languageType
+            }, cancellationToken).ConfigureAwait(false)).Result
+        };
+    }
+
     private async Task GenerateSystemVoiceUrlAsync(MeetingChatVoiceRecord record, int voiceId, bool isSpecifyVoice, CancellationToken cancellationToken)
     {
         Log.Information("Start generating system voice url");
@@ -374,7 +383,7 @@ public partial class MeetingService
     public async Task GenerateChatRecordProcessAsync(
         MeetingChatVoiceRecord meetingChatVoiceRecord, MeetingChatRoomSetting roomSetting, MeetingSpeech meetingSpeech, bool isSpeacifyVoice, CancellationToken cancellationToken = default)
     {
-        Log.Information("Generate Chat Record Process Room setting: {@RoomSetting}", roomSetting);
+        Log.Information($"Generate Chat Record Process Room setting and record: {roomSetting}, record: {meetingChatVoiceRecord}",JsonConvert.SerializeObject(roomSetting), JsonConvert.SerializeObject(meetingChatVoiceRecord)) ;
         
         await TranslateAndGenerateTextAsync(roomSetting.ListeningLanguage, meetingChatVoiceRecord, meetingSpeech, cancellationToken).ConfigureAwait(false);
         
