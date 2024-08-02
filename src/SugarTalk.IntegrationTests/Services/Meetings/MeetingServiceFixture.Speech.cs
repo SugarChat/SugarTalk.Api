@@ -30,11 +30,14 @@ namespace SugarTalk.IntegrationTests.Services.Meetings;
 
 public partial class MeetingServiceFixture
 {
-    [Fact]
-    public async Task ShouldSaveMeetingSpeech()
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task ShouldSaveMeetingSpeech(bool isSystem)
     {
         var currentUser = new TestCurrentUser();
         
+        var voiceId = isSystem ? "1111" : Guid.NewGuid().ToString();
         var meetingId = Guid.NewGuid();
         var command = new SaveMeetingAudioCommand
         {
@@ -46,7 +49,7 @@ public partial class MeetingServiceFixture
             SpeechTargetLanguageType.Cantonese, CantoneseToneType.WanLungNeural);
         
         await _meetingUtil.AddMeetingChatRoomSetting(1, meetingId, currentUser.Id.Value, 
-            "1111", SpeechTargetLanguageType.Cantonese, SpeechTargetLanguageType.Mandarin);
+            voiceId, SpeechTargetLanguageType.Cantonese, SpeechTargetLanguageType.Mandarin, isSystem);
         
         await Run<IMediator, IRepository>(async (mediator, repository) =>
         {
@@ -60,13 +63,36 @@ public partial class MeetingServiceFixture
             
             var meetingChatVoiceRecord = await repository.QueryNoTracking<MeetingChatVoiceRecord>().SingleAsync(CancellationToken.None);
             
-            meetingChatVoiceRecord.VoiceUrl.ShouldBe("我是ea产生的voiceUrl");
-            meetingChatVoiceRecord.TranslatedText.ShouldBe("translated_text");
-            meetingChatVoiceRecord.GenerationStatus.ShouldBe(ChatRecordGenerationStatus.Completed);
+            if (isSystem)
+            {
+                meetingChatVoiceRecord.VoiceUrl.ShouldBe("text.url");
+                meetingChatVoiceRecord.TranslatedText.ShouldBe("translated_text");
+                meetingChatVoiceRecord.GenerationStatus.ShouldBe(ChatRecordGenerationStatus.Completed);
+            }
+            else
+            {
+                meetingChatVoiceRecord.VoiceUrl.ShouldBe("我是ea产生的voiceUrl");
+                meetingChatVoiceRecord.TranslatedText.ShouldBe("translated_text");
+                meetingChatVoiceRecord.GenerationStatus.ShouldBe(ChatRecordGenerationStatus.Completed);
+            }
         }, builder =>
         {
             var openAiService = Substitute.For<IOpenAiService>();
             var speechClient = Substitute.For<ISpeechClient>();
+            var smarties = Substitute.For<ISmartiesClient>();
+
+            smarties.GetEchoAvatarVoiceSettingAsync(Arg.Any<GetEchoAvatarVoiceSettingRequestDto>(), CancellationToken.None)
+                .Returns(new GetEchoAvatarUserToneResponse { Data = new EchoAvatarUserToneDto
+                {
+                    InferenceRecords = new List<EchoAvatarInferenceRecordDto>
+                    {
+                        new ()
+                        {
+                            Language = EchoAvatarLanguageType.Mandarin,
+                            Style = 0
+                        } 
+                    }
+                }});
 
             speechClient.TranslateTextAsync(Arg.Any<TextTranslationDto>(), CancellationToken.None)
                 .Returns(new SpeechResponseDto { Result = "translated_text" });
@@ -85,6 +111,7 @@ public partial class MeetingServiceFixture
 
             builder.RegisterInstance(speechClient);
             builder.RegisterInstance(openAiService);
+            builder.RegisterInstance(smarties);
         });
     }
 
@@ -294,6 +321,7 @@ public partial class MeetingServiceFixture
             VoiceId = voiceId,
             OriginalText = "你好呀",
             UserId = 1,
+            VoiceId = "123",
             CreatedDate = DateTimeOffset.Now.AddSeconds(-1000)
         };
 
@@ -305,6 +333,7 @@ public partial class MeetingServiceFixture
             VoiceId = voiceId,
             OriginalText = "我是小李呀",
             UserId = 1,
+            VoiceId = "123",
             CreatedDate = DateTimeOffset.Now
         };
 

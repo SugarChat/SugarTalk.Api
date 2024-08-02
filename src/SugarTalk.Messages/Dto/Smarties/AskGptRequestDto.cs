@@ -8,7 +8,7 @@ using SugarTalk.Messages.Responses;
 
 namespace SugarTalk.Messages.Dto.Smarties;
 
-public class AskGptRequestDto : IRequest
+public class AskGptRequestDto
 {
     public OpenAiModel? Model { get; set; }
 

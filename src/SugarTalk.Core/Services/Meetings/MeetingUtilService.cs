@@ -108,7 +108,7 @@ public class MeetingUtilService : IMeetingUtilService
         /*var summary = 
             await _openAiService.ChatCompletionsAsync(messages, model: OpenAiModel.Gpt40Turbo, cancellationToken: cancellationToken).ConfigureAwait(false);*/
         
-        var summary = await _smartiesClient.PerformQueryAsync(new AskGptRequestDto()
+        var summary = await _smartiesClient.PerformQueryAsync(new AskGptRequestDto
             {
                 Model = OpenAiModel.Gpt40Turbo,
                 Messages = messages
@@ -138,7 +138,7 @@ public class MeetingUtilService : IMeetingUtilService
         /*var todo = 
             await _openAiService.ChatCompletionsAsync(messages, model: OpenAiModel.Gpt40Turbo, cancellationToken: cancellationToken).ConfigureAwait(false);*/
        
-        var todo = await _smartiesClient.PerformQueryAsync(new AskGptRequestDto()
+        var todo = await _smartiesClient.PerformQueryAsync(new AskGptRequestDto
         {
             Model = OpenAiModel.Gpt40Turbo,
             Messages = messages
@@ -168,7 +168,7 @@ public class MeetingUtilService : IMeetingUtilService
         /*var summary = 
             await _openAiService.ChatCompletionsAsync(messages, model: OpenAiModel.Gpt40Turbo, cancellationToken: cancellationToken).ConfigureAwait(false);*/
         
-        var summary = await _smartiesClient.PerformQueryAsync(new AskGptRequestDto()
+        var summary = await _smartiesClient.PerformQueryAsync(new AskGptRequestDto
         {
             Model = OpenAiModel.Gpt40Turbo,
             Messages = messages
@@ -202,7 +202,7 @@ public class MeetingUtilService : IMeetingUtilService
         /*var integratedResponse = 
             await _openAiService.ChatCompletionsAsync(messages, model: OpenAiModel.Gpt40Turbo, cancellationToken: cancellationToken).ConfigureAwait(false);*/
         
-        var integratedResponse = await _smartiesClient.PerformQueryAsync(new AskGptRequestDto()
+        var integratedResponse = await _smartiesClient.PerformQueryAsync(new AskGptRequestDto
         {
             Model = OpenAiModel.Gpt40Turbo,
             Messages = messages
