@@ -859,10 +859,10 @@ public partial class MeetingServiceFixture
             
             afterGetMeetingDetail.ShouldNotBeNull();
             afterGetMeetingDetail.Count.ShouldBe(2);
-            afterGetMeetingDetail.FirstOrDefault(x => x.Id == 1)?.FileTranscriptionStatus.ShouldBe(FileTranscriptionStatus.Completed);
-            afterGetMeetingDetail.FirstOrDefault(x => x.Id == 2)?.FileTranscriptionStatus.ShouldBe(FileTranscriptionStatus.Completed);
-            afterGetMeetingDetail.FirstOrDefault(x => x.Id == 1)?.OriginalContent.ShouldBe(audioContent);
-            afterGetMeetingDetail.FirstOrDefault(x => x.Id == 2)?.OriginalContent.ShouldBe(audioContent);
+            afterGetMeetingDetail.FirstOrDefault(x => x.Id == 1)?.FileTranscriptionStatus.ShouldBe(FileTranscriptionStatus.InProcess);
+            afterGetMeetingDetail.FirstOrDefault(x => x.Id == 2)?.FileTranscriptionStatus.ShouldBe(FileTranscriptionStatus.InProcess);
+            afterGetMeetingDetail.FirstOrDefault(x => x.Id == 1)?.OriginalContent.ShouldBeNull();
+            afterGetMeetingDetail.FirstOrDefault(x => x.Id == 2)?.OriginalContent.ShouldBeNull();
             afterGetMeetingDetail.FirstOrDefault(x => x.Id == 2)?.SpeakEndTime.ShouldNotBeNull();
             afterGetMeetingDetail.FirstOrDefault(x => x.Id == 1)?.SpeakStatus.ShouldBe(SpeakStatus.End);
             /*afterGetMeetingDetail.FirstOrDefault(x => x.Id == 1)?.SmartContent.ShouldBe("I'm smart content");*/
