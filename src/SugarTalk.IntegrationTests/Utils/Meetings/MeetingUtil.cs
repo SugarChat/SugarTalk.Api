@@ -156,7 +156,7 @@ public class MeetingUtil : TestUtil
     }
 
     public async Task AddMeetingChatRoomSetting(int id, Guid meetingId, int userId, string voiceId,
-        SpeechTargetLanguageType selfLanguage, SpeechTargetLanguageType listeningLanguage,
+        SpeechTargetLanguageType selfLanguage, SpeechTargetLanguageType listeningLanguage, bool isSystem,
         DateTimeOffset? lastModifiedDate = null)
     {
         await RunWithUnitOfWork<IRepository>(async repository =>
@@ -170,6 +170,7 @@ public class MeetingUtil : TestUtil
                 Style = 1,
                 Speed = 1,
                 Transpose = 5,
+                IsSystem = isSystem,
                 SelfLanguage = selfLanguage,
                 ListeningLanguage = listeningLanguage,
                 LastModifiedDate = lastModifiedDate ?? DateTimeOffset.Now
