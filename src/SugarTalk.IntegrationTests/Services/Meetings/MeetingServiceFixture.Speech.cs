@@ -321,7 +321,6 @@ public partial class MeetingServiceFixture
             VoiceId = voiceId,
             OriginalText = "你好呀",
             UserId = 1,
-            VoiceId = "123",
             CreatedDate = DateTimeOffset.Now.AddSeconds(-1000)
         };
 
@@ -333,7 +332,6 @@ public partial class MeetingServiceFixture
             VoiceId = voiceId,
             OriginalText = "我是小李呀",
             UserId = 1,
-            VoiceId = "123",
             CreatedDate = DateTimeOffset.Now
         };
 
