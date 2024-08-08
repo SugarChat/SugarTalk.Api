@@ -21,4 +21,6 @@ public class DelayedMeetingRecordingStorageCommand : ICommand
     public bool IsRestartRecord { get; set; } = false;
 
     public UserAccountDto User { get; set; }
+    
+    public string JobId { get; set; }
 }

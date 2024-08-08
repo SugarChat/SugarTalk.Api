@@ -252,9 +252,11 @@ public partial class MeetingService
         meeting.IsActiveRecord = false;
 
         await _meetingDataProvider.UpdateMeetingAsync(meeting, cancellationToken).ConfigureAwait(false);
+
+        var jobId = _backgroundJobClient.Schedule<IMediator>(m => m.SendAsync(storageCommand, cancellationToken), TimeSpan.FromSeconds(10));
+
+        storageCommand.JobId = jobId;
         
-        _backgroundJobClient.Schedule<IMediator>(m => m.SendAsync(storageCommand, cancellationToken), TimeSpan.FromSeconds(10)); 
-      
         return new StorageMeetingRecordVideoResponse();
     }
 
@@ -271,7 +273,7 @@ public partial class MeetingService
         {
             await _meetingDataProvider.UpdateMeetingRecordUrlStatusAsync(command.MeetingRecordId, MeetingRecordUrlStatus.Failed, cancellationToken).ConfigureAwait(false);
 
-            _sugarTalkBackgroundJobClient.RemoveRecurringJobIfExists(nameof(ExecuteStorageMeetingRecordVideoDelayedJobAsync));
+            _sugarTalkBackgroundJobClient.RemoveRecurringJobIfExists(command.JobId);
         }
 
         return new DelayedMeetingRecordingStorageEvent
