@@ -1,0 +1,1 @@
+ALTER TABLE meeting_record ADD COLUMN `meeting_record_job_id` varchar(128) null;

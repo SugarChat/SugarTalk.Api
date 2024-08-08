@@ -255,7 +255,9 @@ public partial class MeetingService
 
         var jobId = _backgroundJobClient.Schedule<IMediator>(m => m.SendAsync(storageCommand, cancellationToken), TimeSpan.FromSeconds(10));
 
-        storageCommand.JobId = jobId;
+        record.MeetingRecordJobId = jobId;
+        
+        await _meetingDataProvider.UpdateMeetingRecordAsync(record, cancellationToken).ConfigureAwait(false);
         
         return new StorageMeetingRecordVideoResponse();
     }
@@ -265,6 +267,9 @@ public partial class MeetingService
     {
         Log.Information("Starting Execute Storage Meeting Record Video, staring time :{@StartTime}", command.StartDate );
 
+        var record = await _meetingDataProvider.GetMeetingRecordByRecordIdAsync(
+            command.MeetingRecordId, cancellationToken: cancellationToken).ConfigureAwait(false);
+        
         var currentTime = _clock.Now;
 
         var timeElapsedSinceStart = (currentTime - command.StartDate).TotalMinutes;
@@ -273,7 +278,7 @@ public partial class MeetingService
         {
             await _meetingDataProvider.UpdateMeetingRecordUrlStatusAsync(command.MeetingRecordId, MeetingRecordUrlStatus.Failed, cancellationToken).ConfigureAwait(false);
 
-            _sugarTalkBackgroundJobClient.RemoveRecurringJobIfExists(command.JobId);
+            _sugarTalkBackgroundJobClient.RemoveRecurringJobIfExists(record.MeetingRecordJobId);
         }
 
         return new DelayedMeetingRecordingStorageEvent
