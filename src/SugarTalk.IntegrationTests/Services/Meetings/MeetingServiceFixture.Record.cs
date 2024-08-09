@@ -730,7 +730,8 @@ public partial class MeetingServiceFixture
             IsDeleted = false,
             EgressId = "5555",
             UrlStatus = MeetingRecordUrlStatus.Pending,
-            MeetingId = meetingId
+            MeetingId = meetingId,
+            MeetingRecordJobId = "0713"
         };
         
         var speakDetail1 = new MeetingSpeakDetail()
