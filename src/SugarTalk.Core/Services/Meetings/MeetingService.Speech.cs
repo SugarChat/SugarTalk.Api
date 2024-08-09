@@ -51,8 +51,9 @@ public partial class MeetingService
                         FileFormat = "wav"
                     }
                 },
-                LanguageId = (int)meetingSetting.SelfLanguage,
-                ResponseFormat = "text"
+                LanguageId = 20,
+                ResponseFormat = "text",
+                Prompt = $"You are a master fluent in { Enum.GetName(typeof(SpeechTargetLanguageType), meetingSetting.SelfLanguage) }. Please transcribe the provided audio into complete { Enum.GetName(typeof(SpeechTargetLanguageType), meetingSetting.SelfLanguage) } text"
             }, cancellationToken).ConfigureAwait(false);
 
         Log.Information("SugarTalk response to text :{responseToText}", JsonConvert.SerializeObject(responseToText));

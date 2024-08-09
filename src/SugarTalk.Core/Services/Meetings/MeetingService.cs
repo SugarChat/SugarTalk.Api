@@ -485,7 +485,7 @@ namespace SugarTalk.Core.Services.Meetings
                 var addUserSession = _mapper.Map<MeetingUserSessionDto>(userSession);
                 addUserSession.UserName = user.UserName;
 
-                Log.Information("ConnectUserToMeetingAsync: addUserSession:{addUserSession}", addUserSession);
+                Log.Information($"ConnectUserToMeetingAsync: addUserSession:{@addUserSession}", addUserSession);
 
                 meeting.AddUserSession(addUserSession);
                 
