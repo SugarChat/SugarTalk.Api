@@ -46,4 +46,7 @@ public class MeetingRecord : IEntity
     
     [Column("egress_id"), StringLength(128)]
     public string EgressId { get; set; }
+    
+    [Column("meeting_record_job_id"), StringLength(128)]
+    public string MeetingRecordJobId { get; set; }
 }
