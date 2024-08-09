@@ -39,6 +39,9 @@ public class SpeechToTextDto
 
     [JsonProperty("language_id")] 
     public int LanguageId { get; set; }
+
+    [JsonProperty("prompt")]
+    public string Prompt { get; set; }
 }
 
 public class TextToSpeechDto
