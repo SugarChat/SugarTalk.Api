@@ -114,7 +114,8 @@ public class OpenAiService : IOpenAiService
                     }
                 },
                 LanguageId = 20,
-                ResponseFormat = "text"
+                ResponseFormat = "text",
+                Prompt = ""
             }, cancellationToken).ConfigureAwait(false);
 
         Log.Information("Sugartalk Openai response to text :{responseToText}", JsonConvert.SerializeObject(responseToText));
