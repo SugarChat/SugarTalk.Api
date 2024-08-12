@@ -118,11 +118,8 @@ public partial class MeetingService
         
         var userSession = await _meetingDataProvider.GetMeetingUserSessionByUserIdAsync(request.UserId, cancellationToken).ConfigureAwait(false);
         
-        var meeting = await _meetingDataProvider.GetMeetingByIdAsync(userSession.MeetingId, cancellationToken).ConfigureAwait(false);
-        
         var userSessionDto = _mapper.Map<MeetingUserSessionDto>(userSession);
         userSessionDto.UserName = user.UserName;
-        userSessionDto.IsMeetingMaster = meeting.MeetingMasterUserId == userSessionDto.UserId;
         
         return new GetMeetingUserSessionByUserIdResponse
         {
