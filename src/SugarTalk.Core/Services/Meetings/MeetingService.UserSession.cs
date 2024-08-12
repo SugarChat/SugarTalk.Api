@@ -112,14 +112,17 @@ public partial class MeetingService
     public async Task<GetMeetingUserSessionByUserIdResponse> GetMeetingUserSessionByUserIdAsync(
         GetMeetingUserSessionByUserIdRequest request, CancellationToken cancellationToken)
     {
-        var userSession = await _meetingDataProvider.GetMeetingUserSessionByUserIdAsync(request.UserId, cancellationToken).ConfigureAwait(false);
-
         var user = await _accountDataProvider.GetUserAccountAsync(_currentUser.Id, cancellationToken: cancellationToken).ConfigureAwait(false);
 
         if (user is null) throw new UnauthorizedAccessException();
         
+        var userSession = await _meetingDataProvider.GetMeetingUserSessionByUserIdAsync(request.UserId, cancellationToken).ConfigureAwait(false);
+        
+        var meeting = await _meetingDataProvider.GetMeetingByIdAsync(userSession.MeetingId, cancellationToken).ConfigureAwait(false);
+        
         var userSessionDto = _mapper.Map<MeetingUserSessionDto>(userSession);
         userSessionDto.UserName = user.UserName;
+        userSessionDto.IsMeetingMaster = meeting.MeetingMasterUserId == userSessionDto.UserId;
         
         return new GetMeetingUserSessionByUserIdResponse
         {
