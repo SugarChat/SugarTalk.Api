@@ -104,8 +104,7 @@ public partial class MeetingDataProvider
             .ToListAsync(cancellationToken).ConfigureAwait(false);
     }
 
-    public async Task<MeetingUserSessionDto> GetMeetingUserSessionByUserIdAsync(int userId,
-        CancellationToken cancellationToken)
+    public async Task<MeetingUserSessionDto> GetMeetingUserSessionByUserIdAsync(int userId, CancellationToken cancellationToken)
     {
         return await (from userSession in _repository.QueryNoTracking<MeetingUserSession>().Where(x => x.UserId == userId)
             join meeting in _repository.Query<Meeting>() on userSession.MeetingId equals meeting.Id
