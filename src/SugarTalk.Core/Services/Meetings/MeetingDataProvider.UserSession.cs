@@ -1,16 +1,12 @@
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using AutoMapper;
+using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
-using SugarTalk.Core.Data;
+using SugarTalk.Core.Domain.Account;
 using SugarTalk.Core.Domain.Meeting;
-using SugarTalk.Core.Ioc;
-using SugarTalk.Core.Services.Identity;
 using SugarTalk.Messages.Dto.Meetings;
-using SugarTalk.Messages.Dto.Users;
 using SugarTalk.Messages.Enums.Meeting;
 using SugarTalk.Messages.Requests.Meetings;
 
@@ -40,6 +36,8 @@ public partial interface IMeetingDataProvider
     Task<List<MeetingUserSession>> GetMeetingUserSessionsByIdsAndMeetingIdAsync(List<int> ids, Guid meetingId, CancellationToken cancellationToken);
 
     Task<List<MeetingUserSessionDto>> GetUserSessionsByMeetingIdAndOnlineTypeAsync(Guid meetingId,CancellationToken cancellationToken);
+
+    Task<MeetingOnlineLongestDurationUserDto> GetMeetingMinJoinUserByMeetingIdAsync(Guid meetingId, CancellationToken cancellationToken);
 }
 
 public partial class MeetingDataProvider
@@ -152,5 +150,17 @@ public partial class MeetingDataProvider
             .ToListAsync(cancellationToken).ConfigureAwait(false);
         
         return _mapper.Map<List<MeetingUserSessionDto>>(userSessions);
+    }
+
+    public async Task<MeetingOnlineLongestDurationUserDto> GetMeetingMinJoinUserByMeetingIdAsync(Guid meetingId, CancellationToken cancellationToken)
+    {
+        return await (from session in _repository.Query<MeetingUserSession>().Where(x => x.MeetingId == meetingId && x.Status == MeetingAttendeeStatus.Present)
+            join userAccount in _repository.Query<UserAccount>() on session.UserId equals userAccount.Id
+            orderby session.LastJoinTime
+            select new MeetingOnlineLongestDurationUserDto
+            {
+                UserId = userAccount.Id,
+                UserName = userAccount.UserName
+            }).FirstOrDefaultAsync(cancellationToken).ConfigureAwait(false);
     }
 }

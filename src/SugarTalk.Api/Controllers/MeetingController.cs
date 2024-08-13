@@ -269,7 +269,17 @@ public class MeetingController : ControllerBase
 
         return Ok(response);
     }
-
+    
+    [Route("get/User/{meetingId}"), HttpGet]
+    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(GetMeetingOnlineLongestDurationUserResponse))]
+    public async Task<IActionResult> GetMeetingUserSessionByMeetingIdAsync(string meetingId)
+    {
+        var response =
+            await _mediator.RequestAsync<GetMeetingOnlineLongestDurationUserRequest, GetMeetingOnlineLongestDurationUserResponse>(
+                new GetMeetingOnlineLongestDurationUserRequest { MeetingId = Guid.Parse(meetingId)}).ConfigureAwait(false);
+        
+        return Ok(response);
+    }
     #endregion
     
     #region invite
