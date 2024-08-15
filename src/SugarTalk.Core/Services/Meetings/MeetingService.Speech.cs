@@ -463,7 +463,7 @@ public partial class MeetingService
             }, cancellationToken).ConfigureAwait(false);
     }
 
-    private bool CompareLanguage(SpeechTargetLanguageType targetLanguage, string translationLanguage)
+    private static bool CompareLanguage(SpeechTargetLanguageType targetLanguage, string translationLanguage)
     {
         return targetLanguage switch 
         {
