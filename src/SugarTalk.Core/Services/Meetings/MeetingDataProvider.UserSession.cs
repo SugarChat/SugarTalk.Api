@@ -29,7 +29,7 @@ public partial interface IMeetingDataProvider
     
     Task<List<MeetingUserSession>> GetMeetingUserSessionsAsync(List<int> ids, CancellationToken cancellationToken);
     
-    Task<MeetingUserSession> GetMeetingUserSessionByUserIdAsync(int userId, CancellationToken cancellationToken);
+    Task<MeetingUserSessionDto> GetMeetingUserSessionByUserIdAsync(int userId, CancellationToken cancellationToken);
     
     Task<List<MeetingUserSession>> GetMeetingUserSessionByUserIdsAsync(List<int> userIds, Guid? meetingSubId, CancellationToken cancellationToken);
 
@@ -102,10 +102,25 @@ public partial class MeetingDataProvider
             .ToListAsync(cancellationToken).ConfigureAwait(false);
     }
 
-    public async Task<MeetingUserSession> GetMeetingUserSessionByUserIdAsync(int userId, CancellationToken cancellationToken)
+    public async Task<MeetingUserSessionDto> GetMeetingUserSessionByUserIdAsync(int userId, CancellationToken cancellationToken)
     {
-        return await _repository.Query<MeetingUserSession>().Where(x => x.UserId == userId)
-            .FirstOrDefaultAsync(cancellationToken).ConfigureAwait(false);
+        return await (from userSession in _repository.QueryNoTracking<MeetingUserSession>().Where(x => x.UserId == userId)
+            join meeting in _repository.Query<Meeting>() on userSession.MeetingId equals meeting.Id
+            orderby userSession.CreatedDate descending
+            select new MeetingUserSessionDto
+            {
+                Id = userSession.Id,
+                UserId = userSession.UserId,
+                IsMuted = userSession.IsMuted,
+                GuestName = userSession.GuestName,
+                MeetingId = userSession.MeetingId,
+                OnlineType = userSession.OnlineType,
+                CreatedDate = userSession.CreatedDate,
+                LastJoinTime = userSession.LastJoinTime,
+                MeetingSubId = userSession.MeetingSubId,
+                IsSharingScreen = userSession.IsSharingScreen,
+                IsMeetingMaster = meeting.MeetingMasterUserId == userSession.UserId
+            }).FirstOrDefaultAsync(cancellationToken).ConfigureAwait(false);
     }
 
     public async Task<List<MeetingUserSession>> GetMeetingUserSessionByUserIdsAsync(List<int> userIds, Guid? meetingSubId, CancellationToken cancellationToken)
