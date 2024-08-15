@@ -1,3 +1,4 @@
+using Serilog;
 using System;
 using Newtonsoft.Json;
 using System.Collections.Generic;
@@ -34,6 +35,8 @@ public class MeetingDto : MeetingBaseDto
 
     public void AddUserSession(MeetingUserSessionDto userSession)
     {
+        Log.Information($"User session userId:{{userId}}, meetingMasterUserId:{MeetingMasterUserId}", userSession.UserId, MeetingMasterUserId);
+        
         userSession.IsMeetingMaster = userSession.UserId == MeetingMasterUserId;
         UserSessions.Add(userSession);
     }
