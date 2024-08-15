@@ -270,13 +270,13 @@ public class MeetingController : ControllerBase
         return Ok(response);
     }
     
-    [Route("get/User/{meetingId}"), HttpGet]
+    [Route("get/user"), HttpGet]
     [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(GetMeetingOnlineLongestDurationUserResponse))]
-    public async Task<IActionResult> GetMeetingUserSessionByMeetingIdAsync(string meetingId)
+    public async Task<IActionResult> GetMeetingUserSessionByMeetingIdAsync([FromQuery] Guid meetingId)
     {
         var response =
             await _mediator.RequestAsync<GetMeetingOnlineLongestDurationUserRequest, GetMeetingOnlineLongestDurationUserResponse>(
-                new GetMeetingOnlineLongestDurationUserRequest { MeetingId = Guid.Parse(meetingId)}).ConfigureAwait(false);
+                new GetMeetingOnlineLongestDurationUserRequest { MeetingId = meetingId}).ConfigureAwait(false);
         
         return Ok(response);
     }
