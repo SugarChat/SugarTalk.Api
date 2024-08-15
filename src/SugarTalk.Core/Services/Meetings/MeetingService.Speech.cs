@@ -40,24 +40,15 @@ public partial class MeetingService
 
         var meetingSetting = await _meetingDataProvider.GetMeetingChatRoomSettingByMeetingIdAsync(_currentUser.Id.Value, command.MeetingId, cancellationToken).ConfigureAwait(false);
         
-        var responseToText = await _speechClient.GetTextFromAudioAsync(
-            new SpeechToTextDto
-            {
-                Source = new Source
-                {
-                    Base64 = new Base64EncodedAudio
-                    {
-                        Encoded = HandleToBase64(command.AudioForBase64),
-                        FileFormat = "wav"
-                    }
-                },
-                LanguageId = 20,
-                ResponseFormat = "text",
-                Prompt = $"You are a master fluent in { Enum.GetName(typeof(SpeechTargetLanguageType), meetingSetting.SelfLanguage) }. Please transcribe the provided audio into complete { Enum.GetName(typeof(SpeechTargetLanguageType), meetingSetting.SelfLanguage) } text"
-            }, cancellationToken).ConfigureAwait(false);
+        var responseToText = await GenerateVoiceToTextAsync(command.AudioForBase64, meetingSetting.SelfLanguage, cancellationToken: cancellationToken).ConfigureAwait(false);
 
         Log.Information("SugarTalk response to text :{responseToText}", JsonConvert.SerializeObject(responseToText));
 
+        var detection = await _translationClient.DetectLanguageAsync(responseToText.Result, cancellationToken).ConfigureAwait(false);
+
+        if (CompareLanguage(meetingSetting.SelfLanguage, detection.Language))
+            responseToText = await GenerateVoiceToTextAsync(command.AudioForBase64, meetingSetting.SelfLanguage, true, cancellationToken).ConfigureAwait(false);
+        
         if (responseToText is null) return new MeetingAudioSavedEvent { Result = "Ai does not recognize the audio content" };
         
         var meetingSpeech = new MeetingSpeech
@@ -449,6 +440,39 @@ public partial class MeetingService
             SpeechTargetLanguageType.English => EchoAvatarLanguageType.English,
             SpeechTargetLanguageType.Korean => EchoAvatarLanguageType.Korean,
             SpeechTargetLanguageType.Spanish => EchoAvatarLanguageType.Spanish
+        };
+    }
+    
+    private async Task<SpeechResponseDto> GenerateVoiceToTextAsync(
+        string audioForBase64, SpeechTargetLanguageType language, bool isExclusiveLanguage = false, CancellationToken cancellationToken = default)
+    {
+        return await _speechClient.GetTextFromAudioAsync(
+            new SpeechToTextDto
+            {
+                Source = new Source
+                {
+                    Base64 = new Base64EncodedAudio
+                    {
+                        Encoded = HandleToBase64(audioForBase64),
+                        FileFormat = "wav"
+                    }
+                },
+                LanguageId = isExclusiveLanguage ? (int)language : 20,
+                ResponseFormat = "text",
+                Prompt = $"You are a master fluent in { Enum.GetName(typeof(SpeechTargetLanguageType), language) }. Please transcribe the provided audio into complete { Enum.GetName(typeof(SpeechTargetLanguageType), language) } text"
+            }, cancellationToken).ConfigureAwait(false);
+    }
+
+    private bool CompareLanguage(SpeechTargetLanguageType targetLanguage, string translationLanguage)
+    {
+        return targetLanguage switch 
+        {
+            SpeechTargetLanguageType.Korean => translationLanguage == "ko",
+            SpeechTargetLanguageType.Spanish => translationLanguage == "es",
+            SpeechTargetLanguageType.English => translationLanguage == "en",
+            SpeechTargetLanguageType.Mandarin => translationLanguage == "zh-CN",
+            SpeechTargetLanguageType.Cantonese => translationLanguage == "zh-TW",
+            _ => false
         };
     }
 }
