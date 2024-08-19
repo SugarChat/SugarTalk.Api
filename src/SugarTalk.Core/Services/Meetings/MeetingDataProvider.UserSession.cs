@@ -169,7 +169,7 @@ public partial class MeetingDataProvider
 
     public async Task<MeetingOnlineLongestDurationUserDto> GetMeetingMinJoinUserByMeetingIdAsync(Guid meetingId, CancellationToken cancellationToken)
     {
-        return await (from session in _repository.Query<MeetingUserSession>().Where(x => x.MeetingId == meetingId && x.Status == MeetingAttendeeStatus.Present)
+        return await (from session in _repository.Query<MeetingUserSession>().Where(x => x.MeetingId == meetingId && x.OnlineType == MeetingUserSessionOnlineType.Online)
             join userAccount in _repository.Query<UserAccount>() on session.UserId equals userAccount.Id
             orderby session.LastJoinTime
             select new MeetingOnlineLongestDurationUserDto
