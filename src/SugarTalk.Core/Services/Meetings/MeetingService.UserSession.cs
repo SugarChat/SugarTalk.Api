@@ -31,6 +31,9 @@ public partial interface IMeetingService
     
     Task<KickOutMeetingByUserIdResponse> KickOutMeetingAsync(
         KickOutMeetingByUserIdCommand command, CancellationToken cancellationToken);
+
+    Task<GetMeetingOnlineLongestDurationUserResponse> GetMeetingUserSessionByMeetingIdAsync(
+        GetMeetingOnlineLongestDurationUserRequest request, CancellationToken cancellationToken);
 }
 
 public partial class MeetingService
@@ -184,5 +187,17 @@ public partial class MeetingService
         meetingDto.MeetingTokenFromLiveKit = _liveKitServerUtilService
             .GenerateTokenForJoinMeeting(user, meeting.MeetingNumber);
         return new KickOutMeetingByUserIdResponse() { Data = meetingDto };
+    }
+
+    public async Task<GetMeetingOnlineLongestDurationUserResponse> GetMeetingUserSessionByMeetingIdAsync(
+        GetMeetingOnlineLongestDurationUserRequest request, CancellationToken cancellationToken)
+    {
+        var userInfo = await _meetingDataProvider.GetMeetingMinJoinUserByMeetingIdAsync(
+            request.MeetingId, cancellationToken).ConfigureAwait(false);
+
+        return new GetMeetingOnlineLongestDurationUserResponse
+        {
+            Data = userInfo
+        };
     }
 }
