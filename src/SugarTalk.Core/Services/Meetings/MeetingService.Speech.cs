@@ -46,7 +46,7 @@ public partial class MeetingService
 
         var detection = await _translationClient.DetectLanguageAsync(responseToText.Result, cancellationToken).ConfigureAwait(false);
 
-        if (!CompareLanguage(meetingSetting.SelfLanguage, detection.Language))
+        if (CompareLanguage(meetingSetting.SelfLanguage, detection.Language))
             responseToText = await GenerateVoiceToTextAsync(command.AudioForBase64, meetingSetting.SelfLanguage, true, cancellationToken).ConfigureAwait(false);
         
         if (responseToText is null) return new MeetingAudioSavedEvent { Result = "Ai does not recognize the audio content" };
