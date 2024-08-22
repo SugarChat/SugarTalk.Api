@@ -1,9 +1,9 @@
-using System.Collections.Generic;
 using System.Threading;
-using System.Threading.Tasks;
 using SugarTalk.Core.Ioc;
-using SugarTalk.Core.Settings.PostBoy;
+using System.Threading.Tasks;
+using System.Collections.Generic;
 using SugarTalk.Messages.Dto.PostBoy;
+using SugarTalk.Core.Settings.PostBoy;
 
 namespace SugarTalk.Core.Services.Http.Clients;
 
