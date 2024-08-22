@@ -108,6 +108,7 @@ namespace SugarTalk.Core.Services.Meetings
         private readonly ICurrentUser _currentUser;
         private readonly IFfmpegService _ffmpegService;
         private readonly ISpeechClient _speechClient;
+        private readonly IPostBoyClient _postBoyClient;
         private readonly ILiveKitClient _liveKitClient;
         private readonly IFClubClient _fclubClient;
         private readonly IOpenAiService _openAiService;
@@ -135,6 +136,7 @@ namespace SugarTalk.Core.Services.Meetings
             IFfmpegService ffmpegService,
             IOpenAiService openAiService,
             ISpeechClient speechClient,
+            IPostBoyClient postBoyClient,
             ILiveKitClient liveKitClient,
             IFClubClient fclubClient,
             AwsS3Settings awsS3Settings,
@@ -159,6 +161,7 @@ namespace SugarTalk.Core.Services.Meetings
             _ffmpegService = ffmpegService;
             _openAiService = openAiService;
             _speechClient = speechClient;
+            _postBoyClient = postBoyClient;
             _liveKitClient = liveKitClient;
             _fclubClient = fclubClient;
             _awsS3Service = awsS3Service;

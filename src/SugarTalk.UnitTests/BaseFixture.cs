@@ -59,7 +59,8 @@ public partial class BaseFixture
     protected readonly IAliYunOssService _aliYunOssService = Substitute.For<IAliYunOssService>();
     private readonly MeetingInfoSettings _meetingInfoSettings;
     private readonly IFfmpegService _ffmpegService;
-
+    private readonly IPostBoyClient _postBoyClient;
+    
     public BaseFixture()
     {
         _configuration = Substitute.For<IConfiguration>();
@@ -79,7 +80,7 @@ public partial class BaseFixture
         _sugarTalkBackgroundJobClient = Substitute.For<ISugarTalkBackgroundJobClient>();
         _accountDataProvider = MockAccountDataProvider(_mapper, _repository, _unitOfWork, _currentUser);
         _meetingDataProvider = MockMeetingDataProvider(_clock, _mapper, _repository, _unitOfWork, _currentUser, _accountDataProvider);
-        _meetingService = MockMeetingService(_clock, _mapper, _unitOfWork, _currentUser, _ffmpegService, _cacheManager, _openAiService, _speechClient,
+        _meetingService = MockMeetingService(_clock, _mapper, _unitOfWork, _currentUser, _ffmpegService, _cacheManager, _openAiService, _speechClient, _postBoyClient,
             _liveKitClient, _fclubClient, _awsS3Settings, _awsS3Service, _smartiesClient, _translationClient, _meetingUtilService,
             _meetingDataProvider, _accountDataProvider, _liveKitServerSetting, _httpClientFactory, _backgroundJobClient,
             _liveKitServerUtilService, _antMediaServerUtilService, _sugarTalkBackgroundJobClient, _meetingInfoSettings); 
@@ -105,6 +106,7 @@ public partial class BaseFixture
         ICacheManager cacheManager,
         IOpenAiService openAiService,
         ISpeechClient speechClient,
+        IPostBoyClient postBoyClient,
         ILiveKitClient liveKitClient,
         IFClubClient fclubClient,
         AwsS3Settings awsS3Settings,
@@ -123,7 +125,7 @@ public partial class BaseFixture
         MeetingInfoSettings meetingInfoSettings)
     {
         return new MeetingService(
-            clock, mapper, unitOfWork, currentUser, ffmpegService, openAiService, speechClient, liveKitClient, fclubClient, awsS3Settings, awsS3Service, smartiesClient,
+            clock, mapper, unitOfWork, currentUser, ffmpegService, openAiService, speechClient, postBoyClient, liveKitClient, fclubClient, awsS3Settings, awsS3Service, smartiesClient,
             translationClient, meetingUtilService, meetingDataProvider, accountDataProvider, liveKitServerSetting, 
             httpClientFactory, backgroundJobClient, liveKitServerUtilService, antMediaServerUtilService, sugarTalkBackgroundJobClient, null, cacheManager);
     }

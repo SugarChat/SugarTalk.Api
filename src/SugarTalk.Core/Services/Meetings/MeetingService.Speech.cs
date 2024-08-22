@@ -10,9 +10,11 @@ using Newtonsoft.Json;
 using SugarTalk.Messages.Commands.Speech;
 using SugarTalk.Messages.Requests.Speech;
 using SugarTalk.Messages.Dto.Meetings.Speech;
+using SugarTalk.Messages.Dto.PostBoy;
 using SugarTalk.Messages.Dto.Smarties;
 using SugarTalk.Messages.Enums.Account;
 using SugarTalk.Messages.Enums.Caching;
+using SugarTalk.Messages.Enums.OpenAi;
 using SugarTalk.Messages.Enums.Speech;
 using SugarTalk.Messages.Events.Meeting.Speech;
 using SugarTalk.Messages.Requests.Meetings;
@@ -44,10 +46,10 @@ public partial class MeetingService
 
         Log.Information("SugarTalk response to text :{responseToText}", JsonConvert.SerializeObject(responseToText));
 
-        var detection = await _translationClient.DetectLanguageAsync(responseToText.Result, cancellationToken).ConfigureAwait(false);
+        var detection = await _translationClient.DetectLanguageAsync(responseToText.Data, cancellationToken).ConfigureAwait(false);
 
         if (!CompareLanguage(meetingSetting.SelfLanguage, detection.Language))
-            responseToText = await GenerateVoiceToTextAsync(command.AudioForBase64, meetingSetting.SelfLanguage, true, cancellationToken).ConfigureAwait(false);
+            responseToText = await GenerateVoiceToTextAsync(command.AudioForBase64, meetingSetting.SelfLanguage, cancellationToken).ConfigureAwait(false);
         
         if (responseToText is null) return new MeetingAudioSavedEvent { Result = "Ai does not recognize the audio content" };
         
@@ -56,7 +58,7 @@ public partial class MeetingService
             VoiceId = meetingSetting.VoiceId,
             MeetingId = command.MeetingId,
             UserId = _currentUser.Id.Value,
-            OriginalText = responseToText.Result
+            OriginalText = responseToText.Data
         };
         
         await _meetingDataProvider.PersistMeetingSpeechAsync(meetingSpeech, cancellationToken).ConfigureAwait(false);
@@ -443,24 +445,22 @@ public partial class MeetingService
         };
     }
     
-    private async Task<SpeechResponseDto> GenerateVoiceToTextAsync(
-        string audioForBase64, SpeechTargetLanguageType language, bool isExclusiveLanguage = false, CancellationToken cancellationToken = default)
+    private async Task<SpeechResponse> GenerateVoiceToTextAsync(
+        string audioForBase64, SpeechTargetLanguageType language, CancellationToken cancellationToken = default)
     {
-        return await _speechClient.GetTextFromAudioAsync(
-            new SpeechToTextDto
+        return await _postBoyClient.SpeechAsync(new SpeechDto
+        {
+            Language = language switch
             {
-                Source = new Source
-                {
-                    Base64 = new Base64EncodedAudio
-                    {
-                        Encoded = HandleToBase64(audioForBase64),
-                        FileFormat = "wav"
-                    }
-                },
-                LanguageId = isExclusiveLanguage ? (int)language : 20,
-                ResponseFormat = "text",
-                Prompt = $"You are a master fluent in { Enum.GetName(typeof(SpeechTargetLanguageType), language) }. Please transcribe the provided audio into complete { Enum.GetName(typeof(SpeechTargetLanguageType), language) } text"
-            }, cancellationToken).ConfigureAwait(false);
+                SpeechTargetLanguageType.Cantonese or SpeechTargetLanguageType.Mandarin => TranscriptionLanguage.Chinese,
+                SpeechTargetLanguageType.English => TranscriptionLanguage.English,
+                SpeechTargetLanguageType.Korean => TranscriptionLanguage.Korean,
+                SpeechTargetLanguageType.Spanish => TranscriptionLanguage.Spanish,
+                _ => throw new ArgumentOutOfRangeException(nameof(language), language, null)
+            },
+            AudioForBase64 = HandleToBase64(audioForBase64),
+            Temperature = 0
+        }, cancellationToken).ConfigureAwait(false);
     }
 
     private static bool CompareLanguage(SpeechTargetLanguageType targetLanguage, string translationLanguage)
