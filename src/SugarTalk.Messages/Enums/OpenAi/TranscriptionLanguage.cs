@@ -11,5 +11,8 @@ public enum TranscriptionLanguage
     English,
     
     [Description("es")]
-    Spanish
+    Spanish,
+
+    [Description("ko")]
+    Korean 
 }
