@@ -31,6 +31,6 @@ public class PostBoyClient : IPostBoyClient
     
     public async Task<SpeechResponse> SpeechAsync(SpeechDto speechDto, CancellationToken cancellationToken)
     {
-        return await _httpClientFactory.PostAsJsonAsync<SpeechResponse>($"{_postBoySetting.BaseUrl}/api/Transfer/speech", speechDto, cancellationToken, headers: _headers).ConfigureAwait(false);
+        return await _httpClientFactory.PostAsJsonAsync<SpeechResponse>($"{_postBoySetting.BaseUrl}/api/Transcription/asr", speechDto, cancellationToken, headers: _headers).ConfigureAwait(false);
     }
 }
