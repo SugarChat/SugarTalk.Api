@@ -12,6 +12,6 @@ public class SpeechDto
     public TranscriptionLanguage Language { get; set; }
 }
 
-public class SpeechResponse : SugarTalkResponse<string>
+public class SpeechTotextResponse : SugarTalkResponse<string>
 {
 }

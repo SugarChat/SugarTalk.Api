@@ -209,8 +209,7 @@ public partial class MeetingService
     {
         return languageType switch
         {
-            SpeechTargetLanguageType.Mandarin => (await _translationClient.TranslateTextAsync(speech.OriginalText, "zh-CN", cancellationToken: cancellationToken).ConfigureAwait(false))?.TranslatedText,
-            SpeechTargetLanguageType.Cantonese => (await _translationClient.TranslateTextAsync(speech.OriginalText, "zh-TW", cancellationToken: cancellationToken).ConfigureAwait(false))?.TranslatedText,
+            SpeechTargetLanguageType.Mandarin or SpeechTargetLanguageType.Cantonese => (await _translationClient.TranslateTextAsync(speech.OriginalText, "zh-CN", cancellationToken: cancellationToken).ConfigureAwait(false))?.TranslatedText,
             _ => (await _speechClient.TranslateTextAsync(new TextTranslationDto
             {
                 Text = speech.OriginalText,
@@ -446,7 +445,7 @@ public partial class MeetingService
         };
     }
     
-    private async Task<SpeechResponse> GenerateVoiceToTextAsync(
+    private async Task<SpeechTotextResponse> GenerateVoiceToTextAsync(
         string audioForBase64, SpeechTargetLanguageType language, CancellationToken cancellationToken = default)
     {
         return await _postBoyClient.SpeechAsync(new SpeechDto
