@@ -15,6 +15,7 @@ RUN dotnet publish build/SugarTalk.Api -c Release -o out
 FROM mcr.microsoft.com/dotnet/aspnet:7.0
 
 # ffmpeg
+RUN apt-get update && apt-get install -y nasm
 RUN apt-get update && apt-get install -y bzip2 make gcc yasm libopencore-amrnb-dev libopencore-amrwb-dev wget libmp3lame-dev
 
 RUN wget https://ffmpeg.org/releases/ffmpeg-snapshot.tar.bz2 && \
