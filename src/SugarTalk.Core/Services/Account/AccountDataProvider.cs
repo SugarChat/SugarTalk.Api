@@ -16,7 +16,7 @@ using SugarTalk.Core.Services.Identity;
 using SugarTalk.Messages.Dto.Users;
 using SugarTalk.Messages.Enums.Account;
 using Role = SugarTalk.Core.Domain.Account.Role;
- 
+
 namespace SugarTalk.Core.Services.Account
 {
     public interface IAccountDataProvider : IScopedDependency
