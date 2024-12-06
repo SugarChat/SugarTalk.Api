@@ -15,14 +15,14 @@ namespace SugarTalk.Core.Data;
 
 public class SugarTalkDbContext : DbContext, IUnitOfWork
 {
-    private readonly SugarTalkConnectionString _connectionString;
-    private readonly ICurrentUser _currentUser;
     private readonly IClock _clock;
-
-    public SugarTalkDbContext(SugarTalkConnectionString connectionString, ICurrentUser currentUser)
+    private readonly ICurrentUser _currentUser;
+    private readonly SugarTalkConnectionString _connectionString;
+    public SugarTalkDbContext(SugarTalkConnectionString connectionString, ICurrentUser currentUser, IClock clock)
     {
-        _connectionString = connectionString;
+        _clock = clock;
         _currentUser = currentUser;
+        _connectionString = connectionString;
     }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
@@ -50,7 +50,7 @@ public class SugarTalkDbContext : DbContext, IUnitOfWork
             TrackCreated(entityEntry);
             TrackModification(entityEntry);
         }
-        
+         
         return await base.SaveChangesAsync(cancellationToken);
     }
     
