@@ -3,7 +3,7 @@ using SugarTalk.Messages.Dto.Meetings;
 
 namespace SugarTalk.Messages.Events.Meeting;
 
-public class AddMeetingProblemFeedbackEvent : IEvent
+public class MeetingProblemFeedbackAddedEvent : IEvent
 {
     public MeetingProblemFeedbackDto Feedback { get; set; }
 }

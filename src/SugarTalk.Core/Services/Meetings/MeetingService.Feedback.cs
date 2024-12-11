@@ -1,5 +1,4 @@
 using System;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Serilog;
@@ -16,12 +15,12 @@ public partial interface IMeetingService
 {
     Task<GetMeetingProblemFeedbackResponse> GetMeetingProblemFeedbackAsync(GetMeetingProblemFeedbackRequest request, CancellationToken cancellationToken);
     
-    Task<AddMeetingProblemFeedbackEvent> AddMeetingProblemFeedbackAsync(AddMeetingProblemFeedbackCommand command, CancellationToken cancellationToken);
+    Task<MeetingProblemFeedbackAddedEvent> AddMeetingProblemFeedbackAsync(AddMeetingProblemFeedbackCommand command, CancellationToken cancellationToken);
 }
 
 public partial class MeetingService
 {
-    public async Task<GetMeetingProblemFeedbackResponse> GetMeetingProblemFeedbackAsync(GetMeetingProblemFeedbackRequest request, CancellationToken cancellationToken = default)
+    public async Task<GetMeetingProblemFeedbackResponse> GetMeetingProblemFeedbackAsync(GetMeetingProblemFeedbackRequest request, CancellationToken cancellationToken)
     {
         var (feedbackList, totalCount) = await _meetingDataProvider.GetMeetingProblemFeedbacksAsync(request, cancellationToken);
         
@@ -32,7 +31,7 @@ public partial class MeetingService
         };
     }
 
-    public async Task<AddMeetingProblemFeedbackEvent> AddMeetingProblemFeedbackAsync(AddMeetingProblemFeedbackCommand command, CancellationToken cancellationToken)
+    public async Task<MeetingProblemFeedbackAddedEvent> AddMeetingProblemFeedbackAsync(AddMeetingProblemFeedbackCommand command, CancellationToken cancellationToken)
     {
         if (_currentUser.Id is null) throw new UserAccountNotFoundException();
         
@@ -43,7 +42,7 @@ public partial class MeetingService
         
         Log.Information("Add IdentifyFile FeedBack Async feedback: {@feedback}", feedback);
         
-        return new AddMeetingProblemFeedbackEvent()
+        return new MeetingProblemFeedbackAddedEvent
         {
             Feedback = _mapper.Map<MeetingProblemFeedbackDto>(feedback)
         };

@@ -6,9 +6,9 @@ using SugarTalk.Messages.Events.Meeting;
 
 namespace SugarTalk.Core.Handlers.EventHandlers.Meeting;
 
-public class AddMeetingProblemFeedbackEventHandler : IEventHandler<AddMeetingProblemFeedbackEvent>
+public class AddMeetingProblemFeedbackEventHandler : IEventHandler<MeetingProblemFeedbackAddedEvent>
 {
-    public Task Handle(IReceiveContext<AddMeetingProblemFeedbackEvent> context, CancellationToken cancellationToken)
+    public Task Handle(IReceiveContext<MeetingProblemFeedbackAddedEvent> context, CancellationToken cancellationToken)
     {
         return Task.CompletedTask;
     }
