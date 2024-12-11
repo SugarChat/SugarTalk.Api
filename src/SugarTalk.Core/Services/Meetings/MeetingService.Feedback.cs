@@ -23,15 +23,11 @@ public partial class MeetingService
 {
     public async Task<GetMeetingProblemFeedbackResponse> GetMeetingProblemFeedbackAsync(GetMeetingProblemFeedbackRequest request, CancellationToken cancellationToken = default)
     {
-        var feedbackList = await _meetingDataProvider.GetMeetingProblemFeedbackQueryAsync(request, cancellationToken);
-        
-        var totalCount = feedbackList.Count;
-        
-        var paginatedFeedback = feedbackList.Skip((request.PageIndex - 1) * request.PageSize).Take(request.PageSize).ToList();
+        var (feedbackList, totalCount) = await _meetingDataProvider.GetMeetingProblemFeedbacksAsync(request, cancellationToken);
         
         return new GetMeetingProblemFeedbackResponse
         {
-            Result = paginatedFeedback,
+            FeedbackDto = feedbackList,
             Count = totalCount
         };
     }
@@ -41,7 +37,6 @@ public partial class MeetingService
         if (_currentUser.Id is null) throw new UserAccountNotFoundException();
         
         var feedback = _mapper.Map<MeetingProblemFeedback>(command.Feedback);
-        feedback.CreatedBy = _currentUser.Id.Value;
         feedback.LastModifiedDate = DateTimeOffset.Now;
         
         await _meetingDataProvider.AddMeetingProblemFeedbackAsync(feedback, cancellationToken: cancellationToken).ConfigureAwait(false);

@@ -18,7 +18,7 @@ public class GetMeetingProblemFeedbackRequest : IRequest
 
 public class GetMeetingProblemFeedbackResponse : SugarTalkResponse<MeetingProblemFeedbackDto>
 {
-    public List<MeetingProblemFeedbackDto> Result { get; set; }
+    public List<MeetingProblemFeedbackDto> FeedbackDto { get; set; }
     
     public int Count { get; set; }
 }
