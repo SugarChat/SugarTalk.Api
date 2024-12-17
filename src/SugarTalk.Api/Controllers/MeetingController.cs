@@ -328,20 +328,20 @@ public class MeetingController : ControllerBase
         return Ok(response);
     }
     
-    [Route("feedback/get"), HttpPost]
-    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(GetFeedbacksCountResponse))]
-    public async Task<IActionResult> GetFeedBacksCountAsync([FromBody] GetFeedbacksCountRequest request)
+    [Route("feedback/get"), HttpGet]
+    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(GetMeetingProblemFeedbacksCountResponse))]
+    public async Task<IActionResult> GetMeetingProblemFeedbacksCountAsync([FromQuery] GetMeetingProblemFeedbacksCountRequest request)
     {
-        var response = await _mediator.RequestAsync<GetFeedbacksCountRequest, GetFeedbacksCountResponse>(request).ConfigureAwait(false);
+        var response = await _mediator.RequestAsync<GetMeetingProblemFeedbacksCountRequest, GetMeetingProblemFeedbacksCountResponse>(request).ConfigureAwait(false);
         
         return Ok(response);
     }
     
     [Route("feedback/update"), HttpPost]
-    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(UpdateFeedbackUnreadCountResponse))]
-    public async Task<IActionResult> UpdateFeedbackUnreadCountAsync([FromBody] UpdateFeedbackUnreadCountCommand request)
+    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(UpdateMeetingProblemFeedbackUnreadCountResponse))]
+    public async Task<IActionResult> UpdateMeetingProblemFeedbackUnreadCountAsync([FromBody] UpdateMeetingProblemFeedbackUnreadCountCommand request)
     {
-        var response = await _mediator.SendAsync<UpdateFeedbackUnreadCountCommand, UpdateFeedbackUnreadCountResponse>(request).ConfigureAwait(false);
+        var response = await _mediator.SendAsync<UpdateMeetingProblemFeedbackUnreadCountCommand, UpdateMeetingProblemFeedbackUnreadCountResponse>(request).ConfigureAwait(false);
         
         return Ok(response);
     }
