@@ -51,13 +51,13 @@ public partial class MeetingService
 
     public async Task AddFeedbackCountForAccountAsync(List<string> userNames, CancellationToken cancellationToken)
     {
-        foreach (var accountName in userNames)
+        foreach (var feedbackKey in userNames)
         {
-            var feedbackCount = await _cacheManager.GetOrAddAsync(accountName, () => Task.FromResult(new FeedbackCountDto(accountName)), CachingType.RedisCache, cancellationToken: cancellationToken).ConfigureAwait(false);
+            var feedbackCount = await _cacheManager.GetOrAddAsync(feedbackKey, () => Task.FromResult(new FeedbackCountDto(feedbackKey)), CachingType.RedisCache, cancellationToken: cancellationToken).ConfigureAwait(false);
 
             feedbackCount.Count += 1;
             
-            await _cacheManager.SetAsync(accountName, feedbackCount, CachingType.RedisCache, cancellationToken: cancellationToken).ConfigureAwait(false);
+            await _cacheManager.SetAsync(feedbackKey, feedbackCount, CachingType.RedisCache, cancellationToken: cancellationToken).ConfigureAwait(false);
         }
     }
 
