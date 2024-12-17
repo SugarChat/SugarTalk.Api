@@ -99,7 +99,6 @@ public partial class MeetingServiceFixture
                 .ConfigureAwait(false);
             
             feedbackFromDb.ShouldNotBeNull();
-            feedbackFromDb.IsNew.ShouldBe(true);
             feedbackFromDb.Category.ShouldBe(testFeedbackDto.Category);
             feedbackFromDb.CreatedBy.ShouldBe(testFeedbackDto.CreatedBy);
             feedbackFromDb.Description.ShouldBe(testFeedbackDto.Description);

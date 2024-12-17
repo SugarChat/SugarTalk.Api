@@ -18,9 +18,6 @@ public class MeetingProblemFeedback : IEntity, IHasCreatedFields, IHasModifiedFi
 
     [Column("description")]
     public string Description { get; set; }
-
-    [Column("is_new")]
-    public bool IsNew { get; set; }
     
     [Column("created_by")] 
     public int CreatedBy { get; set; }
