@@ -307,7 +307,9 @@ public class MeetingController : ControllerBase
     }
 
     #endregion
-    
+
+    #region FeedBack
+
     [Route("feedback"), HttpGet]
     [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(GetMeetingProblemFeedbackResponse))]
     public async Task<IActionResult> GetIdentifyFileQuestionFeedBacksAsync([FromQuery] GetMeetingProblemFeedbackRequest request)
@@ -325,4 +327,24 @@ public class MeetingController : ControllerBase
         
         return Ok(response);
     }
+    
+    [Route("feedback/get"), HttpPost]
+    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(GetFeedbacksCountResponse))]
+    public async Task<IActionResult> GetFeedBacksCountAsync([FromBody] GetFeedbacksCountRequest request)
+    {
+        var response = await _mediator.RequestAsync<GetFeedbacksCountRequest, GetFeedbacksCountResponse>(request).ConfigureAwait(false);
+        
+        return Ok(response);
+    }
+    
+    [Route("feedback/update"), HttpPost]
+    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(UpdateFeedbackUnreadCountResponse))]
+    public async Task<IActionResult> UpdateFeedbackUnreadCountAsync([FromBody] UpdateFeedbackUnreadCountCommand request)
+    {
+        var response = await _mediator.SendAsync<UpdateFeedbackUnreadCountCommand, UpdateFeedbackUnreadCountResponse>(request).ConfigureAwait(false);
+        
+        return Ok(response);
+    }
+
+    #endregion
 }
