@@ -38,7 +38,6 @@ public class MeetingMapping: Profile
 
         CreateMap<MeetingChatRoomSetting, MeetingChatRoomSettingDto>().ReverseMap();
         
-        CreateMap<MeetingProblemFeedbackDto, MeetingProblemFeedback>()
-            .ForMember(dest => dest.CreatedBy, opt => opt.MapFrom(src => src.CreatedBy));
+        CreateMap<MeetingProblemFeedbackDto, MeetingProblemFeedback>();
     }
 }

@@ -78,8 +78,7 @@ public partial class MeetingServiceFixture
         var testFeedbackDto = new MeetingProblemFeedbackDto
         {
             Category = MeetingCategoryType.Suggestions,
-            Description = "Test Feedback",
-            CreatedBy = 9999
+            Description = "Test Feedback"
         };
 
         var command = new AddMeetingProblemFeedbackCommand
@@ -100,7 +99,6 @@ public partial class MeetingServiceFixture
             
             feedbackFromDb.ShouldNotBeNull();
             feedbackFromDb.Category.ShouldBe(testFeedbackDto.Category);
-            feedbackFromDb.CreatedBy.ShouldBe(testFeedbackDto.CreatedBy);
             feedbackFromDb.Description.ShouldBe(testFeedbackDto.Description);
             feedbackFromDb.LastModifiedDate.ShouldBeGreaterThan(DateTimeOffset.Now.AddMinutes(-1));
         });
