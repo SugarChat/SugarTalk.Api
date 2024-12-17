@@ -301,7 +301,7 @@ namespace SugarTalk.Core.Services.Meetings
                     .CheckMeetingSecurityCodeAsync(meeting.Id, command.SecurityCode, cancellationToken).ConfigureAwait(false);
             }
 
-            CheckJoinMeetingConditions(meeting, user);
+            // CheckJoinMeetingConditions(meeting, user);
 
             await OutLiveKitExistedUserAsync(meetingNumber: meeting.MeetingNumber, userName: user.UserName, cancellationToken: cancellationToken).ConfigureAwait(false);
             

@@ -307,4 +307,22 @@ public class MeetingController : ControllerBase
     }
 
     #endregion
+    
+    [Route("feedback"), HttpGet]
+    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(GetMeetingProblemFeedbackResponse))]
+    public async Task<IActionResult> GetIdentifyFileQuestionFeedBacksAsync([FromQuery] GetMeetingProblemFeedbackRequest request)
+    {
+        var response = await _mediator.RequestAsync<GetMeetingProblemFeedbackRequest, GetMeetingProblemFeedbackResponse>(request).ConfigureAwait(false);
+        
+        return Ok(response);
+    }
+    
+    [Route("feedback/add"), HttpPost]
+    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(AddMeetingProblemFeedbackResponse))]
+    public async Task<IActionResult> GetIdentifyFileQuestionFeedBacksAsync([FromBody] AddMeetingProblemFeedbackCommand command)
+    {
+        var response = await _mediator.SendAsync<AddMeetingProblemFeedbackCommand, AddMeetingProblemFeedbackResponse>(command).ConfigureAwait(false);
+        
+        return Ok(response);
+    }
 }
