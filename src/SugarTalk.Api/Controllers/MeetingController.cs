@@ -339,9 +339,9 @@ public class MeetingController : ControllerBase
     
     [Route("feedback/update"), HttpPost]
     [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(UpdateMeetingProblemFeedbackUnreadCountResponse))]
-    public async Task<IActionResult> UpdateMeetingProblemFeedbackUnreadCountAsync([FromBody] UpdateMeetingProblemFeedbackUnreadCountCommand request)
+    public async Task<IActionResult> UpdateMeetingProblemFeedbackUnreadCountAsync([FromBody] UpdateMeetingProblemFeedbackUnreadCountCommand command)
     {
-        var response = await _mediator.SendAsync<UpdateMeetingProblemFeedbackUnreadCountCommand, UpdateMeetingProblemFeedbackUnreadCountResponse>(request).ConfigureAwait(false);
+        var response = await _mediator.SendAsync<UpdateMeetingProblemFeedbackUnreadCountCommand, UpdateMeetingProblemFeedbackUnreadCountResponse>(command).ConfigureAwait(false);
         
         return Ok(response);
     }

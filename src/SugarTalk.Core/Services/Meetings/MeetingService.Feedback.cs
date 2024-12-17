@@ -20,7 +20,7 @@ public partial interface IMeetingService
 
     Task<GetMeetingProblemFeedbacksCountResponse> GetMeetingProblemFeedbacksCountAsync(GetMeetingProblemFeedbacksCountRequest request, CancellationToken cancellationToken);
 
-    Task<UpdateMeetingProblemFeedbackUnreadCountResponse> UpdateMeetingProblemFeedbackUnreadCountAsync(UpdateMeetingProblemFeedbackUnreadCountCommand countCommand, CancellationToken cancellationToken);
+    Task<UpdateMeetingProblemFeedbackUnreadCountResponse> UpdateMeetingProblemFeedbackUnreadCountAsync(UpdateMeetingProblemFeedbackUnreadCountCommand command, CancellationToken cancellationToken);
 }
 
 public partial class MeetingService
@@ -79,7 +79,7 @@ public partial class MeetingService
         };
     }
 
-    public async Task<UpdateMeetingProblemFeedbackUnreadCountResponse> UpdateMeetingProblemFeedbackUnreadCountAsync(UpdateMeetingProblemFeedbackUnreadCountCommand countCommand, CancellationToken cancellationToken)
+    public async Task<UpdateMeetingProblemFeedbackUnreadCountResponse> UpdateMeetingProblemFeedbackUnreadCountAsync(UpdateMeetingProblemFeedbackUnreadCountCommand command, CancellationToken cancellationToken)
     {
         await _cacheManager.SetAsync(_currentUser.Name, new FeedbackCountDto(_currentUser.Name), CachingType.RedisCache, cancellationToken: cancellationToken).ConfigureAwait(false);
 
