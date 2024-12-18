@@ -7,7 +7,7 @@ using SugarTalk.Messages.Commands.Meetings;
 
 namespace SugarTalk.Core.Handlers.CommandHandlers.Meetings;
 
-public class AddMeetingProblemFeedbackCommandHandler : ICommandHandler<AddMeetingProblemFeedbackCommand>
+public class AddMeetingProblemFeedbackCommandHandler : ICommandHandler<AddMeetingProblemFeedbackCommand, AddMeetingProblemFeedbackResponse>
 {
     private readonly IMeetingService _meetingService;
 
@@ -16,8 +16,8 @@ public class AddMeetingProblemFeedbackCommandHandler : ICommandHandler<AddMeetin
         _meetingService = meetingService;
     }
 
-    public async Task Handle(IReceiveContext<AddMeetingProblemFeedbackCommand> context, CancellationToken cancellationToken)
+    public async Task<AddMeetingProblemFeedbackResponse> Handle(IReceiveContext<AddMeetingProblemFeedbackCommand> context, CancellationToken cancellationToken)
     { 
-        await _meetingService.AddMeetingProblemFeedbackAsync(context.Message, cancellationToken).ConfigureAwait(false);
+        return await _meetingService.AddMeetingProblemFeedbackAsync(context.Message, cancellationToken).ConfigureAwait(false);
     }
 }
