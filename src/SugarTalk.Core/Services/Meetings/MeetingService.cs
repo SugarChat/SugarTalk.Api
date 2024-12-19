@@ -35,6 +35,7 @@ using SugarTalk.Core.Services.Http;
 using SugarTalk.Core.Services.OpenAi;
 using SugarTalk.Core.Settings.Aws;
 using SugarTalk.Core.Settings.Meeting;
+using SugarTalk.Core.Settings.Meeting.Feedback;
 using SugarTalk.Messages.Commands.Meetings.Speak;
 using SugarTalk.Messages.Dto.LiveKit.Egress;
 using SugarTalk.Messages.Enums.Meeting;
@@ -127,6 +128,7 @@ namespace SugarTalk.Core.Services.Meetings
         private readonly ISugarTalkBackgroundJobClient _sugarTalkBackgroundJobClient;
         private readonly LiveKitServerSetting _liveKitServerSetting;
         private readonly MeetingInfoSettings _meetingInfoSettings;
+        private readonly FeedbackSettings _feedbackSettings;
         
         public MeetingService(
             IClock clock,
@@ -152,7 +154,7 @@ namespace SugarTalk.Core.Services.Meetings
             ILiveKitServerUtilService liveKitServerUtilService,
             IAntMediaServerUtilService antMediaServerUtilService,
             ISugarTalkBackgroundJobClient sugarTalkBackgroundJobClient, 
-            MeetingInfoSettings meetingInfoSettings, ICacheManager cacheManager)
+            MeetingInfoSettings meetingInfoSettings, ICacheManager cacheManager, FeedbackSettings feedbackSettings)
         {
             _clock = clock;
             _mapper = mapper;
@@ -179,6 +181,7 @@ namespace SugarTalk.Core.Services.Meetings
             _antMediaServerUtilService = antMediaServerUtilService;
             _sugarTalkBackgroundJobClient = sugarTalkBackgroundJobClient;
             _meetingInfoSettings = meetingInfoSettings;
+            _feedbackSettings = feedbackSettings;
         }
         
         public async Task<MeetingScheduledEvent> ScheduleMeetingAsync(ScheduleMeetingCommand command, CancellationToken cancellationToken)
