@@ -31,8 +31,11 @@ public partial class MeetingService
         
         return new GetMeetingProblemFeedbackResponse
         {
-            FeedbackDto = feedbackList,
-            Count = totalCount
+            Data = new GetMeetingProblemFeedbackData
+            {
+                FeedbackDto = feedbackList,
+                Count = totalCount
+            }
         };
     }
 

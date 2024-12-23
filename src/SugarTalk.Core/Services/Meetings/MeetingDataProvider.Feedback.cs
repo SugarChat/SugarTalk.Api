@@ -28,7 +28,7 @@ public partial class MeetingDataProvider
             {
                 FeedbackId = feedback.Id,
                 Creator = user.UserName,
-                Category = feedback.Category,
+                Categories = feedback.Categories,
                 Description = feedback.Description,
                 LastModifiedDate = feedback.LastModifiedDate
             };
