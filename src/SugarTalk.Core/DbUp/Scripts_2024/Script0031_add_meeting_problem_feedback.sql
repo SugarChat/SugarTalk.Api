@@ -1,7 +1,7 @@
 create table if not exists `meeting_problem_feedback`
 (
     `id` INT NOT NULL AUTO_INCREMENT,
-    `category` INT NOT NULL,
+    `categories` varchar(256) NOT NULL,
     `description` TEXT NOT NULL,
     `created_date` datetime(3) not null,
     `created_by` int not null,

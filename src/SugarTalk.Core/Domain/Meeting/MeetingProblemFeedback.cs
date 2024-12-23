@@ -12,8 +12,8 @@ public class MeetingProblemFeedback : IEntity, IHasCreatedFields, IHasModifiedFi
     [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
     public int Id { get; set; }
 
-    [Column("category")]
-    public int Categories { get; set; }
+    [Column("categories")]
+    public string Categories { get; set; }
 
     [Column("description")]
     public string Description { get; set; }

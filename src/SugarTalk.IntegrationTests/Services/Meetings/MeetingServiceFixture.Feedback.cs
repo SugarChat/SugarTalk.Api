@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Mediator.Net;
+using Newtonsoft.Json;
 using Shouldly;
 using SugarTalk.Core.Data;
 using SugarTalk.Core.Domain.Account;
@@ -26,7 +27,7 @@ public partial class MeetingServiceFixture
         { 
             Id = 1001, 
             CreatedBy = testUser.Id, 
-            Categories  = (int)MeetingCategoryType.Suggestions,
+            Categories  = "功能建議",
             Description = "Test Feedback 1", 
             LastModifiedDate = DateTimeOffset.Now 
         }; 
@@ -34,7 +35,7 @@ public partial class MeetingServiceFixture
         { 
             Id = 1002, 
             CreatedBy = testUser.Id, 
-            Categories = (int)MeetingCategoryType.Defect,
+            Categories = "功能缺陷",
             Description = "Test Feedback 2", 
             LastModifiedDate = DateTimeOffset.Now 
         }; 
@@ -101,8 +102,12 @@ public partial class MeetingServiceFixture
                 .FirstOrDefaultAsync<MeetingProblemFeedback>(f => f.Description == testFeedbackDto.Description)
                 .ConfigureAwait(false);
             
+            var categoriesFromDb = JsonConvert.DeserializeObject<List<MeetingCategoryType>>(feedbackFromDb.Categories);
+            
             feedbackFromDb.ShouldNotBeNull();
-            feedbackFromDb.Categories.ShouldBe((int)MeetingCategoryType.Suggestions | (int)MeetingCategoryType.Defect);
+            feedbackFromDb.Categories.Length.ShouldBe(2);
+            categoriesFromDb.ShouldContain(MeetingCategoryType.Suggestions);
+            categoriesFromDb.ShouldContain(MeetingCategoryType.Defect);
             feedbackFromDb.Description.ShouldBe(testFeedbackDto.Description);
             feedbackFromDb.LastModifiedDate.ShouldBeGreaterThan(DateTimeOffset.Now.AddMinutes(-1));
         });
