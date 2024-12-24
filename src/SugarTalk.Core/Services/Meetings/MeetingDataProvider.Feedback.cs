@@ -30,7 +30,9 @@ public partial class MeetingDataProvider
             {
                 FeedbackId = feedback.Id,
                 Creator = user.UserName,
-                Categories = JsonConvert.DeserializeObject<List<MeetingCategoryType>>(feedback.Categories),
+                Categories = !string.IsNullOrEmpty(feedback.Categories)
+                    ? JsonConvert.DeserializeObject<List<MeetingCategoryType>>(feedback.Categories.Trim('"'))
+                    : new List<MeetingCategoryType>(),
                 Description = feedback.Description,
                 LastModifiedDate = feedback.LastModifiedDate
             };
