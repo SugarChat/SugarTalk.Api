@@ -3,9 +3,11 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
+using Newtonsoft.Json;
 using SugarTalk.Core.Domain.Account;
 using SugarTalk.Core.Domain.Meeting;
 using SugarTalk.Messages.Dto.Meetings;
+using SugarTalk.Messages.Enums.Meeting;
 using SugarTalk.Messages.Requests.Meetings;
 
 namespace SugarTalk.Core.Services.Meetings;
@@ -28,7 +30,7 @@ public partial class MeetingDataProvider
             {
                 FeedbackId = feedback.Id,
                 Creator = user.UserName,
-                Category = feedback.Category,
+                Categories = JsonConvert.DeserializeObject<List<MeetingCategoryType>>(feedback.Categories),
                 Description = feedback.Description,
                 LastModifiedDate = feedback.LastModifiedDate
             };
@@ -42,6 +44,8 @@ public partial class MeetingDataProvider
 
     public async Task AddMeetingProblemFeedbackAsync(MeetingProblemFeedback feedback, bool forceSave = true, CancellationToken cancellationToken = default)
     {
+        feedback.Categories = JsonConvert.SerializeObject(feedback.Categories);
+        
         await _repository.InsertAsync(feedback, cancellationToken).ConfigureAwait(false);
         
         if (forceSave)

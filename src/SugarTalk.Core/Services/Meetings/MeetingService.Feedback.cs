@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using Newtonsoft.Json;
 using SugarTalk.Core.Domain.Meeting;
 using SugarTalk.Messages.Enums.Caching;
 using SugarTalk.Messages.Commands.Meetings;
@@ -31,14 +32,19 @@ public partial class MeetingService
         
         return new GetMeetingProblemFeedbackResponse
         {
-            FeedbackDto = feedbackList,
-            Count = totalCount
+            Data = new GetMeetingProblemFeedbackData
+            {
+                FeedbackDto = feedbackList,
+                Count = totalCount
+            }
         };
     }
 
     public async Task<AddMeetingProblemFeedbackResponse> AddMeetingProblemFeedbackAsync(AddMeetingProblemFeedbackCommand command, CancellationToken cancellationToken)
     {
         var feedback = _mapper.Map<MeetingProblemFeedback>(command.Feedback);
+        
+        feedback.Categories = JsonConvert.SerializeObject(command.Feedback.Categories);
         
         await _meetingDataProvider.AddMeetingProblemFeedbackAsync(feedback, cancellationToken: cancellationToken).ConfigureAwait(false);
 

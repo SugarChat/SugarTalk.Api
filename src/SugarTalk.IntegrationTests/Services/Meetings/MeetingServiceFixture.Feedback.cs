@@ -1,7 +1,9 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Mediator.Net;
+using Newtonsoft.Json;
 using Shouldly;
 using SugarTalk.Core.Data;
 using SugarTalk.Core.Domain.Account;
@@ -25,7 +27,7 @@ public partial class MeetingServiceFixture
         { 
             Id = 1001, 
             CreatedBy = testUser.Id, 
-            Category = MeetingCategoryType.Suggestions, 
+            Categories  = "功能建議",
             Description = "Test Feedback 1", 
             LastModifiedDate = DateTimeOffset.Now 
         }; 
@@ -33,7 +35,7 @@ public partial class MeetingServiceFixture
         { 
             Id = 1002, 
             CreatedBy = testUser.Id, 
-            Category = MeetingCategoryType.Defect, 
+            Categories = "功能缺陷",
             Description = "Test Feedback 2", 
             LastModifiedDate = DateTimeOffset.Now 
         }; 
@@ -57,15 +59,15 @@ public partial class MeetingServiceFixture
                 .ConfigureAwait(false);
 
             response.ShouldNotBeNull();
-            response.Count.ShouldBe(2);
-            response.FeedbackDto.Count.ShouldBe(2);
+            response.Data.Count.ShouldBe(2);
+            response.Data.FeedbackDto.Count.ShouldBe(2);
             
-            var feedback1 = response.FeedbackDto.FirstOrDefault(f => f.FeedbackId == testFeedback1.Id);
+            var feedback1 = response.Data.FeedbackDto.FirstOrDefault(f => f.FeedbackId == testFeedback1.Id);
             feedback1.ShouldNotBeNull();
             feedback1.Creator.ShouldBe(testUser.UserName);
             feedback1.Description.ShouldBe(testFeedback1.Description);
             
-            var feedback2 = response.FeedbackDto.FirstOrDefault(f => f.FeedbackId == testFeedback2.Id);
+            var feedback2 = response.Data.FeedbackDto.FirstOrDefault(f => f.FeedbackId == testFeedback2.Id);
             feedback2.ShouldNotBeNull();
             feedback2.Creator.ShouldBe(testUser.UserName);
             feedback2.Description.ShouldBe(testFeedback2.Description);
@@ -77,7 +79,10 @@ public partial class MeetingServiceFixture
     {
         var testFeedbackDto = new MeetingProblemFeedbackDto
         {
-            Category = MeetingCategoryType.Suggestions,
+            Categories = new List<MeetingCategoryType>
+            {
+               MeetingCategoryType.Suggestions,MeetingCategoryType.Defect
+            },
             Description = "Test Feedback"
         };
 
@@ -97,8 +102,12 @@ public partial class MeetingServiceFixture
                 .FirstOrDefaultAsync<MeetingProblemFeedback>(f => f.Description == testFeedbackDto.Description)
                 .ConfigureAwait(false);
             
+            var categoriesFromDb = JsonConvert.DeserializeObject<List<MeetingCategoryType>>(feedbackFromDb.Categories);
+            
             feedbackFromDb.ShouldNotBeNull();
-            feedbackFromDb.Category.ShouldBe(testFeedbackDto.Category);
+            feedbackFromDb.Categories.Length.ShouldBe(2);
+            categoriesFromDb.ShouldContain(MeetingCategoryType.Suggestions);
+            categoriesFromDb.ShouldContain(MeetingCategoryType.Defect);
             feedbackFromDb.Description.ShouldBe(testFeedbackDto.Description);
             feedbackFromDb.LastModifiedDate.ShouldBeGreaterThan(DateTimeOffset.Now.AddMinutes(-1));
         });

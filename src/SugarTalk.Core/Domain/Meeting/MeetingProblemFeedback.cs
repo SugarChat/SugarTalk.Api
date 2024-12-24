@@ -1,7 +1,6 @@
 using System;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using SugarTalk.Messages.Enums.Meeting;
 
 namespace SugarTalk.Core.Domain.Meeting;
 
@@ -13,8 +12,8 @@ public class MeetingProblemFeedback : IEntity, IHasCreatedFields, IHasModifiedFi
     [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
     public int Id { get; set; }
 
-    [Column("category")]
-    public MeetingCategoryType Category { get; set; }
+    [Column("categories")]
+    public string Categories { get; set; }
 
     [Column("description")]
     public string Description { get; set; }

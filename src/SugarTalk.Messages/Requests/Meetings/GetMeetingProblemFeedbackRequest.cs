@@ -14,7 +14,11 @@ public class GetMeetingProblemFeedbackRequest : IRequest
     public int PageSize { get; set; } = 15;
 }
 
-public class GetMeetingProblemFeedbackResponse : SugarTalkResponse<GetMeetingProblemFeedbackDto>
+public class GetMeetingProblemFeedbackResponse : SugarTalkResponse<GetMeetingProblemFeedbackData>
+{
+}
+
+public class GetMeetingProblemFeedbackData
 {
     public List<GetMeetingProblemFeedbackDto> FeedbackDto { get; set; }
     
