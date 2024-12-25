@@ -27,7 +27,7 @@ public partial class MeetingServiceFixture
         { 
             Id = 1001, 
             CreatedBy = testUser.Id, 
-            Categories  = "功能建議",
+            Categories  = "[0]",
             Description = "Test Feedback 1", 
             LastModifiedDate = DateTimeOffset.Now 
         }; 
@@ -35,7 +35,7 @@ public partial class MeetingServiceFixture
         { 
             Id = 1002, 
             CreatedBy = testUser.Id, 
-            Categories = "功能缺陷",
+            Categories = "[1]",
             Description = "Test Feedback 2", 
             LastModifiedDate = DateTimeOffset.Now 
         }; 
@@ -105,7 +105,6 @@ public partial class MeetingServiceFixture
             var categoriesFromDb = JsonConvert.DeserializeObject<List<MeetingCategoryType>>(feedbackFromDb.Categories);
             
             feedbackFromDb.ShouldNotBeNull();
-            feedbackFromDb.Categories.Length.ShouldBe(2);
             categoriesFromDb.ShouldContain(MeetingCategoryType.Suggestions);
             categoriesFromDb.ShouldContain(MeetingCategoryType.Defect);
             feedbackFromDb.Description.ShouldBe(testFeedbackDto.Description);

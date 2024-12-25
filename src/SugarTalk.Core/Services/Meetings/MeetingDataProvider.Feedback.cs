@@ -30,9 +30,7 @@ public partial class MeetingDataProvider
             {
                 FeedbackId = feedback.Id,
                 Creator = user.UserName,
-                Categories = !string.IsNullOrEmpty(feedback.Categories)
-                    ? JsonConvert.DeserializeObject<List<MeetingCategoryType>>(feedback.Categories.Trim('"'))
-                    : new List<MeetingCategoryType>(),
+                Categories = JsonConvert.DeserializeObject<List<MeetingCategoryType>>(feedback.Categories),
                 Description = feedback.Description,
                 LastModifiedDate = feedback.LastModifiedDate
             };
@@ -46,8 +44,6 @@ public partial class MeetingDataProvider
 
     public async Task AddMeetingProblemFeedbackAsync(MeetingProblemFeedback feedback, bool forceSave = true, CancellationToken cancellationToken = default)
     {
-        feedback.Categories = JsonConvert.SerializeObject(feedback.Categories);
-        
         await _repository.InsertAsync(feedback, cancellationToken).ConfigureAwait(false);
         
         if (forceSave)
