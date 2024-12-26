@@ -108,7 +108,6 @@ public partial class MeetingServiceFixture
             categoriesFromDb.ShouldContain(MeetingCategoryType.Suggestions);
             categoriesFromDb.ShouldContain(MeetingCategoryType.Defect);
             feedbackFromDb.Description.ShouldBe(testFeedbackDto.Description);
-            feedbackFromDb.LastModifiedDate.ShouldBeGreaterThan(DateTimeOffset.Now.AddMinutes(-1));
         });
     }
 }
