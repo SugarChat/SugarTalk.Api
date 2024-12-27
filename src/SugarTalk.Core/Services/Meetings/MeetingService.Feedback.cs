@@ -28,7 +28,7 @@ public partial class MeetingService
 {
     public async Task<GetMeetingProblemFeedbackResponse> GetMeetingProblemFeedbackAsync(GetMeetingProblemFeedbackRequest request, CancellationToken cancellationToken)
     {
-        var (feedbackList, totalCount) = await _meetingDataProvider.GetMeetingProblemFeedbacksAsync(request, cancellationToken);
+        var (feedbackList, totalCount) = await _meetingDataProvider.GetMeetingProblemFeedbacksAsync(request, cancellationToken).ConfigureAwait(false);
         
         return new GetMeetingProblemFeedbackResponse
         {
