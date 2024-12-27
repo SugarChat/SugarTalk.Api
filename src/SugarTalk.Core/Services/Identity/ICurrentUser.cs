@@ -70,3 +70,11 @@ public class InternalUser : ICurrentUser
     
     public UserAccountIssuer AuthType => UserAccountIssuer.Wiltechs;
 }
+
+public static class CurrentUsers
+{
+    public static class InternalUser
+    {
+        public static int Id = 8888;
+    }
+}

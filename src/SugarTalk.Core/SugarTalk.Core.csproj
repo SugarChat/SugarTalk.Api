@@ -111,6 +111,8 @@
         <EmbeddedResource Include="DbUp\Scripts_2024\Script0028_modify_meeting_speech.sql" />
         <EmbeddedResource Include="DbUp\Scripts_2024\Script0029_add_user_account_api_key.sql" />
         <EmbeddedResource Include="DbUp\Scripts_2024\Script0030_add_meeting_record_job_id.sql" />
+        <EmbeddedResource Include="DbUp\Scripts_2024\Script0031_add_meeting_problem_feedback.sql" />
+        <EmbeddedResource Include="DbUp\Scripts_2024\Script0032_modify_meeting_problem_feedback_table.sql" />
     </ItemGroup>
     
     <ItemGroup>

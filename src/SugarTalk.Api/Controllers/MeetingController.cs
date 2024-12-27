@@ -307,4 +307,44 @@ public class MeetingController : ControllerBase
     }
 
     #endregion
+
+    #region FeedBack
+
+    [Route("feedback"), HttpGet]
+    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(GetMeetingProblemFeedbackResponse))]
+    public async Task<IActionResult> GetMeetingProblemFeedBacksAsync([FromQuery] GetMeetingProblemFeedbackRequest request)
+    {
+        var response = await _mediator.RequestAsync<GetMeetingProblemFeedbackRequest, GetMeetingProblemFeedbackResponse>(request).ConfigureAwait(false);
+        
+        return Ok(response);
+    }
+    
+    [Route("feedback/add"), HttpPost]
+    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(AddMeetingProblemFeedbackResponse))]
+    public async Task<IActionResult> AddMeetingProblemFeedBacksAsync([FromBody] AddMeetingProblemFeedbackCommand command)
+    {
+        var response = await _mediator.SendAsync<AddMeetingProblemFeedbackCommand, AddMeetingProblemFeedbackResponse>(command).ConfigureAwait(false);
+        
+        return Ok(response);
+    }
+    
+    [Route("feedback/count/get"), HttpGet]
+    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(GetMeetingProblemFeedbacksCountResponse))]
+    public async Task<IActionResult> GetMeetingProblemFeedbacksCountAsync([FromQuery] GetMeetingProblemFeedbacksCountRequest request)
+    {
+        var response = await _mediator.RequestAsync<GetMeetingProblemFeedbacksCountRequest, GetMeetingProblemFeedbacksCountResponse>(request).ConfigureAwait(false);
+        
+        return Ok(response);
+    }
+    
+    [Route("feedback/update"), HttpPost]
+    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(UpdateMeetingProblemFeedbackUnreadCountResponse))]
+    public async Task<IActionResult> UpdateMeetingProblemFeedbackUnreadCountAsync([FromBody] UpdateMeetingProblemFeedbackUnreadCountCommand command)
+    {
+        var response = await _mediator.SendAsync<UpdateMeetingProblemFeedbackUnreadCountCommand, UpdateMeetingProblemFeedbackUnreadCountResponse>(command).ConfigureAwait(false);
+        
+        return Ok(response);
+    }
+
+    #endregion
 }
