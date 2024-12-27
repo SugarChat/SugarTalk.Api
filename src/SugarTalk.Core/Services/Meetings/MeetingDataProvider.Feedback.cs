@@ -28,16 +28,16 @@ public partial class MeetingDataProvider
             where string.IsNullOrEmpty(request.KeyWord) || user.UserName.Contains(request.KeyWord)
             select new GetMeetingProblemFeedbackDto
             {
-                FeedbackId = feedback.Id,
                 Creator = user.UserName,
-                Categories = JsonConvert.DeserializeObject<List<MeetingCategoryType>>(feedback.Categories),
+                FeedbackId = feedback.Id,
                 Description = feedback.Description,
-                LastModifiedDate = feedback.LastModifiedDate
+                LastModifiedDate = feedback.LastModifiedDate,
+                Categories = JsonConvert.DeserializeObject<List<MeetingCategoryType>>(feedback.Categories)
             };
         
-        var totalCount = await query.CountAsync(cancellationToken);
+        var totalCount = await query.CountAsync(cancellationToken).ConfigureAwait(false);
 
-        var feedbackList = await query.Skip((request.PageIndex - 1) * request.PageSize).Take(request.PageSize).ToListAsync(cancellationToken);
+        var feedbackList = await query.Skip((request.PageIndex - 1) * request.PageSize).Take(request.PageSize).ToListAsync(cancellationToken).ConfigureAwait(false);
 
         return (feedbackList, totalCount);
     }

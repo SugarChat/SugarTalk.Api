@@ -328,7 +328,7 @@ public class MeetingController : ControllerBase
         return Ok(response);
     }
     
-    [Route("feedback/get"), HttpGet]
+    [Route("feedback/count/get"), HttpGet]
     [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(GetMeetingProblemFeedbacksCountResponse))]
     public async Task<IActionResult> GetMeetingProblemFeedbacksCountAsync([FromQuery] GetMeetingProblemFeedbacksCountRequest request)
     {
