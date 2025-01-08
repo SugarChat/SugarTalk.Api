@@ -116,6 +116,8 @@ public partial class MeetingService
         if (postResponse is null) throw new Exception("Start Meeting Recording Failed.");
         
         await AddMeetingRecordAsync(meeting, meetingRecordId, postResponse.EgressId, cancellationToken).ConfigureAwait(false);
+
+        _backgroundJobClient.Enqueue(() => AddRecordForAccountAsync(_currentUser.Name, cancellationToken));
       
         _sugarTalkBackgroundJobClient.Schedule<IMediator>(m => m.SendAsync(new MeetingRecordRestartCommand
         {
@@ -469,6 +471,17 @@ public partial class MeetingService
         meeting.IsActiveRecord = true;
 
         await _meetingDataProvider.UpdateMeetingAsync(meeting, cancellationToken).ConfigureAwait(false);
+    }
+    
+    private async Task AddRecordForAccountAsync(string currentUserName, CancellationToken cancellationToken)
+    {
+        var recordKey = currentUserName;
+        
+        var recordCount = await _cacheManager.GetOrAddAsync(recordKey, () => Task.FromResult(new RecordCountDto(recordKey)), CachingType.RedisCache, cancellationToken: cancellationToken).ConfigureAwait(false);
+
+        recordCount.Count += 1;
+
+        await _cacheManager.SetAsync(recordKey, recordCount, CachingType.RedisCache, cancellationToken: cancellationToken).ConfigureAwait(false);
     }
 
     private async Task UpdateMeetingRecordEgressRestartAsync(Guid? meetingRecordId, string egressId, CancellationToken cancellationToken)
