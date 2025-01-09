@@ -7,7 +7,7 @@ using SugarTalk.Messages.Commands.Meetings;
 
 namespace SugarTalk.Core.Handlers.CommandHandlers.Meetings;
 
-public class CheckRenamePermissionCommandHandler :ICommandHandler<CheckRenamePermissionCommand,CheckRenamePermissionResponse>
+public class CheckRenamePermissionCommandHandler :ICommandHandler<CheckRenamePermissionCommand, CheckRenamePermissionResponse>
 {
     private readonly IMeetingService _meetingService;
 
