@@ -24,7 +24,7 @@ using SugarTalk.Messages.Requests.Meetings;
 
 namespace SugarTalk.Core.Services.Meetings
 {
-    public partial interface IMeetingDataProvider : IScopedDependency 
+    public partial interface IMeetingDataProvider : IScopedDependency
     {
         Task<MeetingUserSession> GetMeetingUserSessionByMeetingIdAsync(Guid meetingId, Guid? meetingSubId, int? userId,
             CancellationToken cancellationToken);
