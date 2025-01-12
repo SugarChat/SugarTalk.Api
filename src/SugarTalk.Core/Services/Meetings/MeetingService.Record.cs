@@ -6,6 +6,8 @@ using Newtonsoft.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using Aspose.Pdf;
+using Aspose.Pdf.Text;
 using SugarTalk.Messages.Dto.Users;
 using SugarTalk.Messages.Dto.FClub;
 using SugarTalk.Messages.Extensions;
@@ -52,6 +54,8 @@ public partial interface IMeetingService
     Task<GenerateMeetingRecordTemporaryUrlResponse> GenerateMeetingRecordTemporaryUrlAsync(GenerateMeetingRecordTemporaryUrlCommand command);
 
     Task UpdateMeetingRecordUrlAsync(UpdateMeetingRecordUrlCommand command, CancellationToken cancellationToken);
+
+    Task<MeetingSummaryPDFExportResponse> MeetingSummaryPDFExportAsync(MeetingSummaryPDFExportCommand command, CancellationToken cancellationToken);
 }
 
 public partial class MeetingService
@@ -445,7 +449,31 @@ public partial class MeetingService
             await TranscriptionMeetingAsync(meetingDetails, record, cancellationToken);
         }
     }
-    
+
+    public async Task<MeetingSummaryPDFExportResponse> MeetingSummaryPDFExportAsync(
+        MeetingSummaryPDFExportCommand command, CancellationToken cancellationToken)
+    {
+        var license = new License();
+        license.SetLicense("Aspose.Total.NET.txt");
+        // 创建一个 PDF 文档对象
+        var pdfDocument = new Document();
+        // 添加一个页面
+        var page = pdfDocument.Pages.Add();
+
+        // 创建文字段
+        var textFragment = new TextFragment("Hello word");
+        textFragment.Position = new Position(100, 700); // 设置文本位置
+        page.Paragraphs.Add(textFragment);
+
+        // 保存为 PDF 文件
+        pdfDocument.Save("output.pdf");
+        
+        return new MeetingSummaryPDFExportResponse
+        {
+            
+        };
+    }
+
     private async Task AddMeetingRecordAsync(Meeting meeting, Guid meetingRecordId, string egressId, CancellationToken cancellationToken)
     {
         await _meetingDataProvider.PersistMeetingRecordAsync(meeting.Id, meetingRecordId, egressId, cancellationToken).ConfigureAwait(false);
@@ -528,8 +556,7 @@ public partial class MeetingService
         _backgroundJobClient.Schedule<IMediator>(m => m.SendAsync(restartRecordCommand, cancellationToken), TimeSpan.FromSeconds(10)); 
     }
 
-     private async Task UpdateMeetingRecordAsync(MeetingRecord meetingRecord, EgressItemDto egressItem,
-         CancellationToken cancellationToken)
+     private async Task UpdateMeetingRecordAsync(MeetingRecord meetingRecord, EgressItemDto egressItem, CancellationToken cancellationToken)
      {
          meetingRecord.Url = egressItem.File.Filename;
          meetingRecord.RecordType = MeetingRecordType.EndRecord;
