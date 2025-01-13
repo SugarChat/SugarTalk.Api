@@ -1,7 +1,10 @@
 using System;
 using Serilog;
+using System.IO;
+using Aspose.Pdf;
 using System.Linq;
 using Mediator.Net;
+using Aspose.Pdf.Text;
 using Newtonsoft.Json;
 using System.Threading;
 using System.Threading.Tasks;
@@ -53,6 +56,8 @@ public partial interface IMeetingService
     Task<GenerateMeetingRecordTemporaryUrlResponse> GenerateMeetingRecordTemporaryUrlAsync(GenerateMeetingRecordTemporaryUrlCommand command);
 
     Task UpdateMeetingRecordUrlAsync(UpdateMeetingRecordUrlCommand command, CancellationToken cancellationToken);
+
+    Task<MeetingSummaryPDFExportResponse> MeetingSummaryPdfExportAsync(MeetingSummaryPDFExportRequest request, CancellationToken cancellationToken);
 }
 
 public partial class MeetingService
@@ -460,6 +465,58 @@ public partial class MeetingService
         }
     }
 
+    public async Task<MeetingSummaryPDFExportResponse> MeetingSummaryPdfExportAsync(MeetingSummaryPDFExportRequest request, CancellationToken cancellationToken)
+    {
+        var meetingSummaryPdfRecord = await _meetingDataProvider.GetMeetingSummaryPdfAsync(request.SummaryId, request.TargetLanguage, cancellationToken).ConfigureAwait(false);
+        
+        Log.Information("Get meeting summary pdf record: {@MeetingSummaryPdfRecord}", meetingSummaryPdfRecord);
+        
+        var fileName = meetingSummaryPdfRecord.Any() 
+            ? meetingSummaryPdfRecord.First().PdfUrl
+            : await ConvertPdfAsync(request.PdfContent, request.SummaryId, request.TargetLanguage, cancellationToken).ConfigureAwait(false);
+        
+        var presignedUrl = await _awsS3Service.GeneratePresignedUrlAsync(fileName, DateTime.UtcNow.AddDays(7)).ConfigureAwait(false);
+        
+        return new MeetingSummaryPDFExportResponse
+        {
+            Data = new MeetingSummaryPDFExportDto
+            {
+                Url = presignedUrl
+            }
+        };
+    }
+    
+    private async Task<string> ConvertPdfAsync(string content, int summaryId, TranslationLanguage targetLanguage, CancellationToken cancellationToken)
+    {
+        var license = new License();
+        license.SetLicense("Aspose.Total.NET.txt");
+        
+        var pdfDocument = new Document();
+        var page = pdfDocument.Pages.Add();
+        var textFragment = new TextFragment(content)
+        {
+            Position = new Position(100, 700)
+        };
+        page.Paragraphs.Add(textFragment);
+
+        using var memoryStream = new MemoryStream();
+        pdfDocument.Save(memoryStream);
+        memoryStream.Position = 0;
+
+        var fileName = $"Sugartalk/{Guid.NewGuid()}.pdf";
+        
+        await _awsS3Service.UploadFileAsync(fileName: fileName, fileContent: memoryStream.ToArray(), cancellationToken: cancellationToken).ConfigureAwait(false);
+
+        await _meetingDataProvider.AddMeetingSummaryPdfAsync(new MeetingSummaryPdfRecord
+        {
+            SummaryId = summaryId,
+            TargetLanguage = targetLanguage,
+            PdfUrl = fileName
+        }, cancellationToken: cancellationToken).ConfigureAwait(false);
+
+        return fileName;
+    }
+    
     private async Task AddMeetingRecordAsync(Meeting meeting, Guid meetingRecordId, string egressId, CancellationToken cancellationToken)
     {
         await _meetingDataProvider.PersistMeetingRecordAsync(meeting.Id, meetingRecordId, egressId, cancellationToken).ConfigureAwait(false);
@@ -553,8 +610,7 @@ public partial class MeetingService
         _backgroundJobClient.Schedule<IMediator>(m => m.SendAsync(restartRecordCommand, cancellationToken), TimeSpan.FromSeconds(10)); 
     }
 
-     private async Task UpdateMeetingRecordAsync(MeetingRecord meetingRecord, EgressItemDto egressItem,
-         CancellationToken cancellationToken)
+     private async Task UpdateMeetingRecordAsync(MeetingRecord meetingRecord, EgressItemDto egressItem, CancellationToken cancellationToken)
      {
          meetingRecord.Url = egressItem.File.Filename;
          meetingRecord.RecordType = MeetingRecordType.EndRecord;

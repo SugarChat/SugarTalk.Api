@@ -7,6 +7,9 @@
 
     <ItemGroup>
       <PackageReference Include="Aliyun.OSS.SDK.NetCore" Version="2.13.0" />
+      <PackageReference Include="Aspose.Drawing" Version="24.7.0" />
+      <PackageReference Include="Aspose.PDF.Drawing" Version="24.6.0" />
+      <PackageReference Include="Aspose.Words" Version="24.6.0" />
       <PackageReference Include="Autofac" Version="7.0.0" />
       <PackageReference Include="Autofac.Extensions.DependencyInjection" Version="8.0.0" />
       <PackageReference Include="AutoMapper" Version="12.0.1" />
@@ -113,6 +116,7 @@
         <EmbeddedResource Include="DbUp\Scripts_2024\Script0030_add_meeting_record_job_id.sql" />
         <EmbeddedResource Include="DbUp\Scripts_2024\Script0031_add_meeting_problem_feedback.sql" />
         <EmbeddedResource Include="DbUp\Scripts_2024\Script0032_modify_meeting_problem_feedback_table.sql" />
+        <EmbeddedResource Include="DbUp\Scripts_2025\Script0001_add_meeting_summary_pdf_record.sql" />
     </ItemGroup>
     
     <ItemGroup>

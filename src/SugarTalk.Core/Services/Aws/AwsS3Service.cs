@@ -16,7 +16,7 @@ public interface IAwsS3Service : IScopedDependency
     
     Task UploadFileAsync(string fileName, byte[] fileContent, CancellationToken cancellationToken);
 
-    Task<string> GeneratePresignedUrlAsync(string fileName, double durationInMinutes = 1);
+    Task<string> GeneratePresignedUrlAsync(string fileName, DateTime? duration = null);
 }
 
 public class AwsS3Service : IAwsS3Service
@@ -47,13 +47,13 @@ public class AwsS3Service : IAwsS3Service
         await _amazonS3.PutObjectAsync(request, cancellationToken);
     }
 
-    public async Task<string> GeneratePresignedUrlAsync(string fileName, double durationInMinutes = 1)
+    public async Task<string> GeneratePresignedUrlAsync(string fileName, DateTime? duration = null)
     {
         var request = new GetPreSignedUrlRequest
         {
             Key = fileName,
             BucketName = _awsOssSettings.BucketName,
-            Expires = DateTime.UtcNow.AddMinutes(durationInMinutes)
+            Expires = duration ?? DateTime.UtcNow.AddMinutes(1)
         };
         
         return await _amazonS3.GetPreSignedURLAsync(request).ConfigureAwait(false);

@@ -86,7 +86,7 @@ public partial class MeetingService
         
         try
         {
-            var presignedUrl = await _awsS3Service.GeneratePresignedUrlAsync(meetingRecord.Url, 30).ConfigureAwait(false);
+            var presignedUrl = await _awsS3Service.GeneratePresignedUrlAsync(meetingRecord.Url, DateTime.UtcNow.AddMinutes(30)).ConfigureAwait(false);
 
             localhostUrl = await DownloadWithRetryAsync(presignedUrl, cancellationToken: cancellationToken).ConfigureAwait(false);
 
@@ -219,7 +219,7 @@ public partial class MeetingService
     private async Task<string> GetUrlAsync(string url, CancellationToken cancellationToken)
     {
         if (!url.StartsWith("http"))
-            return await _awsS3Service.GeneratePresignedUrlAsync(url, 30).ConfigureAwait(false);
+            return await _awsS3Service.GeneratePresignedUrlAsync(url, DateTime.UtcNow.AddMinutes(30)).ConfigureAwait(false);
         
         return url;
     }
