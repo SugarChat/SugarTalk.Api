@@ -21,7 +21,7 @@ public partial interface IMeetingDataProvider
     Task UpdateMeetingUserSessionAsync(MeetingUserSession userSession, CancellationToken cancellationToken);
 
     Task<List<MeetingUserSessionDto>> GetUserSessionsByMeetingIdAsync(Guid meetingId, Guid? meetingSubId,
-        CancellationToken cancellationToken, bool isQueryKickedOut = false, bool includeUsername = false);
+        CancellationToken cancellationToken, bool isQueryKickedOut = false, bool? includeUsername = false);
 
     Task RemoveMeetingUserSessionsIfRequiredAsync(int userId, Guid meetingId, CancellationToken cancellationToken);
     
@@ -68,7 +68,7 @@ public partial class MeetingDataProvider
     }
 
     public async Task<List<MeetingUserSessionDto>> GetUserSessionsByMeetingIdAsync(Guid meetingId, Guid? meetingSubId,
-        CancellationToken cancellationToken, bool isQueryKickedOut = false, bool includeUserName = false)
+        CancellationToken cancellationToken, bool isQueryKickedOut = false, bool? includeUserName = false)
     {
         var query = _repository.QueryNoTracking<MeetingUserSession>()
             .Where(x => x.MeetingId == meetingId && !x.IsDeleted);
@@ -87,7 +87,7 @@ public partial class MeetingDataProvider
         
         var userSessionDtos = _mapper.Map<List<MeetingUserSessionDto>>(userSessions);
     
-        if (includeUserName)
+        if (includeUserName == true)
             await EnrichMeetingUserSessionsByOnlineAsync(userSessionDtos, cancellationToken).ConfigureAwait(false);
 
         return userSessionDtos;
