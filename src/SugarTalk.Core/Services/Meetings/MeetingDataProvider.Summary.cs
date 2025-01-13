@@ -22,6 +22,10 @@ public partial interface IMeetingDataProvider
     Task AddMeetingSummariesAsync(List<MeetingSummary> summaries, bool forceSave = true, CancellationToken cancellationToken = default);
     
     Task UpdateMeetingSummariesAsync(List<MeetingSummary> summaries, bool forceSave = true, CancellationToken cancellationToken = default);
+
+    Task AddMeetingSummaryPdfAsync(MeetingSummaryPdfRecord record, bool forceSave = true, CancellationToken cancellationToken = default);
+    
+    Task<List<MeetingSummaryPdfRecord>> GetMeetingSummaryPdfAsync(int? summaryId = null, TranslationLanguage? targetLanguage = null, CancellationToken cancellationToken = default);
 }
 
 public partial class MeetingDataProvider
@@ -81,5 +85,26 @@ public partial class MeetingDataProvider
         
         if (forceSave)
             await _unitOfWork.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+    }
+    
+    public async  Task AddMeetingSummaryPdfAsync(MeetingSummaryPdfRecord record, bool forceSave = true, CancellationToken cancellationToken = default)
+    {
+        await _repository.InsertAsync(record, cancellationToken).ConfigureAwait(false);
+
+        if (forceSave)
+            await _unitOfWork.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+    }
+
+    public async Task<List<MeetingSummaryPdfRecord>> GetMeetingSummaryPdfAsync(int? summaryId = null, TranslationLanguage? targetLanguage = null, CancellationToken cancellationToken = default)
+    {
+        var query = _repository.Query<MeetingSummaryPdfRecord>();
+
+        if (summaryId.HasValue)
+            query = query.Where(x => x.SummaryId == summaryId.Value);
+
+        if (targetLanguage.HasValue)
+            query = query.Where(x => x.TargetLanguage == targetLanguage.Value);
+        
+        return await query.ToListAsync(cancellationToken).ConfigureAwait(false);
     }
 }

@@ -454,12 +454,33 @@ public partial class MeetingService
     public async Task<MeetingSummaryPDFExportResponse> MeetingSummaryPDFExportAsync(
         MeetingSummaryPDFExportCommand command, CancellationToken cancellationToken)
     {
+        var meetingSummaryPdfRecord = await _meetingDataProvider.GetMeetingSummaryPdfAsync(command.SummaryId, command.TargetLanguage, cancellationToken).ConfigureAwait(false);
+        
+        Log.Information("Get meeting summary pdf record: {@MeetingSummaryPdfRecord}", meetingSummaryPdfRecord);
+        
+        var fileName = meetingSummaryPdfRecord.Any() 
+            ? meetingSummaryPdfRecord.First().PdfUrl
+            : await ConvertPDFAsync(command.PdfContent, command.SummaryId, command.TargetLanguage, cancellationToken).ConfigureAwait(false);
+        
+        var presignedUrl = await _awsS3Service.GeneratePresignedUrlAsync(fileName, DateTime.UtcNow.AddDays(7)).ConfigureAwait(false);
+        
+        return new MeetingSummaryPDFExportResponse
+        {
+            Data = new MeetingSummaryPDFExportDto
+            {
+                Url = presignedUrl
+            }
+        };
+    }
+    
+    private async Task<string> ConvertPDFAsync(string content, int summaryId, TranslationLanguage targetLanguage, CancellationToken cancellationToken)
+    {
         var license = new License();
         license.SetLicense("Aspose.Total.NET.txt");
         
         var pdfDocument = new Document();
         var page = pdfDocument.Pages.Add();
-        var textFragment = new TextFragment(command.PdfContent)
+        var textFragment = new TextFragment(content)
         {
             Position = new Position(100, 700)
         };
@@ -469,17 +490,18 @@ public partial class MeetingService
         pdfDocument.Save(memoryStream);
         memoryStream.Position = 0;
 
-        var fileName = "output.pdf";
+        var fileName = $"Sugartalk/{Guid.NewGuid()}.pdf";
         
         await _awsS3Service.UploadFileAsync(fileName: fileName, fileContent: memoryStream.ToArray(), cancellationToken: cancellationToken).ConfigureAwait(false);
-        
-        return new MeetingSummaryPDFExportResponse
+
+        await _meetingDataProvider.AddMeetingSummaryPdfAsync(new MeetingSummaryPdfRecord
         {
-            Data = new MeetingSummaryPDFExportDto
-            {
-                Url = await _awsS3Service.GeneratePresignedUrlAsync(fileName, 9999).ConfigureAwait(false)
-            }
-        };
+            SummaryId = summaryId,
+            TargetLanguage = targetLanguage,
+            PdfUrl = fileName
+        }, cancellationToken: cancellationToken).ConfigureAwait(false);
+
+        return fileName;
     }
 
     private async Task AddMeetingRecordAsync(Meeting meeting, Guid meetingRecordId, string egressId, CancellationToken cancellationToken)
