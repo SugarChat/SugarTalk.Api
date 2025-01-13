@@ -85,7 +85,27 @@ public partial class MeetingDataProvider
 
         var userSessions = await query.ToListAsync(cancellationToken).ConfigureAwait(false);
 
-        return _mapper.Map<List<MeetingUserSessionDto>>(userSessions);
+        var userIds = userSessions.Select(p => p.UserId).Distinct().ToList();
+        
+        var users = await _repository.QueryNoTracking<UserAccount>().Where(u => userIds.Contains(u.Id)).ToListAsync(cancellationToken).ConfigureAwait(false);
+        
+        var result = _mapper.Map<List<MeetingUserSessionDto>>(userSessions);
+        
+        foreach (var sessionDto in result)
+        {
+            var user = users.FirstOrDefault(u => u.Id == sessionDto.UserId);
+            
+            if (user != null)
+            {
+                sessionDto.UserName = user.UserName;
+            }
+            else
+            {
+                sessionDto.UserName = string.Empty;
+            }
+        }
+        
+        return result;
     }
 
     public async Task<bool> IsOtherSharingAsync(MeetingUserSession userSession, CancellationToken cancellationToken)
