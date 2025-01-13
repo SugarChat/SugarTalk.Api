@@ -2,9 +2,9 @@
 using SugarTalk.Messages.Responses;
 using SugarTalk.Messages.Dto.Translation;
 
-namespace SugarTalk.Messages.Commands.Meetings;
+namespace SugarTalk.Messages.Requests.Meetings;
 
-public class MeetingSummaryPDFExportCommand : ICommand
+public class MeetingSummaryPDFExportRequest : IRequest
 {
     public int SummaryId { get; set; }
     

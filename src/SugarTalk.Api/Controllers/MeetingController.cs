@@ -248,9 +248,9 @@ public class MeetingController : ControllerBase
     
     [Route("record/pdf"), HttpGet]
     [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(UpdateMeetingRecordUrlResponse))]
-    public async Task<IActionResult> MeetingSummaryPdfExportAsync([FromBody] MeetingSummaryPDFExportCommand command)
+    public async Task<IActionResult> MeetingSummaryPdfExportAsync([FromQuery] MeetingSummaryPDFExportRequest request)
     {
-        var response = await _mediator.SendAsync<MeetingSummaryPDFExportCommand, MeetingSummaryPDFExportResponse>(command).ConfigureAwait(false);
+        var response = await _mediator.RequestAsync<MeetingSummaryPDFExportRequest, MeetingSummaryPDFExportResponse>(request).ConfigureAwait(false);
 
         return Ok(response);
     }

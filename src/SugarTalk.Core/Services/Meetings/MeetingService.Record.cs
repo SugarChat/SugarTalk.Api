@@ -56,7 +56,7 @@ public partial interface IMeetingService
 
     Task UpdateMeetingRecordUrlAsync(UpdateMeetingRecordUrlCommand command, CancellationToken cancellationToken);
 
-    Task<MeetingSummaryPDFExportResponse> MeetingSummaryPDFExportAsync(MeetingSummaryPDFExportCommand command, CancellationToken cancellationToken);
+    Task<MeetingSummaryPDFExportResponse> MeetingSummaryPdfExportAsync(MeetingSummaryPDFExportRequest request, CancellationToken cancellationToken);
 }
 
 public partial class MeetingService
@@ -451,16 +451,15 @@ public partial class MeetingService
         }
     }
 
-    public async Task<MeetingSummaryPDFExportResponse> MeetingSummaryPDFExportAsync(
-        MeetingSummaryPDFExportCommand command, CancellationToken cancellationToken)
+    public async Task<MeetingSummaryPDFExportResponse> MeetingSummaryPdfExportAsync(MeetingSummaryPDFExportRequest request, CancellationToken cancellationToken)
     {
-        var meetingSummaryPdfRecord = await _meetingDataProvider.GetMeetingSummaryPdfAsync(command.SummaryId, command.TargetLanguage, cancellationToken).ConfigureAwait(false);
+        var meetingSummaryPdfRecord = await _meetingDataProvider.GetMeetingSummaryPdfAsync(request.SummaryId, request.TargetLanguage, cancellationToken).ConfigureAwait(false);
         
         Log.Information("Get meeting summary pdf record: {@MeetingSummaryPdfRecord}", meetingSummaryPdfRecord);
         
         var fileName = meetingSummaryPdfRecord.Any() 
             ? meetingSummaryPdfRecord.First().PdfUrl
-            : await ConvertPDFAsync(command.PdfContent, command.SummaryId, command.TargetLanguage, cancellationToken).ConfigureAwait(false);
+            : await ConvertPdfAsync(request.PdfContent, request.SummaryId, request.TargetLanguage, cancellationToken).ConfigureAwait(false);
         
         var presignedUrl = await _awsS3Service.GeneratePresignedUrlAsync(fileName, DateTime.UtcNow.AddDays(7)).ConfigureAwait(false);
         
@@ -473,7 +472,7 @@ public partial class MeetingService
         };
     }
     
-    private async Task<string> ConvertPDFAsync(string content, int summaryId, TranslationLanguage targetLanguage, CancellationToken cancellationToken)
+    private async Task<string> ConvertPdfAsync(string content, int summaryId, TranslationLanguage targetLanguage, CancellationToken cancellationToken)
     {
         var license = new License();
         license.SetLicense("Aspose.Total.NET.txt");
