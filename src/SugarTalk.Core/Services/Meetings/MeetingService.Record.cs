@@ -244,10 +244,12 @@ public partial class MeetingService
         var participants = await _meetingDataProvider.GetUserSessionsByMeetingIdAsync(command.MeetingId, null, cancellationToken, true).ConfigureAwait(false);
         
         var filterGuest = participants.Where(p => p.GuestName == null).ToList();
+        Log.Information("filter guest response: {@filterGuest}", filterGuest);
         
         foreach (var participant in filterGuest)
         {
             await AddRecordForAccountAsync(participant.UserName, cancellationToken).ConfigureAwait(false);
+            Log.Information("An exception occurred while processing participants: {@participant}", participant);
         }
 
         var storageCommand = new DelayedMeetingRecordingStorageCommand 
