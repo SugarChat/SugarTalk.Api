@@ -1,13 +1,14 @@
 using System;
 using Serilog;
+using System.IO;
+using Aspose.Pdf;
 using System.Linq;
 using Mediator.Net;
+using Aspose.Pdf.Text;
 using Newtonsoft.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Collections.Generic;
-using Aspose.Pdf;
-using Aspose.Pdf.Text;
 using SugarTalk.Messages.Dto.Users;
 using SugarTalk.Messages.Dto.FClub;
 using SugarTalk.Messages.Extensions;
@@ -455,22 +456,29 @@ public partial class MeetingService
     {
         var license = new License();
         license.SetLicense("Aspose.Total.NET.txt");
-        // 创建一个 PDF 文档对象
+        
         var pdfDocument = new Document();
-        // 添加一个页面
         var page = pdfDocument.Pages.Add();
-
-        // 创建文字段
-        var textFragment = new TextFragment("Hello word");
-        textFragment.Position = new Position(100, 700); // 设置文本位置
+        var textFragment = new TextFragment(command.PdfContent)
+        {
+            Position = new Position(100, 700)
+        };
         page.Paragraphs.Add(textFragment);
 
-        // 保存为 PDF 文件
-        pdfDocument.Save("output.pdf");
+        using var memoryStream = new MemoryStream();
+        pdfDocument.Save(memoryStream);
+        memoryStream.Position = 0;
+
+        var fileName = "output.pdf";
+        
+        await _awsS3Service.UploadFileAsync(fileName: fileName, fileContent: memoryStream.ToArray(), cancellationToken: cancellationToken).ConfigureAwait(false);
         
         return new MeetingSummaryPDFExportResponse
         {
-            
+            Data = new MeetingSummaryPDFExportDto
+            {
+                Url = await _awsS3Service.GeneratePresignedUrlAsync(fileName, 9999).ConfigureAwait(false)
+            }
         };
     }
 
