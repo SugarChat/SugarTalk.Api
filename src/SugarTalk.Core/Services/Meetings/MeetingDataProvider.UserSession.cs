@@ -21,7 +21,7 @@ public partial interface IMeetingDataProvider
     Task UpdateMeetingUserSessionAsync(MeetingUserSession userSession, CancellationToken cancellationToken);
 
     Task<List<MeetingUserSessionDto>> GetUserSessionsByMeetingIdAsync(Guid meetingId, Guid? meetingSubId,
-        CancellationToken cancellationToken, bool isQueryKickedOut = false);
+        CancellationToken cancellationToken, bool isQueryKickedOut = false, bool includeUsername = false);
 
     Task RemoveMeetingUserSessionsIfRequiredAsync(int userId, Guid meetingId, CancellationToken cancellationToken);
     
@@ -68,7 +68,7 @@ public partial class MeetingDataProvider
     }
 
     public async Task<List<MeetingUserSessionDto>> GetUserSessionsByMeetingIdAsync(Guid meetingId, Guid? meetingSubId,
-        CancellationToken cancellationToken, bool isQueryKickedOut = false)
+        CancellationToken cancellationToken, bool isQueryKickedOut = false, bool includeUserName = false)
     {
         var query = _repository.QueryNoTracking<MeetingUserSession>()
             .Where(x => x.MeetingId == meetingId && !x.IsDeleted);
@@ -84,28 +84,13 @@ public partial class MeetingDataProvider
         }
 
         var userSessions = await query.ToListAsync(cancellationToken).ConfigureAwait(false);
+        
+        var userSessionDtos = _mapper.Map<List<MeetingUserSessionDto>>(userSessions);
+    
+        if (includeUserName)
+            await EnrichMeetingUserSessionsByOnlineAsync(userSessionDtos, cancellationToken).ConfigureAwait(false);
 
-        var userIds = userSessions.Select(p => p.UserId).Distinct().ToList();
-        
-        var users = await _repository.QueryNoTracking<UserAccount>().Where(u => userIds.Contains(u.Id)).ToListAsync(cancellationToken).ConfigureAwait(false);
-        
-        var result = _mapper.Map<List<MeetingUserSessionDto>>(userSessions);
-        
-        foreach (var sessionDto in result)
-        {
-            var user = users.FirstOrDefault(u => u.Id == sessionDto.UserId);
-            
-            if (user != null)
-            {
-                sessionDto.UserName = user.UserName;
-            }
-            else
-            {
-                sessionDto.UserName = string.Empty;
-            }
-        }
-        
-        return result;
+        return userSessionDtos;
     }
 
     public async Task<bool> IsOtherSharingAsync(MeetingUserSession userSession, CancellationToken cancellationToken)
