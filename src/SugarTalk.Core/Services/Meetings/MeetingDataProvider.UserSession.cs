@@ -21,8 +21,8 @@ public partial interface IMeetingDataProvider
     Task UpdateMeetingUserSessionAsync(MeetingUserSession userSession, CancellationToken cancellationToken);
 
     Task<List<MeetingUserSessionDto>> GetUserSessionsByMeetingIdAsync(Guid meetingId, Guid? meetingSubId,
-        CancellationToken cancellationToken, bool isQueryKickedOut = false, bool? includeUsername = false);
-
+        bool isQueryKickedOut = false, bool? includeUserName = false, CancellationToken cancellationToken = default);
+    
     Task RemoveMeetingUserSessionsIfRequiredAsync(int userId, Guid meetingId, CancellationToken cancellationToken);
     
     Task<bool> IsOtherSharingAsync(MeetingUserSession userSession, CancellationToken cancellationToken);
@@ -67,8 +67,8 @@ public partial class MeetingDataProvider
         await _unitOfWork.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
     }
 
-    public async Task<List<MeetingUserSessionDto>> GetUserSessionsByMeetingIdAsync(Guid meetingId, Guid? meetingSubId,
-        CancellationToken cancellationToken, bool isQueryKickedOut = false, bool? includeUserName = false)
+    public async Task<List<MeetingUserSessionDto>> GetUserSessionsByMeetingIdAsync(Guid meetingId, Guid? meetingSubId, 
+        bool isQueryKickedOut = false, bool? includeUserName = false, CancellationToken cancellationToken = default)
     {
         var query = _repository.QueryNoTracking<MeetingUserSession>()
             .Where(x => x.MeetingId == meetingId && !x.IsDeleted);
