@@ -192,7 +192,7 @@ namespace SugarTalk.Core.Services.Meetings
             if (includeUserSessions)
             {
                 var allUserSessions =
-                    await GetUserSessionsByMeetingIdAsync(meeting.Id, updateMeeting.MeetingSubId, cancellationToken, true).ConfigureAwait(false);
+                    await GetUserSessionsByMeetingIdAsync(meeting.Id, updateMeeting.MeetingSubId, true, null, cancellationToken).ConfigureAwait(false);
 
                 updateMeeting.UserSessions = await EnrichMeetingUserSessionsByOnlineAsync(allUserSessions, cancellationToken).ConfigureAwait(false);
             }
