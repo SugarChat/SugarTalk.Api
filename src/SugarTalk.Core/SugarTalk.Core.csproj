@@ -117,6 +117,7 @@
         <EmbeddedResource Include="DbUp\Scripts_2024\Script0031_add_meeting_problem_feedback.sql" />
         <EmbeddedResource Include="DbUp\Scripts_2024\Script0032_modify_meeting_problem_feedback_table.sql" />
         <EmbeddedResource Include="DbUp\Scripts_2025\Script0001_add_meeting_summary_pdf_record.sql" />
+        <EmbeddedResource Include="DbUp\Scripts_2025\Script0002_modify_meeting_summary_pdf_record.sql" />
     </ItemGroup>
     
     <ItemGroup>
