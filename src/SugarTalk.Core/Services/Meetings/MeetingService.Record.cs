@@ -491,8 +491,9 @@ public partial class MeetingService
     
     private async Task<string> ConvertPdfAsync(string content, Guid summaryId, TranslationLanguage targetLanguage, PdfExportType pdfExportType, CancellationToken cancellationToken)
     {
+        using var stream = new MemoryStream(Encoding.UTF8.GetBytes(_asposeTotalNetSettings.AsposeTotalNetContent));
         var license = new Aspose.Words.License();
-        license.SetLicense("src/SugarTalk.Core/Services/Aspose.Total.NET.txt");
+        license.SetLicense(stream);
         
         var pdfDocument = new Document();
         var page = pdfDocument.Pages.Add();
@@ -501,6 +502,8 @@ public partial class MeetingService
             Position = new Position(100, 700)
         };
         page.Paragraphs.Add(textFragment);
+        
+        Log.Information("pdfDocument :{@pdfDocument}", pdfDocument);
 
         using var memoryStream = new MemoryStream();
         await pdfDocument.SaveAsync(memoryStream, cancellationToken).ConfigureAwait(false);
