@@ -58,6 +58,8 @@ public partial interface IMeetingService
     Task UpdateMeetingRecordUrlAsync(UpdateMeetingRecordUrlCommand command, CancellationToken cancellationToken);
 
     Task<MeetingSummaryPDFExportResponse> MeetingSummaryPdfExportAsync(MeetingSummaryPDFExportRequest request, CancellationToken cancellationToken);
+    
+    Task<GetMeetingRecordCountResponse> GetMeetingRecordCountAsync(GetMeetingRecordCountRequest request, CancellationToken cancellationToken);
 }
 
 public partial class MeetingService
@@ -515,6 +517,17 @@ public partial class MeetingService
         }, cancellationToken: cancellationToken).ConfigureAwait(false);
 
         return fileName;
+    }
+    
+    public async Task<GetMeetingRecordCountResponse> GetMeetingRecordCountAsync(GetMeetingRecordCountRequest request, CancellationToken cancellationToken)
+    {
+        var count = await _cacheManager.GetOrAddAsync(
+            _currentUser.Name, () => Task.FromResult(new RecordCountDto(_currentUser.Name)), CachingType.RedisCache, cancellationToken: cancellationToken).ConfigureAwait(false);
+
+        return new GetMeetingRecordCountResponse
+        {
+            Data = count.Count
+        };
     }
     
     private async Task AddMeetingRecordAsync(Meeting meeting, Guid meetingRecordId, string egressId, CancellationToken cancellationToken)
