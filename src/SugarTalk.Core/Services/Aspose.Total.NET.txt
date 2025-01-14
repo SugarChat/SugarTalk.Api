@@ -1,0 +1,20 @@
+<License>
+<Data>
+<LicensedTo>SunTech Investments Limited</LicensedTo>
+<EmailTo>tech@suntech.gi</EmailTo>
+<LicenseType>Developer Small Business</LicenseType>
+<LicenseNote>1 Developer And 1 Deployment Location</LicenseNote>
+<OrderID>230710075623</OrderID>
+<UserID>963946</UserID>
+<OEM>This is not a redistributable license</OEM>
+<Products>
+<Product>Aspose.Total for .NET</Product>
+</Products>
+<EditionType>Professional</EditionType>
+<SerialNumber>63f71ead-1f1e-4343-b9ab-ead3ae02d3b5</SerialNumber>
+<SubscriptionExpiry>20240710</SubscriptionExpiry>
+<LicenseVersion>3.0</LicenseVersion>
+<LicenseInstructions>https://purchase.aspose.com/policies/use-license</LicenseInstructions>
+</Data>
+<Signature>GHUG8jZJsRFcGtQy7ihRBcOP5Nfm6lobud2fByjssIXjFilGiZzx5g43Af+K2HSJLNpIPvOK8671kxeB4HneLCVI326NT7ocU/mRvC3lQ86wtcapakUmnNQiKLVbzyMe1v99W/RJjzjo007jW4U7/MUFVuhYz9/sSXK2kUupl28=</Signature>
+</License>
