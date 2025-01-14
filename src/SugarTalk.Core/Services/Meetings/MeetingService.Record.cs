@@ -476,12 +476,10 @@ public partial class MeetingService
     private async Task<string> ConvertPdfAsync(string content, Guid summaryId, TranslationLanguage targetLanguage, PdfExportType pdfExportType, CancellationToken cancellationToken)
     {
         var fileName = $"Sugartalk/{Guid.NewGuid()}.pdf";
-        
-        using (var stream = new MemoryStream(Encoding.UTF8.GetBytes(_asposeTotalNetSettings.AsposeTotalNetContent)))
-        {
-            var license = new Aspose.Words.License();
-            license.SetLicense(stream);
-       
+
+        using var stream = new MemoryStream(Encoding.UTF8.GetBytes(_asposeTotalNetSettings.AsposeTotalNetContent));
+        var license = new Aspose.Words.License();
+        license.SetLicense(stream);
         
         var pdfDocument = new Document();
         var page = pdfDocument.Pages.Add();
@@ -492,7 +490,7 @@ public partial class MeetingService
         page.Paragraphs.Add(textFragment);
 
         using var memoryStream = new MemoryStream();
-        pdfDocument.Save(memoryStream);
+        await pdfDocument.SaveAsync(memoryStream, cancellationToken).ConfigureAwait(false);
         memoryStream.Position = 0;
         
         await _awsS3Service.UploadFileAsync(fileName: fileName, fileContent: memoryStream.ToArray(), cancellationToken: cancellationToken).ConfigureAwait(false);
@@ -504,8 +502,7 @@ public partial class MeetingService
             PdfExportType = pdfExportType,
             TargetLanguage = targetLanguage
         }, cancellationToken: cancellationToken).ConfigureAwait(false);
-        }
-        
+
         return fileName;
     }
 
