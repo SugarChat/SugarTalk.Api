@@ -1,19 +1,23 @@
 using System;
+using SugarTalk.Messages.Enums.Meeting;
 using SugarTalk.Messages.Dto.Translation;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace SugarTalk.Core.Domain.Meeting;
 
-[Table("meeting_summary_pdf_record")]
-public class MeetingSummaryPdfRecord : IEntity, IHasCreatedFields
+[Table("meeting_record_pdf_record")]
+public class MeetingRecordPdfRecord : IEntity, IHasCreatedFields
 {
     [Key]
     [Column("id")]
     public int Id { get; set; }
     
-    [Column("summary_id")] 
-    public int SummaryId { get; set; }
+    [Column("record_id")] 
+    public Guid RecordId { get; set; }
+    
+    [Column("pdf_export_type")]
+    public PdfExportType PdfExportType { get; set; }
 
     [Column("target_language")]
     public TranslationLanguage TargetLanguage { get; set; }

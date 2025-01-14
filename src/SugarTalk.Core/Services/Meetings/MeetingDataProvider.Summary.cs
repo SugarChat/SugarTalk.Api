@@ -8,6 +8,7 @@ using SugarTalk.Core.Domain.Account;
 using SugarTalk.Core.Domain.Meeting;
 using SugarTalk.Messages.Dto.Translation;
 using SugarTalk.Messages.Dto.Meetings.Summary;
+using SugarTalk.Messages.Enums.Meeting;
 using SugarTalk.Messages.Enums.Meeting.Summary;
 
 namespace SugarTalk.Core.Services.Meetings;
@@ -23,9 +24,9 @@ public partial interface IMeetingDataProvider
     
     Task UpdateMeetingSummariesAsync(List<MeetingSummary> summaries, bool forceSave = true, CancellationToken cancellationToken = default);
 
-    Task AddMeetingSummaryPdfAsync(MeetingSummaryPdfRecord record, bool forceSave = true, CancellationToken cancellationToken = default);
+    Task AddMeetingRecordPdfAsync(MeetingRecordPdfRecord record, bool forceSave = true, CancellationToken cancellationToken = default);
     
-    Task<List<MeetingSummaryPdfRecord>> GetMeetingSummaryPdfAsync(int? summaryId = null, TranslationLanguage? targetLanguage = null, CancellationToken cancellationToken = default);
+    Task<List<MeetingRecordPdfRecord>> GetMeetingRecordPdfAsync(Guid? recordId = null, TranslationLanguage? targetLanguage = null, PdfExportType? pdfExportType = null, CancellationToken cancellationToken = default);
 }
 
 public partial class MeetingDataProvider
@@ -87,7 +88,7 @@ public partial class MeetingDataProvider
             await _unitOfWork.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
     }
     
-    public async  Task AddMeetingSummaryPdfAsync(MeetingSummaryPdfRecord record, bool forceSave = true, CancellationToken cancellationToken = default)
+    public async Task AddMeetingRecordPdfAsync(MeetingRecordPdfRecord record, bool forceSave = true, CancellationToken cancellationToken = default)
     {
         await _repository.InsertAsync(record, cancellationToken).ConfigureAwait(false);
 
@@ -95,15 +96,18 @@ public partial class MeetingDataProvider
             await _unitOfWork.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
     }
 
-    public async Task<List<MeetingSummaryPdfRecord>> GetMeetingSummaryPdfAsync(int? summaryId = null, TranslationLanguage? targetLanguage = null, CancellationToken cancellationToken = default)
+    public async Task<List<MeetingRecordPdfRecord>> GetMeetingRecordPdfAsync(Guid? recordId = null, TranslationLanguage? targetLanguage = null, PdfExportType? pdfExportType = null, CancellationToken cancellationToken = default)
     {
-        var query = _repository.Query<MeetingSummaryPdfRecord>();
+        var query = _repository.Query<MeetingRecordPdfRecord>();
 
-        if (summaryId.HasValue)
-            query = query.Where(x => x.SummaryId == summaryId.Value);
+        if (recordId.HasValue)
+            query = query.Where(x => x.RecordId == recordId.Value);
 
         if (targetLanguage.HasValue)
             query = query.Where(x => x.TargetLanguage == targetLanguage.Value);
+
+        if (pdfExportType.HasValue)
+            query = query.Where(x => x.PdfExportType == pdfExportType.Value);
         
         return await query.ToListAsync(cancellationToken).ConfigureAwait(false);
     }

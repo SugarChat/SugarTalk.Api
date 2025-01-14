@@ -57,9 +57,9 @@ public partial interface IMeetingService
 
     Task UpdateMeetingRecordUrlAsync(UpdateMeetingRecordUrlCommand command, CancellationToken cancellationToken);
 
-    Task<MeetingSummaryPDFExportResponse> MeetingSummaryPdfExportAsync(MeetingSummaryPDFExportRequest request, CancellationToken cancellationToken);
-    
     Task<GetMeetingRecordCountResponse> GetMeetingRecordCountAsync(GetMeetingRecordCountRequest request, CancellationToken cancellationToken);
+
+    Task<MeetingRecordPdfExportResponse> MeetingRecordPdfExportAsync(MeetingRecordPdfExportCommand command, CancellationToken cancellationToken);
 }
 
 public partial class MeetingService
@@ -467,28 +467,28 @@ public partial class MeetingService
         }
     }
 
-    public async Task<MeetingSummaryPDFExportResponse> MeetingSummaryPdfExportAsync(MeetingSummaryPDFExportRequest request, CancellationToken cancellationToken)
+    public async Task<MeetingRecordPdfExportResponse> MeetingRecordPdfExportAsync(MeetingRecordPdfExportCommand command, CancellationToken cancellationToken)
     {
-        var meetingSummaryPdfRecord = await _meetingDataProvider.GetMeetingSummaryPdfAsync(request.SummaryId, request.TargetLanguage, cancellationToken).ConfigureAwait(false);
+        var meetingSummaryPdfRecord = await _meetingDataProvider.GetMeetingRecordPdfAsync(command.MeetingRecordId, command.TargetLanguage, command.PdfExportType, cancellationToken).ConfigureAwait(false);
         
-        Log.Information("Get meeting summary pdf record: {@MeetingSummaryPdfRecord}", meetingSummaryPdfRecord);
+        Log.Information("Get meeting summary pdf record: {@MeetingRecordPdfRecord}", meetingSummaryPdfRecord);
         
         var fileName = meetingSummaryPdfRecord.Any() 
             ? meetingSummaryPdfRecord.First().PdfUrl
-            : await ConvertPdfAsync(request.PdfContent, request.SummaryId, request.TargetLanguage, cancellationToken).ConfigureAwait(false);
+            : await ConvertPdfAsync(command.PdfContent, command.MeetingRecordId, command.TargetLanguage, command.PdfExportType, cancellationToken).ConfigureAwait(false);
         
         var presignedUrl = await _awsS3Service.GeneratePresignedUrlAsync(fileName, DateTime.UtcNow.AddDays(7)).ConfigureAwait(false);
         
-        return new MeetingSummaryPDFExportResponse
+        return new MeetingRecordPdfExportResponse
         {
-            Data = new MeetingSummaryPDFExportDto
+            Data = new MeetingRecordPdfExportDto
             {
                 Url = presignedUrl
             }
         };
     }
     
-    private async Task<string> ConvertPdfAsync(string content, int summaryId, TranslationLanguage targetLanguage, CancellationToken cancellationToken)
+    private async Task<string> ConvertPdfAsync(string content, Guid summaryId, TranslationLanguage targetLanguage, PdfExportType pdfExportType, CancellationToken cancellationToken)
     {
         var license = new License();
         license.SetLicense("Aspose.Total.NET.txt");
@@ -509,11 +509,12 @@ public partial class MeetingService
         
         await _awsS3Service.UploadFileAsync(fileName: fileName, fileContent: memoryStream.ToArray(), cancellationToken: cancellationToken).ConfigureAwait(false);
 
-        await _meetingDataProvider.AddMeetingSummaryPdfAsync(new MeetingSummaryPdfRecord
+        await _meetingDataProvider.AddMeetingRecordPdfAsync(new MeetingRecordPdfRecord
         {
-            SummaryId = summaryId,
-            TargetLanguage = targetLanguage,
-            PdfUrl = fileName
+            PdfUrl = fileName,
+            RecordId = summaryId,
+            PdfExportType = pdfExportType,
+            TargetLanguage = targetLanguage
         }, cancellationToken: cancellationToken).ConfigureAwait(false);
 
         return fileName;
