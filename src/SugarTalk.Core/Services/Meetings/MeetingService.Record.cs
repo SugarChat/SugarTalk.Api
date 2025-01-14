@@ -9,6 +9,7 @@ using Newtonsoft.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using System.Text;
 using SugarTalk.Messages.Dto.Users;
 using SugarTalk.Messages.Dto.FClub;
 using SugarTalk.Messages.Extensions;
@@ -474,8 +475,11 @@ public partial class MeetingService
     
     private async Task<string> ConvertPdfAsync(string content, Guid summaryId, TranslationLanguage targetLanguage, PdfExportType pdfExportType, CancellationToken cancellationToken)
     {
-        var license = new License();
-        license.SetLicense("Aspose.Total.NET.txt");
+        using (var stream = new MemoryStream(Encoding.UTF8.GetBytes(_asposeTotalNetSettings.AsposeTotalNetContent)))
+        {
+            var license = new Aspose.Words.License();
+            license.SetLicense(stream);
+        }
         
         var pdfDocument = new Document();
         var page = pdfDocument.Pages.Add();

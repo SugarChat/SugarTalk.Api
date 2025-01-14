@@ -115,6 +115,7 @@ namespace SugarTalk.Core.Services.Meetings
         private readonly IOpenAiService _openAiService;
         private readonly IAwsS3Service _awsS3Service;
         private readonly AwsS3Settings _awsS3Settings;
+        private readonly AsposeTotalNetSettings _asposeTotalNetSettings;
         private readonly ICacheManager _cacheManager;
         private readonly ISmartiesClient _smartiesClient;
         private readonly TranslationClient _translationClient;
@@ -143,6 +144,7 @@ namespace SugarTalk.Core.Services.Meetings
             IFClubClient fclubClient,
             AwsS3Settings awsS3Settings,
             IAwsS3Service awsS3Service,
+            AsposeTotalNetSettings asposeTotalNetSettings,
             ISmartiesClient smartiesClient,
             TranslationClient translationClient,
             IMeetingUtilService meetingUtilService,
@@ -170,6 +172,7 @@ namespace SugarTalk.Core.Services.Meetings
             _cacheManager = cacheManager;
             _smartiesClient = smartiesClient;
             _awsS3Settings = awsS3Settings;
+            _asposeTotalNetSettings = asposeTotalNetSettings;
             _httpClientFactory = httpClientFactory;
             _translationClient = translationClient;
             _meetingUtilService = meetingUtilService;
