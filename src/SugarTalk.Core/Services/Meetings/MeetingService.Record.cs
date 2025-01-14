@@ -9,6 +9,7 @@ using Newtonsoft.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using System.Reflection;
 using System.Text;
 using SugarTalk.Messages.Dto.Users;
 using SugarTalk.Messages.Dto.FClub;
@@ -491,9 +492,23 @@ public partial class MeetingService
     
     private async Task<string> ConvertPdfAsync(string content, Guid summaryId, TranslationLanguage targetLanguage, PdfExportType pdfExportType, CancellationToken cancellationToken)
     {
-        using var stream = new MemoryStream(Encoding.UTF8.GetBytes(_asposeTotalNetSettings.AsposeTotalNetContent));
+        var assembly = Assembly.GetExecutingAssembly();
+        var resourceNames = assembly.GetManifestResourceNames();
+
+        Console.WriteLine("Embedded resources:");
+        foreach (var resource in resourceNames)
+        {
+            Console.WriteLine(resource);
+        }
+        var resourceName = "SugarTalk.Core.Services.Aspose.Total.NET.txt";
+
+        using var resourceStream = assembly.GetManifestResourceStream(resourceName);
+        
+        if (resourceStream == null)
+            throw new Exception("License file not found in embedded resources.");
+
         var license = new Aspose.Words.License();
-        license.SetLicense(stream);
+        license.SetLicense(resourceStream);
         
         var pdfDocument = new Document();
         var page = pdfDocument.Pages.Add();
