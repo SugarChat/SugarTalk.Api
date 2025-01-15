@@ -20,6 +20,7 @@ using SugarTalk.Messages.Dto.Translation;
 using SugarTalk.Messages.Commands.Meetings;
 using SugarTalk.Messages.Requests.Meetings;
 using SugarTalk.Messages.Dto.LiveKit.Egress;
+using SugarTalk.Messages.Enums.Caching;
 using SugarTalk.Messages.Enums.Meeting.Speak;
 using SugarTalk.Messages.Events.Meeting.Summary;
 
@@ -52,6 +53,8 @@ public partial interface IMeetingService
     Task<GenerateMeetingRecordTemporaryUrlResponse> GenerateMeetingRecordTemporaryUrlAsync(GenerateMeetingRecordTemporaryUrlCommand command);
 
     Task UpdateMeetingRecordUrlAsync(UpdateMeetingRecordUrlCommand command, CancellationToken cancellationToken);
+    
+    Task<GetMeetingRecordCountResponse> GetMeetingRecordCountAsync(GetMeetingRecordCountRequest request, CancellationToken cancellationToken);
 }
 
 public partial class MeetingService
@@ -70,6 +73,8 @@ public partial class MeetingService
                Records = items
            }
         };
+
+        await _cacheManager.SetAsync(_currentUser.Name, new RecordCountDto(_currentUser.Name), CachingType.RedisCache, cancellationToken: cancellationToken).ConfigureAwait(false);
 
         return response;
     }
@@ -237,6 +242,17 @@ public partial class MeetingService
         await _meetingDataProvider.UpdateMeetingSpeakDetailsAsync(speakDetails, true, cancellationToken).ConfigureAwait(false);
 
         if (stopResponse == null) throw new Exception();
+        
+        var participants = await _meetingDataProvider.GetUserSessionsByMeetingIdAsync(command.MeetingId, null, true, true, cancellationToken).ConfigureAwait(false);
+        
+        var filterGuest = participants.Where(p => p.GuestName == null).ToList();
+        Log.Information("filter guest response: {@filterGuest}", filterGuest);
+        
+        foreach (var participant in filterGuest)
+        {
+            await AddRecordForAccountAsync(participant.UserName, cancellationToken).ConfigureAwait(false);
+            Log.Information("An exception occurred while processing participants: {@participant}", participant);
+        }
 
         var storageCommand = new DelayedMeetingRecordingStorageCommand 
         { 
@@ -445,7 +461,18 @@ public partial class MeetingService
             await TranscriptionMeetingAsync(meetingDetails, record, cancellationToken);
         }
     }
-    
+
+    public async Task<GetMeetingRecordCountResponse> GetMeetingRecordCountAsync(GetMeetingRecordCountRequest request, CancellationToken cancellationToken)
+    {
+        var count = await _cacheManager.GetOrAddAsync(
+            _currentUser.Name, () => Task.FromResult(new RecordCountDto(_currentUser.Name)), CachingType.RedisCache, cancellationToken: cancellationToken).ConfigureAwait(false);
+
+        return new GetMeetingRecordCountResponse
+        {
+            Data = count.Count
+        };
+    }
+
     private async Task AddMeetingRecordAsync(Meeting meeting, Guid meetingRecordId, string egressId, CancellationToken cancellationToken)
     {
         await _meetingDataProvider.PersistMeetingRecordAsync(meeting.Id, meetingRecordId, egressId, cancellationToken).ConfigureAwait(false);
@@ -453,6 +480,17 @@ public partial class MeetingService
         meeting.IsActiveRecord = true;
 
         await _meetingDataProvider.UpdateMeetingAsync(meeting, cancellationToken).ConfigureAwait(false);
+    }
+    
+    private async Task AddRecordForAccountAsync(string currentUserName, CancellationToken cancellationToken)
+    {
+        var recordKey = currentUserName;
+        
+        var recordCount = await _cacheManager.GetOrAddAsync(recordKey, () => Task.FromResult(new RecordCountDto(recordKey)), CachingType.RedisCache, cancellationToken: cancellationToken).ConfigureAwait(false);
+
+        recordCount.Count += 1;
+
+        await _cacheManager.SetAsync(recordKey, recordCount, CachingType.RedisCache, cancellationToken: cancellationToken).ConfigureAwait(false);
     }
 
     private async Task UpdateMeetingRecordEgressRestartAsync(Guid? meetingRecordId, string egressId, CancellationToken cancellationToken)

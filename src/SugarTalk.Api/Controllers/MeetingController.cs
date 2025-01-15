@@ -245,7 +245,16 @@ public class MeetingController : ControllerBase
 
         return Ok(response);
     }
+    
+    [Route("record/count"), HttpGet]
+    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(GetMeetingRecordCountResponse))]
+    public async Task<IActionResult> GetMeetingRecordCountAsync([FromQuery] GetMeetingRecordCountRequest request)
+    {
+        var response = await _mediator.RequestAsync<GetMeetingRecordCountRequest, GetMeetingRecordCountResponse>(request).ConfigureAwait(false);
 
+        return Ok(response);
+    }
+    
     #endregion
     
     #region MeetingUserSession
