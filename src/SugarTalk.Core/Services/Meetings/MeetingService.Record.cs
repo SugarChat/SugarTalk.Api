@@ -512,7 +512,7 @@ public partial class MeetingService
         var textFragment = new TextFragment(content)
         {
             Position = new Position(100, 700), 
-            TextState = { Font = FontRepository.FindFont("Arial Unicode MS")}
+            TextState = { Font = FontRepository.FindFont("Noto Sans") }
         };
 
         page.Paragraphs.Add(textFragment);
