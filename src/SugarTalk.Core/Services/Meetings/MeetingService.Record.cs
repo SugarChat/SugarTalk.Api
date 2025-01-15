@@ -493,7 +493,19 @@ public partial class MeetingService
     private async Task<string> ConvertPdfAsync(string content, Guid summaryId, TranslationLanguage targetLanguage, PdfExportType pdfExportType, CancellationToken cancellationToken)
     {
         var license = new Aspose.Words.License();
-        license.SetLicense("SugarTalk.Core/Aspose.Total.NET.txt");
+        license.SetLicense("Aspose.Total.NET.txt");
+        
+        string filePath = "Aspose.Total.NET.txt";
+        try
+        {
+            // 读取整个文件内容
+            var licensetxt = await File.ReadAllTextAsync(filePath, cancellationToken);
+            Log.Information("File content: {Content}", licensetxt);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"An error occurred: {ex.Message}");
+        }
         
         var pdfDocument = new Document();
         var page = pdfDocument.Pages.Add();
