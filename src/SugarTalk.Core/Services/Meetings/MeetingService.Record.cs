@@ -476,14 +476,8 @@ public partial class MeetingService
     
     private async Task<string> ConvertPdfAsync(string content, Guid summaryId, TranslationLanguage targetLanguage, PdfExportType pdfExportType, CancellationToken cancellationToken)
     {
-        var assembly = Assembly.GetExecutingAssembly();
-        var resourceName = "SugarTalk.Core.Services.Aspose.Total.NET.txt";
-        using var resourceStream = assembly.GetManifestResourceStream(resourceName);
-        if (resourceStream == null)
-            throw new Exception("License file not found in embedded resources.");
-
         var license = new Aspose.Words.License();
-        license.SetLicense(resourceStream);
+        license.SetLicense("Aspose.Total.NET.txt");
         
         var pdfDocument = new Document();
         var page = pdfDocument.Pages.Add();

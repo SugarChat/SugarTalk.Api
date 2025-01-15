@@ -61,6 +61,7 @@
     </ItemGroup>
     
     <ItemGroup>
+        <EmbeddedResource Include="Aspose.Total.NET.txt" />
         <EmbeddedResource Include="DbUp\Scripts_2023\Script0001_initial_tables.sql" />
         <EmbeddedResource Include="DbUp\Scripts_2023\Script0002_add_foundation_tables.sql" />
         <EmbeddedResource Include="DbUp\Scripts_2023\Script0003_add_update_meeting_tables.sql" />
@@ -118,8 +119,6 @@
         <EmbeddedResource Include="DbUp\Scripts_2024\Script0032_modify_meeting_problem_feedback_table.sql" />
         <EmbeddedResource Include="DbUp\Scripts_2025\Script0001_add_meeting_summary_pdf_record.sql" />
         <EmbeddedResource Include="DbUp\Scripts_2025\Script0002_modify_meeting_summary_pdf_record.sql" />
-        <None Remove="Services\Aspose.Total.NET.txt" />
-        <EmbeddedResource Include="Services\Aspose.Total.NET.txt" />
     </ItemGroup>
     
     <ItemGroup>
