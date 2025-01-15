@@ -32,4 +32,7 @@ make -j8 && make install && \
 
 WORKDIR /app
 COPY --from=build-env /app/out .
+COPY --from=build-env /app/build/SugarTalk.Core/Aspose.Total.NET.txt .
+COPY --from=build-env /app/build/SugarTalk.Core/Aspose.Total.NET.txt ./Aspose.Total.NET.txt
+
 ENTRYPOINT ["dotnet", "SugarTalk.Api.dll"]
