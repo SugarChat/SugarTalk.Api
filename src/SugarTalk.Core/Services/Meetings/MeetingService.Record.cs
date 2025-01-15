@@ -495,25 +495,12 @@ public partial class MeetingService
         var license = new Aspose.Words.License();
         license.SetLicense("Aspose.Total.NET.txt");
         
-        string filePath = "Aspose.Total.NET.txt";
-        try
-        {
-            // 读取整个文件内容
-            var licensetxt = await File.ReadAllTextAsync(filePath, cancellationToken);
-            Log.Information("File content: {Content}", licensetxt);
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"An error occurred: {ex.Message}");
-        }
-        
         var pdfDocument = new Document();
         var page = pdfDocument.Pages.Add();
-        FontRepository.Sources.Add(new FolderFontSource("/usr/share/fonts"));
+
         var textFragment = new TextFragment(content)
         {
-            Position = new Position(100, 700), 
-            TextState = { Font = FontRepository.FindFont("Noto Sans") }
+            Position = new Position(100, 700),
         };
 
         page.Paragraphs.Add(textFragment);
