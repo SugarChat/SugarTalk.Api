@@ -8,6 +8,7 @@ COPY ./src/SugarTalk.Core ./build/SugarTalk.Core
 COPY ./src/SugarTalk.Api ./build/SugarTalk.Api
 COPY ./src/SugarTalk.Messages ./build/SugarTalk.Messages
 COPY ./NuGet.Config ./build
+COPY ./src/SugarTalk.Core/Aspose.Total.NET.txt ./build/SugarTalk.Core/Aspose.Total.NET.txt
 
 RUN dotnet publish build/SugarTalk.Api -c Release -o out
 
