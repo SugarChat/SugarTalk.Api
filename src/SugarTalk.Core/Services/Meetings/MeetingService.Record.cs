@@ -509,6 +509,7 @@ public partial class MeetingService
         
         var pdfDocument = new Document();
         var page = pdfDocument.Pages.Add();
+        FontRepository.Sources.Add(new FolderFontSource("/usr/share/fonts"));
         var textFragment = new TextFragment(content)
         {
             Position = new Position(100, 700), 
