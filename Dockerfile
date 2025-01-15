@@ -19,6 +19,10 @@ FROM mcr.microsoft.com/dotnet/aspnet:7.0
 RUN apt-get update && apt-get install -y nasm
 RUN apt-get update && apt-get install -y bzip2 make gcc yasm libopencore-amrnb-dev libopencore-amrwb-dev wget libmp3lame-dev
 
+RUN apt-get update && apt-get install -y \
+    fonts-noto fonts-noto-cjk fonts-noto-mono \
+    && apt-get clean
+
 RUN wget https://ffmpeg.org/releases/ffmpeg-snapshot.tar.bz2 && \
  tar -jxvf ffmpeg-snapshot.tar.bz2 && \
 cd ffmpeg && \

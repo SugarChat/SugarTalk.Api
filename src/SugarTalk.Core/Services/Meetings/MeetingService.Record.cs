@@ -511,8 +511,10 @@ public partial class MeetingService
         var page = pdfDocument.Pages.Add();
         var textFragment = new TextFragment(content)
         {
-            Position = new Position(100, 700)
+            Position = new Position(100, 700), 
+            TextState = { Font = FontRepository.FindFont("Arial Unicode MS")}
         };
+
         page.Paragraphs.Add(textFragment);
         
         Log.Information("pdfDocument :{@pdfDocument}", pdfDocument);
