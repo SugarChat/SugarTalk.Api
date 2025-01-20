@@ -34,6 +34,9 @@ public partial interface IMeetingService
 
     Task<GetMeetingOnlineLongestDurationUserResponse> GetMeetingUserSessionByMeetingIdAsync(
         GetMeetingOnlineLongestDurationUserRequest request, CancellationToken cancellationToken);
+
+    Task<CheckRenamePermissionResponse> CheckRenamePermissionAsync(CheckRenamePermissionCommand command,
+        CancellationToken cancellationToken);
 }
 
 public partial class MeetingService
@@ -198,6 +201,23 @@ public partial class MeetingService
         return new GetMeetingOnlineLongestDurationUserResponse
         {
             Data = userInfo
+        };
+    }
+
+    public async Task<CheckRenamePermissionResponse> CheckRenamePermissionAsync(CheckRenamePermissionCommand command, CancellationToken cancellationToken)
+    {
+        var meeting = await _meetingDataProvider.GetMeetingByIdAsync(command.MeetingId, cancellationToken).ConfigureAwait(false);
+        
+        if(meeting == null) throw new MeetingNotFoundException();
+
+        var hasPermission = meeting.MeetingMasterUserId == command.UserId || command.UserId == command.TargetUserId;
+
+        return new CheckRenamePermissionResponse
+        {
+            Data = new CheckRenamePermissionResponseData
+            {
+                CanRename = hasPermission
+            }
         };
     }
 }
