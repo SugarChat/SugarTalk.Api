@@ -84,9 +84,10 @@ public class MeetingUtilService : IMeetingUtilService
 
         var todo = await SummarizeMeetingTodoAsync(originalRecord, cancellationToken).ConfigureAwait(false);
 
-        var summary = await SummarizeMeetingSummaryAsync(originalRecord, cancellationToken).ConfigureAwait(false);
+        //var summary = await SummarizeMeetingSummaryAsync(originalRecord, cancellationToken).ConfigureAwait(false);
         
-        return $"會議總結：\n\n會議主題：{summaryBaseInfo.MeetingTitle}\n日期：{summaryBaseInfo.MeetingDate}\n主持人：{summaryBaseInfo.MeetingAdmin}\n\n{summaryContent}\n\n{todo}\n\n{summary}";
+        //return $"會議總結：\n\n會議主題：{summaryBaseInfo.MeetingTitle}\n日期：{summaryBaseInfo.MeetingDate}\n主持人：{summaryBaseInfo.MeetingAdmin}\n\n{summaryContent}\n\n{todo}\n\n{summary}";
+        return $"{summaryContent}\n\n{todo}";
     }
     
     private async Task<string> SummarizeMeetingContentAsync(string originalRecord, CancellationToken cancellationToken)
@@ -96,7 +97,8 @@ public class MeetingUtilService : IMeetingUtilService
             new ()
             {
                 Role = "system",
-                Content = "You are a highly skilled AI trained in language comprehension and summarization. I would like you to read the following text and summarize it into a concise abstract paragraph. Aim to retain the most important points, providing a coherent and readable summary that could help a person understand the main points of the discussion without needing to read the entire text. Please avoid unnecessary details or tangential points. Please use the following template to generate in traditional Chinese: \n會議內容：1.xxx\n2.xxx\n3.xxx\n"
+                //Content = "You are a highly skilled AI trained in language comprehension and summarization. I would like you to read the following text and summarize it into a concise abstract paragraph. Aim to retain the most important points, providing a coherent and readable summary that could help a person understand the main points of the discussion without needing to read the entire text. Please avoid unnecessary details or tangential points. Please use the following template to generate in traditional Chinese: \n會議內容：1.xxx\n2.xxx\n3.xxx\n"
+                Content = "You are a highly skilled AI trained in language comprehension and summarization.  I would like you to read the following text and summarize it into a abstract paragraph.  Aim to retain the most important points, providing a coherent and readable summary that could help a person understand the main points of the discussion without needing to read the entire text.  Please avoid unnecessary details or tangential points.  Please use the following template to generate in traditional Chinese: \n會議摘要 \nAbstractTitle1\nxxx\nAbstractTitle2\nxxx\nAbstractTitle3\nxxx"
             },
             new ()
             {
@@ -126,7 +128,7 @@ public class MeetingUtilService : IMeetingUtilService
             new ()
             {
                 Role = "system",
-                Content = "You are an AI expert in analyzing conversations and extracting action items. Please review the text and identify any tasks, assignments, or actions that were agreed upon or mentioned as needing to be done. These could be tasks assigned to specific individuals, or general actions that the group has decided to take. Please list these action items point by point clearly and concisely in the following format: \nTodo:1.xxx\n2.xxx\n3.xxx. Must list in tradition Chinese"
+                Content = "You are an AI expert at analyzing conversations and extracting action items. Please read the text and identify any tasks, assignments, or actions that have been agreed upon or mentioned as needing to be completed. These may be tasks assigned to specific individuals or general actions that the group has decided to take. Please list these action items clearly and concisely point by point in the following format: \n會議待辦 \nxxx \nxxx \nxxx. Must be listed in Traditional Chinese without sequence numbers"
             },
             new ()
             {
@@ -143,6 +145,7 @@ public class MeetingUtilService : IMeetingUtilService
             Model = OpenAiModel.Gpt40Turbo,
             Messages = messages
         }, cancellationToken).ConfigureAwait(false);
+        
         
         Log.Information("OriginRecord: {OriginRecord},\n Todo: {Todo}", originalRecord, todo);
 
@@ -190,7 +193,7 @@ public class MeetingUtilService : IMeetingUtilService
                 Role = "system",
                 Content =  "You are a meeting summary content integration assistant, please help me make multiple meeting summaries into a logical content integration, " +
                            "and return a complete meeting summary in the following format:\n" +
-                           "\"會議總結：\n\n會議主題：xxx\n日期：xxx\n主持人:xxx\n會議內容：1.xxx\n2.xxx\n3.xxx\nTodo:1.xxx\n2.xxx\n3.xxx\n總結：xxx\""
+                           "\"會議摘要 \nAbstractTitle1\nxxx\nAbstractTitle2\nxxx\nAbstractTitle3\nxxx\n會議待辦 \nxxx\nxxx\nxxx\""
             },
             new ()
             {
