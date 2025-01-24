@@ -1,6 +1,7 @@
 using System;
 using Serilog;
 using System.Linq;
+using Newtonsoft.Json;
 using System.Threading;
 using SugarTalk.Core.Ioc;
 using System.Threading.Tasks;
@@ -84,10 +85,16 @@ public class MeetingUtilService : IMeetingUtilService
 
         var todo = await SummarizeMeetingTodoAsync(originalRecord, cancellationToken).ConfigureAwait(false);
 
+        var meetingSummary = new MeetingSummaryJsonDto
+        {   
+            Abstract = JsonConvert.DeserializeObject<List<MeetingAbstractDto>>(summaryContent),
+            MeetingTodoItems = JsonConvert.DeserializeObject<List<MeetingTodoItemsDto>>(todo)
+        };
+
         //var summary = await SummarizeMeetingSummaryAsync(originalRecord, cancellationToken).ConfigureAwait(false);
         
         //return $"會議總結：\n\n會議主題：{summaryBaseInfo.MeetingTitle}\n日期：{summaryBaseInfo.MeetingDate}\n主持人：{summaryBaseInfo.MeetingAdmin}\n\n{summaryContent}\n\n{todo}\n\n{summary}";
-        return $"{summaryContent}\n\n{todo}";
+        return JsonConvert.SerializeObject(meetingSummary);
     }
     
     private async Task<string> SummarizeMeetingContentAsync(string originalRecord, CancellationToken cancellationToken)
@@ -98,7 +105,7 @@ public class MeetingUtilService : IMeetingUtilService
             {
                 Role = "system",
                 //Content = "You are a highly skilled AI trained in language comprehension and summarization. I would like you to read the following text and summarize it into a concise abstract paragraph. Aim to retain the most important points, providing a coherent and readable summary that could help a person understand the main points of the discussion without needing to read the entire text. Please avoid unnecessary details or tangential points. Please use the following template to generate in traditional Chinese: \n會議內容：1.xxx\n2.xxx\n3.xxx\n"
-                Content = "You are a highly skilled AI trained in language comprehension and summarization.  I would like you to read the following text and summarize it into a abstract paragraph.  Aim to retain the most important points, providing a coherent and readable summary that could help a person understand the main points of the discussion without needing to read the entire text.  Please avoid unnecessary details or tangential points.  Please use the following template to generate in traditional Chinese: \n會議摘要 \nAbstractTitle1\nxxx\nAbstractTitle2\nxxx\nAbstractTitle3\nxxx"
+                Content = "You are a trained AI that excels at language understanding and conference summaries. I want you to read the text below and divide it into several necessary summary paragraphs. Strive to retain the most important points and provide a coherent and easy-to-read summary that helps people understand the main points of the discussion without having to read the entire text. Please avoid unnecessary details or digressions. Please use the following json template to generate traditional Chinese fills. The objects in the json template generate the corresponding number according to the summary paragraph: \n[{\"abstract_title\":\"xxx\",\"abstract_content\":\"xxx\"},{\"abstract_title\":\"xxx\",\"abstract_content\":\"xxx\"},{\"abstract_title\":\"xxx\",\"abstract_content\":\"xxx\"}]"
             },
             new ()
             {
@@ -128,7 +135,7 @@ public class MeetingUtilService : IMeetingUtilService
             new ()
             {
                 Role = "system",
-                Content = "You are an AI expert at analyzing conversations and extracting action items. Please read the text and identify any tasks, assignments, or actions that have been agreed upon or mentioned as needing to be completed. These may be tasks assigned to specific individuals or general actions that the group has decided to take. Please list these action items clearly and concisely point by point in the following format: \n會議待辦 \nxxx \nxxx \nxxx. Must be listed in Traditional Chinese without sequence numbers"
+                Content = "You are an AI expert at analyzing conversations and extracting action items. Please read the text and identify any tasks, assignments, or actions that have been agreed upon or mentioned as needing to be completed. These may be tasks assigned to specific individuals or general actions that the group has decided to take. Please list these action items clearly and concisely point by point in the following format: [{\"meeting_todo_item\": \"xxx\"},{\"meeting_todo_item\": \"xxx\"},{\"meeting_todo_item\": \"xxx\"}]. Must be listed in Traditional Chinese without sequence numbers"
             },
             new ()
             {
@@ -191,9 +198,9 @@ public class MeetingUtilService : IMeetingUtilService
             new ()
             {
                 Role = "system",
-                Content =  "You are a meeting summary content integration assistant, please help me make multiple meeting summaries into a logical content integration, " +
-                           "and return a complete meeting summary in the following format:\n" +
-                           "\"會議摘要 \nAbstractTitle1\nxxx\nAbstractTitle2\nxxx\nAbstractTitle3\nxxx\n會議待辦 \nxxx\nxxx\nxxx\""
+                Content =  "You are a conference summary content integration assistant. Please help me make multiple conference summaries into a logical content integration, " +
+                           " and return the complete conference summary in strict accordance with the format, the format is as follows:\n" +
+                           "\"{\"meeting_summary\":\"Conference Summary\",\"Abstract\":[{\"abstract_title\":\"xxx\",\"abstract_content\":\"xxx\"},{\"abstract_title\":\"xxx\",\"abstract_content\":\"xxx\"}],\"meeting_todo\":\"Conference To Do\",\"meeting_todo_items\":[{\"meeting_todo_item\":\"xxx\"},{\"meeting_todo_item\":\"xxx\"}]}\""
             },
             new ()
             {
