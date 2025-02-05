@@ -1,4 +1,5 @@
 using System;
+using Newtonsoft.Json;
 using SugarTalk.Messages.Dto.Translation;
 using SugarTalk.Messages.Enums.Meeting.Summary;
 
@@ -17,7 +18,9 @@ public class MeetingSummaryDto
     public string OriginText { get; set; }
     
     public string Summary { get; set; }
-    
+
+    public MeetingSummaryJsonDto SummaryDto => string.IsNullOrEmpty(Summary) ? null : JsonConvert.DeserializeObject<MeetingSummaryJsonDto>(Summary);
+
     public TranslationLanguage TargetLanguage { get; set; }
     
     public SummaryStatus Status { get; set; }
