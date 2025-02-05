@@ -123,8 +123,9 @@ public partial class MeetingService
                 }
             }
 
-            await _meetingDataProvider.UpdateMeetingSpeakDetailsAsync(speakDetails, true, cancellationToken)
-                .ConfigureAwait(false);
+            await _meetingDataProvider.UpdateMeetingSpeakDetailsAsync(speakDetails, true, cancellationToken).ConfigureAwait(false);
+            
+            Log.Information("Complete transcription meeting");
             
             await ProcessMeetingSummaryAsync(speakDetails, meetingRecord, cancellationToken).ConfigureAwait(false);
         }
@@ -145,6 +146,8 @@ public partial class MeetingService
     {
         var meeting = await _meetingDataProvider.GetMeetingAsync(meetingId: meetingRecord.MeetingId, cancellationToken: cancellationToken).ConfigureAwait(false);
 
+        Log.Information("Process meeting");
+        
         var speakIds = string.Join(",", speakDetails.OrderBy(x => x.SpeakStartTime).Select(x => x.Id));
 
         var summary = new MeetingSummary
