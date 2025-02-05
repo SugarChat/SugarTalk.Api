@@ -33,7 +33,7 @@ namespace SugarTalk.Core.Services.Meetings
         
         Task PersistMeetingAsync(Meeting meeting, CancellationToken cancellationToken);
 
-        Task<MeetingDto> GetMeetingAsync(string meetingNumber, CancellationToken cancellationToken = default, bool includeUserSessions = true);
+        Task<MeetingDto> GetMeetingAsync(string meetingNumber = null, Guid? meetingId = null, CancellationToken cancellationToken = default, bool includeUserSessions = true);
         
         Task RemoveMeetingUserSessionsAsync(IEnumerable<MeetingUserSession> meetingUserSessions, CancellationToken cancellationToken = default);
         
@@ -160,12 +160,18 @@ namespace SugarTalk.Core.Services.Meetings
         }
         
         public async Task<MeetingDto> GetMeetingAsync(
-            string meetingNumber, CancellationToken cancellationToken, bool includeUserSessions = true)
+            string meetingNumber = null, Guid? meetingId = null, CancellationToken cancellationToken = default, bool includeUserSessions = true)
         {
-            var meeting = await _repository.QueryNoTracking<Meeting>()
-                .SingleOrDefaultAsync(x => x.MeetingNumber == meetingNumber, cancellationToken)
-                .ConfigureAwait(false);
+            var query = _repository.QueryNoTracking<Meeting>();
 
+            if(!string.IsNullOrEmpty(meetingNumber))
+                query = query.Where(x => x.MeetingNumber == meetingNumber);
+
+            if (meetingId.HasValue)
+                query = query.Where(x => x.Id == meetingId);
+
+            var meeting = await query.SingleOrDefaultAsync(cancellationToken).ConfigureAwait(false);
+            
             if (meeting == null) throw new MeetingNotFoundException();
 
             var updateMeeting = _mapper.Map<MeetingDto>(meeting);

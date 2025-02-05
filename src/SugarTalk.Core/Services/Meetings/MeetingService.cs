@@ -270,7 +270,7 @@ namespace SugarTalk.Core.Services.Meetings
             CancellationToken cancellationToken)
         {
             var meeting = await _meetingDataProvider
-                .GetMeetingAsync(request.MeetingNumber, cancellationToken, request.IncludeUserSession).ConfigureAwait(false);
+                .GetMeetingAsync(request.MeetingNumber, cancellationToken: cancellationToken, includeUserSessions: request.IncludeUserSession).ConfigureAwait(false);
 
             meeting.AppName = appName;
 
@@ -296,7 +296,7 @@ namespace SugarTalk.Core.Services.Meetings
             
             await _meetingDataProvider.CheckUserKickedFromMeetingAsync(command.MeetingNumber, user.Id, cancellationToken).ConfigureAwait(false);
             
-            var meeting = await _meetingDataProvider.GetMeetingAsync(command.MeetingNumber, cancellationToken).ConfigureAwait(false);
+            var meeting = await _meetingDataProvider.GetMeetingAsync(command.MeetingNumber, cancellationToken: cancellationToken).ConfigureAwait(false);
 
             if (meeting.MeetingMasterUserId != user.Id && meeting.IsPasswordEnabled)
             {
@@ -448,7 +448,7 @@ namespace SugarTalk.Core.Services.Meetings
 
         public async Task<MeetingEndedEvent> EndMeetingAsync(EndMeetingCommand command, CancellationToken cancellationToken)
         {
-            var meeting = await _meetingDataProvider.GetMeetingAsync(command.MeetingNumber, cancellationToken).ConfigureAwait(false);
+            var meeting = await _meetingDataProvider.GetMeetingAsync(command.MeetingNumber, cancellationToken: cancellationToken).ConfigureAwait(false);
 
             if (meeting.MeetingMasterUserId != _currentUser.Id) throw new CannotEndMeetingWhenUnauthorizedException();
 
