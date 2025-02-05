@@ -1,18 +1,19 @@
+using Xunit;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using HR.Message.Contract.Command;
-using HR.Message.Contract.Event;
-using Microsoft.EntityFrameworkCore;
 using Shouldly;
+using System.Linq;
+using Newtonsoft.Json;
 using SugarTalk.Core.Data;
+using System.Threading.Tasks;
+using HR.Message.Contract.Event;
+using System.Collections.Generic;
+using HR.Message.Contract.Command;
+using Microsoft.EntityFrameworkCore;
 using SugarTalk.Core.Domain.Foundation;
 using SugarTalk.Core.Services.Foundation;
+using SugarTalk.Messages.Enums.Foundation;
 using SugarTalk.IntegrationTests.TestBaseClasses;
 using SugarTalk.IntegrationTests.Utils.Foundation;
-using SugarTalk.Messages.Enums.Foundation;
-using Xunit;
 
 namespace SugarTalk.IntegrationTests.Services.Foundation;
 

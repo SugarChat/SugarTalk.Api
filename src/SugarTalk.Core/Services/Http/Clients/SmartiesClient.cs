@@ -13,6 +13,8 @@ public interface ISmartiesClient : IScopedDependency
     Task<AskGptResponse> PerformQueryAsync(AskGptRequestDto request, CancellationToken cancellationToken);
     
     Task<GetEchoAvatarUserToneResponse> GetEchoAvatarVoiceSettingAsync(GetEchoAvatarVoiceSettingRequestDto request, CancellationToken cancellationToken);
+    
+    Task<CreateSpeechMaticsJobResponseDto> CreateSpeechMaticsJobAsync(CreateSpeechMaticsJobCommandDto command, CancellationToken cancellationToken);
 }
 
 public class SmartiesClient : ISmartiesClient
@@ -42,5 +44,11 @@ public class SmartiesClient : ISmartiesClient
     {
         return await _httpClientFactory.PostAsJsonAsync<AskGptResponse>(
             $"{_smartiesSettings.BaseUrl}/api/Ask/general/query", request, cancellationToken, headers: _headers).ConfigureAwait(false);
+    }
+    
+    public async Task<CreateSpeechMaticsJobResponseDto> CreateSpeechMaticsJobAsync(CreateSpeechMaticsJobCommandDto command, CancellationToken cancellationToken)
+    {
+        return await _httpClientFactory.PostAsJsonAsync<CreateSpeechMaticsJobResponseDto>(
+            $"{_smartiesSettings.BaseUrl}/api/transcription/callback", command, cancellationToken, headers: _headers).ConfigureAwait(false);
     }
 }
