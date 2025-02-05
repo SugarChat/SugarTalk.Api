@@ -160,12 +160,12 @@ namespace SugarTalk.Core.Services.Meetings
         }
         
         public async Task<MeetingDto> GetMeetingAsync(
-            string meetingNumber, CancellationToken cancellationToken = default, bool includeUserSessions = true)
+            string meetingNumber, CancellationToken cancellationToken, bool includeUserSessions = true)
         {
             var meeting = await _repository.QueryNoTracking<Meeting>()
                 .SingleOrDefaultAsync(x => x.MeetingNumber == meetingNumber, cancellationToken)
                 .ConfigureAwait(false);
-            
+
             if (meeting == null) throw new MeetingNotFoundException();
 
             var updateMeeting = _mapper.Map<MeetingDto>(meeting);

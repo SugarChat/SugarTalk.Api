@@ -130,7 +130,7 @@ public partial class MeetingService
             if (File.Exists(localhostUrl))
                 File.Delete(localhostUrl);
         }
-
+        
         /*_backgroundJobClient.Enqueue<IMeetingService>(x => x.OptimizeTranscribedContent(speakDetails, cancellationToken));*/
     }
 
