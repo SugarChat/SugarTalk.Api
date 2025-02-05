@@ -173,7 +173,7 @@ public partial class MeetingService
     public static string GenerateOriginRecordText(List<MeetingSpeakDetail> speakInfos)
     {
         var originText = speakInfos.OrderBy(x => x.SpeakStartTime)
-            .Select(speakInfo => $"<{speakInfo.Username}> ({DateTimeOffset.FromUnixTimeSeconds(speakInfo.SpeakStartTime):yyyy-MM-dd HH:mm:ss}) : {speakInfo.OriginalContent}")
+            .Select(speakInfo => $"<{speakInfo.Username}> ({DateTimeOffset.FromUnixTimeMilliseconds(speakInfo.SpeakStartTime):yyyy-MM-dd HH:mm:ss}) : {speakInfo.OriginalContent}")
             .Aggregate((current, next) => current + "\n" + next);
 
         Log.Information("Generating origin record text for summary: {OriginText}", originText);
