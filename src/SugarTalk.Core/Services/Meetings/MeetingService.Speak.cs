@@ -141,45 +141,6 @@ public partial class MeetingService
         
         /*_backgroundJobClient.Enqueue<IMeetingService>(x => x.OptimizeTranscribedContent(speakDetails, cancellationToken));*/
     }
-    
-    public async Task ProcessMeetingSummaryAsync(List<MeetingSpeakDetail> speakDetails, MeetingRecord meetingRecord, CancellationToken cancellationToken)
-    {
-        var meeting = await _meetingDataProvider.GetMeetingAsync(meetingId: meetingRecord.MeetingId, cancellationToken: cancellationToken).ConfigureAwait(false);
-
-        Log.Information("Process meeting");
-        
-        var speakIds = string.Join(",", speakDetails.OrderBy(x => x.SpeakStartTime).Select(x => x.Id));
-
-        var summary = new MeetingSummary
-        {
-            SpeakIds = speakIds,
-            Status = SummaryStatus.InProgress,
-            RecordId = meetingRecord.Id,
-            MeetingNumber = meeting.MeetingNumber,
-            TargetLanguage = TranslationLanguage.ZhCn,
-            OriginText = GenerateOriginRecordText(speakDetails)
-        };
-
-        await _meetingDataProvider.AddMeetingSummariesAsync(new List<MeetingSummary> { summary }, cancellationToken: cancellationToken).ConfigureAwait(false);
-
-        _backgroundJobClient.Enqueue<IMediator>(x => x.SendAsync(new ProcessSummaryMeetingCommand
-        {
-            MeetingSummaryId = summary.Id,
-            Language = TranslationLanguage.ZhCn
-        }, cancellationToken), HangfireConstants.MeetingSummaryQueue);
-    }
-    
-    
-    public static string GenerateOriginRecordText(List<MeetingSpeakDetail> speakInfos)
-    {
-        var originText = speakInfos.OrderBy(x => x.SpeakStartTime)
-            .Select(speakInfo => $"<{speakInfo.Username}> ({DateTimeOffset.FromUnixTimeMilliseconds(speakInfo.SpeakStartTime):yyyy-MM-dd HH:mm:ss}) : {speakInfo.OriginalContent}")
-            .Aggregate((current, next) => current + "\n" + next);
-
-        Log.Information("Generating origin record text for summary: {OriginText}", originText);
-
-        return originText;
-    }
 
     public async Task OptimizeTranscribedContent(List<MeetingSpeakDetail> speakDetails, CancellationToken cancellationToken)
     {
@@ -269,6 +230,43 @@ public partial class MeetingService
             return await _awsS3Service.GeneratePresignedUrlAsync(url, 30).ConfigureAwait(false);
         
         return url;
+    }
+    
+    private async Task ProcessMeetingSummaryAsync(List<MeetingSpeakDetail> speakDetails, MeetingRecord meetingRecord, CancellationToken cancellationToken)
+    {
+        var meeting = await _meetingDataProvider.GetMeetingAsync(meetingId: meetingRecord.MeetingId, cancellationToken: cancellationToken).ConfigureAwait(false);
+
+        var speakIds = string.Join(",", speakDetails.OrderBy(x => x.SpeakStartTime).Select(x => x.Id));
+
+        var summary = new MeetingSummary
+        {
+            SpeakIds = speakIds,
+            Status = SummaryStatus.InProgress,
+            RecordId = meetingRecord.Id,
+            MeetingNumber = meeting.MeetingNumber,
+            TargetLanguage = TranslationLanguage.ZhCn,
+            OriginText = GenerateOriginRecordText(speakDetails)
+        };
+
+        await _meetingDataProvider.AddMeetingSummariesAsync(new List<MeetingSummary> { summary }, cancellationToken: cancellationToken).ConfigureAwait(false);
+
+        _backgroundJobClient.Enqueue<IMediator>(x => x.SendAsync(new ProcessSummaryMeetingCommand
+        {
+            MeetingSummaryId = summary.Id,
+            Language = TranslationLanguage.ZhCn
+        }, cancellationToken), HangfireConstants.MeetingSummaryQueue);
+    }
+    
+    
+    private static string GenerateOriginRecordText(List<MeetingSpeakDetail> speakInfos)
+    {
+        var originText = speakInfos.OrderBy(x => x.SpeakStartTime)
+            .Select(speakInfo => $"<{speakInfo.Username}> ({DateTimeOffset.FromUnixTimeMilliseconds(speakInfo.SpeakStartTime):yyyy-MM-dd HH:mm:ss}) : {speakInfo.OriginalContent}")
+            .Aggregate((current, next) => current + "\n" + next);
+
+        Log.Information("Generating origin record text for summary: {OriginText}", originText);
+
+        return originText;
     }
     
     private static readonly HttpClient Client = new HttpClient { Timeout = TimeSpan.FromSeconds(300) };
