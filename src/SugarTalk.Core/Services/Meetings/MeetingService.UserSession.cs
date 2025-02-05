@@ -53,7 +53,7 @@ public partial class MeetingService
 
         await _meetingDataProvider.UpdateMeetingUserSessionAsync(userSession, cancellationToken).ConfigureAwait(false);
 
-        var updateMeeting = await _meetingDataProvider.GetMeetingAsync(meeting.MeetingNumber, cancellationToken: cancellationToken).ConfigureAwait(false);
+        var updateMeeting = await _meetingDataProvider.GetMeetingAsync(meeting.MeetingNumber, cancellationToken).ConfigureAwait(false);
 
         return new AudioChangedEvent
         {
@@ -93,7 +93,7 @@ public partial class MeetingService
         await _meetingDataProvider
             .UpdateMeetingUserSessionAsync(userSession, cancellationToken).ConfigureAwait(false);
         
-        var updateMeeting = await _meetingDataProvider.GetMeetingAsync(meeting.MeetingNumber, cancellationToken: cancellationToken).ConfigureAwait(false);
+        var updateMeeting = await _meetingDataProvider.GetMeetingAsync(meeting.MeetingNumber, cancellationToken).ConfigureAwait(false);
 
         return new ScreenSharedEvent
         {
