@@ -269,8 +269,8 @@ namespace SugarTalk.Core.Services.Meetings
         public async Task<GetMeetingByNumberResponse> GetMeetingByNumberAsync(GetMeetingByNumberRequest request,
             CancellationToken cancellationToken)
         {
-            var meeting = await _meetingDataProvider.GetMeetingAsync(
-                request.MeetingNumber, cancellationToken, request.IncludeUserSession).ConfigureAwait(false);
+            var meeting = await _meetingDataProvider
+                .GetMeetingAsync(request.MeetingNumber, cancellationToken, request.IncludeUserSession).ConfigureAwait(false);
 
             meeting.AppName = appName;
 
@@ -448,7 +448,7 @@ namespace SugarTalk.Core.Services.Meetings
 
         public async Task<MeetingEndedEvent> EndMeetingAsync(EndMeetingCommand command, CancellationToken cancellationToken)
         {
-            var meeting = await _meetingDataProvider.GetMeetingAsync(command.MeetingNumber, cancellationToken: cancellationToken).ConfigureAwait(false);
+            var meeting = await _meetingDataProvider.GetMeetingAsync(command.MeetingNumber, cancellationToken).ConfigureAwait(false);
 
             if (meeting.MeetingMasterUserId != _currentUser.Id) throw new CannotEndMeetingWhenUnauthorizedException();
 
