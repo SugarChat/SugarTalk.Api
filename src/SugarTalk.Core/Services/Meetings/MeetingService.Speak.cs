@@ -257,7 +257,6 @@ public partial class MeetingService
         }, cancellationToken), HangfireConstants.MeetingSummaryQueue);
     }
     
-    
     private static string GenerateOriginRecordText(List<MeetingSpeakDetail> speakInfos)
     {
         var originText = speakInfos.OrderBy(x => x.SpeakStartTime)
