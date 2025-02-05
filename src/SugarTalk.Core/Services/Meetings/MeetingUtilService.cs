@@ -87,8 +87,8 @@ public class MeetingUtilService : IMeetingUtilService
 
         var meetingSummary = new MeetingSummaryJsonDto
         {   
-            Abstract = JsonConvert.DeserializeObject<List<MeetingAbstractDto>>(summaryContent),
-            MeetingTodoItems = JsonConvert.DeserializeObject<List<MeetingTodoItemsDto>>(todo)
+            Abstract = string.IsNullOrEmpty(summaryContent) ? null : JsonConvert.DeserializeObject<List<MeetingAbstractDto>>(summaryContent),
+            MeetingTodoItems = string.IsNullOrEmpty(todo) ? null : JsonConvert.DeserializeObject<List<MeetingTodoItemsDto>>(todo)
         };
 
         //var summary = await SummarizeMeetingSummaryAsync(originalRecord, cancellationToken).ConfigureAwait(false);

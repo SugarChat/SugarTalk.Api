@@ -19,7 +19,7 @@ public class MeetingSummaryDto
     
     public string Summary { get; set; }
 
-    public MeetingSummaryJsonDto SummaryDto => JsonConvert.DeserializeObject<MeetingSummaryJsonDto>(Summary);
+    public MeetingSummaryJsonDto SummaryDto => string.IsNullOrEmpty(Summary) ? null : JsonConvert.DeserializeObject<MeetingSummaryJsonDto>(Summary);
 
     public TranslationLanguage TargetLanguage { get; set; }
     
