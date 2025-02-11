@@ -465,6 +465,8 @@ public partial class MeetingService
                 cancellationToken).ConfigureAwait(false);
 
             await TranscriptionMeetingAsync(meetingDetails, record, cancellationToken);
+            
+            await CreateSpeechMaticsJobAsync(record, meetingDetails, cancellationToken).ConfigureAwait(false);
         }
     }
 
@@ -592,8 +594,6 @@ public partial class MeetingService
                  cancellationToken).ConfigureAwait(false);
 
              await TranscriptionMeetingAsync(meetingDetails, meetingRecord, cancellationToken);
-
-             await CreateSpeechMaticsJobAsync(meetingRecord, meetingDetails, cancellationToken).ConfigureAwait(false);
          }
      }
 
