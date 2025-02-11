@@ -1,5 +1,6 @@
 using System;
 using Serilog;
+using System.IO;
 using System.Linq;
 using Mediator.Net;
 using Newtonsoft.Json;
@@ -11,6 +12,7 @@ using SugarTalk.Messages.Dto.FClub;
 using SugarTalk.Messages.Extensions;
 using SugarTalk.Core.Domain.Meeting;
 using Microsoft.IdentityModel.Tokens;
+using SugarTalk.Core.Domain.SpeechMatics;
 using SugarTalk.Messages.Enums.Speech;
 using SugarTalk.Messages.Dto.Meetings;
 using SugarTalk.Messages.Enums.Meeting;
@@ -20,8 +22,12 @@ using SugarTalk.Messages.Dto.Translation;
 using SugarTalk.Messages.Commands.Meetings;
 using SugarTalk.Messages.Requests.Meetings;
 using SugarTalk.Messages.Dto.LiveKit.Egress;
+using SugarTalk.Messages.Dto.Smarties;
 using SugarTalk.Messages.Enums.Caching;
 using SugarTalk.Messages.Enums.Meeting.Speak;
+using SugarTalk.Messages.Enums.OpenAi;
+using SugarTalk.Messages.Enums.Smarties;
+using SugarTalk.Messages.Enums.SpeechMatics;
 using SugarTalk.Messages.Events.Meeting.Summary;
 
 namespace SugarTalk.Core.Services.Meetings;
@@ -586,6 +592,39 @@ public partial class MeetingService
                  cancellationToken).ConfigureAwait(false);
 
              await TranscriptionMeetingAsync(meetingDetails, meetingRecord, cancellationToken);
+
+             await CreateSpeechMaticsJobAsync(meetingRecord, meetingDetails, cancellationToken).ConfigureAwait(false);
          }
+     }
+
+     private async Task CreateSpeechMaticsJobAsync(MeetingRecord meetingRecord, List<MeetingSpeakDetail> meetingDetails, CancellationToken cancellationToken)
+     {
+         var presignedUrl = await _awsS3Service.GeneratePresignedUrlAsync(meetingRecord.Url, 30).ConfigureAwait(false);
+        
+         var localhostUrl = await DownloadWithRetryAsync(presignedUrl, cancellationToken: cancellationToken).ConfigureAwait(false);
+        
+         var audio = await _ffmpegService.VideoToAudioConverterAsync(localhostUrl, cancellationToken).ConfigureAwait(false);
+        
+         var audioMp3 = await _ffmpegService.ConvertFileFormatAsync(audio, TranscriptionFileType.Mp3, cancellationToken).ConfigureAwait(false);
+             
+         var speechMaticsJob = await _smartiesClient.CreateSpeechMaticsJobAsync(new CreateSpeechMaticsJobCommandDto
+         {
+             Language = "zh",
+             RecordContent = audioMp3,
+             Url = _smartiesSettings.BaseUrl,
+             Key = _smartiesSettings.SpeechMaticsApiKey,
+             SourceSystem = TranscriptionJobSystem.SmartTalk,
+             RecordName = Path.GetFileNameWithoutExtension(meetingRecord.Url)
+         }, cancellationToken).ConfigureAwait(false);
+
+         Log.Information("Create SpeechMatics job: {@speechMaticsJob}", speechMaticsJob.Result);
+
+         await _smartiesDataProvider.CreateSpeechMaticsRecordAsync(new SpeechMaticsRecord
+         {
+             Status = SpeechMaticsStatus.Sent,
+             MeetingRecordId = meetingRecord.Id,
+             TranscriptionJobId = speechMaticsJob.Result,
+             MeetingNumber = meetingDetails.FirstOrDefault()?.MeetingNumber
+         }, cancellationToken: cancellationToken).ConfigureAwait(false);
      }
 }

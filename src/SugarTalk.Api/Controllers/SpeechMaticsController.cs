@@ -21,7 +21,7 @@ public class SpeechMaticsController : ControllerBase
     [ProducesResponseType(StatusCodes.Status200OK)]
     public async Task<IActionResult> TranscriptionCallbackAsync([FromBody] TranscriptionCallBackCommand command)
     {
-        await _mediator.SendAsync(command);
+        await _mediator.SendAsync(command).ConfigureAwait(false);
 
         return Ok();
     }

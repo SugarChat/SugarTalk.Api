@@ -48,7 +48,17 @@ public class SmartiesClient : ISmartiesClient
     
     public async Task<CreateSpeechMaticsJobResponseDto> CreateSpeechMaticsJobAsync(CreateSpeechMaticsJobCommandDto command, CancellationToken cancellationToken)
     {
-        return await _httpClientFactory.PostAsJsonAsync<CreateSpeechMaticsJobResponseDto>(
-            $"{_smartiesSettings.BaseUrl}/api/transcription/callback", command, cancellationToken, headers: _headers).ConfigureAwait(false);
+        var parameters = new Dictionary<string, string>
+        {
+            { "Url", command.Url },
+            { "Key", command.Key },
+            { "Language", command.Language },
+            { "SourceSystem", command.SourceSystem.ToString() }
+        };
+        
+        var files = new Dictionary<string, (byte[], string)> { { "file", (command.RecordContent, command.RecordName) } };
+        
+        return await _httpClientFactory.PostAsMultipartAsync<CreateSpeechMaticsJobResponseDto>(
+            $"{_smartiesSettings.BaseUrl}/api/SpeechMatics/create/job", parameters, files, cancellationToken, headers: _headers).ConfigureAwait(false);
     }
 }
