@@ -546,7 +546,7 @@ public partial class MeetingService
         }
     }
     
-     private async Task HandleMeetingRecordRestartAsync(Guid meetingId, Guid meetingRecordId, EgressItemDto egressItem, UserAccountDto user, CancellationToken cancellationToken)
+    private async Task HandleMeetingRecordRestartAsync(Guid meetingId, Guid meetingRecordId, EgressItemDto egressItem, UserAccountDto user, CancellationToken cancellationToken)
     {
         Log.Information("meetingId: {meetingId}, meetingRecordId:{meetingRecordId}, egressItem:{@egressItem}, user:{@user} ",meetingId, meetingRecordId, egressItem, user);
      
@@ -601,7 +601,7 @@ public partial class MeetingService
 
      private async Task CreateSpeechMaticsJobAsync(MeetingRecord meetingRecord, List<MeetingSpeakDetail> meetingDetails, CancellationToken cancellationToken)
      {
-         Log.Information("Create speech matics job meeting record: {@meetingRecord}", meetingRecord);
+         Log.Information("Create speech matics job meeting record: {@meetingRecord} MeetingDetails:{@meetingDetails}", meetingRecord, meetingDetails);
          
          var presignedUrl = await _awsS3Service.GeneratePresignedUrlAsync(meetingRecord.Url, 30).ConfigureAwait(false);
         
