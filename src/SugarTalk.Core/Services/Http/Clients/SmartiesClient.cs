@@ -53,7 +53,8 @@ public class SmartiesClient : ISmartiesClient
             { "Url", command.Url },
             { "Key", command.Key },
             { "Language", command.Language },
-            { "SourceSystem", command.SourceSystem.ToString() }
+            { "SourceSystem", command.SourceSystem.ToString() },
+            { "RecordName", command.RecordName}
         };
         
         var files = new Dictionary<string, (byte[], string)> { { "file", (command.RecordContent, command.RecordName) } };
