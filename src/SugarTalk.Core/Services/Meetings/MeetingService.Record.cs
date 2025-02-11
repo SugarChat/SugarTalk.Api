@@ -614,7 +614,7 @@ public partial class MeetingService
              Url = _smartiesSettings.BaseUrl,
              Key = _smartiesSettings.SpeechMaticsApiKey,
              SourceSystem = TranscriptionJobSystem.SmartTalk,
-             RecordName = Path.GetFileNameWithoutExtension(meetingRecord.Url)
+             RecordName = meetingRecord.Url
          }, cancellationToken).ConfigureAwait(false);
 
          Log.Information("Create SpeechMatics job: {@speechMaticsJob}", speechMaticsJob.Result);
