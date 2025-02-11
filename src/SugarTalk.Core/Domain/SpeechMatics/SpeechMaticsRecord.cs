@@ -6,7 +6,7 @@ using SugarTalk.Messages.Enums.SpeechMatics;
 namespace SugarTalk.Core.Domain.SpeechMatics;
 
 [Table("speech_matics_record")]
-public class SpeechMaticsRecord : IEntity, IHasCreatedFields
+public class SpeechMaticsRecord : IEntity
 {
     [Key]
     [Column("id")]
@@ -23,10 +23,4 @@ public class SpeechMaticsRecord : IEntity, IHasCreatedFields
 
     [Column("transcription_job_id")]
     public string TranscriptionJobId { get; set; }
-    
-    [Column("created_by")]
-    public int CreatedBy { get; set; }
-    
-    [Column("created_date")]
-    public DateTimeOffset CreatedDate { get; set; }
 }
