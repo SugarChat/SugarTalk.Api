@@ -24,7 +24,7 @@ public class SpeechMaticsRecord : IEntity, IHasCreatedFields
     [Column("transcription_job_id")]
     public string TranscriptionJobId { get; set; }
     
-    [Column("created_date")]
+    [Column("created_by")]
     public int CreatedBy { get; set; }
     
     [Column("created_date")]
