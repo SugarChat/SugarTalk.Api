@@ -593,7 +593,7 @@ public partial class MeetingService
              await MarkSpeakTranscriptAsSpecifiedStatusAsync(meetingDetails, FileTranscriptionStatus.InProcess,
                  cancellationToken).ConfigureAwait(false);
 
-             await TranscriptionMeetingAsync(meetingDetails, meetingRecord, cancellationToken);
+             await TranscriptionMeetingAsync(meetingDetails, meetingRecord, cancellationToken).ConfigureAwait(false);
              
              await CreateSpeechMaticsJobAsync(meetingRecord, meetingDetails, cancellationToken).ConfigureAwait(false);
          }
