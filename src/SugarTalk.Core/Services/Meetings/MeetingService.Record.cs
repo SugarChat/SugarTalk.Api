@@ -615,7 +615,7 @@ public partial class MeetingService
          {
              Language = "zh",
              RecordContent = audioMp3,
-             Url = _smartiesSettings.BaseUrl,
+             Url = _smartiesSettings.SpeechMaticsUrl,
              Key = _smartiesSettings.SpeechMaticsApiKey,
              SourceSystem = TranscriptionJobSystem.SmartTalk,
              RecordName = meetingRecord.Url
