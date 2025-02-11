@@ -2,6 +2,7 @@ using System.Threading;
 using SugarTalk.Core.Ioc;
 using SugarTalk.Core.Data;
 using System.Threading.Tasks;
+using Serilog;
 using SugarTalk.Core.Domain.SpeechMatics;
 
 namespace SugarTalk.Core.Services.Smarties;
@@ -31,6 +32,8 @@ public class SmartiesDataProvider : ISmartiesDataProvider
 
     public async Task CreateSpeechMaticsRecordAsync(SpeechMaticsRecord record, bool forceSave = true, CancellationToken cancellationToken = default)
     {
+        Log.Information("Create SpeechMatics job: {@speechMaticsJob}", record);
+        
         await _repository.InsertAsync(record, cancellationToken).ConfigureAwait(false);
 
         if (forceSave)
