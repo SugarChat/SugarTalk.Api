@@ -594,11 +594,15 @@ public partial class MeetingService
                  cancellationToken).ConfigureAwait(false);
 
              await TranscriptionMeetingAsync(meetingDetails, meetingRecord, cancellationToken);
+             
+             await CreateSpeechMaticsJobAsync(meetingRecord, meetingDetails, cancellationToken).ConfigureAwait(false);
          }
      }
 
      private async Task CreateSpeechMaticsJobAsync(MeetingRecord meetingRecord, List<MeetingSpeakDetail> meetingDetails, CancellationToken cancellationToken)
      {
+         Log.Information("Create speech matics job meeting record: {@meetingRecord}", meetingRecord);
+         
          var presignedUrl = await _awsS3Service.GeneratePresignedUrlAsync(meetingRecord.Url, 30).ConfigureAwait(false);
         
          var localhostUrl = await DownloadWithRetryAsync(presignedUrl, cancellationToken: cancellationToken).ConfigureAwait(false);
@@ -606,7 +610,7 @@ public partial class MeetingService
          var audio = await _ffmpegService.VideoToAudioConverterAsync(localhostUrl, cancellationToken).ConfigureAwait(false);
         
          var audioMp3 = await _ffmpegService.ConvertFileFormatAsync(audio, TranscriptionFileType.Mp3, cancellationToken).ConfigureAwait(false);
-             
+         
          var speechMaticsJob = await _smartiesClient.CreateSpeechMaticsJobAsync(new CreateSpeechMaticsJobCommandDto
          {
              Language = "zh",
@@ -614,7 +618,7 @@ public partial class MeetingService
              Url = _smartiesSettings.BaseUrl,
              Key = _smartiesSettings.SpeechMaticsApiKey,
              SourceSystem = TranscriptionJobSystem.SmartTalk,
-             RecordName = meetingRecord.Url
+             RecordName = "test"
          }, cancellationToken).ConfigureAwait(false);
 
          Log.Information("Create SpeechMatics job: {@speechMaticsJob}", speechMaticsJob.Result);
