@@ -623,12 +623,14 @@ public partial class MeetingService
 
          Log.Information("Create SpeechMatics job: {@speechMaticsJob}", speechMaticsJob.Result);
 
-         await _smartiesDataProvider.CreateSpeechMaticsRecordAsync(new SpeechMaticsRecord
+         var meetingSpeechMaticsRecord = new SpeechMaticsRecord
          {
              Status = SpeechMaticsStatus.Sent,
              MeetingRecordId = meetingRecord.Id,
              TranscriptionJobId = speechMaticsJob.Result,
              MeetingNumber = meetingDetails.FirstOrDefault()?.MeetingNumber
-         }, cancellationToken: cancellationToken).ConfigureAwait(false);
+         };
+         
+         await _smartiesDataProvider.CreateSpeechMaticsRecordAsync(meetingSpeechMaticsRecord, cancellationToken: cancellationToken).ConfigureAwait(false);
      }
 }
