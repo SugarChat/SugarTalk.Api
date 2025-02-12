@@ -139,7 +139,7 @@ public class SmartiesService : ISmartiesService
         return originalSpeakDetails;
     }
     
-    public async Task<string> zSplitAudioAsync(byte[] file , long speakStartTimeVideo, long speakEndTimeVideo, TranscriptionFileType fileType = TranscriptionFileType.Wav, CancellationToken cancellationToken = default)
+    public async Task<string> SplitAudioAsync(byte[] file , long speakStartTimeVideo, long speakEndTimeVideo, TranscriptionFileType fileType = TranscriptionFileType.Wav, CancellationToken cancellationToken = default)
     {
         if (file == null) return null;
         
