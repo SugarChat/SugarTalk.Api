@@ -62,7 +62,7 @@ public class SmartiesService : ISmartiesService
         
         Log.Information("SpeechMatics originalSpeakDetails: {@originalSpeakDetails}", originalSpeakDetails);
         
-        var meetingRecord = await _meetingDataProvider.GetMeetingRecordByMeetingRecordIdAsync(speechMaticsRecord.MeetingRecordId, cancellationToken).ConfigureAwait(false);
+        var meetingRecord = (await _meetingDataProvider.GetMeetingRecordsAsync(speechMaticsRecord.MeetingRecordId, cancellationToken).ConfigureAwait(false)).FirstOrDefault();
 
         Log.Information("SpeechMatics meetingRecord: {@meetingRecord}", meetingRecord);
         
@@ -103,7 +103,7 @@ public class SmartiesService : ISmartiesService
 
         Log.Information("New speak details: {@speakDetails}", speakDetails);
         
-        var recordUrl = await _awsS3Service.GeneratePresignedUrlAsync(meetingRecord.Url, 30).ConfigureAwait(false);
+        var recordUrl = await _awsS3Service.GeneratePresignedUrlAsync(meetingRecord?.Url, 30).ConfigureAwait(false);
         
         var audioContent = await _sugarTalkHttpClientFactory.GetAsync<byte[]>(recordUrl, cancellationToken).ConfigureAwait(false);
         
@@ -119,9 +119,7 @@ public class SmartiesService : ISmartiesService
     {
         foreach (var speakDetail in originalSpeakDetails)
         {
-            Log.Information(
-                "Start time of speak in video: {SpeakStartTimeVideo}, End time of speak in video: {SpeakEndTimeVideo}",
-                speakDetail.SpeakStartTime * 1000, speakDetail.SpeakEndTime * 1000);
+            Log.Information("Start time of speak in video: {SpeakStartTimeVideo}, End time of speak in video: {SpeakEndTimeVideo}", speakDetail.SpeakStartTime * 1000, speakDetail.SpeakEndTime * 1000);
 
             try
             {
