@@ -103,7 +103,7 @@ public class SmartiesService : ISmartiesService
 
         Log.Information("New speak details: {@speakDetails}", speakDetails);
         
-        var recordUrl = await _awsS3Service.GeneratePresignedUrlAsync(meetingRecord?.Url, 30).ConfigureAwait(false);
+        var recordUrl = await _awsS3Service.GeneratePresignedUrlAsync(meetingRecord?.Url ?? "", 30).ConfigureAwait(false);
         
         var audioContent = await _sugarTalkHttpClientFactory.GetAsync<byte[]>(recordUrl, cancellationToken).ConfigureAwait(false);
         
