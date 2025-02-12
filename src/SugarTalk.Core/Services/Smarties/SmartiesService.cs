@@ -98,7 +98,7 @@ public class SmartiesService : ISmartiesService
             speakDetails.AddRange(replaceSameSpeaker);
             
             if (speakDetails.Count == originalSpeakInfos.Count)
-                return;
+                break;
         }
 
         Log.Information("New speak details: {@speakDetails}", speakDetails);
