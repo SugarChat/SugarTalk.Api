@@ -60,8 +60,12 @@ public class SmartiesService : ISmartiesService
         var originalSpeakDetails = await _meetingDataProvider.GetMeetingSpeakDetailsAsync(
             meetingNumber: speechMaticsRecord.MeetingNumber, recordId: speechMaticsRecord.MeetingRecordId, cancellationToken: cancellationToken).ConfigureAwait(false);
         
+        Log.Information("SpeechMatics originalSpeakDetails: {@originalSpeakDetails}", originalSpeakDetails);
+        
         var meetingRecord = await _meetingDataProvider.GetMeetingRecordByMeetingRecordIdAsync(speechMaticsRecord.MeetingRecordId, cancellationToken).ConfigureAwait(false);
 
+        Log.Information("SpeechMatics meetingRecord: {@meetingRecord}", meetingRecord);
+        
         var speakDetails = new List<MeetingSpeakDetail>();
         
         foreach (var speakInfo in originalSpeakInfos)
@@ -87,8 +91,9 @@ public class SmartiesService : ISmartiesService
                     SpeakStartTime = Convert.ToInt64(x.StartTime),
                     FileTranscriptionStatus = speakDetail.FileTranscriptionStatus,
                 };
-
             }).ToList();
+            
+            Log.Information("SpeechMatics replaceSameSpeaker: {@replaceSameSpeaker}", replaceSameSpeaker);
             
             speakDetails.AddRange(replaceSameSpeaker);
             
