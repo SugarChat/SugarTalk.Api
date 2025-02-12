@@ -77,7 +77,7 @@ public partial class MeetingService
         speakDetail.SpeakStatus = SpeakStatus.End;
         speakDetail.SpeakEndTime = command.SpeakEndTime.Value;
         
-        await _meetingDataProvider.UpdateMeetingSpeakDetailAsync(speakDetail, cancellationToken: cancellationToken).ConfigureAwait(false);
+        await _meetingDataProvider.UpdateMeetingSpeakDetailsAsync(new List<MeetingSpeakDetail>{ speakDetail }, cancellationToken: cancellationToken).ConfigureAwait(false);
         
         return speakDetail;
     }
@@ -163,7 +163,7 @@ public partial class MeetingService
 
             Log.Information("SmartContent: {SmartContent}", speakDetail.SmartContent);
 
-            await _meetingDataProvider.UpdateMeetingSpeakDetailAsync(speakDetail, true, cancellationToken).ConfigureAwait(false);
+            await _meetingDataProvider.UpdateMeetingSpeakDetailsAsync(new List<MeetingSpeakDetail>{ speakDetail }, true, cancellationToken).ConfigureAwait(false);
         }
     }
 

@@ -109,15 +109,17 @@ public class SmartiesService : ISmartiesService
 
         var audio = await _ffmpegService.VideoToAudioConverterAsync(localhostUrl, cancellationToken);
         
-        speakDetails = await TranscriptionSpeakInfoAsync(speakDetails, audio, cancellationToken).ConfigureAwait(false);
+        speakDetails = await TranscriptionSpeakInfoAsync(speakDetails, audio, meetingRecord, cancellationToken).ConfigureAwait(false);
         
         Log.Information("Transcription new speak details: {@speakDetails}", speakDetails);
         
         await _meetingDataProvider.UpdateMeetingSpeakDetailsAsync(speakDetails, true, cancellationToken).ConfigureAwait(false);
+        
+        await _meetingDataProvider.DeleteMeetingSpeekDetailsAsync(originalSpeakDetails, cancellationToken: cancellationToken).ConfigureAwait(false);
     }
 
     private async Task<List<MeetingSpeakDetail>> TranscriptionSpeakInfoAsync(
-        List<MeetingSpeakDetail> originalSpeakDetails, byte[] audioContent, CancellationToken cancellationToken)
+        List<MeetingSpeakDetail> originalSpeakDetails, byte[] audioContent, MeetingRecord meetingRecord, CancellationToken cancellationToken)
     {
         foreach (var speakDetail in originalSpeakDetails)
         {
@@ -131,6 +133,9 @@ public class SmartiesService : ISmartiesService
                         TranscriptionFileType.Wav, cancellationToken).ConfigureAwait(false);
                 else
                     speakDetail.OriginalContent = "";
+                
+                speakDetail.SpeakStartTime += meetingRecord.CreatedDate.ToUnixTimeMilliseconds();
+                speakDetail.SpeakEndTime += meetingRecord.CreatedDate.ToUnixTimeMilliseconds();
             }
             catch (Exception ex)
             {
