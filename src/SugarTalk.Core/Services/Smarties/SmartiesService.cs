@@ -129,17 +129,20 @@ public class SmartiesService : ISmartiesService
             {
                 if (speakDetail.SpeakStartTime != 0 && speakDetail.SpeakEndTime != 0)
                     speakDetail.OriginalContent = await SplitAudioAsync(
-                        audioContent, Convert.ToInt64(speakDetail.SpeakStartTime * 1000), Convert.ToInt64(speakDetail.SpeakEndTime * 1000),
+                        audioContent, Convert.ToInt64(speakDetail.SpeakStartTime * 1000),
+                        Convert.ToInt64(speakDetail.SpeakEndTime * 1000),
                         TranscriptionFileType.Wav, cancellationToken).ConfigureAwait(false);
                 else
                     speakDetail.OriginalContent = "";
-                
-                speakDetail.SpeakStartTime += meetingRecord.CreatedDate.ToUnixTimeMilliseconds();
-                speakDetail.SpeakEndTime += meetingRecord.CreatedDate.ToUnixTimeMilliseconds();
             }
             catch (Exception ex)
             {
                 Log.Information("transcription error: {ErrorMessage}", ex.Message);
+            }
+            finally
+            {
+                speakDetail.SpeakStartTime += meetingRecord.CreatedDate.ToUnixTimeMilliseconds();
+                speakDetail.SpeakEndTime += meetingRecord.CreatedDate.ToUnixTimeMilliseconds();
             }
         }
         
