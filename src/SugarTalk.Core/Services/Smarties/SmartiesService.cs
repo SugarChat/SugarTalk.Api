@@ -119,13 +119,13 @@ public class SmartiesService : ISmartiesService
     {
         foreach (var speakDetail in originalSpeakDetails)
         {
-            Log.Information("Start time of speak in video: {SpeakStartTimeVideo}, End time of speak in video: {SpeakEndTimeVideo}", speakDetail.SpeakStartTime * 1000, speakDetail.SpeakEndTime * 1000);
+            Log.Information("Start time of speak in video: {SpeakStartTimeVideo}, End time of speak in video: {SpeakEndTimeVideo}", speakDetail.SpeakStartTime, speakDetail.SpeakEndTime);
 
             try
             {
                 if (speakDetail.SpeakStartTime != 0 && speakDetail.SpeakEndTime != 0)
                     speakDetail.OriginalContent = await SplitAudioAsync(
-                        audioContent, Convert.ToInt64(speakDetail.SpeakStartTime * 1000), Convert.ToInt64(speakDetail.SpeakEndTime * 1000),
+                        audioContent, Convert.ToInt64(speakDetail.SpeakStartTime), Convert.ToInt64(speakDetail.SpeakEndTime),
                         TranscriptionFileType.Wav, cancellationToken).ConfigureAwait(false);
                 else
                     speakDetail.OriginalContent = "";
@@ -139,7 +139,7 @@ public class SmartiesService : ISmartiesService
         return originalSpeakDetails;
     }
     
-    public async Task<string> SplitAudioAsync(byte[] file , long speakStartTimeVideo, long speakEndTimeVideo, TranscriptionFileType fileType = TranscriptionFileType.Wav, CancellationToken cancellationToken = default)
+    public async Task<string> zSplitAudioAsync(byte[] file , long speakStartTimeVideo, long speakEndTimeVideo, TranscriptionFileType fileType = TranscriptionFileType.Wav, CancellationToken cancellationToken = default)
     {
         if (file == null) return null;
         
