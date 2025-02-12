@@ -29,18 +29,18 @@ public class SmartiesService : ISmartiesService
     private readonly IAwsS3Service _awsS3Service;
     private readonly IFfmpegService _ffmpegService;
     private readonly IOpenAiService _openAiService;
+    private readonly IMeetingService _meetingService;
     private readonly IMeetingDataProvider _meetingDataProvider;
     private readonly ISmartiesDataProvider _smartiesDataProvider;
-    private readonly ISugarTalkHttpClientFactory _sugarTalkHttpClientFactory;
 
-    public SmartiesService(IFfmpegService ffmpegService, IOpenAiService openAiService, IAwsS3Service awsS3Service, IMeetingDataProvider meetingDataProvider, ISmartiesDataProvider smartiesDataProvider, ISugarTalkHttpClientFactory sugarTalkHttpClientFactory)
+    public SmartiesService(IAwsS3Service awsS3Service, IFfmpegService ffmpegService, IOpenAiService openAiService, IMeetingService meetingService, IMeetingDataProvider meetingDataProvider, ISmartiesDataProvider smartiesDataProvider, ISugarTalkHttpClientFactory sugarTalkHttpClientFactory)
     {
         _awsS3Service = awsS3Service;
         _ffmpegService = ffmpegService;
         _openAiService = openAiService;
+        _meetingService = meetingService;
         _meetingDataProvider = meetingDataProvider;
         _smartiesDataProvider = smartiesDataProvider;
-        _sugarTalkHttpClientFactory = sugarTalkHttpClientFactory;
     }
 
     public async Task HandleTranscriptionCallbackAsync(TranscriptionCallBackCommand command, CancellationToken cancellationToken)
@@ -105,9 +105,11 @@ public class SmartiesService : ISmartiesService
         
         var recordUrl = await _awsS3Service.GeneratePresignedUrlAsync(meetingRecord?.Url ?? "", 30).ConfigureAwait(false);
         
-        var audioContent = await _sugarTalkHttpClientFactory.GetAsync<byte[]>(recordUrl, cancellationToken).ConfigureAwait(false);
+        var localhostUrl = await _meetingService.DownloadWithRetryAsync(recordUrl, cancellationToken: cancellationToken).ConfigureAwait(false);
+
+        var audio = await _ffmpegService.VideoToAudioConverterAsync(localhostUrl, cancellationToken);
         
-        speakDetails = await TranscriptionSpeakInfoAsync(speakDetails, audioContent, cancellationToken).ConfigureAwait(false);
+        speakDetails = await TranscriptionSpeakInfoAsync(speakDetails, audio, cancellationToken).ConfigureAwait(false);
         
         Log.Information("Transcription new speak details: {@speakDetails}", speakDetails);
         
@@ -119,13 +121,13 @@ public class SmartiesService : ISmartiesService
     {
         foreach (var speakDetail in originalSpeakDetails)
         {
-            Log.Information("Start time of speak in video: {SpeakStartTimeVideo}, End time of speak in video: {SpeakEndTimeVideo}", speakDetail.SpeakStartTime, speakDetail.SpeakEndTime);
+            Log.Information("Start time of speak in video: {SpeakStartTimeVideo}, End time of speak in video: {SpeakEndTimeVideo}", speakDetail.SpeakStartTime * 1000, speakDetail.SpeakEndTime * 1000);
 
             try
             {
                 if (speakDetail.SpeakStartTime != 0 && speakDetail.SpeakEndTime != 0)
                     speakDetail.OriginalContent = await SplitAudioAsync(
-                        audioContent, Convert.ToInt64(speakDetail.SpeakStartTime), Convert.ToInt64(speakDetail.SpeakEndTime),
+                        audioContent, Convert.ToInt64(speakDetail.SpeakStartTime * 1000), Convert.ToInt64(speakDetail.SpeakEndTime * 1000),
                         TranscriptionFileType.Wav, cancellationToken).ConfigureAwait(false);
                 else
                     speakDetail.OriginalContent = "";

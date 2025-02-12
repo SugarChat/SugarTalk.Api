@@ -608,13 +608,11 @@ public partial class MeetingService
          var localhostUrl = await DownloadWithRetryAsync(presignedUrl, cancellationToken: cancellationToken).ConfigureAwait(false);
         
          var audio = await _ffmpegService.VideoToAudioConverterAsync(localhostUrl, cancellationToken).ConfigureAwait(false);
-        
-         var audioMp3 = await _ffmpegService.ConvertFileFormatAsync(audio, TranscriptionFileType.Mp3, cancellationToken).ConfigureAwait(false);
          
          var speechMaticsJob = await _smartiesClient.CreateSpeechMaticsJobAsync(new CreateSpeechMaticsJobCommandDto
          {
              Language = "zh",
-             RecordContent = audioMp3,
+             RecordContent = audio,
              Url = _smartiesSettings.SpeechMaticsUrl,
              Key = _smartiesSettings.SpeechMaticsApiKey,
              SourceSystem = TranscriptionJobSystem.SmartTalk,
