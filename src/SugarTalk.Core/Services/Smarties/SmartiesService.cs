@@ -85,10 +85,10 @@ public class SmartiesService : ISmartiesService
                     Username = speakDetail.Username,
                     CreatedDate = speakDetail.CreatedDate,
                     SpeakStatus = speakDetail.SpeakStatus,
-                    SpeakEndTime = Convert.ToInt64(x.EndTime),
+                    SpeakEndTime = Convert.ToInt64(x.EndTime * 1000),
                     MeetingNumber = speakDetail.MeetingNumber,
                     MeetingRecordId = speakDetail.MeetingRecordId,
-                    SpeakStartTime = Convert.ToInt64(x.StartTime),
+                    SpeakStartTime = Convert.ToInt64(x.StartTime * 1000),
                     FileTranscriptionStatus = speakDetail.FileTranscriptionStatus,
                 };
             }).ToList();
@@ -123,14 +123,14 @@ public class SmartiesService : ISmartiesService
     {
         foreach (var speakDetail in originalSpeakDetails)
         {
-            Log.Information("Start time of speak in video: {SpeakStartTimeVideo}, End time of speak in video: {SpeakEndTimeVideo}", speakDetail.SpeakStartTime * 1000, speakDetail.SpeakEndTime * 1000);
+            Log.Information("Start time of speak in video: {SpeakStartTimeVideo}, End time of speak in video: {SpeakEndTimeVideo}", speakDetail.SpeakStartTime, speakDetail.SpeakEndTime);
 
             try
             {
                 if (speakDetail.SpeakStartTime != 0 && speakDetail.SpeakEndTime != 0)
                     speakDetail.OriginalContent = await SplitAudioAsync(
-                        audioContent, Convert.ToInt64(speakDetail.SpeakStartTime * 1000),
-                        Convert.ToInt64(speakDetail.SpeakEndTime * 1000),
+                        audioContent, Convert.ToInt64(speakDetail.SpeakStartTime),
+                        Convert.ToInt64(speakDetail.SpeakEndTime),
                         TranscriptionFileType.Wav, cancellationToken).ConfigureAwait(false);
                 else
                     speakDetail.OriginalContent = "";
