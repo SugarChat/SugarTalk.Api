@@ -25,7 +25,6 @@ using SugarTalk.Messages.Dto.LiveKit.Egress;
 using SugarTalk.Messages.Dto.Smarties;
 using SugarTalk.Messages.Enums.Caching;
 using SugarTalk.Messages.Enums.Meeting.Speak;
-using SugarTalk.Messages.Enums.OpenAi;
 using SugarTalk.Messages.Enums.Smarties;
 using SugarTalk.Messages.Enums.SpeechMatics;
 using SugarTalk.Messages.Events.Meeting.Summary;
@@ -61,6 +60,8 @@ public partial interface IMeetingService
     Task UpdateMeetingRecordUrlAsync(UpdateMeetingRecordUrlCommand command, CancellationToken cancellationToken);
     
     Task<GetMeetingRecordCountResponse> GetMeetingRecordCountAsync(GetMeetingRecordCountRequest request, CancellationToken cancellationToken);
+    
+    Task RetrySpeechMaticsJobAsync(CreateSpeechMaticsJobCommand command, CancellationToken cancellationToken);
 }
 
 public partial class MeetingService
@@ -574,8 +575,18 @@ public partial class MeetingService
         _backgroundJobClient.Schedule<IMediator>(m => m.SendAsync(restartRecordCommand, cancellationToken), TimeSpan.FromSeconds(10)); 
     }
 
-     private async Task UpdateMeetingRecordAsync(MeetingRecord meetingRecord, EgressItemDto egressItem,
-         CancellationToken cancellationToken)
+    public async Task RetrySpeechMaticsJobAsync(CreateSpeechMaticsJobCommand command, CancellationToken cancellationToken)
+    {
+        Log.Information("Retry speechMatics job start");
+        
+        var record = (await _meetingDataProvider.GetMeetingRecordsAsync(command.RecordId, cancellationToken: cancellationToken).ConfigureAwait(false)).FirstOrDefault();
+        
+        var meetingDetails = await _meetingDataProvider.GetMeetingSpeakDetailsAsync(meetingNumber: command.MeetingNumber, recordId: command.RecordId, cancellationToken: cancellationToken).ConfigureAwait(false);
+        
+        await CreateSpeechMaticsJobAsync(record, meetingDetails, cancellationToken).ConfigureAwait(false);
+    }
+
+    private async Task UpdateMeetingRecordAsync(MeetingRecord meetingRecord, EgressItemDto egressItem, CancellationToken cancellationToken)
      {
          meetingRecord.Url = egressItem.File.Filename;
          meetingRecord.RecordType = MeetingRecordType.EndRecord;

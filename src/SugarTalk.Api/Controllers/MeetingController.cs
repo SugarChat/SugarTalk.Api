@@ -255,6 +255,15 @@ public class MeetingController : ControllerBase
         return Ok(response);
     }
     
+    [HttpPost("create/job")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    public async Task<IActionResult> CreateJobAsync([FromBody] CreateSpeechMaticsJobCommand command)
+    {
+        await _mediator.SendAsync(command).ConfigureAwait(false);
+
+        return Ok();
+    }
+    
     #endregion
     
     #region MeetingUserSession
