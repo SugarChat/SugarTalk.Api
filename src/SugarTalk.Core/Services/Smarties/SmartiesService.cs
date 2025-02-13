@@ -70,7 +70,10 @@ public class SmartiesService : ISmartiesService
         
         foreach (var speakInfo in originalSpeakInfos)
         {
-            var speakDetail = originalSpeakDetails.OrderBy(x => Math.Abs(x.SpeakStartTime - speakInfo.StartTime)).FirstOrDefault();
+            if (meetingRecord == null)
+                break;
+            
+            var speakDetail = originalSpeakDetails.OrderBy(x => Math.Abs(x.SpeakStartTime - meetingRecord.CreatedDate.ToUnixTimeMilliseconds() - speakInfo.StartTime * 1000 )).FirstOrDefault();
 
             Log.Information("The smallest relative time difference speak detail: {@speakDetail}", speakDetail);
             
