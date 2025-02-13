@@ -107,7 +107,7 @@ public class SmartiesService : ISmartiesService
         
         var localhostUrl = await _meetingService.DownloadWithRetryAsync(recordUrl, cancellationToken: cancellationToken).ConfigureAwait(false);
 
-        var audio = await _ffmpegService.VideoToAudioConverterAsync(localhostUrl, cancellationToken);
+        var audio = await _ffmpegService.VideoToAudioConverterAsync(localhostUrl, cancellationToken).ConfigureAwait(false);
         
         speakDetails = await TranscriptionSpeakInfoAsync(speakDetails, audio, meetingRecord, cancellationToken).ConfigureAwait(false);
         
@@ -128,10 +128,9 @@ public class SmartiesService : ISmartiesService
             try
             {
                 if (speakDetail.SpeakStartTime != 0 && speakDetail.SpeakEndTime != 0)
-                    speakDetail.OriginalContent = await SplitAudioAsync(
-                        audioContent, Convert.ToInt64(speakDetail.SpeakStartTime),
-                        Convert.ToInt64(speakDetail.SpeakEndTime),
-                        TranscriptionFileType.Wav, cancellationToken).ConfigureAwait(false);
+                    speakDetail.OriginalContent = await _openAiService.TranscriptionAsync(
+                        audioContent, TranscriptionLanguage.Chinese, Convert.ToInt64(speakDetail.SpeakStartTime), Convert.ToInt64(speakDetail.SpeakEndTime),
+                        TranscriptionFileType.Mp3, TranscriptionResponseFormat.Text, cancellationToken: cancellationToken).ConfigureAwait(false);
                 else
                     speakDetail.OriginalContent = "";
             }
@@ -147,31 +146,6 @@ public class SmartiesService : ISmartiesService
         }
         
         return originalSpeakDetails;
-    }
-    
-    public async Task<string> SplitAudioAsync(byte[] file , long speakStartTimeVideo, long speakEndTimeVideo, TranscriptionFileType fileType = TranscriptionFileType.Wav, CancellationToken cancellationToken = default)
-    {
-        if (file == null) return null;
-        
-        var audioBytes = await _ffmpegService.ConvertFileFormatAsync(file, fileType, cancellationToken).ConfigureAwait(false);
-    
-        var splitAudios = await _ffmpegService.SpiltAudioAsync(audioBytes, speakStartTimeVideo, speakEndTimeVideo, cancellationToken).ConfigureAwait(false);
-        
-        var transcriptionResult = new StringBuilder();
-        
-        foreach (var reSplitAudio in splitAudios)
-        {
-            var transcriptionResponse = await _openAiService.TranscriptionAsync(
-                reSplitAudio, TranscriptionLanguage.Chinese, speakStartTimeVideo, speakEndTimeVideo,
-                TranscriptionFileType.Mp3, TranscriptionResponseFormat.Text,
-                cancellationToken: cancellationToken).ConfigureAwait(false);
-            
-            transcriptionResult.Append(transcriptionResponse);
-        }
-        
-        Log.Information("Transcription result {Transcription}", transcriptionResult.ToString());
-        
-        return transcriptionResult.ToString();
     }
 
     private List<SpeechMaticsSpeakInfoDto> StructureDiarizationResults(List<SpeechMaticsResultDto> results)
