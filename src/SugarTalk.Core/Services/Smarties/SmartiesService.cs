@@ -121,6 +121,8 @@ public class SmartiesService : ISmartiesService
     private async Task<List<MeetingSpeakDetail>> TranscriptionSpeakInfoAsync(
         List<MeetingSpeakDetail> originalSpeakDetails, byte[] audioContent, MeetingRecord meetingRecord, CancellationToken cancellationToken)
     {
+        var audioBytes =  await _ffmpegService.ConvertFileFormatAsync(audioContent, TranscriptionFileType.Mp3, cancellationToken).ConfigureAwait(false);
+        
         foreach (var speakDetail in originalSpeakDetails)
         {
             Log.Information("Start time of speak in video: {SpeakStartTimeVideo}, End time of speak in video: {SpeakEndTimeVideo}", speakDetail.SpeakStartTime, speakDetail.SpeakEndTime);
@@ -129,7 +131,7 @@ public class SmartiesService : ISmartiesService
             {
                 if (speakDetail.SpeakStartTime != 0 && speakDetail.SpeakEndTime != 0)
                     speakDetail.OriginalContent = await _openAiService.TranscriptionAsync(
-                        audioContent, TranscriptionLanguage.Chinese, Convert.ToInt64(speakDetail.SpeakStartTime), Convert.ToInt64(speakDetail.SpeakEndTime),
+                        audioBytes, TranscriptionLanguage.Chinese, Convert.ToInt64(speakDetail.SpeakStartTime), Convert.ToInt64(speakDetail.SpeakEndTime),
                         TranscriptionFileType.Mp3, TranscriptionResponseFormat.Text, cancellationToken: cancellationToken).ConfigureAwait(false);
                 else
                     speakDetail.OriginalContent = "";
