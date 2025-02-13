@@ -178,7 +178,7 @@ public partial class MeetingDataProvider
         
         meetingInfo.MeetingRecordDetails = await GetMeetingRecordDetailsTranslationAsync(recordId, language, cancellationToken).ConfigureAwait(false);
 
-        meetingInfo.Summary = await GetMeetingSummaryAsync(meetingInfo, cancellationToken).ConfigureAwait(false);
+        meetingInfo.Summary = await GetMeetingSummaryAsync(meetingInfo, language, cancellationToken).ConfigureAwait(false);
         
         return new GetMeetingRecordDetailsResponse
         {
@@ -326,11 +326,15 @@ public partial class MeetingDataProvider
         return await meetingRecordDetailQuery.ToListAsync(cancellationToken).ConfigureAwait(false);
     }
 
-    private async Task<MeetingSummaryDto> GetMeetingSummaryAsync(GetMeetingRecordDetailsDto meetingInfo, CancellationToken cancellationToken)
+    private async Task<MeetingSummaryDto> GetMeetingSummaryAsync(GetMeetingRecordDetailsDto meetingInfo, TranslationLanguage? language, CancellationToken cancellationToken)
     {
-        return await _repository.QueryNoTracking<MeetingSummary>()
-            .Where(x => x.MeetingNumber == meetingInfo.MeetingNumber && x.RecordId == meetingInfo.Id)
-            .OrderByDescending(x => x.CreatedDate)
+        var query = _repository.QueryNoTracking<MeetingSummary>()
+            .Where(x => x.MeetingNumber == meetingInfo.MeetingNumber && x.RecordId == meetingInfo.Id);
+
+        if (language.HasValue)
+            query = query.Where(x => x.TargetLanguage == language);
+        
+        return await query.OrderByDescending(x => x.CreatedDate)
             .ProjectTo<MeetingSummaryDto>(_mapper.ConfigurationProvider)
             .FirstOrDefaultAsync(cancellationToken)
             .ConfigureAwait(false);
