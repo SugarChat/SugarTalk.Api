@@ -134,7 +134,7 @@ public class SmartiesService : ISmartiesService
                 if (speakDetail.SpeakStartTime != 0 && speakDetail.SpeakEndTime != 0)
                     speakDetail.OriginalContent = await _openAiService.TranscriptionAsync(
                         audioBytes, TranscriptionLanguage.Chinese, Convert.ToInt64(speakDetail.SpeakStartTime), Convert.ToInt64(speakDetail.SpeakEndTime),
-                        TranscriptionFileType.Mp3, TranscriptionResponseFormat.Text, cancellationToken: cancellationToken).ConfigureAwait(false);
+                        TranscriptionFileType.Mp3, TranscriptionResponseFormat.Text, false, cancellationToken: cancellationToken).ConfigureAwait(false);
                 else
                     speakDetail.OriginalContent = "";
             }
