@@ -72,6 +72,8 @@ public class SmartiesService : ISmartiesService
         {
             var speakDetail = originalSpeakDetails.OrderBy(x => Math.Abs(x.SpeakStartTime - speakInfo.StartTime)).FirstOrDefault();
 
+            Log.Information("The smallest relative time difference speak detail: {@speakDetail}", speakDetail);
+            
             var replaceSameSpeaker = originalSpeakInfos.Where(x => x.Speaker.Equals(speakInfo.Speaker)).Select(x =>
             {
                 if (speakDetail == null) return null;
