@@ -68,22 +68,23 @@ public class SmartiesService : ISmartiesService
         
         var speakDetails = new List<MeetingSpeakDetail>();
         
-        foreach (var speakInfo in originalSpeakInfos)
+        foreach (var speakDetail in originalSpeakDetails)
         {
-            if (meetingRecord == null)
-                break;
+            if (meetingRecord == null) break;
             
-            var speakDetail = originalSpeakDetails.OrderBy(x => Math.Abs(x.SpeakStartTime - meetingRecord.CreatedDate.ToUnixTimeMilliseconds() - speakInfo.StartTime * 1000 )).FirstOrDefault();
+            var speakInfo = originalSpeakInfos
+                .Aggregate((min, x) => 
+                    Math.Abs(speakDetail.SpeakStartTime - meetingRecord.CreatedDate.ToUnixTimeMilliseconds() - x.StartTime * 1000) 
+                    < Math.Abs(speakDetail.SpeakStartTime - meetingRecord.CreatedDate.ToUnixTimeMilliseconds() - min.StartTime * 1000) 
+                        ? x : min);
 
-            Log.Information("The smallest relative time difference speak detail: {@speakDetail}", speakDetail);
+            if (speakInfo == null) continue;
             
-            var replaceSameSpeaker = originalSpeakInfos.Where(x => x.Speaker.Equals(speakInfo.Speaker)).Select(x =>
-            {
-                if (speakDetail == null) return null;
-                
-                x.Speaker = speakDetail?.Username;
-                
-                return new MeetingSpeakDetail
+            Log.Information("Matched speak detail: {@speakDetail}", speakDetail);
+            
+            var replaceSameSpeaker = originalSpeakInfos
+                .Where(x => x.Speaker == speakInfo.Speaker)
+                .Select(x => new MeetingSpeakDetail
                 {
                     UserId = speakDetail.UserId,
                     TrackId = speakDetail.TrackId,
@@ -95,15 +96,15 @@ public class SmartiesService : ISmartiesService
                     MeetingRecordId = speakDetail.MeetingRecordId,
                     SpeakStartTime = Convert.ToInt64(x.StartTime * 1000),
                     FileTranscriptionStatus = speakDetail.FileTranscriptionStatus,
-                };
-            }).ToList();
-            
-            Log.Information("SpeechMatics replaceSameSpeaker: {@replaceSameSpeaker}", replaceSameSpeaker);
-            
+                })
+                .ToList();
+
+            if (replaceSameSpeaker.Any())
+                Log.Information("Updated speaker details: {@replaceSameSpeaker}", replaceSameSpeaker);
+
             speakDetails.AddRange(replaceSameSpeaker);
             
-            if (speakDetails.Count == originalSpeakInfos.Count)
-                break;
+            if (speakDetails.Count >= originalSpeakInfos.Count) break;
         }
 
         Log.Information("New speak details: {@speakDetails}", speakDetails);
