@@ -189,7 +189,7 @@ public class MeetingUtilService : IMeetingUtilService
             {
                 Role = "system",
                 Content =  "You are a conference summary content integration assistant. Please help me make multiple conference summaries into a logical content integration, " +
-                           " and return the complete conference summary in strict accordance with the format, the format is as follows:\n" +
+                           " And return the complete meeting minutes strictly in JSON format, the JSON format is as follows:\n" +
                            "\"{\"meeting_summary\":\"Conference Summary\",\"Abstract\":[{\"abstract_title\":\"xxx\",\"abstract_content\":\"xxx\"},{\"abstract_title\":\"xxx\",\"abstract_content\":\"xxx\"}],\"meeting_todo\":\"Conference To Do\",\"meeting_todo_items\":[{\"meeting_todo_item\":\"xxx\"},{\"meeting_todo_item\":\"xxx\"}]}\""
             },
             new ()
