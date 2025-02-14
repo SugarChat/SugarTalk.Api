@@ -236,7 +236,7 @@ public class FfmpegService : IFfmpegService
 
         try
         {
-            Log.Information("According stareTime Splitting audio, the audio length is {Length}", audioBytes.Length);
+            Log.Information("According start time splitting audio, the audio length is {Length}", audioBytes.Length);
 
             await File.WriteAllBytesAsync(inputFileName, audioBytes, cancellationToken).ConfigureAwait(false);
 

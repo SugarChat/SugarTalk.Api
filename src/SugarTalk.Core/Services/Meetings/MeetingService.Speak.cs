@@ -30,6 +30,8 @@ public partial interface IMeetingService
     Task<MeetingSpeakRecordedEvent> RecordMeetingSpeakAsync(RecordMeetingSpeakCommand command, CancellationToken cancellationToken);
 
     Task OptimizeTranscribedContent(List<MeetingSpeakDetail> speakDetail, CancellationToken cancellationToken);
+
+    Task<string> DownloadWithRetryAsync(string url, int maxRetries = 5, CancellationToken cancellationToken = default);
 }
 
 public partial class MeetingService
@@ -80,7 +82,7 @@ public partial class MeetingService
         speakDetail.SpeakStatus = SpeakStatus.End;
         speakDetail.SpeakEndTime = command.SpeakEndTime.Value;
         
-        await _meetingDataProvider.UpdateMeetingSpeakDetailAsync(speakDetail, cancellationToken: cancellationToken).ConfigureAwait(false);
+        await _meetingDataProvider.UpdateMeetingSpeakDetailsAsync(new List<MeetingSpeakDetail>{ speakDetail }, cancellationToken: cancellationToken).ConfigureAwait(false);
         
         return speakDetail;
     }
@@ -169,7 +171,7 @@ public partial class MeetingService
 
             Log.Information("SmartContent: {SmartContent}", speakDetail.SmartContent);
 
-            await _meetingDataProvider.UpdateMeetingSpeakDetailAsync(speakDetail, true, cancellationToken).ConfigureAwait(false);
+            await _meetingDataProvider.UpdateMeetingSpeakDetailsAsync(new List<MeetingSpeakDetail>{ speakDetail }, true, cancellationToken).ConfigureAwait(false);
         }
     }
 
@@ -181,7 +183,7 @@ public partial class MeetingService
         await _meetingDataProvider.UpdateMeetingSpeakDetailsAsync(details, cancellationToken: cancellationToken).ConfigureAwait(false);
     }
     
-    private async Task<string> DownloadWithRetryAsync(string url, int maxRetries = 5, CancellationToken cancellationToken = default)
+    public async Task<string> DownloadWithRetryAsync(string url, int maxRetries = 5, CancellationToken cancellationToken = default)
     {
         for (var i = 0; i < maxRetries; i++)
         {

@@ -21,15 +21,17 @@ using SugarTalk.Core.Services.Caching;
 using SugarTalk.Core.Services.Ffmpeg;
 using SugarTalk.Core.Services.Jobs;
 using SugarTalk.Core.Services.OpenAi;
+using SugarTalk.Core.Services.Smarties;
 using SugarTalk.Core.Settings.Aws;
 using SugarTalk.Core.Settings.Meeting;
 using SugarTalk.Core.Settings.Meeting.Feedback;
+using SugarTalk.Core.Settings.Smarties;
 
 namespace SugarTalk.UnitTests;
 
 public partial class BaseFixture
 {
-     protected IRepository _repository;
+    protected IRepository _repository;
     protected SugarTalkDbContext _dbContext;
     protected readonly IMeetingService _meetingService;
     protected readonly IMeetingDataProvider _meetingDataProvider;
@@ -62,6 +64,8 @@ public partial class BaseFixture
     private readonly IFfmpegService _ffmpegService;
     private readonly IPostBoyClient _postBoyClient;
     private readonly FeedbackSettings _feedbackSettings;
+    private readonly SmartiesSettings _smartiesSettings;
+    private readonly ISmartiesDataProvider _smartiesDataProvider;
     
     public BaseFixture()
     {
@@ -85,7 +89,7 @@ public partial class BaseFixture
         _meetingService = MockMeetingService(_clock, _mapper, _unitOfWork, _currentUser, _ffmpegService, _cacheManager, _openAiService, _speechClient, _postBoyClient,
             _liveKitClient, _fclubClient, _awsS3Settings, _awsS3Service, _smartiesClient, _translationClient, _meetingUtilService,
             _meetingDataProvider, _accountDataProvider, _liveKitServerSetting, _httpClientFactory, _backgroundJobClient,
-            _liveKitServerUtilService, _antMediaServerUtilService, _sugarTalkBackgroundJobClient, _meetingInfoSettings, _feedbackSettings); 
+            _liveKitServerUtilService, _antMediaServerUtilService, _sugarTalkBackgroundJobClient, _meetingInfoSettings, _feedbackSettings, _smartiesSettings, _smartiesDataProvider); 
         _meetingProcessJobService = MockMeetingProcessJobService(_clock, _unitOfWork, _meetingDataProvider);
     }
 
@@ -125,12 +129,14 @@ public partial class BaseFixture
         IAntMediaServerUtilService antMediaServerUtilService,
         ISugarTalkBackgroundJobClient sugarTalkBackgroundJobClient, 
         MeetingInfoSettings meetingInfoSettings,
-        FeedbackSettings feedbackSettings)
+        FeedbackSettings feedbackSettings,
+        SmartiesSettings smartiesSettings,
+        ISmartiesDataProvider smartiesDataProvider)
     {
         return new MeetingService(
-            clock, mapper, unitOfWork, currentUser, ffmpegService, openAiService, speechClient, postBoyClient, liveKitClient, fclubClient, awsS3Settings, awsS3Service, smartiesClient,
+            clock, mapper, unitOfWork, currentUser, ffmpegService, openAiService, speechClient, postBoyClient, liveKitClient, fclubClient, awsS3Settings, awsS3Service, smartiesClient, smartiesSettings,
             translationClient, meetingUtilService, meetingDataProvider, accountDataProvider, liveKitServerSetting, 
-            httpClientFactory, backgroundJobClient, liveKitServerUtilService, antMediaServerUtilService, sugarTalkBackgroundJobClient, null, cacheManager, feedbackSettings);
+            httpClientFactory, backgroundJobClient, liveKitServerUtilService, antMediaServerUtilService, sugarTalkBackgroundJobClient, null, cacheManager, feedbackSettings, smartiesDataProvider);
     }
     
     protected IMeetingDataProvider MockMeetingDataProvider(

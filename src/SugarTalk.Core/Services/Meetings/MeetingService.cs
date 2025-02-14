@@ -33,9 +33,11 @@ using SugarTalk.Core.Services.Caching;
 using SugarTalk.Core.Services.Ffmpeg;
 using SugarTalk.Core.Services.Http;
 using SugarTalk.Core.Services.OpenAi;
+using SugarTalk.Core.Services.Smarties;
 using SugarTalk.Core.Settings.Aws;
 using SugarTalk.Core.Settings.Meeting;
 using SugarTalk.Core.Settings.Meeting.Feedback;
+using SugarTalk.Core.Settings.Smarties;
 using SugarTalk.Messages.Commands.Meetings.Speak;
 using SugarTalk.Messages.Dto.LiveKit.Egress;
 using SugarTalk.Messages.Enums.Meeting;
@@ -117,6 +119,7 @@ namespace SugarTalk.Core.Services.Meetings
         private readonly AwsS3Settings _awsS3Settings;
         private readonly ICacheManager _cacheManager;
         private readonly ISmartiesClient _smartiesClient;
+        private readonly SmartiesSettings _smartiesSettings;
         private readonly TranslationClient _translationClient;
         private readonly IMeetingUtilService _meetingUtilService;
         private readonly IAccountDataProvider _accountDataProvider;
@@ -129,6 +132,7 @@ namespace SugarTalk.Core.Services.Meetings
         private readonly LiveKitServerSetting _liveKitServerSetting;
         private readonly MeetingInfoSettings _meetingInfoSettings;
         private readonly FeedbackSettings _feedbackSettings;
+        private readonly ISmartiesDataProvider _smartiesDataProvider;
         
         public MeetingService(
             IClock clock,
@@ -144,6 +148,7 @@ namespace SugarTalk.Core.Services.Meetings
             AwsS3Settings awsS3Settings,
             IAwsS3Service awsS3Service,
             ISmartiesClient smartiesClient,
+            SmartiesSettings smartiesSettings,
             TranslationClient translationClient,
             IMeetingUtilService meetingUtilService,
             IMeetingDataProvider meetingDataProvider,
@@ -154,7 +159,7 @@ namespace SugarTalk.Core.Services.Meetings
             ILiveKitServerUtilService liveKitServerUtilService,
             IAntMediaServerUtilService antMediaServerUtilService,
             ISugarTalkBackgroundJobClient sugarTalkBackgroundJobClient, 
-            MeetingInfoSettings meetingInfoSettings, ICacheManager cacheManager, FeedbackSettings feedbackSettings)
+            MeetingInfoSettings meetingInfoSettings, ICacheManager cacheManager, FeedbackSettings feedbackSettings, ISmartiesDataProvider smartiesDataProvider)
         {
             _clock = clock;
             _mapper = mapper;
@@ -171,6 +176,7 @@ namespace SugarTalk.Core.Services.Meetings
             _smartiesClient = smartiesClient;
             _awsS3Settings = awsS3Settings;
             _httpClientFactory = httpClientFactory;
+            _smartiesSettings = smartiesSettings;
             _translationClient = translationClient;
             _meetingUtilService = meetingUtilService;
             _accountDataProvider = accountDataProvider;
@@ -182,6 +188,7 @@ namespace SugarTalk.Core.Services.Meetings
             _sugarTalkBackgroundJobClient = sugarTalkBackgroundJobClient;
             _meetingInfoSettings = meetingInfoSettings;
             _feedbackSettings = feedbackSettings;
+            _smartiesDataProvider = smartiesDataProvider;
         }
         
         public async Task<MeetingScheduledEvent> ScheduleMeetingAsync(ScheduleMeetingCommand command, CancellationToken cancellationToken)
