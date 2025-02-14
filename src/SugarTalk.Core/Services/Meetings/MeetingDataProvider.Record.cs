@@ -326,7 +326,7 @@ public partial class MeetingDataProvider
         return await meetingRecordDetailQuery.ToListAsync(cancellationToken).ConfigureAwait(false);
     }
 
-    private async Task<MeetingSummaryDto> GetMeetingSummaryAsync(GetMeetingRecordDetailsDto meetingInfo, TranslationLanguage? language, CancellationToken cancellationToken)
+    private async Task<MeetingSummaryDto> GetMeetingSummaryAsync(GetMeetingRecordDetailsDto meetingInfo, TranslationLanguage? language = null, CancellationToken cancellationToken = default)
     {
         var query = _repository.QueryNoTracking<MeetingSummary>()
             .Where(x => x.MeetingNumber == meetingInfo.MeetingNumber && x.RecordId == meetingInfo.Id);
