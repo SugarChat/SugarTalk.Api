@@ -5,9 +5,11 @@ using Mediator.Net;
 using System.Threading;
 using System.Threading.Tasks;
 using SugarTalk.Core.Constants;
-using SugarTalk.Core.Extensions;
 using System.Collections.Generic;
 using SugarTalk.Core.Domain.Meeting;
+using SugarTalk.Messages.Enums.Speech;
+using SugarTalk.Messages.Dto.Translation;
+using SugarTalk.Messages.Dto.Meetings.Speech;
 using SugarTalk.Core.Services.Meetings.Exceptions;
 using SugarTalk.Messages.Dto.Meetings.Speak;
 using SugarTalk.Messages.Dto.Meetings.Summary;
@@ -88,7 +90,18 @@ public partial class MeetingService
 
             Log.Information("Generate origin summary: {OriginSummary}", originSummary);
             
-            summary.Summary = (await _translationClient.TranslateTextAsync(originSummary, command.Language.GetDescription(), cancellationToken: cancellationToken).ConfigureAwait(false)).TranslatedText;
+            summary.Summary = (await _speechClient.TranslateTextAsync(new TextTranslationDto
+            {
+                Text = originSummary,
+                TargetLanguageType = command.Language switch
+                {
+                    TranslationLanguage.ZhCn => SpeechTargetLanguageType.Mandarin,
+                    TranslationLanguage.EnUs => SpeechTargetLanguageType.English,
+                    TranslationLanguage.EsEs => SpeechTargetLanguageType.Spanish,
+                    TranslationLanguage.KoKr => SpeechTargetLanguageType.Korean,
+                    _ => SpeechTargetLanguageType.Mandarin
+                },
+            },  cancellationToken: cancellationToken).ConfigureAwait(false)).Result;
             
             Log.Information("Translated summary: {Summary}", summary.Summary);
             
