@@ -1,11 +1,11 @@
 using Mediator.Net;
 using Microsoft.AspNetCore.Mvc;
+using SugarTalk.Messages.Dto.Meetings;
 using Microsoft.AspNetCore.Authorization;
 using SugarTalk.Messages.Commands.Meetings;
 using SugarTalk.Messages.Requests.Meetings;
 using SugarTalk.Messages.Commands.Meetings.Speak;
 using SugarTalk.Messages.Commands.Meetings.Summary;
-using SugarTalk.Messages.Dto.Meetings;
 
 namespace SugarTalk.Api.Controllers;
 
@@ -253,15 +253,6 @@ public class MeetingController : ControllerBase
         var response = await _mediator.RequestAsync<GetMeetingRecordCountRequest, GetMeetingRecordCountResponse>(request).ConfigureAwait(false);
 
         return Ok(response);
-    }
-    
-    [HttpPost("create/job")]
-    [ProducesResponseType(StatusCodes.Status200OK)]
-    public async Task<IActionResult> CreateJobAsync([FromBody] CreateSpeechMaticsJobCommand command)
-    {
-        await _mediator.SendAsync(command).ConfigureAwait(false);
-
-        return Ok();
     }
     
     #endregion

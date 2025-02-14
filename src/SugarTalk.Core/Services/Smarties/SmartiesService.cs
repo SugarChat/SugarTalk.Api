@@ -1,7 +1,7 @@
 using System;
 using Serilog;
+using System.IO;
 using System.Linq;
-using System.Text;
 using System.Threading;
 using SugarTalk.Core.Ioc;
 using System.Threading.Tasks;
@@ -16,6 +16,7 @@ using SugarTalk.Messages.Enums.OpenAi;
 using SugarTalk.Core.Services.Meetings;
 using SugarTalk.Messages.Dto.SpeechMatics;
 using SugarTalk.Messages.Commands.SpeechMatics;
+using SugarTalk.Messages.Enums.Meeting.Speak;
 
 namespace SugarTalk.Core.Services.Smarties;
 
@@ -109,13 +110,7 @@ public class SmartiesService : ISmartiesService
 
         Log.Information("New speak details: {@speakDetails}", speakDetails);
         
-        var recordUrl = await _awsS3Service.GeneratePresignedUrlAsync(meetingRecord?.Url ?? "", 30).ConfigureAwait(false);
-        
-        var localhostUrl = await _meetingService.DownloadWithRetryAsync(recordUrl, cancellationToken: cancellationToken).ConfigureAwait(false);
-
-        var audio = await _ffmpegService.VideoToAudioConverterAsync(localhostUrl, cancellationToken).ConfigureAwait(false);
-        
-        speakDetails = await TranscriptionSpeakInfoAsync(speakDetails, audio, meetingRecord, cancellationToken).ConfigureAwait(false);
+        speakDetails = await TranscriptionSpeakInfoAsync(speakDetails, meetingRecord, cancellationToken).ConfigureAwait(false);
         
         Log.Information("Transcription new speak details: {@speakDetails}", speakDetails);
         
@@ -125,34 +120,66 @@ public class SmartiesService : ISmartiesService
     }
 
     private async Task<List<MeetingSpeakDetail>> TranscriptionSpeakInfoAsync(
-        List<MeetingSpeakDetail> originalSpeakDetails, byte[] audioContent, MeetingRecord meetingRecord, CancellationToken cancellationToken)
+        List<MeetingSpeakDetail> originalSpeakDetails, MeetingRecord meetingRecord, CancellationToken cancellationToken)
     {
-        var audioBytes =  await _ffmpegService.ConvertFileFormatAsync(audioContent, TranscriptionFileType.Mp3, cancellationToken).ConfigureAwait(false);
+        if (meetingRecord == null)
+            return new List<MeetingSpeakDetail>();
         
-        foreach (var speakDetail in originalSpeakDetails)
+        var localhostUrl = "";
+        
+        try
         {
-            Log.Information("Start time of speak in video: {SpeakStartTimeVideo}, End time of speak in video: {SpeakEndTimeVideo}", speakDetail.SpeakStartTime, speakDetail.SpeakEndTime);
+            var recordUrl = await _awsS3Service.GeneratePresignedUrlAsync(meetingRecord.Url, 30).ConfigureAwait(false);
+        
+            localhostUrl = await _meetingService.DownloadWithRetryAsync(recordUrl, cancellationToken: cancellationToken).ConfigureAwait(false);
 
-            try
+            var audio = await _ffmpegService.VideoToAudioConverterAsync(localhostUrl, cancellationToken).ConfigureAwait(false);
+            
+            var audioBytes = await _ffmpegService.ConvertFileFormatAsync(
+                audio, TranscriptionFileType.Mp3, cancellationToken).ConfigureAwait(false);
+
+            foreach (var speakDetail in originalSpeakDetails)
             {
-                if (speakDetail.SpeakStartTime != 0 && speakDetail.SpeakEndTime != 0)
-                    speakDetail.OriginalContent = await _openAiService.TranscriptionAsync(
-                        audioBytes, TranscriptionLanguage.Chinese, Convert.ToInt64(speakDetail.SpeakStartTime), Convert.ToInt64(speakDetail.SpeakEndTime),
-                        TranscriptionFileType.Mp3, TranscriptionResponseFormat.Text, false, cancellationToken: cancellationToken).ConfigureAwait(false);
-                else
-                    speakDetail.OriginalContent = "";
-            }
-            catch (Exception ex)
-            {
-                Log.Information("transcription error: {ErrorMessage}", ex.Message);
-            }
-            finally
-            {
-                speakDetail.SpeakStartTime += meetingRecord.CreatedDate.ToUnixTimeMilliseconds();
-                speakDetail.SpeakEndTime += meetingRecord.CreatedDate.ToUnixTimeMilliseconds();
+                Log.Information(
+                    "Start time of speak in video: {SpeakStartTimeVideo}, End time of speak in video: {SpeakEndTimeVideo}",
+                    speakDetail.SpeakStartTime, speakDetail.SpeakEndTime);
+
+                try
+                {
+                    if (speakDetail.SpeakStartTime != 0 && speakDetail.SpeakEndTime != 0)
+                        speakDetail.OriginalContent = await _openAiService.TranscriptionAsync(
+                            audioBytes, TranscriptionLanguage.Chinese, Convert.ToInt64(speakDetail.SpeakStartTime),
+                            Convert.ToInt64(speakDetail.SpeakEndTime),
+                            TranscriptionFileType.Mp3, TranscriptionResponseFormat.Text, false,
+                            cancellationToken: cancellationToken).ConfigureAwait(false);
+                    else
+                        speakDetail.OriginalContent = "";
+
+                    speakDetail.FileTranscriptionStatus = FileTranscriptionStatus.Completed;
+                }
+                catch (Exception ex)
+                {
+                    speakDetail.FileTranscriptionStatus = FileTranscriptionStatus.Exception;
+
+                    Log.Information("transcription error: {ErrorMessage}", ex.Message);
+                }
+                finally
+                {
+                    speakDetail.SpeakStartTime += meetingRecord.CreatedDate.ToUnixTimeMilliseconds();
+                    speakDetail.SpeakEndTime += meetingRecord.CreatedDate.ToUnixTimeMilliseconds();
+                }
             }
         }
-        
+        catch (Exception ex)
+        {
+            Log.Information(ex.Message);
+        }
+        finally
+        {
+            if (File.Exists(localhostUrl))
+                File.Delete(localhostUrl);
+        }
+
         return originalSpeakDetails;
     }
 
