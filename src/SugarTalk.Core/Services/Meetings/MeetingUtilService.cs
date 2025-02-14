@@ -189,7 +189,7 @@ public class MeetingUtilService : IMeetingUtilService
             {
                 Role = "system",
                 Content =  "You are a conference summary content integration assistant. Please help me make multiple conference summaries into a logical content integration, " +
-                           " And return the complete meeting minutes strictly in JSON format, without extra symbols, such as multiple \";\" at the end. The JSON format is as follows:\n" +
+                           "And return the complete meeting minutes. Be sure to strictly follow the JSON format and do not have any extra symbols at the end, such as semicolons. The JSON format is as follows:\n" +
                            "\"{\"meeting_summary\":\"Conference Summary\",\"Abstract\":[{\"abstract_title\":\"xxx\",\"abstract_content\":\"xxx\"},{\"abstract_title\":\"xxx\",\"abstract_content\":\"xxx\"}],\"meeting_todo\":\"Conference To Do\",\"meeting_todo_items\":[{\"meeting_todo_item\":\"xxx\"},{\"meeting_todo_item\":\"xxx\"}]}\""
             },
             new ()
