@@ -91,9 +91,6 @@ public class MeetingUtilService : IMeetingUtilService
             MeetingTodoItems = string.IsNullOrEmpty(todo) ? null : JsonConvert.DeserializeObject<List<MeetingTodoItemsDto>>(todo)
         };
 
-        //var summary = await SummarizeMeetingSummaryAsync(originalRecord, cancellationToken).ConfigureAwait(false);
-        
-        //return $"會議總結：\n\n會議主題：{summaryBaseInfo.MeetingTitle}\n日期：{summaryBaseInfo.MeetingDate}\n主持人：{summaryBaseInfo.MeetingAdmin}\n\n{summaryContent}\n\n{todo}\n\n{summary}";
         return JsonConvert.SerializeObject(meetingSummary);
     }
     
@@ -104,7 +101,6 @@ public class MeetingUtilService : IMeetingUtilService
             new ()
             {
                 Role = "system",
-                //Content = "You are a highly skilled AI trained in language comprehension and summarization. I would like you to read the following text and summarize it into a concise abstract paragraph. Aim to retain the most important points, providing a coherent and readable summary that could help a person understand the main points of the discussion without needing to read the entire text. Please avoid unnecessary details or tangential points. Please use the following template to generate in traditional Chinese: \n會議內容：1.xxx\n2.xxx\n3.xxx\n"
                 Content = "You are a trained AI that excels at language understanding and conference summaries. I want you to read the text below and divide it into several necessary summary paragraphs. Strive to retain the most important points and provide a coherent and easy-to-read summary that helps people understand the main points of the discussion without having to read the entire text. Please avoid unnecessary details or digressions. Please use the following json template to generate traditional Chinese fills. The objects in the json template generate the corresponding number according to the summary paragraph: \n[{\"abstract_title\":\"xxx\",\"abstract_content\":\"xxx\"},{\"abstract_title\":\"xxx\",\"abstract_content\":\"xxx\"},{\"abstract_title\":\"xxx\",\"abstract_content\":\"xxx\"}]"
             },
             new ()
@@ -113,9 +109,6 @@ public class MeetingUtilService : IMeetingUtilService
                 Content = $" minutes:\n\"{originalRecord}\"\nmeeting summary:\n"
             }
         };
-
-        /*var summary = 
-            await _openAiService.ChatCompletionsAsync(messages, model: OpenAiModel.Gpt40Turbo, cancellationToken: cancellationToken).ConfigureAwait(false);*/
         
         var summary = await _smartiesClient.PerformQueryAsync(new AskGptRequestDto
             {
@@ -143,10 +136,7 @@ public class MeetingUtilService : IMeetingUtilService
                 Content = $" minutes:\n\"{originalRecord}\"\nmeeting summary:\n"
             }
         };
-
-        /*var todo = 
-            await _openAiService.ChatCompletionsAsync(messages, model: OpenAiModel.Gpt40Turbo, cancellationToken: cancellationToken).ConfigureAwait(false);*/
-       
+        
         var todo = await _smartiesClient.PerformQueryAsync(new AskGptRequestDto
         {
             Model = OpenAiModel.Gpt40Turbo,
