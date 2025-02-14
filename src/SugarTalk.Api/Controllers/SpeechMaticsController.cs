@@ -1,6 +1,7 @@
 using Mediator.Net;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
+using SugarTalk.Messages.Commands.Meetings;
 using SugarTalk.Messages.Commands.SpeechMatics;
 
 namespace SugarTalk.Api.Controllers;
@@ -20,6 +21,15 @@ public class SpeechMaticsController : ControllerBase
     [HttpPost("transcription/callback")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     public async Task<IActionResult> TranscriptionCallbackAsync([FromBody] TranscriptionCallBackCommand command)
+    {
+        await _mediator.SendAsync(command).ConfigureAwait(false);
+
+        return Ok();
+    }
+    
+    [HttpPost("create/speechmatics")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    public async Task<IActionResult> CreateSpeechMaticsJobAsync([FromBody] CreateSpeechMaticsJobCommand command)
     {
         await _mediator.SendAsync(command).ConfigureAwait(false);
 
