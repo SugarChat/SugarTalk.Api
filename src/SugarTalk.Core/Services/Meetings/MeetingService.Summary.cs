@@ -58,10 +58,6 @@ public partial class MeetingService
             OriginText = GenerateOriginRecordText(command.SpeakInfos)
         };
 
-        var record = (await _meetingDataProvider.GetMeetingRecordsAsync(command.MeetingRecordId, cancellationToken: cancellationToken).ConfigureAwait(false)).FirstOrDefault();
-        
-        Log.Information("Get record for summary: {@Record}", record);
-
         await _meetingDataProvider.AddMeetingSummariesAsync(new List<MeetingSummary> { summary }, cancellationToken: cancellationToken).ConfigureAwait(false);
 
         _backgroundJobClient.Enqueue<IMediator>(x => x.SendAsync(new ProcessSummaryMeetingCommand
