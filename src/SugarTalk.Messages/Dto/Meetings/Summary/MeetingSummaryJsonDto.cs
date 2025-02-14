@@ -21,14 +21,14 @@ public class MeetingSummaryJsonDto
 public class MeetingAbstractDto
 {
     [JsonProperty("abstract_title")]
-    public string Title { get; set; }
+    public string AbstractTitle { get; set; }
 
     [JsonProperty("abstract_content")]
-    public string Content { get; set; }
+    public string AbstractContent { get; set; }
 }
 
 public class MeetingTodoItemsDto
 {
     [JsonProperty("meeting_todo_item")]
-    public string Item { get; set; }
+    public string MeetingTodoItem { get; set; }
 }
