@@ -111,8 +111,6 @@ public class SmartiesService : ISmartiesService
         Log.Information("New speak details: {@speakDetails}", speakDetails);
         
         speakDetails = await TranscriptionSpeakInfoAsync(speakDetails, meetingRecord, cancellationToken).ConfigureAwait(false);
-
-        await _meetingService.ProcessMeetingSummaryAsync(speakDetails, meetingRecord, cancellationToken).ConfigureAwait(false);
         
         Log.Information("Transcription new speak details: {@speakDetails}", speakDetails);
         
