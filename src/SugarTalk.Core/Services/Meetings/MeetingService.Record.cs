@@ -462,10 +462,7 @@ public partial class MeetingService
             var meetingDetails = await _meetingDataProvider
                 .GetMeetingDetailsByRecordIdAsync(record.Id, cancellationToken).ConfigureAwait(false);
              
-            await MarkSpeakTranscriptAsSpecifiedStatusAsync(meetingDetails, FileTranscriptionStatus.InProcess,
-                cancellationToken).ConfigureAwait(false);
-
-            //await TranscriptionMeetingAsync(meetingDetails, record, cancellationToken).ConfigureAwait(false);
+            await MarkSpeakTranscriptAsSpecifiedStatusAsync(meetingDetails, FileTranscriptionStatus.InProcess, cancellationToken).ConfigureAwait(false);
             
             await CreateSpeechMaticsJobAsync(record, meetingDetails, cancellationToken).ConfigureAwait(false);
         }
@@ -601,8 +598,6 @@ public partial class MeetingService
              var meetingDetails = await _meetingDataProvider.GetMeetingDetailsByRecordIdAsync(meetingRecord.Id, cancellationToken).ConfigureAwait(false);
              
              await MarkSpeakTranscriptAsSpecifiedStatusAsync(meetingDetails, FileTranscriptionStatus.InProcess, cancellationToken).ConfigureAwait(false);
-
-             //await TranscriptionMeetingAsync(meetingDetails, meetingRecord, cancellationToken).ConfigureAwait(false);
              
              await CreateSpeechMaticsJobAsync(meetingRecord, meetingDetails, cancellationToken).ConfigureAwait(false);
          }

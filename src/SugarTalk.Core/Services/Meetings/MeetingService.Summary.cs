@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using SugarTalk.Core.Constants;
 using System.Collections.Generic;
+using System.Text.RegularExpressions;
 using SugarTalk.Core.Domain.Meeting;
 using SugarTalk.Messages.Enums.Speech;
 using SugarTalk.Messages.Dto.Translation;
@@ -102,6 +103,10 @@ public partial class MeetingService
                     _ => SpeechTargetLanguageType.Mandarin
                 },
             },  cancellationToken: cancellationToken).ConfigureAwait(false)).Result;
+            
+            var match = Regex.Match(summary.Summary, @".*\}");
+
+            summary.Summary = match.Value;
             
             Log.Information("Translated summary: {Summary}", summary.Summary);
             
