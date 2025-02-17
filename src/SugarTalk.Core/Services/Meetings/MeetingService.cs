@@ -392,14 +392,65 @@ namespace SugarTalk.Core.Services.Meetings
 
             EnrichMeetingUserSessionForOutMeeting(userSession);
             
-            await _meetingDataProvider.UpdateMeetingUserSessionAsync(userSession, cancellationToken).ConfigureAwait(false);
+            await _meetingDataProvider.UpdateMeetingUserSessionAsync(new List<MeetingUserSession>{ userSession }, cancellationToken).ConfigureAwait(false);
             
             await OutLiveKitExistedUserAsync(userName: _currentUser?.Name, meetingId: command.MeetingId, cancellationToken: cancellationToken).ConfigureAwait(false);
 
             await HandleMeetingStatusWhenOutMeetingAsync(
                 userSession.UserId, command.MeetingId, command.MeetingSubId, cancellationToken).ConfigureAwait(false);
 
+            _backgroundJobClient.Enqueue(() => HandlerMeetingUserRoleAsync(userSession, cancellationToken));
+
             return new MeetingOutedEvent();
+        }
+
+        public async Task HandlerMeetingUserRoleAsync(MeetingUserSession userSession, CancellationToken cancellationToken)
+        {
+            var meeting = await _meetingDataProvider.GetMeetingByIdAsync(userSession.MeetingId, cancellationToken: cancellationToken).ConfigureAwait(false);
+
+            if (userSession.UserId == meeting.MeetingMasterUserId)
+                await ProcessMeetingMasterInheritAsync(meeting, cancellationToken).ConfigureAwait(false);
+
+            if (!userSession.CoHost)
+                return;
+            
+            userSession.CoHost = false;
+            await _meetingDataProvider.UpdateMeetingUserSessionAsync(new List<MeetingUserSession>{ userSession }, cancellationToken).ConfigureAwait(false);
+        }
+
+        public async Task ProcessMeetingMasterInheritAsync(Meeting meeting, CancellationToken cancellationToken)
+        {
+            var meetingUserSessions = await _meetingDataProvider.GetMeetingUserSessionAsync(meeting.Id, null,null, cancellationToken).ConfigureAwait(false);
+
+            var coHostUsers = meetingUserSessions.Where(x => x.UserId == meeting.MeetingMasterUserId || x.CoHost).ToList();
+
+            var newMaster = coHostUsers.Where(x => x.CoHost).OrderBy(x => x.LastModifiedDateForCoHost).FirstOrDefault();
+            
+            foreach (var user in coHostUsers)
+            {
+                if (user.UserId == meeting.MeetingMasterUserId)
+                {
+                    user.CoHost = true;
+                }
+            }
+            
+            if (newMaster != null && newMaster.UserId != meeting.MeetingMasterUserId)
+            {
+                foreach (var user in coHostUsers)
+                {
+                    if (user.UserId == newMaster.UserId)
+                    {
+                        user.CoHost = false;
+                        meeting.MeetingMasterUserId = newMaster.UserId;
+                        break;
+                    }
+                }
+            }
+            
+            Log.Information("Update after replacement meeting user sessions: {@coHostUsers}", coHostUsers);
+
+            await _meetingDataProvider.UpdateMeetingAsync(meeting, cancellationToken).ConfigureAwait(false);
+            await _meetingDataProvider.UpdateMeetingUserSessionAsync(coHostUsers, cancellationToken).ConfigureAwait(false);
         }
 
         public async Task HandleMeetingStatusWhenOutMeetingAsync(
@@ -410,7 +461,7 @@ namespace SugarTalk.Core.Services.Meetings
             if (meeting is null) throw new MeetingNotFoundException();
             
             var attendingUserSessionsExceptCurrentUser = 
-                await _meetingDataProvider.GetMeetingUserSessionAsync(meetingId, meetingSubId, cancellationToken).ConfigureAwait(false);
+                await _meetingDataProvider.GetMeetingUserSessionAsync(meetingId, meetingSubId, cancellationToken: cancellationToken).ConfigureAwait(false);
 
             attendingUserSessionsExceptCurrentUser = attendingUserSessionsExceptCurrentUser
                 .Where(x => x.UserId != userId)
@@ -465,6 +516,8 @@ namespace SugarTalk.Core.Services.Meetings
 
             await _meetingDataProvider.UpdateUserSessionsAtMeetingEndAsync(updateMeeting, updateMeetingUserSessions, cancellationToken).ConfigureAwait(false);
             
+            //todo 角色初始化
+            
             return new MeetingEndedEvent
             {
                 MeetingNumber = meeting.MeetingNumber,
@@ -515,7 +568,7 @@ namespace SugarTalk.Core.Services.Meetings
 
                 if (user.Issuer == UserAccountIssuer.Guest) HandleGuestNameForUserSession(meeting, userSession);
                 
-                await _meetingDataProvider.UpdateMeetingUserSessionAsync(userSession, cancellationToken).ConfigureAwait(false);
+                await _meetingDataProvider.UpdateMeetingUserSessionAsync(new List<MeetingUserSession>{ userSession }, cancellationToken).ConfigureAwait(false);
 
                 var updateUserSession = _mapper.Map<MeetingUserSessionDto>(userSession);
 

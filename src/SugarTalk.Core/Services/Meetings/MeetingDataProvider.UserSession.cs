@@ -18,7 +18,7 @@ public partial interface IMeetingDataProvider
     
     Task AddMeetingUserSessionAsync(MeetingUserSession userSession, CancellationToken cancellationToken);
         
-    Task UpdateMeetingUserSessionAsync(MeetingUserSession userSession, CancellationToken cancellationToken);
+    Task UpdateMeetingUserSessionAsync(List<MeetingUserSession> userSessions, CancellationToken cancellationToken);
 
     Task<List<MeetingUserSessionDto>> GetUserSessionsByMeetingIdAsync(
         Guid meetingId, Guid? meetingSubId, bool isQueryKickedOut = false, bool? includeUserName = false, CancellationToken cancellationToken = default);
@@ -27,7 +27,7 @@ public partial interface IMeetingDataProvider
     
     Task<bool> IsOtherSharingAsync(MeetingUserSession userSession, CancellationToken cancellationToken);
     
-    Task<List<MeetingUserSession>> GetMeetingUserSessionsAsync(List<int> ids, CancellationToken cancellationToken);
+    Task<List<MeetingUserSession>> GetMeetingUserSessionsAsync(List<int> ids = null,  Guid? meetingId = null, CancellationToken cancellationToken = default);
     
     Task<MeetingUserSessionDto> GetMeetingUserSessionByUserIdAsync(int userId, CancellationToken cancellationToken);
     
@@ -59,10 +59,10 @@ public partial class MeetingDataProvider
         }
     }
 
-    public async Task UpdateMeetingUserSessionAsync(MeetingUserSession userSession, CancellationToken cancellationToken)
+    public async Task UpdateMeetingUserSessionAsync(List<MeetingUserSession> userSessions, CancellationToken cancellationToken)
     {
-        if (userSession != null)
-            await _repository.UpdateAsync(userSession, cancellationToken).ConfigureAwait(false);
+        if (userSessions != null)
+            await _repository.UpdateAllAsync(userSessions, cancellationToken).ConfigureAwait(false);
         
         await _unitOfWork.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
     }
@@ -101,10 +101,17 @@ public partial class MeetingDataProvider
             .AnyAsync(x => x.IsSharingScreen, cancellationToken).ConfigureAwait(false);
     }
 
-    public async Task<List<MeetingUserSession>> GetMeetingUserSessionsAsync(List<int> ids, CancellationToken cancellationToken)
+    public async Task<List<MeetingUserSession>> GetMeetingUserSessionsAsync(List<int> ids = null, Guid? meetingId = null, CancellationToken cancellationToken = default)
     {
-        return await _repository.Query<MeetingUserSession>().Where(x => ids.Contains(x.Id))
-            .ToListAsync(cancellationToken).ConfigureAwait(false);
+        var query = _repository.Query<MeetingUserSession>();
+
+        if (ids is { Count: > 0 })
+            query = query.Where(x => ids.Contains(x.Id));
+
+        if (meetingId.HasValue)
+            query = query.Where(x => x.MeetingId == meetingId.Value);
+        
+        return await query.ToListAsync(cancellationToken).ConfigureAwait(false);
     }
 
     public async Task<MeetingUserSessionDto> GetMeetingUserSessionByUserIdAsync(int userId, CancellationToken cancellationToken)

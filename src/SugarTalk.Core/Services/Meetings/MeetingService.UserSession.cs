@@ -3,6 +3,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using SugarTalk.Core.Domain.Meeting;
 using SugarTalk.Core.Services.Exceptions;
 using SugarTalk.Messages.Dto.Meetings;
 using SugarTalk.Messages.Events.Meeting;
@@ -34,6 +35,9 @@ public partial interface IMeetingService
 
     Task<GetMeetingOnlineLongestDurationUserResponse> GetMeetingUserSessionByMeetingIdAsync(
         GetMeetingOnlineLongestDurationUserRequest request, CancellationToken cancellationToken);
+    
+    Task<UpdateMeetingUserSessionRoleResponse> UpdateMeetingUserSessionRoleAsync(
+        UpdateMeetingUserSessionRoleCommand command, CancellationToken cancellationToken);
 }
 
 public partial class MeetingService
@@ -51,7 +55,7 @@ public partial class MeetingService
 
         userSession.IsMuted = command.IsMuted;
 
-        await _meetingDataProvider.UpdateMeetingUserSessionAsync(userSession, cancellationToken).ConfigureAwait(false);
+        await _meetingDataProvider.UpdateMeetingUserSessionAsync(new List<MeetingUserSession>{ userSession }, cancellationToken).ConfigureAwait(false);
 
         var updateMeeting = await _meetingDataProvider.GetMeetingAsync(meeting.MeetingNumber, cancellationToken: cancellationToken).ConfigureAwait(false);
 
@@ -91,7 +95,7 @@ public partial class MeetingService
         }
 
         await _meetingDataProvider
-            .UpdateMeetingUserSessionAsync(userSession, cancellationToken).ConfigureAwait(false);
+            .UpdateMeetingUserSessionAsync(new List<MeetingUserSession>{ userSession }, cancellationToken).ConfigureAwait(false);
         
         var updateMeeting = await _meetingDataProvider.GetMeetingAsync(meeting.MeetingNumber, cancellationToken: cancellationToken).ConfigureAwait(false);
 
@@ -104,7 +108,7 @@ public partial class MeetingService
     public async Task<GetMeetingUserSessionsResponse> GetMeetingUserSessionsAsync(GetMeetingUserSessionsRequest request, CancellationToken cancellationToken)
     {
         var meetingUserSessions = await _meetingDataProvider
-            .GetMeetingUserSessionsAsync(request.Ids, cancellationToken).ConfigureAwait(false);
+            .GetMeetingUserSessionsAsync(request.Ids, cancellationToken: cancellationToken).ConfigureAwait(false);
 
         return new GetMeetingUserSessionsResponse
         {
@@ -175,7 +179,7 @@ public partial class MeetingService
         kickOutUserSession.OnlineType = MeetingUserSessionOnlineType.KickOutMeeting;
         kickOutUserSession.Status = MeetingAttendeeStatus.Absent;
         await _meetingDataProvider
-            .UpdateMeetingUserSessionAsync(kickOutUserSession, cancellationToken).ConfigureAwait(false);
+            .UpdateMeetingUserSessionAsync(new List<MeetingUserSession>{ kickOutUserSession }, cancellationToken).ConfigureAwait(false);
         
         var userSessionOnlineDtos = await _meetingDataProvider
             .GetUserSessionsByMeetingIdAndOnlineTypeAsync(meeting.Id, cancellationToken).ConfigureAwait(false);
@@ -199,5 +203,46 @@ public partial class MeetingService
         {
             Data = userInfo
         };
+    }
+
+    public async Task<UpdateMeetingUserSessionRoleResponse> UpdateMeetingUserSessionRoleAsync(
+        UpdateMeetingUserSessionRoleCommand command, CancellationToken cancellationToken)
+    {
+        return command.NewRole switch
+        {
+            MeetingUserSessionRole.Master => await UpdateMeetingUserSessionRoleForMasterAsync(command, cancellationToken).ConfigureAwait(false),
+            MeetingUserSessionRole.CoHost => await UpdateMeetingUserSessionRoleForCoHostAsync(command, cancellationToken).ConfigureAwait(false),
+            _ => throw new ArgumentOutOfRangeException()
+        };
+    }
+
+    private async Task<UpdateMeetingUserSessionRoleResponse> UpdateMeetingUserSessionRoleForMasterAsync(UpdateMeetingUserSessionRoleCommand command, CancellationToken cancellationToken)
+    {
+        var meeting = await _meetingDataProvider.GetMeetingByIdAsync(command.MeetingId, cancellationToken: cancellationToken).ConfigureAwait(false);
+        
+        var meetUserSession = await _meetingDataProvider.GetMeetingUserSessionByMeetingIdAsync(meeting.Id, null, meeting.MeetingMasterUserId, cancellationToken).ConfigureAwait(false);
+        
+        meeting.MeetingMasterUserId = command.UserId;
+        
+        meetUserSession.CoHost = true; 
+        
+        await _meetingDataProvider.UpdateMeetingAsync(meeting, cancellationToken).ConfigureAwait(false);
+        await _meetingDataProvider.UpdateMeetingUserSessionAsync(new List<MeetingUserSession>{ meetUserSession }, cancellationToken).ConfigureAwait(false);
+        
+        return new UpdateMeetingUserSessionRoleResponse();
+    }
+    
+    private async Task<UpdateMeetingUserSessionRoleResponse> UpdateMeetingUserSessionRoleForCoHostAsync(UpdateMeetingUserSessionRoleCommand command, CancellationToken cancellationToken)
+    {
+        var meetingUserSession = (await _meetingDataProvider.GetMeetingUserSessionAsync(command.MeetingId, null, command.UserId, cancellationToken).ConfigureAwait(false)).FirstOrDefault();
+
+        if (meetingUserSession == null) throw new MeetingUserSessionNotFoundException();
+
+        meetingUserSession.CoHost = command?.IsCoHost ?? false;
+        meetingUserSession.LastModifiedDateForCoHost = _clock.Now;
+
+        await _meetingDataProvider.UpdateMeetingUserSessionAsync(new List<MeetingUserSession>{ meetingUserSession }, cancellationToken).ConfigureAwait(false);
+        
+        return new UpdateMeetingUserSessionRoleResponse();
     }
 }

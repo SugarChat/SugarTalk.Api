@@ -59,4 +59,10 @@ public class MeetingUserSession : IEntity
 
     [Column("guest_Name")]
     public string GuestName { get; set; }
+
+    [Column("co_host")]
+    public bool CoHost { get; set; }
+
+    [Column("last_modified_date_for_co_host")]
+    public DateTimeOffset LastModifiedDateForCoHost { get; set; }
 }
