@@ -506,7 +506,9 @@ namespace SugarTalk.Core.Services.Meetings
             await _meetingDataProvider.PersistMeetingHistoryAsync(meeting, cancellationToken).ConfigureAwait(false);
             
             var updateMeeting = _mapper.Map<Meeting>(meeting);
-            
+
+           updateMeeting.MeetingMasterUserId = updateMeeting.CreatedBy;
+
             await _meetingDataProvider.MarkMeetingAsCompletedAsync(updateMeeting, cancellationToken).ConfigureAwait(false);
             
             var attendingUserSessionIds = meeting.UserSessions.Select(x => x.Id).ToList();
@@ -516,7 +518,11 @@ namespace SugarTalk.Core.Services.Meetings
 
             await _meetingDataProvider.UpdateUserSessionsAtMeetingEndAsync(updateMeeting, updateMeetingUserSessions, cancellationToken).ConfigureAwait(false);
             
-            //todo 角色初始化
+            var meetingUserSessions = await _meetingDataProvider.GetMeetingUserSessionsAsync(meetingId: meeting.Id, coHost: true, cancellationToken: cancellationToken).ConfigureAwait(false);
+
+            meetingUserSessions = meetingUserSessions.Select(x => { x.CoHost = false; return x; }).ToList();
+            
+            await _meetingDataProvider.UpdateMeetingUserSessionAsync(meetingUserSessions, cancellationToken).ConfigureAwait(false);
             
             return new MeetingEndedEvent
             {
