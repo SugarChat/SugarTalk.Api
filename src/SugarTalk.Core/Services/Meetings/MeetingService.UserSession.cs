@@ -215,7 +215,11 @@ public partial class MeetingService
         
         return new GetAllMeetingUserSessionsForMeetingIdResponse
         {
-            Data = _mapper.Map<List<MeetingUserSessionDto>>(meetingUserSessions)
+            Data = new GetAllMeetingUserSessionsForMeetingIdDto
+            {
+                MeetingUserSessions = _mapper.Map<List<MeetingUserSessionDto>>(meetingUserSessions),
+                Count = meetingUserSessions.Count(x => x.IsMeetingMaster || x.CoHost)
+            }
         };
     }
 

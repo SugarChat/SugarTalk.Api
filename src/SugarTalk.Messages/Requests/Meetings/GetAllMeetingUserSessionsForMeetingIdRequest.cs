@@ -11,6 +11,13 @@ public class GetAllMeetingUserSessionsForMeetingIdRequest : IRequest
     public Guid MeetingId { get; set; }
 }
 
-public class GetAllMeetingUserSessionsForMeetingIdResponse : SugarTalkResponse<List<MeetingUserSessionDto>>
+public class GetAllMeetingUserSessionsForMeetingIdResponse : SugarTalkResponse<GetAllMeetingUserSessionsForMeetingIdDto>
 {
+}
+
+public class GetAllMeetingUserSessionsForMeetingIdDto
+{
+    public List<MeetingUserSessionDto> MeetingUserSessions { get; set; }
+
+    public int Count { get; set; }
 }
