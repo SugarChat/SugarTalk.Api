@@ -298,6 +298,16 @@ public class MeetingController : ControllerBase
         
         return Ok(response);
     }
+
+    [Route("get/all"), HttpPost]
+    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(GetAllMeetingUserSessionsForMeetingIdResponse))]
+    public async Task<IActionResult> GetAllMeetingUserSessionsForMeetingIdAsync([FromQuery] GetAllMeetingUserSessionsForMeetingIdRequest request)
+    {
+        var response = await _mediator.RequestAsync<GetAllMeetingUserSessionsForMeetingIdRequest, GetAllMeetingUserSessionsForMeetingIdResponse>(request).ConfigureAwait(false);
+        
+        return Ok(response);
+    }
+
     #endregion
     
     #region invite

@@ -31,4 +31,10 @@ public class MeetingUserSessionDto
     public Guid? MeetingSubId { get; set; }
     
     public long? LastJoinTime { get; set; }
+    
+    public bool CoHost { get; set; }
+
+    public DateTimeOffset LastModifiedDateForCoHost { get; set; }
+
+    public bool? IsMeetingCreator { get; set; }
 }

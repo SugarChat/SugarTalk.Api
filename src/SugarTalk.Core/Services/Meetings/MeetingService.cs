@@ -408,49 +408,45 @@ namespace SugarTalk.Core.Services.Meetings
         {
             var meeting = await _meetingDataProvider.GetMeetingByIdAsync(userSession.MeetingId, cancellationToken: cancellationToken).ConfigureAwait(false);
 
-            if (userSession.UserId == meeting.MeetingMasterUserId)
-                await ProcessMeetingMasterInheritAsync(meeting, cancellationToken).ConfigureAwait(false);
-
-            if (!userSession.CoHost)
-                return;
+            MeetingUserSession newMasterSession = null;
             
-            userSession.CoHost = false;
-            await _meetingDataProvider.UpdateMeetingUserSessionAsync(new List<MeetingUserSession>{ userSession }, cancellationToken).ConfigureAwait(false);
+            if (userSession.UserId == meeting.MeetingMasterUserId)
+            {
+                newMasterSession = await ProcessingMeetingMasterInheritAsync(meeting, cancellationToken).ConfigureAwait(false);
+            
+                newMasterSession.CoHost = false;
+            }
+            
+            userSession.CoHost = userSession.UserId == meeting.CreatedBy;
+            
+            await _meetingDataProvider.UpdateMeetingUserSessionAsync(new List<MeetingUserSession>{ userSession, newMasterSession }, cancellationToken).ConfigureAwait(false);
         }
 
-        public async Task ProcessMeetingMasterInheritAsync(Meeting meeting, CancellationToken cancellationToken)
+        private async Task<MeetingUserSession> ProcessingMeetingMasterInheritAsync(Meeting meeting, CancellationToken cancellationToken)
         {
-            var meetingUserSessions = await _meetingDataProvider.GetMeetingUserSessionAsync(meeting.Id, null,null, cancellationToken).ConfigureAwait(false);
+            var meetingUserSession = await _meetingDataProvider.GetMeetingUserSessionAsync(
+                meeting.Id, null,null, true, MeetingUserSessionOnlineType.Online, cancellationToken).ConfigureAwait(false);
+            
+            var newMasterSession = meetingUserSession.FirstOrDefault(x => x.UserId == meeting.CreatedBy);
 
-            var coHostUsers = meetingUserSessions.Where(x => x.UserId == meeting.MeetingMasterUserId || x.CoHost).ToList();
+            if (newMasterSession != null)
+            {
+                meeting.MeetingMasterUserId = newMasterSession.UserId;
+            }
+            else
+            {
+                newMasterSession = meetingUserSession.OrderBy(x => x.LastModifiedDateForCoHost).FirstOrDefault();
 
-            var newMaster = coHostUsers.Where(x => x.CoHost).OrderBy(x => x.LastModifiedDateForCoHost).FirstOrDefault();
-            
-            foreach (var user in coHostUsers)
-            {
-                if (user.UserId == meeting.MeetingMasterUserId)
-                {
-                    user.CoHost = true;
-                }
+                if (newMasterSession == null) return new MeetingUserSession();
             }
+                
+            meeting.MeetingMasterUserId = newMasterSession.UserId;
             
-            if (newMaster != null && newMaster.UserId != meeting.MeetingMasterUserId)
-            {
-                foreach (var user in coHostUsers)
-                {
-                    if (user.UserId == newMaster.UserId)
-                    {
-                        user.CoHost = false;
-                        meeting.MeetingMasterUserId = newMaster.UserId;
-                        break;
-                    }
-                }
-            }
-            
-            Log.Information("Update after replacement meeting user sessions: {@coHostUsers}", coHostUsers);
+            Log.Information("Update after replacement meeting user sessions: {@coHostUsers}", newMasterSession);
 
             await _meetingDataProvider.UpdateMeetingAsync(meeting, cancellationToken).ConfigureAwait(false);
-            await _meetingDataProvider.UpdateMeetingUserSessionAsync(coHostUsers, cancellationToken).ConfigureAwait(false);
+
+            return newMasterSession;
         }
 
         public async Task HandleMeetingStatusWhenOutMeetingAsync(

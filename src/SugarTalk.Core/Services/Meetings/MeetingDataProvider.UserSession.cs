@@ -38,6 +38,8 @@ public partial interface IMeetingDataProvider
     Task<List<MeetingUserSessionDto>> GetUserSessionsByMeetingIdAndOnlineTypeAsync(Guid meetingId,CancellationToken cancellationToken);
 
     Task<MeetingOnlineLongestDurationUserDto> GetMeetingMinJoinUserByMeetingIdAsync(Guid meetingId, CancellationToken cancellationToken);
+
+    Task<List<MeetingUserSessionDto>> GetAllMeetingUserSessionsAsync(Guid meetingId, CancellationToken cancellationToken);
 }
 
 public partial class MeetingDataProvider
@@ -192,5 +194,32 @@ public partial class MeetingDataProvider
                 UserId = userAccount.Id,
                 UserName = userAccount.UserName
             }).FirstOrDefaultAsync(cancellationToken).ConfigureAwait(false);
+    }
+
+    public async Task<List<MeetingUserSessionDto>> GetAllMeetingUserSessionsAsync(
+        Guid meetingId, CancellationToken cancellationToken)
+    {
+        return await (from session in _repository.Query<MeetingUserSession>().Where(x => x.MeetingId == meetingId && x.OnlineType == MeetingUserSessionOnlineType.Online)
+            join userAccount in _repository.Query<UserAccount>() on session.UserId equals userAccount.Id
+            join meeting in _repository.Query<Meeting>() on session.MeetingId equals meeting.Id
+            orderby session.LastJoinTime
+            select new MeetingUserSessionDto
+            {
+                Id = session.Id,
+                UserId = session.UserId,
+                CoHost = session.CoHost,
+                IsMuted = session.IsMuted,
+                GuestName = session.GuestName,
+                MeetingId = session.MeetingId,
+                UserName = userAccount.UserName,
+                OnlineType = session.OnlineType,
+                CreatedDate = session.CreatedDate,
+                LastJoinTime = session.LastJoinTime,
+                MeetingSubId = session.MeetingSubId,
+                IsSharingScreen = session.IsSharingScreen,
+                LastModifiedDateForCoHost = session.LastModifiedDateForCoHost,
+                IsMeetingMaster = meeting.MeetingMasterUserId == userAccount.Id,
+                IsMeetingCreator = session.UserId == meeting.CreatedBy
+            }).ToListAsync(cancellationToken).ConfigureAwait(false);
     }
 }
