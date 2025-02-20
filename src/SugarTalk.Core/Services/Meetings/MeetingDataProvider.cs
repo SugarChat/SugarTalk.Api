@@ -516,7 +516,7 @@ namespace SugarTalk.Core.Services.Meetings
                 join subMeetings in _repository.Query<MeetingSubMeeting>() on meeting.Id equals subMeetings.MeetingId
                     into subMeetingGroup
                 from subMeeting in subMeetingGroup.DefaultIfEmpty()
-                where meeting.MeetingMasterUserId == _currentUser.Id &&
+                where (meeting.MeetingMasterUserId == _currentUser.Id || meeting.CreatedBy == _currentUser.Id) &&
                       meeting.AppointmentType == MeetingAppointmentType.Appointment &&
                       ((rules.RepeatType == MeetingRepeatType.None &&
                         meeting.StartDate >= startOfDay &&
@@ -532,6 +532,7 @@ namespace SugarTalk.Core.Services.Meetings
                     EndDate = rules.RepeatType == MeetingRepeatType.None ? meeting.EndDate : subMeeting.EndTime,
                     Status = meeting.Status,
                     Title = meeting.Title,
+                    Creator = meeting.CreatedBy,
                     AppointmentType = meeting.AppointmentType,
                     CreatedDate = meeting.CreatedDate
                 };
