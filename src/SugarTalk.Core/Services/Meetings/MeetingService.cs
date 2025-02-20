@@ -219,6 +219,19 @@ namespace SugarTalk.Core.Services.Meetings
                         RepeatType = command.RepeatType,
                         RepeatUntilDate = command.UtilDate
                     }, cancellationToken).ConfigureAwait(false);
+
+                    var meetingParticipants = new List<MeetingParticipant>();
+                    
+                    foreach (var thirdPartyUserId in command.ThirdPartyUserIds)
+                    {
+                        meetingParticipants.Add(new MeetingParticipant
+                        {
+                            MeetingId = meeting.Id,
+                            ThirdPartyUserId = thirdPartyUserId
+                        });
+                    }
+                    
+                    await _meetingDataProvider.AddMeetingParticipantAsync(meetingParticipants, cancellationToken).ConfigureAwait(false);
                     break;
                 }
                 default:

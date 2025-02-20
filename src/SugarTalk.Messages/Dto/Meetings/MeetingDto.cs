@@ -127,6 +127,8 @@ public class AddOrUpdateMeetingDto
     public MeetingAppointmentType AppointmentType { get; set; }
     
     public MeetingStreamMode MeetingStreamMode { get; set; }
+
+    public List<Guid> ThirdPartyUserIds { get; set; }
     
     public bool IsMuted { get; set; } = false;
     
