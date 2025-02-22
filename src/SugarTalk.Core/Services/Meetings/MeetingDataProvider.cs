@@ -82,6 +82,8 @@ namespace SugarTalk.Core.Services.Meetings
         
         Task<(int Count, List<AppointmentMeetingDto> Records)> GetAppointmentMeetingsByUserIdAsync(GetAppointmentMeetingsRequest request, CancellationToken cancellationToken);
 
+        Task<GetAppointmentMeetingDetailDto> GetAppointmentMeetingsDetailByMeetingIdAsync(Guid meetingId, CancellationToken cancellationToken);
+        
         Task MarkMeetingAsCompletedAsync(Meeting meeting, CancellationToken cancellationToken);
 
         Task UpdateUserSessionsAtMeetingEndAsync(Meeting meeting, List<MeetingUserSession> userSessions, CancellationToken cancellationToken);
@@ -553,7 +555,12 @@ namespace SugarTalk.Core.Services.Meetings
             
             return (filteredAppointmentMeetingList.Count, appointmentMeetingDtos);
         }
-        
+
+        public async Task<GetAppointmentMeetingDetailDto> GetAppointmentMeetingsDetailByMeetingIdAsync(Guid meetingId, CancellationToken cancellationToken)
+        {
+            
+        }
+
         public async Task MarkMeetingAsCompletedAsync(Meeting meeting, CancellationToken cancellationToken)
         {
             if (meeting.AppointmentType == MeetingAppointmentType.Quick)

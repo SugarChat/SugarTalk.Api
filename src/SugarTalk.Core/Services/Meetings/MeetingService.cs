@@ -97,6 +97,8 @@ namespace SugarTalk.Core.Services.Meetings
         Task HandleMeetingStatusWhenOutMeetingAsync(int userId, Guid meetingId, Guid? meetingSubId = null, CancellationToken cancellationToken = default);
         
         Task<MeetingSwitchEaResponse> UpdateMeetingChatResponseAsync(MeetingSwitchEaCommand command, CancellationToken cancellationToken);
+        
+        Task<GetAppointmentMeetingDetailResponse> GetAppointmentMeetingsDetailAsync(GetAppointmentMeetingDetailRequest request, CancellationToken cancellationToken);
     }
     
     public partial class MeetingService : IMeetingService
@@ -863,6 +865,19 @@ namespace SugarTalk.Core.Services.Meetings
                     Count = count,
                     Records = records
                 }
+            };
+        }
+
+        public async Task<GetAppointmentMeetingDetailResponse> GetAppointmentMeetingsDetailAsync(
+            GetAppointmentMeetingDetailRequest request, CancellationToken cancellationToken)
+        {
+            await _meetingDataProvider.GetAppointmentMeetingsDetailByMeetingIdAsync(request.MeetingId ,cancellationToken: cancellationToken).ConfigureAwait(false);
+            
+            await _smartiesClient.GetStaffDepartmentHierarchyTreeAsync(new GetStaffDepartmentHierarchyTreeRequest())
+            
+            return new GetAppointmentMeetingDetailResponse
+            {
+                Data = new GetAppointmentMeetingDetailDto()
             };
         }
 

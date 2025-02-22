@@ -1,6 +1,7 @@
 using Mediator.Net;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
+using SugarTalk.Core.Handlers.RequestHandlers;
 using SugarTalk.Messages.Commands.Meetings;
 using SugarTalk.Messages.Requests.Meetings;
 using SugarTalk.Messages.Commands.Meetings.Speak;
@@ -120,6 +121,15 @@ public class MeetingController : ControllerBase
     {
         var response = await _mediator.SendAsync<CancelAppointmentMeetingCommand, CancelAppointmentMeetingResponse>(command).ConfigureAwait(false);
 
+        return Ok(response);
+    }
+
+    [Route("appointment/detail")]
+    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(GetAppointmentMeetingDetailResponse))]
+    public async Task<IActionResult> GetAppointmentMeetingDetailAsync([FromQuery] GetAppointmentMeetingDetailRequest request)
+    {
+        var response = await _mediator.RequestAsync<GetAppointmentMeetingDetailRequest, GetAppointmentMeetingDetailResponse>(request);
+        
         return Ok(response);
     }
 
