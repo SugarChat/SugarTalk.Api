@@ -38,6 +38,7 @@ using SugarTalk.Core.Settings.Meeting;
 using SugarTalk.Core.Settings.Meeting.Feedback;
 using SugarTalk.Messages.Commands.Meetings.Speak;
 using SugarTalk.Messages.Dto.LiveKit.Egress;
+using SugarTalk.Messages.Dto.Smarties;
 using SugarTalk.Messages.Enums.Meeting;
 using SugarTalk.Messages.Enums.Speech;
 using SugarTalk.Messages.Events.Meeting;
@@ -224,16 +225,17 @@ namespace SugarTalk.Core.Services.Meetings
 
                     var meetingParticipants = new List<MeetingParticipant>();
                     
-                    foreach (var thirdPartyUserId in command.ThirdPartyUserIds)
+                    foreach (var participant in command.Participants)
                     {
                         meetingParticipants.Add(new MeetingParticipant
                         {
                             MeetingId = meeting.Id,
-                            ThirdPartyUserId = thirdPartyUserId
+                            ThirdPartyUserId = participant.ThirdPartyUserId,
+                            IsDesignatedHost = participant.IsDesignatedHost
                         });
                     }
                     
-                    await _meetingDataProvider.AddMeetingParticipantAsync(meetingParticipants, cancellationToken).ConfigureAwait(false);
+                    await _meetingDataProvider.AddMeetingParticipantAsync(meetingParticipants, cancellationToken: cancellationToken).ConfigureAwait(false);
                     break;
                 }
                 default:
@@ -871,13 +873,36 @@ namespace SugarTalk.Core.Services.Meetings
         public async Task<GetAppointmentMeetingDetailResponse> GetAppointmentMeetingsDetailAsync(
             GetAppointmentMeetingDetailRequest request, CancellationToken cancellationToken)
         {
-            await _meetingDataProvider.GetAppointmentMeetingsDetailByMeetingIdAsync(request.MeetingId ,cancellationToken: cancellationToken).ConfigureAwait(false);
+            var meetingParticipants  = await _meetingDataProvider.GetMeetingParticipantAsync(request.MeetingId, cancellationToken: cancellationToken).ConfigureAwait(false);
             
-            await _smartiesClient.GetStaffDepartmentHierarchyTreeAsync(new GetStaffDepartmentHierarchyTreeRequest())
+            var participantDict = meetingParticipants.ToDictionary(x => x.ThirdPartyUserId);
+            
+            var staffs = await _smartiesClient.GetStaffsRequestAsync(new GetStaffsRequestDto
+            {
+                UserIds = participantDict.Keys.ToList()
+            }, cancellationToken).ConfigureAwait(false);
+
+            var participants = new List<GetAppointmentMeetingDetailForParticipantDto>();
+            
+            foreach (var staff in staffs.Data.Staffs)
+            {
+                if (!participantDict.TryGetValue(staff.UserId ?? Guid.Empty, out var participant))
+                    continue;
+                
+                participants.Add(new GetAppointmentMeetingDetailForParticipantDto
+                {
+                    UserId = staff.UserId ?? Guid.Empty,
+                    UserName = staff.UserName,
+                    IsMeetingMaster = participant.IsDesignatedHost 
+                });
+            }
             
             return new GetAppointmentMeetingDetailResponse
             {
-                Data = new GetAppointmentMeetingDetailDto()
+                Data = new GetAppointmentMeetingDetailDto
+                {
+                    Participants = participants
+                }
             };
         }
 

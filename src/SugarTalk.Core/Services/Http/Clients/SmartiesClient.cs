@@ -15,8 +15,8 @@ public interface ISmartiesClient : IScopedDependency
     Task<GetEchoAvatarUserToneResponse> GetEchoAvatarVoiceSettingAsync(GetEchoAvatarVoiceSettingRequestDto request, CancellationToken cancellationToken);
 
     Task<GetStaffDepartmentHierarchyTreeResponse> GetStaffDepartmentHierarchyTreeAsync(GetStaffDepartmentHierarchyTreeRequest request, CancellationToken cancellationToken);
-    
-    Task<>
+
+    Task<GetStaffsResponse> GetStaffsRequestAsync(GetStaffsRequestDto request, CancellationToken cancellationToken);
 }
 
 public class SmartiesClient : ISmartiesClient
@@ -52,5 +52,21 @@ public class SmartiesClient : ISmartiesClient
     {
         return await _httpClientFactory.GetAsync<GetStaffDepartmentHierarchyTreeResponse>(
             $"{_smartiesSettings.BaseUrl}/api/Foundation/department/staff/hierarchy/tree?StaffIdSource={request.StaffIdSource}&HierarchyDepth={request.HierarchyDepth}&HierarchyStaffRange={request.HierarchyStaffRange}", cancellationToken, headers: _headers).ConfigureAwait(false);
+    }
+
+    public async Task<GetStaffsResponse> GetStaffsRequestAsync(GetStaffsRequestDto request, CancellationToken cancellationToken)
+    {
+        var userIds = "";
+
+        if (request.UserIds is { Count: > 0 })
+        {
+            foreach (var userId in request.UserIds)
+            {
+                userIds += $"&UserIds={userId}";    
+            }
+        }
+        
+        return await _httpClientFactory.GetAsync<GetStaffsResponse>(
+            $"{_smartiesSettings.BaseUrl}/api/Foundation/staffs?IsActive={request.IsActive}{userIds}", cancellationToken, headers: _headers).ConfigureAwait(false);
     }
 }

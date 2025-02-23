@@ -128,9 +128,18 @@ public class AddOrUpdateMeetingDto
     
     public MeetingStreamMode MeetingStreamMode { get; set; }
 
-    public List<Guid> ThirdPartyUserIds { get; set; }
+    public List<MeetingParticipantDto> Participants { get; set; }
+
+    public bool IsMetis { get; set; }
     
     public bool IsMuted { get; set; } = false;
     
     public bool IsRecorded { get; set; } = false;
+}
+
+public class MeetingParticipantDto
+{
+    public Guid ThirdPartyUserId { get; set; }
+
+    public bool IsDesignatedHost { get; set; }
 }

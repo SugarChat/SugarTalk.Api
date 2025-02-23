@@ -81,8 +81,6 @@ namespace SugarTalk.Core.Services.Meetings
         Task<List<MeetingSubMeeting>> GetMeetingSubMeetingsAsync(Guid meetingId, CancellationToken cancellationToken);
         
         Task<(int Count, List<AppointmentMeetingDto> Records)> GetAppointmentMeetingsByUserIdAsync(GetAppointmentMeetingsRequest request, CancellationToken cancellationToken);
-
-        Task<GetAppointmentMeetingDetailDto> GetAppointmentMeetingsDetailByMeetingIdAsync(Guid meetingId, CancellationToken cancellationToken);
         
         Task MarkMeetingAsCompletedAsync(Meeting meeting, CancellationToken cancellationToken);
 
@@ -111,7 +109,9 @@ namespace SugarTalk.Core.Services.Meetings
         
         Task<MeetingChatVoiceRecord> GetMeetingChatVoiceRecordAsync(Guid id, CancellationToken cancellationToken);
 
-        Task AddMeetingParticipantAsync(List<MeetingParticipant> meetingParticipants, CancellationToken cancellationToken);
+        Task AddMeetingParticipantAsync(List<MeetingParticipant> meetingParticipants, bool forSave = true, CancellationToken cancellationToken = default);
+
+        Task<List<MeetingParticipant>> GetMeetingParticipantAsync(Guid meetingId, CancellationToken cancellationToken);
     }
     
     public partial class MeetingDataProvider : IMeetingDataProvider
@@ -556,11 +556,6 @@ namespace SugarTalk.Core.Services.Meetings
             return (filteredAppointmentMeetingList.Count, appointmentMeetingDtos);
         }
 
-        public async Task<GetAppointmentMeetingDetailDto> GetAppointmentMeetingsDetailByMeetingIdAsync(Guid meetingId, CancellationToken cancellationToken)
-        {
-            
-        }
-
         public async Task MarkMeetingAsCompletedAsync(Meeting meeting, CancellationToken cancellationToken)
         {
             if (meeting.AppointmentType == MeetingAppointmentType.Quick)
@@ -714,9 +709,17 @@ namespace SugarTalk.Core.Services.Meetings
                 .FirstOrDefaultAsync(cancellationToken).ConfigureAwait(false);
         }
 
-        public async Task AddMeetingParticipantAsync(List<MeetingParticipant> meetingParticipants, CancellationToken cancellationToken)
+        public async Task AddMeetingParticipantAsync(List<MeetingParticipant> meetingParticipants, bool forSave = true, CancellationToken cancellationToken = default)
         {
             await _repository.InsertAllAsync(meetingParticipants, cancellationToken).ConfigureAwait(false);
+
+            if (forSave)
+                await _unitOfWork.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        }
+        
+        public async Task<List<MeetingParticipant>> GetMeetingParticipantAsync(Guid meetingId, CancellationToken cancellationToken)
+        {
+            return await _repository.Query<MeetingParticipant>().Where(x => x.MeetingId == meetingId).ToListAsync(cancellationToken).ConfigureAwait(false);
         }
 
         public async Task<MeetingRecord> GetMeetingRecordAsync(Guid meetingId, CancellationToken cancellationToken)

@@ -59,6 +59,9 @@ public class Meeting : IEntity
     [Column("appointment_type")]
     public MeetingAppointmentType AppointmentType { get; set; }
 
+    [Column("is_metis")]
+    public bool IsMetis { get; set; }
+    
     [Column("is_muted")] 
     public bool IsMuted { get; set; }
 

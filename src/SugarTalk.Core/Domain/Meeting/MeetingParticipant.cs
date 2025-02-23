@@ -18,6 +18,9 @@ public class MeetingParticipant : IEntity
     [Column("meeting_id")]
     public Guid MeetingId { get; set; }
 
+    [Column("is_designated_host")]
+    public bool IsDesignatedHost { get; set; }
+    
     [Column("third_party_user_id")]
     public Guid ThirdPartyUserId { get; set; }
 

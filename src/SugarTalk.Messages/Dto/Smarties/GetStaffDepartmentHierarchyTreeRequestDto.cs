@@ -20,16 +20,16 @@ public class GetStaffDepartmentHierarchyTreeResponse : SugarTalkResponse<GetStaf
 
 public class GetStaffDepartmentHierarchyTreeResponseData
 {
-    public List<RmStaffDepartmentHierarchyTreeNodeDto> StaffDepartmentHierarchy { get; set; }
+    public List<GetStaffDepartmentHierarchyTreeRequestDto> StaffDepartmentHierarchy { get; set; }
 }
 
-public class RmStaffDepartmentHierarchyTreeNodeDto
+public class GetStaffDepartmentHierarchyTreeRequestDto
 {
     public RmUnitHierarchyDto Department { get; set; }
     
     public List<StaffHierarchyUserDto> Staffs { get; set; }
 
-    public List<RmStaffDepartmentHierarchyTreeNodeDto> Childrens { get; set; } = new();
+    public List<GetStaffDepartmentHierarchyTreeRequestDto> Childrens { get; set; } = new();
 }
 
 public class RmUnitHierarchyDto
