@@ -71,6 +71,8 @@ public class SmartiesService : ISmartiesService
         
         foreach (var speakDetail in originalSpeakDetails)
         {
+            Log.Information("Matched speak detail: {@speakDetail}", speakDetail);
+            
             if(meetingRecord == null) break;
             
             if (speakDetails.Any(x => x.UserId == speakDetail.UserId)) continue;
@@ -79,8 +81,6 @@ public class SmartiesService : ISmartiesService
                 x => Math.Abs(speakDetail.SpeakStartTime - meetingRecord.CreatedDate.ToUnixTimeMilliseconds() - x.StartTime * 1000)).FirstOrDefault();
 
             if (speakInfo == null) continue;
-            
-            Log.Information("Matched speak detail: {@speakDetail}", speakDetail);
             
             var replaceSameSpeaker = originalSpeakInfos
                 .Where(x => x.Speaker == speakInfo.Speaker)
@@ -105,8 +105,6 @@ public class SmartiesService : ISmartiesService
             speakDetails.AddRange(replaceSameSpeaker);
             
             originalSpeakInfos.RemoveAll(x => x.Speaker == speakInfo.Speaker);
-            
-            if (speakDetails.Count >= originalSpeakInfos.Count) break;
         }
 
         Log.Information("New speak details: {@speakDetails}", speakDetails);
