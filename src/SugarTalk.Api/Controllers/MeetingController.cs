@@ -133,6 +133,15 @@ public class MeetingController : ControllerBase
         return Ok(response);
     }
 
+    [Route("Get/staffs")]
+    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(GetStaffsTreeResponse))]
+    public async Task<IActionResult> GetStaffsTreeAsync([FromQuery] GetStaffsTreeRequest request)
+    {
+        var response = await _mediator.RequestAsync<GetStaffsTreeRequest, GetStaffsTreeResponse>(request);
+        
+        return Ok(response);
+    }
+
     #endregion
 
     #region MeetingHistory

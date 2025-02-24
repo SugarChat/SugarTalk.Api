@@ -40,6 +40,7 @@ using SugarTalk.Messages.Commands.Meetings.Speak;
 using SugarTalk.Messages.Dto.LiveKit.Egress;
 using SugarTalk.Messages.Dto.Smarties;
 using SugarTalk.Messages.Enums.Meeting;
+using SugarTalk.Messages.Enums.Smarties;
 using SugarTalk.Messages.Enums.Speech;
 using SugarTalk.Messages.Events.Meeting;
 using SugarTalk.Messages.Requests.Meetings;
@@ -100,6 +101,8 @@ namespace SugarTalk.Core.Services.Meetings
         Task<MeetingSwitchEaResponse> UpdateMeetingChatResponseAsync(MeetingSwitchEaCommand command, CancellationToken cancellationToken);
         
         Task<GetAppointmentMeetingDetailResponse> GetAppointmentMeetingsDetailAsync(GetAppointmentMeetingDetailRequest request, CancellationToken cancellationToken);
+
+        Task<GetStaffsTreeResponse> GetStaffsTreeAsync(GetStaffsTreeRequest request, CancellationToken cancellationToken);
     }
     
     public partial class MeetingService : IMeetingService
@@ -903,6 +906,19 @@ namespace SugarTalk.Core.Services.Meetings
                 {
                     Participants = participants
                 }
+            };
+        }
+
+        public async Task<GetStaffsTreeResponse> GetStaffsTreeAsync(GetStaffsTreeRequest request, CancellationToken cancellationToken)
+        {
+            var staffs = await _smartiesClient.GetStaffDepartmentHierarchyTreeAsync(new GetStaffDepartmentHierarchyTreeRequest
+            {
+                StaffIdSource = StaffIdSource.Self
+            }, cancellationToken).ConfigureAwait(false);
+
+            return new GetStaffsTreeResponse
+            {
+                Data = staffs.Data
             };
         }
 
