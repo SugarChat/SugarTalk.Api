@@ -124,7 +124,7 @@ public class MeetingController : ControllerBase
         return Ok(response);
     }
 
-    [Route("appointment/detail")]
+    [Route("appointment/detail"), HttpGet]
     [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(GetAppointmentMeetingDetailResponse))]
     public async Task<IActionResult> GetAppointmentMeetingDetailAsync([FromQuery] GetAppointmentMeetingDetailRequest request)
     {
@@ -133,7 +133,7 @@ public class MeetingController : ControllerBase
         return Ok(response);
     }
 
-    [Route("Get/staffs")]
+    [Route("Get/staffs"), HttpGet]
     [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(GetStaffsTreeResponse))]
     public async Task<IActionResult> GetStaffsTreeAsync([FromQuery] GetStaffsTreeRequest request)
     {
