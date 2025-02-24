@@ -303,6 +303,7 @@ public partial class MeetingDataProvider
                 join translation in _repository.QueryNoTracking<MeetingSpeakDetailTranslationRecord>().Where(x => x.Language == language.Value)
                     on speak.Id equals translation.MeetingSpeakDetailId into translations
                 from translation in translations.DefaultIfEmpty()
+                orderby speak.SpeakStartTime
                 select new MeetingSpeakDetailDto
                 {
                     Id = speak.Id,
