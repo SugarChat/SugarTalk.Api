@@ -13,6 +13,8 @@ public interface ISmartiesClient : IScopedDependency
     Task<AskGptResponse> PerformQueryAsync(AskGptRequestDto request, CancellationToken cancellationToken);
     
     Task<GetEchoAvatarUserToneResponse> GetEchoAvatarVoiceSettingAsync(GetEchoAvatarVoiceSettingRequestDto request, CancellationToken cancellationToken);
+    
+    Task<CreateSpeechMaticsJobResponseDto> CreateSpeechMaticsJobAsync(CreateSpeechMaticsJobCommandDto command, CancellationToken cancellationToken);
 }
 
 public class SmartiesClient : ISmartiesClient
@@ -42,5 +44,22 @@ public class SmartiesClient : ISmartiesClient
     {
         return await _httpClientFactory.PostAsJsonAsync<AskGptResponse>(
             $"{_smartiesSettings.BaseUrl}/api/Ask/general/query", request, cancellationToken, headers: _headers).ConfigureAwait(false);
+    }
+    
+    public async Task<CreateSpeechMaticsJobResponseDto> CreateSpeechMaticsJobAsync(CreateSpeechMaticsJobCommandDto command, CancellationToken cancellationToken)
+    {
+        var parameters = new Dictionary<string, string>
+        {
+            { "Url", command.Url },
+            { "Key", command.Key },
+            { "Language", command.Language },
+            { "SourceSystem", command.SourceSystem.ToString() },
+            { "RecordName", command.RecordName}
+        };
+        
+        var files = new Dictionary<string, (byte[], string)> { { "file", (command.RecordContent, command.RecordName) } };
+        
+        return await _httpClientFactory.PostAsMultipartAsync<CreateSpeechMaticsJobResponseDto>(
+            $"{_smartiesSettings.BaseUrl}/api/SpeechMatics/create/job", parameters, files, cancellationToken, headers: _headers).ConfigureAwait(false);
     }
 }

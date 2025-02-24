@@ -16,10 +16,10 @@ public partial interface IMeetingDataProvider
         int? userId = null, SpeakStatus? speakStatus = null, CancellationToken cancellationToken = default);
 
     Task AddMeetingSpeakDetailAsync(MeetingSpeakDetail speakDetail, bool forceSave = true, CancellationToken cancellationToken = default);
-        
-    Task UpdateMeetingSpeakDetailAsync(MeetingSpeakDetail speakDetail, bool forceSave = true, CancellationToken cancellationToken = default);
     
     Task UpdateMeetingSpeakDetailsAsync(List<MeetingSpeakDetail> speakDetails, bool forceSave = true, CancellationToken cancellationToken = default);
+    
+    Task DeleteMeetingSpeekDetailsAsync(List<MeetingSpeakDetail> speakDetails, bool forceSave = true, CancellationToken cancellationToken = default);
 }
 
 public partial class MeetingDataProvider
@@ -60,19 +60,18 @@ public partial class MeetingDataProvider
             await _unitOfWork.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
     }
 
-    public async Task UpdateMeetingSpeakDetailAsync(
-        MeetingSpeakDetail speakDetail, bool forceSave = true, CancellationToken cancellationToken = default)
-    {
-        await _repository.UpdateAsync(speakDetail, cancellationToken).ConfigureAwait(false);
-        
-        if (forceSave)
-            await _unitOfWork.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
-    }
-
     public async Task UpdateMeetingSpeakDetailsAsync(
         List<MeetingSpeakDetail> speakDetails, bool forceSave = true, CancellationToken cancellationToken = default)
     {
         await _repository.UpdateAllAsync(speakDetails, cancellationToken).ConfigureAwait(false);
+
+        if (forceSave)
+            await _unitOfWork.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+    }
+
+    public async Task DeleteMeetingSpeekDetailsAsync(List<MeetingSpeakDetail> speakDetails, bool forceSave = true, CancellationToken cancellationToken = default)
+    {
+        await _repository.DeleteAllAsync(speakDetails, cancellationToken).ConfigureAwait(false);
 
         if (forceSave)
             await _unitOfWork.SaveChangesAsync(cancellationToken).ConfigureAwait(false);

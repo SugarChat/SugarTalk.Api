@@ -148,7 +148,7 @@ public partial class MeetingServiceFixture
 
             openAiService.TranscriptionAsync(Arg.Any<byte[]>(), Arg.Any<TranscriptionLanguage?>(),
                 Arg.Any<long>(), Arg.Any<long>(), Arg.Any<TranscriptionFileType>(), Arg.Any<TranscriptionResponseFormat>(),
-                Arg.Any<CancellationToken>()).Returns(audioContent);
+                cancellationToken: Arg.Any<CancellationToken>()).Returns(audioContent);
 
             sugarTalkHttpClientFactory.GetAsync<byte[]>(Arg.Any<string>(), Arg.Any<CancellationToken>())
                 .Returns(fileContent);
