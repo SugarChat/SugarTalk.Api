@@ -41,6 +41,10 @@ public partial interface IMeetingService
     
     Task<GetAllMeetingUserSessionsForMeetingIdResponse> GetAllMeetingUserSessionByMeetingIdAsync(
         GetAllMeetingUserSessionsForMeetingIdRequest request, CancellationToken cancellationToken);
+
+    Task<CheckRenamePermissionResponse> CheckRenamePermissionAsync(CheckRenamePermissionCommand command,
+        CancellationToken cancellationToken);
+
 }
 
 public partial class MeetingService
@@ -271,5 +275,22 @@ public partial class MeetingService
         await _meetingDataProvider.UpdateMeetingUserSessionAsync(new List<MeetingUserSession>{ meetingUserSession }, cancellationToken).ConfigureAwait(false);
         
         return new UpdateMeetingUserSessionRoleResponse();
+    }
+
+    public async Task<CheckRenamePermissionResponse> CheckRenamePermissionAsync(CheckRenamePermissionCommand command, CancellationToken cancellationToken)
+    {
+        var meeting = await _meetingDataProvider.GetMeetingByIdAsync(command.MeetingId, cancellationToken).ConfigureAwait(false);
+        
+        if(meeting == null) throw new MeetingNotFoundException();
+
+        var hasPermission = meeting.MeetingMasterUserId == command.UserId || command.UserId == command.TargetUserId;
+
+        return new CheckRenamePermissionResponse
+        {
+            Data = new CheckRenamePermissionResponseData
+            {
+                CanRename = hasPermission
+            }
+        };
     }
 }
