@@ -1,11 +1,11 @@
 using Mediator.Net;
 using Microsoft.AspNetCore.Mvc;
+using SugarTalk.Messages.Dto.Meetings;
 using Microsoft.AspNetCore.Authorization;
 using SugarTalk.Messages.Commands.Meetings;
 using SugarTalk.Messages.Requests.Meetings;
 using SugarTalk.Messages.Commands.Meetings.Speak;
 using SugarTalk.Messages.Commands.Meetings.Summary;
-using SugarTalk.Messages.Dto.Meetings;
 
 namespace SugarTalk.Api.Controllers;
 
@@ -245,7 +245,16 @@ public class MeetingController : ControllerBase
 
         return Ok(response);
     }
+    
+    [Route("record/count"), HttpGet]
+    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(GetMeetingRecordCountResponse))]
+    public async Task<IActionResult> GetMeetingRecordCountAsync([FromQuery] GetMeetingRecordCountRequest request)
+    {
+        var response = await _mediator.RequestAsync<GetMeetingRecordCountRequest, GetMeetingRecordCountResponse>(request).ConfigureAwait(false);
 
+        return Ok(response);
+    }
+    
     #endregion
     
     #region MeetingUserSession

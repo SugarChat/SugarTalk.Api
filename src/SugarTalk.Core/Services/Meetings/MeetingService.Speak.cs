@@ -7,6 +7,8 @@ using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using Mediator.Net;
+using SugarTalk.Core.Constants;
 using SugarTalk.Messages.Dto.OpenAi;
 using SugarTalk.Core.Domain.Meeting;
 using SugarTalk.Messages.Enums.OpenAi;
@@ -15,6 +17,9 @@ using SugarTalk.Messages.Enums.Meeting.Speak;
 using SugarTalk.Messages.Events.Meeting.Speak;
 using SugarTalk.Messages.Commands.Meetings.Speak;
 using SugarTalk.Core.Services.Meetings.Exceptions;
+using SugarTalk.Messages.Commands.Meetings.Summary;
+using SugarTalk.Messages.Dto.Translation;
+using SugarTalk.Messages.Enums.Meeting.Summary;
 using OpenAiModel = SugarTalk.Messages.Enums.OpenAi.OpenAiModel;
 using CompletionsRequestMessageDto = SugarTalk.Messages.Dto.OpenAi.CompletionsRequestMessageDto;
 
@@ -25,6 +30,10 @@ public partial interface IMeetingService
     Task<MeetingSpeakRecordedEvent> RecordMeetingSpeakAsync(RecordMeetingSpeakCommand command, CancellationToken cancellationToken);
 
     Task OptimizeTranscribedContent(List<MeetingSpeakDetail> speakDetail, CancellationToken cancellationToken);
+
+    Task<string> DownloadWithRetryAsync(string url, int maxRetries = 5, CancellationToken cancellationToken = default);
+    
+    Task ProcessMeetingSummaryAsync(List<MeetingSpeakDetail> speakDetails, MeetingRecord meetingRecord, CancellationToken cancellationToken);
 }
 
 public partial class MeetingService
@@ -75,7 +84,7 @@ public partial class MeetingService
         speakDetail.SpeakStatus = SpeakStatus.End;
         speakDetail.SpeakEndTime = command.SpeakEndTime.Value;
         
-        await _meetingDataProvider.UpdateMeetingSpeakDetailAsync(speakDetail, cancellationToken: cancellationToken).ConfigureAwait(false);
+        await _meetingDataProvider.UpdateMeetingSpeakDetailsAsync(new List<MeetingSpeakDetail>{ speakDetail }, cancellationToken: cancellationToken).ConfigureAwait(false);
         
         return speakDetail;
     }
@@ -118,8 +127,11 @@ public partial class MeetingService
                 }
             }
 
-            await _meetingDataProvider.UpdateMeetingSpeakDetailsAsync(speakDetails, true, cancellationToken)
-                .ConfigureAwait(false);
+            await _meetingDataProvider.UpdateMeetingSpeakDetailsAsync(speakDetails, true, cancellationToken).ConfigureAwait(false);
+            
+            Log.Information("Complete transcription meeting");
+            
+            await ProcessMeetingSummaryAsync(speakDetails, meetingRecord, cancellationToken).ConfigureAwait(false);
         }
         catch (Exception ex)
         {
@@ -161,7 +173,7 @@ public partial class MeetingService
 
             Log.Information("SmartContent: {SmartContent}", speakDetail.SmartContent);
 
-            await _meetingDataProvider.UpdateMeetingSpeakDetailAsync(speakDetail, true, cancellationToken).ConfigureAwait(false);
+            await _meetingDataProvider.UpdateMeetingSpeakDetailsAsync(new List<MeetingSpeakDetail>{ speakDetail }, true, cancellationToken).ConfigureAwait(false);
         }
     }
 
@@ -173,7 +185,7 @@ public partial class MeetingService
         await _meetingDataProvider.UpdateMeetingSpeakDetailsAsync(details, cancellationToken: cancellationToken).ConfigureAwait(false);
     }
     
-    private async Task<string> DownloadWithRetryAsync(string url, int maxRetries = 5, CancellationToken cancellationToken = default)
+    public async Task<string> DownloadWithRetryAsync(string url, int maxRetries = 5, CancellationToken cancellationToken = default)
     {
         for (var i = 0; i < maxRetries; i++)
         {
@@ -222,6 +234,42 @@ public partial class MeetingService
             return await _awsS3Service.GeneratePresignedUrlAsync(url, 30).ConfigureAwait(false);
         
         return url;
+    }
+    
+    public async Task ProcessMeetingSummaryAsync(List<MeetingSpeakDetail> speakDetails, MeetingRecord meetingRecord, CancellationToken cancellationToken)
+    {
+        var meeting = await _meetingDataProvider.GetMeetingAsync(meetingId: meetingRecord.MeetingId, cancellationToken: cancellationToken).ConfigureAwait(false);
+
+        var speakIds = string.Join(",", speakDetails.OrderBy(x => x.SpeakStartTime).Select(x => x.Id));
+
+        var summary = new MeetingSummary
+        {
+            SpeakIds = speakIds,
+            Status = SummaryStatus.InProgress,
+            RecordId = meetingRecord.Id,
+            MeetingNumber = meeting.MeetingNumber,
+            TargetLanguage = TranslationLanguage.ZhCn,
+            OriginText = GenerateOriginRecordText(speakDetails)
+        };
+
+        await _meetingDataProvider.AddMeetingSummariesAsync(new List<MeetingSummary> { summary }, cancellationToken: cancellationToken).ConfigureAwait(false);
+
+        _backgroundJobClient.Enqueue<IMediator>(x => x.SendAsync(new ProcessSummaryMeetingCommand
+        {
+            MeetingSummaryId = summary.Id,
+            Language = TranslationLanguage.ZhCn
+        }, cancellationToken), HangfireConstants.MeetingSummaryQueue);
+    }
+    
+    private static string GenerateOriginRecordText(List<MeetingSpeakDetail> speakInfos)
+    {
+        var originText = speakInfos.OrderBy(x => x.SpeakStartTime)
+            .Select(speakInfo => $"<{speakInfo.Username}> ({DateTimeOffset.FromUnixTimeMilliseconds(speakInfo.SpeakStartTime):yyyy-MM-dd HH:mm:ss}) : {speakInfo.OriginalContent}")
+            .Aggregate((current, next) => current + "\n" + next);
+
+        Log.Information("Generating origin record text for summary: {OriginText}", originText);
+
+        return originText;
     }
     
     private static readonly HttpClient Client = new HttpClient { Timeout = TimeSpan.FromSeconds(300) };
