@@ -71,13 +71,12 @@ public class SmartiesService : ISmartiesService
         
         foreach (var speakDetail in originalSpeakDetails)
         {
-            if (meetingRecord == null) break;
+            if(meetingRecord == null) break;
             
-            var speakInfo = originalSpeakInfos
-                .Aggregate((min, x) => 
-                    Math.Abs(speakDetail.SpeakStartTime - meetingRecord.CreatedDate.ToUnixTimeMilliseconds() - x.StartTime * 1000) 
-                    < Math.Abs(speakDetail.SpeakStartTime - meetingRecord.CreatedDate.ToUnixTimeMilliseconds() - min.StartTime * 1000) 
-                        ? x : min);
+            if (speakDetails.Any(x => x.UserId == speakDetail.UserId)) continue;
+            
+            var speakInfo = originalSpeakInfos.OrderBy(
+                x => Math.Abs(speakDetail.SpeakStartTime - meetingRecord.CreatedDate.ToUnixTimeMilliseconds() - x.StartTime * 1000)).FirstOrDefault();
 
             if (speakInfo == null) continue;
             
@@ -104,6 +103,8 @@ public class SmartiesService : ISmartiesService
                 Log.Information("Updated speaker details: {@replaceSameSpeaker}", replaceSameSpeaker);
 
             speakDetails.AddRange(replaceSameSpeaker);
+            
+            originalSpeakInfos.RemoveAll(x => x.Speaker == speakInfo.Speaker);
             
             if (speakDetails.Count >= originalSpeakInfos.Count) break;
         }
