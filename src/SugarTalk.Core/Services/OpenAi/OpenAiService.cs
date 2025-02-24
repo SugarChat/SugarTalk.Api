@@ -32,7 +32,7 @@ public interface IOpenAiService : IScopedDependency
     
     Task<string> TranscriptionAsync(
         byte[] file, TranscriptionLanguage? language, long speakStartTimeVideo, long speakEndTimeVideo, TranscriptionFileType fileType = TranscriptionFileType.Wav, 
-        TranscriptionResponseFormat responseFormat = TranscriptionResponseFormat.Vtt, CancellationToken cancellationToken = default);
+        TranscriptionResponseFormat responseFormat = TranscriptionResponseFormat.Vtt, bool fileFormat = true, CancellationToken cancellationToken = default);
 }
 
 public class OpenAiService : IOpenAiService
@@ -75,11 +75,14 @@ public class OpenAiService : IOpenAiService
     
     public async Task<string> TranscriptionAsync(
         byte[] file, TranscriptionLanguage? language, long speakStartTimeVideo, long speakEndTimeVideo, TranscriptionFileType fileType = TranscriptionFileType.Wav, 
-        TranscriptionResponseFormat responseFormat = TranscriptionResponseFormat.Vtt, CancellationToken cancellationToken = default)
+        TranscriptionResponseFormat responseFormat = TranscriptionResponseFormat.Vtt, bool fileFormat = true, CancellationToken cancellationToken = default)
     {
         if (file == null) return null;
+
+        var audioBytes = file;
         
-        var audioBytes = await _ffmpegService.ConvertFileFormatAsync(file, fileType, cancellationToken).ConfigureAwait(false);
+        if (fileFormat)
+            audioBytes = await _ffmpegService.ConvertFileFormatAsync(file, fileType, cancellationToken).ConfigureAwait(false);
     
         var splitAudios = await _ffmpegService.SpiltAudioAsync(audioBytes, speakStartTimeVideo, speakEndTimeVideo, cancellationToken).ConfigureAwait(false);
 

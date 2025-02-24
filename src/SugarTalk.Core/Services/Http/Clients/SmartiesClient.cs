@@ -17,6 +17,8 @@ public interface ISmartiesClient : IScopedDependency
     Task<GetStaffDepartmentHierarchyTreeResponse> GetStaffDepartmentHierarchyTreeAsync(GetStaffDepartmentHierarchyTreeRequest request, CancellationToken cancellationToken);
 
     Task<GetStaffsResponse> GetStaffsRequestAsync(GetStaffsRequestDto request, CancellationToken cancellationToken);
+    
+    Task<CreateSpeechMaticsJobResponseDto> CreateSpeechMaticsJobAsync(CreateSpeechMaticsJobCommandDto command, CancellationToken cancellationToken);
 }
 
 public class SmartiesClient : ISmartiesClient
@@ -68,5 +70,22 @@ public class SmartiesClient : ISmartiesClient
         
         return await _httpClientFactory.GetAsync<GetStaffsResponse>(
             $"{_smartiesSettings.BaseUrl}/api/Foundation/staffs?IsActive={request.IsActive}{userIds}", cancellationToken, headers: _headers).ConfigureAwait(false);
+	}
+    
+    public async Task<CreateSpeechMaticsJobResponseDto> CreateSpeechMaticsJobAsync(CreateSpeechMaticsJobCommandDto command, CancellationToken cancellationToken)
+    {
+        var parameters = new Dictionary<string, string>
+        {
+            { "Url", command.Url },
+            { "Key", command.Key },
+            { "Language", command.Language },
+            { "SourceSystem", command.SourceSystem.ToString() },
+            { "RecordName", command.RecordName}
+        };
+        
+        var files = new Dictionary<string, (byte[], string)> { { "file", (command.RecordContent, command.RecordName) } };
+        
+        return await _httpClientFactory.PostAsMultipartAsync<CreateSpeechMaticsJobResponseDto>(
+            $"{_smartiesSettings.BaseUrl}/api/SpeechMatics/create/job", parameters, files, cancellationToken, headers: _headers).ConfigureAwait(false);
     }
 }

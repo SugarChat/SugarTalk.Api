@@ -1,5 +1,6 @@
 using System;
 using Serilog;
+using System.IO;
 using System.Linq;
 using Mediator.Net;
 using Newtonsoft.Json;
@@ -11,6 +12,7 @@ using SugarTalk.Messages.Dto.FClub;
 using SugarTalk.Messages.Extensions;
 using SugarTalk.Core.Domain.Meeting;
 using Microsoft.IdentityModel.Tokens;
+using SugarTalk.Core.Domain.SpeechMatics;
 using SugarTalk.Messages.Enums.Speech;
 using SugarTalk.Messages.Dto.Meetings;
 using SugarTalk.Messages.Enums.Meeting;
@@ -20,8 +22,11 @@ using SugarTalk.Messages.Dto.Translation;
 using SugarTalk.Messages.Commands.Meetings;
 using SugarTalk.Messages.Requests.Meetings;
 using SugarTalk.Messages.Dto.LiveKit.Egress;
+using SugarTalk.Messages.Dto.Smarties;
 using SugarTalk.Messages.Enums.Caching;
 using SugarTalk.Messages.Enums.Meeting.Speak;
+using SugarTalk.Messages.Enums.Smarties;
+using SugarTalk.Messages.Enums.SpeechMatics;
 using SugarTalk.Messages.Events.Meeting.Summary;
 
 namespace SugarTalk.Core.Services.Meetings;
@@ -55,6 +60,8 @@ public partial interface IMeetingService
     Task UpdateMeetingRecordUrlAsync(UpdateMeetingRecordUrlCommand command, CancellationToken cancellationToken);
     
     Task<GetMeetingRecordCountResponse> GetMeetingRecordCountAsync(GetMeetingRecordCountRequest request, CancellationToken cancellationToken);
+    
+    Task RetrySpeechMaticsJobAsync(CreateSpeechMaticsJobCommand command, CancellationToken cancellationToken);
 }
 
 public partial class MeetingService
@@ -455,10 +462,9 @@ public partial class MeetingService
             var meetingDetails = await _meetingDataProvider
                 .GetMeetingDetailsByRecordIdAsync(record.Id, cancellationToken).ConfigureAwait(false);
              
-            await MarkSpeakTranscriptAsSpecifiedStatusAsync(meetingDetails, FileTranscriptionStatus.InProcess,
-                cancellationToken).ConfigureAwait(false);
-
-            await TranscriptionMeetingAsync(meetingDetails, record, cancellationToken);
+            await MarkSpeakTranscriptAsSpecifiedStatusAsync(meetingDetails, FileTranscriptionStatus.InProcess, cancellationToken).ConfigureAwait(false);
+            
+            await CreateSpeechMaticsJobAsync(record, meetingDetails, cancellationToken).ConfigureAwait(false);
         }
     }
 
@@ -538,7 +544,7 @@ public partial class MeetingService
         }
     }
     
-     private async Task HandleMeetingRecordRestartAsync(Guid meetingId, Guid meetingRecordId, EgressItemDto egressItem, UserAccountDto user, CancellationToken cancellationToken)
+    private async Task HandleMeetingRecordRestartAsync(Guid meetingId, Guid meetingRecordId, EgressItemDto egressItem, UserAccountDto user, CancellationToken cancellationToken)
     {
         Log.Information("meetingId: {meetingId}, meetingRecordId:{meetingRecordId}, egressItem:{@egressItem}, user:{@user} ",meetingId, meetingRecordId, egressItem, user);
      
@@ -566,8 +572,18 @@ public partial class MeetingService
         _backgroundJobClient.Schedule<IMediator>(m => m.SendAsync(restartRecordCommand, cancellationToken), TimeSpan.FromSeconds(10)); 
     }
 
-     private async Task UpdateMeetingRecordAsync(MeetingRecord meetingRecord, EgressItemDto egressItem,
-         CancellationToken cancellationToken)
+    public async Task RetrySpeechMaticsJobAsync(CreateSpeechMaticsJobCommand command, CancellationToken cancellationToken)
+    {
+        Log.Information("Retry speechMatics job start");
+        
+        var record = (await _meetingDataProvider.GetMeetingRecordsAsync(command.RecordId, cancellationToken: cancellationToken).ConfigureAwait(false)).FirstOrDefault();
+        
+        var meetingDetails = await _meetingDataProvider.GetMeetingSpeakDetailsAsync(meetingNumber: command.MeetingNumber, recordId: command.RecordId, cancellationToken: cancellationToken).ConfigureAwait(false);
+        
+        await CreateSpeechMaticsJobAsync(record, meetingDetails, cancellationToken).ConfigureAwait(false);
+    }
+
+    private async Task UpdateMeetingRecordAsync(MeetingRecord meetingRecord, EgressItemDto egressItem, CancellationToken cancellationToken)
      {
          meetingRecord.Url = egressItem.File.Filename;
          meetingRecord.RecordType = MeetingRecordType.EndRecord;
@@ -579,13 +595,44 @@ public partial class MeetingService
          
          if (!string.IsNullOrEmpty(meetingRecord.Url))
          {
-             var meetingDetails = await _meetingDataProvider
-                 .GetMeetingDetailsByRecordIdAsync(meetingRecord.Id, cancellationToken).ConfigureAwait(false);
+             var meetingDetails = await _meetingDataProvider.GetMeetingDetailsByRecordIdAsync(meetingRecord.Id, cancellationToken).ConfigureAwait(false);
              
-             await MarkSpeakTranscriptAsSpecifiedStatusAsync(meetingDetails, FileTranscriptionStatus.InProcess,
-                 cancellationToken).ConfigureAwait(false);
-
-             await TranscriptionMeetingAsync(meetingDetails, meetingRecord, cancellationToken);
+             await MarkSpeakTranscriptAsSpecifiedStatusAsync(meetingDetails, FileTranscriptionStatus.InProcess, cancellationToken).ConfigureAwait(false);
+             
+             await CreateSpeechMaticsJobAsync(meetingRecord, meetingDetails, cancellationToken).ConfigureAwait(false);
          }
+     }
+
+     private async Task CreateSpeechMaticsJobAsync(MeetingRecord meetingRecord, List<MeetingSpeakDetail> meetingDetails, CancellationToken cancellationToken)
+     {
+         Log.Information("Create speech matics job meeting record: {@meetingRecord} MeetingDetails:{@meetingDetails}", meetingRecord, meetingDetails);
+         
+         var presignedUrl = await _awsS3Service.GeneratePresignedUrlAsync(meetingRecord.Url, 30).ConfigureAwait(false);
+        
+         var localhostUrl = await DownloadWithRetryAsync(presignedUrl, cancellationToken: cancellationToken).ConfigureAwait(false);
+        
+         var audio = await _ffmpegService.VideoToAudioConverterAsync(localhostUrl, cancellationToken).ConfigureAwait(false);
+         
+         var speechMaticsJob = await _smartiesClient.CreateSpeechMaticsJobAsync(new CreateSpeechMaticsJobCommandDto
+         {
+             Language = "zh",
+             RecordContent = audio,
+             Url = _smartiesSettings.SpeechMaticsUrl,
+             Key = _smartiesSettings.SpeechMaticsApiKey,
+             SourceSystem = TranscriptionJobSystem.SmartTalk,
+             RecordName = meetingRecord.Url
+         }, cancellationToken).ConfigureAwait(false);
+
+         Log.Information("Create SpeechMatics job: {@speechMaticsJob}", speechMaticsJob.Result);
+
+         var meetingSpeechMaticsRecord = new SpeechMaticsRecord
+         {
+             Status = SpeechMaticsStatus.Sent,
+             MeetingRecordId = meetingRecord.Id,
+             TranscriptionJobId = speechMaticsJob.Result,
+             MeetingNumber = meetingDetails.FirstOrDefault()?.MeetingNumber
+         };
+         
+         await _smartiesDataProvider.CreateSpeechMaticsRecordAsync(meetingSpeechMaticsRecord, cancellationToken: cancellationToken).ConfigureAwait(false);
      }
 }

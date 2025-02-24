@@ -1,12 +1,12 @@
 using Mediator.Net;
 using Microsoft.AspNetCore.Mvc;
+using SugarTalk.Messages.Dto.Meetings;
 using Microsoft.AspNetCore.Authorization;
 using SugarTalk.Core.Handlers.RequestHandlers;
 using SugarTalk.Messages.Commands.Meetings;
 using SugarTalk.Messages.Requests.Meetings;
 using SugarTalk.Messages.Commands.Meetings.Speak;
 using SugarTalk.Messages.Commands.Meetings.Summary;
-using SugarTalk.Messages.Dto.Meetings;
 
 namespace SugarTalk.Api.Controllers;
 
@@ -308,6 +308,16 @@ public class MeetingController : ControllerBase
         
         return Ok(response);
     }
+    
+    [Route("check/rename"), HttpPost]
+    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(CheckRenamePermissionResponse))]
+    public async Task<IActionResult> CheckRenamePermissionAsync(CheckRenamePermissionCommand command)
+    {
+        var response = await _mediator.SendAsync<CheckRenamePermissionCommand, CheckRenamePermissionResponse>(command).ConfigureAwait(false);
+
+        return Ok(response);
+    }
+    
     #endregion
     
     #region invite
