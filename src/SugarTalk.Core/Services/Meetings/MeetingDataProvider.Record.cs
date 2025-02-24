@@ -296,6 +296,7 @@ public partial class MeetingDataProvider
     {
         var meetingRecordDetailQuery =  _repository.QueryNoTracking<MeetingSpeakDetail>()
             .Where(x => x.MeetingRecordId == recordId)
+            .OrderBy(x => x.SpeakStartTime)
             .ProjectTo<MeetingSpeakDetailDto>(_mapper.ConfigurationProvider);
 
         if (language.HasValue)
@@ -303,7 +304,6 @@ public partial class MeetingDataProvider
                 join translation in _repository.QueryNoTracking<MeetingSpeakDetailTranslationRecord>().Where(x => x.Language == language.Value)
                     on speak.Id equals translation.MeetingSpeakDetailId into translations
                 from translation in translations.DefaultIfEmpty()
-                orderby speak.SpeakStartTime
                 select new MeetingSpeakDetailDto
                 {
                     Id = speak.Id,
