@@ -296,6 +296,7 @@ public partial class MeetingDataProvider
     {
         var meetingRecordDetailQuery =  _repository.QueryNoTracking<MeetingSpeakDetail>()
             .Where(x => x.MeetingRecordId == recordId)
+            .OrderBy(x => x.SpeakStartTime)
             .ProjectTo<MeetingSpeakDetailDto>(_mapper.ConfigurationProvider);
 
         if (language.HasValue)
