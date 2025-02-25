@@ -9,7 +9,7 @@ public class GetStaffDepartmentHierarchyTreeRequest
 {
     public StaffIdSource StaffIdSource { get; set; } = StaffIdSource.UserAccount;
     
-    public HierarchyDepth HierarchyDepth { get; set; } = HierarchyDepth.Department;
+    public HierarchyDepth HierarchyDepth { get; set; } = HierarchyDepth.Group;
     
     public HierarchyStaffRange HierarchyStaffRange { get; set; } = HierarchyStaffRange.All;
 }

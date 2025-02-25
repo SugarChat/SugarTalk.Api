@@ -924,7 +924,9 @@ namespace SugarTalk.Core.Services.Meetings
         {
             var staffs = await _smartiesClient.GetStaffDepartmentHierarchyTreeAsync(new GetStaffDepartmentHierarchyTreeRequest
             {
-                StaffIdSource = StaffIdSource.Self
+                StaffIdSource = request.StaffIdSource,
+                HierarchyDepth = request.HierarchyDepth,
+                HierarchyStaffRange = request.HierarchyStaffRange
             }, cancellationToken).ConfigureAwait(false);
 
             return new GetStaffsTreeResponse
