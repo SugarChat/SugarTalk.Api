@@ -40,7 +40,9 @@ using SugarTalk.Core.Settings.Meeting.Feedback;
 using SugarTalk.Core.Settings.Smarties;
 using SugarTalk.Messages.Commands.Meetings.Speak;
 using SugarTalk.Messages.Dto.LiveKit.Egress;
+using SugarTalk.Messages.Dto.Smarties;
 using SugarTalk.Messages.Enums.Meeting;
+using SugarTalk.Messages.Enums.Smarties;
 using SugarTalk.Messages.Enums.Speech;
 using SugarTalk.Messages.Events.Meeting;
 using SugarTalk.Messages.Requests.Meetings;
@@ -99,6 +101,10 @@ namespace SugarTalk.Core.Services.Meetings
         Task HandleMeetingStatusWhenOutMeetingAsync(int userId, Guid meetingId, Guid? meetingSubId = null, CancellationToken cancellationToken = default);
         
         Task<MeetingSwitchEaResponse> UpdateMeetingChatResponseAsync(MeetingSwitchEaCommand command, CancellationToken cancellationToken);
+        
+        Task<GetAppointmentMeetingDetailResponse> GetAppointmentMeetingsDetailAsync(GetAppointmentMeetingDetailRequest request, CancellationToken cancellationToken);
+
+        Task<GetStaffsTreeResponse> GetStaffsTreeAsync(GetStaffsTreeRequest request, CancellationToken cancellationToken);
     }
     
     public partial class MeetingService : IMeetingService
@@ -226,6 +232,20 @@ namespace SugarTalk.Core.Services.Meetings
                         RepeatType = command.RepeatType,
                         RepeatUntilDate = command.UtilDate
                     }, cancellationToken).ConfigureAwait(false);
+
+                    var meetingParticipants = new List<MeetingParticipant>();
+                    
+                    foreach (var participant in command.Participants)
+                    {
+                        meetingParticipants.Add(new MeetingParticipant
+                        {
+                            MeetingId = meeting.Id,
+                            ThirdPartyUserId = participant.ThirdPartyUserId,
+                            IsDesignatedHost = participant.IsDesignatedHost
+                        });
+                    }
+                    
+                    await _meetingDataProvider.AddMeetingParticipantAsync(meetingParticipants, cancellationToken: cancellationToken).ConfigureAwait(false);
                     break;
                 }
                 default:
@@ -912,6 +932,55 @@ namespace SugarTalk.Core.Services.Meetings
                     Count = count,
                     Records = records
                 }
+            };
+        }
+
+        public async Task<GetAppointmentMeetingDetailResponse> GetAppointmentMeetingsDetailAsync(
+            GetAppointmentMeetingDetailRequest request, CancellationToken cancellationToken)
+        {
+            var meetingParticipants  = await _meetingDataProvider.GetMeetingParticipantAsync(request.MeetingId, cancellationToken: cancellationToken).ConfigureAwait(false);
+            
+            var participantDict = meetingParticipants.ToDictionary(x => x.ThirdPartyUserId);
+            
+            var staffs = await _smartiesClient.GetStaffsRequestAsync(new GetStaffsRequestDto
+            {
+                UserIds = participantDict.Keys.ToList()
+            }, cancellationToken).ConfigureAwait(false);
+
+            var participants = new List<GetAppointmentMeetingDetailForParticipantDto>();
+            
+            foreach (var staff in staffs.Data.Staffs)
+            {
+                if (!participantDict.TryGetValue(staff.UserId ?? Guid.Empty, out var participant))
+                    continue;
+                
+                participants.Add(new GetAppointmentMeetingDetailForParticipantDto
+                {
+                    UserId = staff.UserId ?? Guid.Empty,
+                    UserName = staff.UserName,
+                    IsMeetingMaster = participant.IsDesignatedHost 
+                });
+            }
+            
+            return new GetAppointmentMeetingDetailResponse
+            {
+                Data = new GetAppointmentMeetingDetailDto
+                {
+                    Participants = participants
+                }
+            };
+        }
+
+        public async Task<GetStaffsTreeResponse> GetStaffsTreeAsync(GetStaffsTreeRequest request, CancellationToken cancellationToken)
+        {
+            var staffs = await _smartiesClient.GetStaffDepartmentHierarchyTreeAsync(new GetStaffDepartmentHierarchyTreeRequest
+            {
+                StaffIdSource = StaffIdSource.Self
+            }, cancellationToken).ConfigureAwait(false);
+
+            return new GetStaffsTreeResponse
+            {
+                Data = staffs.Data
             };
         }
 

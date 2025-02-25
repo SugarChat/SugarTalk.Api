@@ -95,6 +95,8 @@ public class MeetingBaseDto
     
     public bool IsRecorded { get; set; } = false;
     
+    public bool? IsMetis { get; set; }
+    
     public bool IsPasswordEnabled { get; set; } = false;
 
     public bool IsActiveEa { get; set; } = false;
@@ -129,8 +131,19 @@ public class AddOrUpdateMeetingDto
     public MeetingAppointmentType AppointmentType { get; set; }
     
     public MeetingStreamMode MeetingStreamMode { get; set; }
+
+    public List<MeetingParticipantDto> Participants { get; set; }
+
+    public bool? IsMetis { get; set; }
     
     public bool IsMuted { get; set; } = false;
     
     public bool IsRecorded { get; set; } = false;
+}
+
+public class MeetingParticipantDto
+{
+    public Guid ThirdPartyUserId { get; set; }
+
+    public bool IsDesignatedHost { get; set; }
 }
