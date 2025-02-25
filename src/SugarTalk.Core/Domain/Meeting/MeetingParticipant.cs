@@ -4,6 +4,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace SugarTalk.Core.Domain.Meeting;
 
+[Table("meeting_participant")]
 public class MeetingParticipant : IEntity
 {
     public MeetingParticipant()
