@@ -93,6 +93,8 @@ public class MeetingBaseDto
     
     public bool IsRecorded { get; set; } = false;
     
+    public bool? IsMetis { get; set; }
+    
     public bool IsPasswordEnabled { get; set; } = false;
 
     public bool IsActiveEa { get; set; } = false;
@@ -130,7 +132,7 @@ public class AddOrUpdateMeetingDto
 
     public List<MeetingParticipantDto> Participants { get; set; }
 
-    public bool IsMetis { get; set; }
+    public bool? IsMetis { get; set; }
     
     public bool IsMuted { get; set; } = false;
     

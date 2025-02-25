@@ -2,7 +2,6 @@ using Mediator.Net;
 using Microsoft.AspNetCore.Mvc;
 using SugarTalk.Messages.Dto.Meetings;
 using Microsoft.AspNetCore.Authorization;
-using SugarTalk.Core.Handlers.RequestHandlers;
 using SugarTalk.Messages.Commands.Meetings;
 using SugarTalk.Messages.Requests.Meetings;
 using SugarTalk.Messages.Commands.Meetings.Speak;

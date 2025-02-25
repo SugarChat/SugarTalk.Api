@@ -7,16 +7,20 @@ using System.Threading.Tasks;
 using SugarTalk.Core.Constants;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
+using PostBoy.Messages.Commands.Messages;
+using PostBoy.Messages.DTO.Messages;
 using SugarTalk.Core.Domain.Meeting;
 using SugarTalk.Messages.Enums.Speech;
 using SugarTalk.Messages.Dto.Translation;
 using SugarTalk.Messages.Dto.Meetings.Speech;
 using SugarTalk.Core.Services.Meetings.Exceptions;
+using SugarTalk.Core.Settings.PostBoy;
 using SugarTalk.Messages.Dto.Meetings.Speak;
 using SugarTalk.Messages.Dto.Meetings.Summary;
 using SugarTalk.Messages.Enums.Meeting.Summary;
 using SugarTalk.Messages.Events.Meeting.Summary;
 using SugarTalk.Messages.Commands.Meetings.Summary;
+using SugarTalk.Messages.Dto.Smarties;
 
 namespace SugarTalk.Core.Services.Meetings;
 
@@ -29,6 +33,13 @@ public partial interface IMeetingService
 
 public partial class MeetingService
 {
+    private readonly PostBoySettings _postBoySettings;
+    
+    public MeetingService(PostBoySettings postBoySettings)
+    {
+        _postBoySettings = postBoySettings;
+    }
+
     public async Task<MeetingRecordSummarizedEvent> SummaryMeetingRecordAsync(
         SummaryMeetingRecordCommand command, CancellationToken cancellationToken)
     {
@@ -113,6 +124,32 @@ public partial class MeetingService
             CheckMeetingSummarized(summary);
             
             await MarkRecordSummaryAsSpecifiedStatusAsync(summary, SummaryStatus.Completed, cancellationToken).ConfigureAwait(false);
+            
+            if (command.IsMetis.HasValue && command.IsMetis.Value)
+                _backgroundJobClient.Enqueue(() => ReSendMetisMeetingSummaryAsync(command.MeetingId.Value, summary.Summary, cancellationToken));
+            
+        }, cancellationToken).ConfigureAwait(false);
+    }
+    
+    public async Task ReSendMetisMeetingSummaryAsync(Guid meetingId, string summary, CancellationToken cancellationToken)
+    {
+        var meetingParticipants = await _meetingDataProvider.GetMeetingParticipantAsync(meetingId, cancellationToken).ConfigureAwait(false);
+
+        var meetingParticipantsName = await _smartiesClient.GetStaffsRequestAsync(new GetStaffsRequestDto
+        {
+            UserIds = meetingParticipants.Select(r => r.ThirdPartyUserId).ToList()
+        }, cancellationToken);
+        
+        Log.Information("Send message meeting participants names：{@meetingParticipantsName}", meetingParticipantsName);
+        
+        await _postBoyClient.SendMessageAsync(new SendMessageCommand
+        {
+            WorkWeChatAppNotification = new SendWorkWeChatAppNotificationDto
+            {
+                AppId = _postBoySettings.MetisAppId,
+                ToUsers = new List<string>{ "TRAVIS.C" }, //meetingParticipantsName.Data.Staffs.Select(r => r.UserName).ToList(),
+                Text = new SendWorkWeChatTextNotificationDto { Content = summary }
+            }
         }, cancellationToken).ConfigureAwait(false);
     }
     
