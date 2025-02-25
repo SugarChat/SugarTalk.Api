@@ -232,20 +232,24 @@ namespace SugarTalk.Core.Services.Meetings
                         RepeatType = command.RepeatType,
                         RepeatUntilDate = command.UtilDate
                     }, cancellationToken).ConfigureAwait(false);
-
-                    var meetingParticipants = new List<MeetingParticipant>();
                     
-                    foreach (var participant in command.Participants)
+                    if (command.Participants is { Count: > 0 }) 
                     {
-                        meetingParticipants.Add(new MeetingParticipant
+                        var meetingParticipants = new List<MeetingParticipant>();
+                        
+                        foreach (var participant in command.Participants)
                         {
-                            MeetingId = meeting.Id,
-                            ThirdPartyUserId = participant.ThirdPartyUserId,
-                            IsDesignatedHost = participant.IsDesignatedHost
-                        });
+                            meetingParticipants.Add(new MeetingParticipant
+                            {
+                                MeetingId = meeting.Id,
+                                ThirdPartyUserId = participant.ThirdPartyUserId,
+                                IsDesignatedHost = participant.IsDesignatedHost
+                            });
+                        }
+                    
+                        await _meetingDataProvider.AddMeetingParticipantAsync(meetingParticipants, cancellationToken: cancellationToken).ConfigureAwait(false);
                     }
                     
-                    await _meetingDataProvider.AddMeetingParticipantAsync(meetingParticipants, cancellationToken: cancellationToken).ConfigureAwait(false);
                     break;
                 }
                 default:
