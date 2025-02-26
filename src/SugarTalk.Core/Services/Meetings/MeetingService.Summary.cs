@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using SugarTalk.Core.Constants;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
+using Newtonsoft.Json;
 using PostBoy.Messages.Commands.Messages;
 using PostBoy.Messages.DTO.Messages;
 using SugarTalk.Core.Domain.Meeting;
@@ -29,17 +30,12 @@ public partial interface IMeetingService
     Task<MeetingRecordSummarizedEvent> SummaryMeetingRecordAsync(SummaryMeetingRecordCommand command, CancellationToken cancellationToken);
 
     Task SummarizeMeetingInTargetLanguageAsync(ProcessSummaryMeetingCommand command, CancellationToken cancellationToken);
+    
+    Task ReSendMetisMeetingSummaryAsync(Guid meetingId, string summary, CancellationToken cancellationToken);
 }
 
 public partial class MeetingService
 {
-    private readonly PostBoySettings _postBoySettings;
-    
-    public MeetingService(PostBoySettings postBoySettings)
-    {
-        _postBoySettings = postBoySettings;
-    }
-
     public async Task<MeetingRecordSummarizedEvent> SummaryMeetingRecordAsync(
         SummaryMeetingRecordCommand command, CancellationToken cancellationToken)
     {
@@ -133,22 +129,37 @@ public partial class MeetingService
     
     public async Task ReSendMetisMeetingSummaryAsync(Guid meetingId, string summary, CancellationToken cancellationToken)
     {
-        var meetingParticipants = await _meetingDataProvider.GetMeetingParticipantAsync(meetingId, cancellationToken).ConfigureAwait(false);
-
-        var meetingParticipantsName = await _smartiesClient.GetExternalStaffsAsync(new GetExternalStaffsRequestDto
+        var meetingParticipantsTask = _meetingDataProvider.GetMeetingParticipantAsync(meetingId, cancellationToken);
+        var meetingParticipantsNameTask = meetingParticipantsTask.ContinueWith(async task =>
         {
-            Ids = meetingParticipants.Select(r => r.ThirdPartyUserId).ToList()
-        }, cancellationToken);
+            var participants = await task;
+            return await _smartiesClient.GetExternalStaffsAsync(new GetExternalStaffsRequestDto
+            {
+                Ids = participants.Select(r => r.ThirdPartyUserId).ToList()
+            }, cancellationToken);
+        }, cancellationToken, TaskContinuationOptions.OnlyOnRanToCompletion, TaskScheduler.Default).Unwrap();
+
+        await Task.WhenAll(meetingParticipantsTask, meetingParticipantsNameTask).ConfigureAwait(false);
         
-        Log.Information("Send message meeting participants names：{@meetingParticipantsName}", meetingParticipantsName);
-        
+        var meetingParticipantsName = await meetingParticipantsNameTask;
+
+        Log.Information("Send message meeting participants names: {@meetingParticipantsName}", meetingParticipantsName);
+
+        var originalSummary = JsonConvert.DeserializeObject<MeetingSummaryJsonDto>(summary);
+
+        var abstractString = string.Join("\n\n", originalSummary.Abstract.Select(a => $"{a.AbstractTitle}\n{a.AbstractContent}"));
+        var todoString = string.Join("\n\n", originalSummary.MeetingTodoItems.Select(t => t.MeetingTodoItem));
+
         await _postBoyClient.SendMessageAsync(new SendMessageCommand
         {
             WorkWeChatAppNotification = new SendWorkWeChatAppNotificationDto
             {
                 AppId = _postBoySettings.MetisAppId,
-                ToUsers = new List<string>{ "TRAVIS.C" }, //meetingParticipantsName.Data.Staffs.Select(r => r.UserName).ToList(),
-                Text = new SendWorkWeChatTextNotificationDto { Content = summary }
+                ToUsers = meetingParticipantsName.Data.Staffs.Select(r => r.ExternalSystemStaffId).ToList(),
+                Text = new SendWorkWeChatTextNotificationDto
+                {
+                    Content = $"會議摘要\n\n{abstractString}\n\n會議代辦\n\n{todoString}"
+                }
             }
         }, cancellationToken).ConfigureAwait(false);
     }

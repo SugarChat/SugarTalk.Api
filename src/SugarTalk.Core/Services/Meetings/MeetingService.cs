@@ -37,6 +37,7 @@ using SugarTalk.Core.Services.Smarties;
 using SugarTalk.Core.Settings.Aws;
 using SugarTalk.Core.Settings.Meeting;
 using SugarTalk.Core.Settings.Meeting.Feedback;
+using SugarTalk.Core.Settings.PostBoy;
 using SugarTalk.Core.Settings.Smarties;
 using SugarTalk.Messages.Commands.Meetings.Speak;
 using SugarTalk.Messages.Dto.LiveKit.Egress;
@@ -110,7 +111,6 @@ namespace SugarTalk.Core.Services.Meetings
     public partial class MeetingService : IMeetingService
     {
         private const string appName = "LiveApp";
-
         private readonly IClock _clock;
         private readonly IMapper _mapper;
         private readonly IUnitOfWork _unitOfWork;
@@ -125,6 +125,7 @@ namespace SugarTalk.Core.Services.Meetings
         private readonly AwsS3Settings _awsS3Settings;
         private readonly ICacheManager _cacheManager;
         private readonly ISmartiesClient _smartiesClient;
+        private readonly PostBoySettings _postBoySettings;
         private readonly SmartiesSettings _smartiesSettings;
         private readonly TranslationClient _translationClient;
         private readonly IMeetingUtilService _meetingUtilService;
@@ -154,6 +155,7 @@ namespace SugarTalk.Core.Services.Meetings
             AwsS3Settings awsS3Settings,
             IAwsS3Service awsS3Service,
             ISmartiesClient smartiesClient,
+            PostBoySettings postBoySettings,
             SmartiesSettings smartiesSettings,
             TranslationClient translationClient,
             IMeetingUtilService meetingUtilService,
@@ -182,6 +184,7 @@ namespace SugarTalk.Core.Services.Meetings
             _smartiesClient = smartiesClient;
             _awsS3Settings = awsS3Settings;
             _httpClientFactory = httpClientFactory;
+            _postBoySettings = postBoySettings;
             _smartiesSettings = smartiesSettings;
             _translationClient = translationClient;
             _meetingUtilService = meetingUtilService;

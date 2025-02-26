@@ -35,7 +35,7 @@ public partial interface IMeetingService
 
     Task<GetMeetingOnlineLongestDurationUserResponse> GetMeetingUserSessionByMeetingIdAsync(
         GetMeetingOnlineLongestDurationUserRequest request, CancellationToken cancellationToken);
-    
+
     Task<UpdateMeetingUserSessionRoleResponse> UpdateMeetingUserSessionRoleAsync(
         UpdateMeetingUserSessionRoleCommand command, CancellationToken cancellationToken);
     
@@ -44,7 +44,6 @@ public partial interface IMeetingService
 
     Task<CheckRenamePermissionResponse> CheckRenamePermissionAsync(CheckRenamePermissionCommand command,
         CancellationToken cancellationToken);
-
 }
 
 public partial class MeetingService

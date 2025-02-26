@@ -20,7 +20,7 @@ public interface ISmartiesClient : IScopedDependency
     
     Task<CreateSpeechMaticsJobResponseDto> CreateSpeechMaticsJobAsync(CreateSpeechMaticsJobCommandDto command, CancellationToken cancellationToken);
     
-    Task<GetExternalStaffsResponseData> GetExternalStaffsAsync(GetExternalStaffsRequestDto request, CancellationToken cancellationToken);
+    Task<GetExternalStaffsResponse> GetExternalStaffsAsync(GetExternalStaffsRequestDto request, CancellationToken cancellationToken);
 }
 
 public class SmartiesClient : ISmartiesClient
@@ -91,7 +91,7 @@ public class SmartiesClient : ISmartiesClient
             $"{_smartiesSettings.BaseUrl}/api/SpeechMatics/create/job", parameters, files, cancellationToken, headers: _headers).ConfigureAwait(false);
     }
 
-    public async Task<GetExternalStaffsResponseData> GetExternalStaffsAsync(GetExternalStaffsRequestDto request, CancellationToken cancellationToken)
+    public async Task<GetExternalStaffsResponse> GetExternalStaffsAsync(GetExternalStaffsRequestDto request, CancellationToken cancellationToken)
     {
         var userIds = "";
 
@@ -103,7 +103,7 @@ public class SmartiesClient : ISmartiesClient
             }
         }
         
-        return await _httpClientFactory.GetAsync<GetExternalStaffsResponseData>(
+        return await _httpClientFactory.GetAsync<GetExternalStaffsResponse>(
             $"{_smartiesSettings.BaseUrl}/api/Foundation/external/staffs?SystemType={request.SystemType}{userIds}", cancellationToken, headers: _headers).ConfigureAwait(false);
     }
 }

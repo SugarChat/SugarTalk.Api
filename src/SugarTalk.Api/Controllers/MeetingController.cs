@@ -334,7 +334,6 @@ public class MeetingController : ControllerBase
 
         return Ok(response);
     }
-    
     #endregion
     
     #region invite
