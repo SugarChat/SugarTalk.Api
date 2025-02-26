@@ -317,7 +317,7 @@ public class MeetingController : ControllerBase
         return Ok(response);
     }
 
-    [Route("get/all"), HttpPost]
+    [Route("get/all"), HttpGet]
     [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(GetAllMeetingUserSessionsForMeetingIdResponse))]
     public async Task<IActionResult> GetAllMeetingUserSessionsForMeetingIdAsync([FromQuery] GetAllMeetingUserSessionsForMeetingIdRequest request)
     {
