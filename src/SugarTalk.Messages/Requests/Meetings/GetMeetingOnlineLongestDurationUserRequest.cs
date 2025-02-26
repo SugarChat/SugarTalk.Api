@@ -18,4 +18,8 @@ public class MeetingOnlineLongestDurationUserDto
     public int UserId { get; set; }
     
     public string UserName { get; set; }
+
+    public bool CoHost { get; set; }
+
+    public bool IsMeetingMaster { get; set; }
 }

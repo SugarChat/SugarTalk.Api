@@ -12,6 +12,8 @@ public class AppointmentMeetingDto
     public string Title { get; set; }
     
     public MeetingAppointmentType AppointmentType { get; set; }
+
+    public int Creator { get; set; }
     
     public long StartDate { get; set; }
     
