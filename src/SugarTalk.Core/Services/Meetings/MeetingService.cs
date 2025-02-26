@@ -895,7 +895,7 @@ namespace SugarTalk.Core.Services.Meetings
             
             var staffs = await _smartiesClient.GetStaffsRequestAsync(new GetStaffsRequestDto
             {
-                UserIds = participantDict.Keys.ToList()
+                Ids = participantDict.Keys.ToList()
             }, cancellationToken).ConfigureAwait(false);
 
             Log.Information("Meeting staffs: {@staffs}", staffs);
@@ -911,7 +911,7 @@ namespace SugarTalk.Core.Services.Meetings
                 {
                     UserId = staff.UserId ?? Guid.Empty,
                     UserName = staff.UserName,
-                    IsMeetingMaster = participant.IsDesignatedHost 
+                    IsDesignatedHost = participant.IsDesignatedHost 
                 });
             }
             

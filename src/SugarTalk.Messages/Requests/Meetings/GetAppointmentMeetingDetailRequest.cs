@@ -26,5 +26,5 @@ public class GetAppointmentMeetingDetailForParticipantDto
     
     public string UserName { get; set; }
 
-    public bool IsMeetingMaster { get; set; }
+    public bool IsDesignatedHost { get; set; }
 }
