@@ -478,8 +478,8 @@ namespace SugarTalk.Core.Services.Meetings
                         newMasterSession = meetingUserSession.Where(x => userIds.Contains(x.UserId)).OrderBy(x => x.CreatedDate).FirstOrDefault();
                     }
                 }
-                else
-                    newMasterSession = meetingUserSession.Where(x => x.CoHost).OrderBy(x => x.LastModifiedDateForCoHost).FirstOrDefault();
+
+                newMasterSession ??= meetingUserSession.Where(x => x.CoHost).OrderBy(x => x.LastModifiedDateForCoHost).FirstOrDefault();
 
                 if (newMasterSession == null) return new MeetingUserSession();
             }
