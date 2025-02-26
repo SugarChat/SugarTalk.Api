@@ -26,8 +26,7 @@ namespace SugarTalk.Core.Services.Meetings
 {
     public partial interface IMeetingDataProvider : IScopedDependency
     {
-        Task<MeetingUserSession> GetMeetingUserSessionByMeetingIdAsync(Guid meetingId, Guid? meetingSubId, int? userId,
-            CancellationToken cancellationToken);
+        Task<MeetingUserSession> GetMeetingUserSessionByMeetingIdAsync(Guid meetingId, Guid? meetingSubId, int? userId, CancellationToken cancellationToken);
         
         Task<Meeting> GetMeetingByIdAsync(Guid meetingId, CancellationToken cancellationToken = default);
         
@@ -93,7 +92,7 @@ namespace SugarTalk.Core.Services.Meetings
         
         Task CancelAppointmentMeetingAsync(Guid meetingId, CancellationToken cancellationToken);
 
-        Task<List<MeetingUserSession>> GetMeetingUserSessionAsync(Guid meetingId, Guid? meetingSubId = null, CancellationToken cancellationToken = default);
+        Task<List<MeetingUserSession>> GetMeetingUserSessionAsync(Guid meetingId, Guid? meetingSubId = null, int? userId = null, bool? coHost = null, MeetingUserSessionOnlineType? sessionOnlineType = null, CancellationToken cancellationToken = default);
         
         Task<List<Meeting>> GetAvailableRepeatMeetingAsync(CancellationToken cancellationToken);
         
@@ -521,7 +520,7 @@ namespace SugarTalk.Core.Services.Meetings
                 join subMeetings in _repository.Query<MeetingSubMeeting>() on meeting.Id equals subMeetings.MeetingId
                     into subMeetingGroup
                 from subMeeting in subMeetingGroup.DefaultIfEmpty()
-                where meeting.MeetingMasterUserId == _currentUser.Id &&
+                where (meeting.MeetingMasterUserId == _currentUser.Id || meeting.CreatedBy == _currentUser.Id) &&
                       meeting.AppointmentType == MeetingAppointmentType.Appointment &&
                       ((rules.RepeatType == MeetingRepeatType.None &&
                         meeting.StartDate >= startOfDay &&
@@ -537,6 +536,7 @@ namespace SugarTalk.Core.Services.Meetings
                     EndDate = rules.RepeatType == MeetingRepeatType.None ? meeting.EndDate : subMeeting.EndTime,
                     Status = meeting.Status,
                     Title = meeting.Title,
+                    Creator = meeting.CreatedBy,
                     AppointmentType = meeting.AppointmentType,
                     CreatedDate = meeting.CreatedDate
                 };
@@ -632,11 +632,19 @@ namespace SugarTalk.Core.Services.Meetings
             await _unitOfWork.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
         }
 
-        public async Task<List<MeetingUserSession>> GetMeetingUserSessionAsync(Guid meetingId, Guid? meetingSubId = null, CancellationToken cancellationToken = default)
+        public async Task<List<MeetingUserSession>> GetMeetingUserSessionAsync(Guid meetingId, Guid? meetingSubId = null, int? userId = null, bool? coHost = null, MeetingUserSessionOnlineType? sessionOnlineType = null,  CancellationToken cancellationToken = default)
         {
             var query = _repository.QueryNoTracking<MeetingUserSession>().Where(x => x.MeetingId == meetingId);
 
             if (meetingSubId.HasValue) query = query.Where(x => x.MeetingSubId == meetingSubId.Value);
+
+            if (userId.HasValue) query = query.Where(x => x.UserId == userId);
+
+            if (sessionOnlineType.HasValue)
+                query = query.Where(x => x.OnlineType == sessionOnlineType.Value);
+
+            if (coHost.HasValue)
+                query = query.Where(x => x.CoHost == coHost.Value);
 
             return await query.ToListAsync(cancellationToken).ConfigureAwait(false);
         }

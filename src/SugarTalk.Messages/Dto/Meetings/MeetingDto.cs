@@ -64,7 +64,9 @@ public class MeetingBaseDto
     public Guid? MeetingRecordId { get; set; }
 
     public string MeetingNumber { get; set; }
-    
+
+    public int CreatedBy { get; set; }
+
     public long StartDate { get; set; }
 
     public long EndDate { get; set; }
