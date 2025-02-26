@@ -446,7 +446,7 @@ namespace SugarTalk.Core.Services.Meetings
             
             if (userSession.UserId == meeting.MeetingMasterUserId)
             {
-                newMasterSession = await ProcessingMeetingMasterInheritAsync(meeting, cancellationToken).ConfigureAwait(false);
+                newMasterSession = await ProcessingMeetingMasterInheritAsync(meeting, userSession, cancellationToken).ConfigureAwait(false);
             
                 newMasterSession.CoHost = false;
             }
@@ -456,20 +456,30 @@ namespace SugarTalk.Core.Services.Meetings
             await _meetingDataProvider.UpdateMeetingUserSessionAsync(new List<MeetingUserSession>{ userSession, newMasterSession }, cancellationToken).ConfigureAwait(false);
         }
 
-        private async Task<MeetingUserSession> ProcessingMeetingMasterInheritAsync(Meeting meeting, CancellationToken cancellationToken)
+        private async Task<MeetingUserSession> ProcessingMeetingMasterInheritAsync(Meeting meeting, MeetingUserSession currentUserSession, CancellationToken cancellationToken)
         {
             var meetingUserSession = await _meetingDataProvider.GetMeetingUserSessionAsync(
-                meeting.Id, null,null, true, MeetingUserSessionOnlineType.Online, cancellationToken).ConfigureAwait(false);
+                meeting.Id, null,null, null, MeetingUserSessionOnlineType.Online, cancellationToken).ConfigureAwait(false);
             
             var newMasterSession = meetingUserSession.FirstOrDefault(x => x.UserId == meeting.CreatedBy);
 
-            if (newMasterSession != null)
+            if (newMasterSession == null)
             {
-                meeting.MeetingMasterUserId = newMasterSession.UserId;
-            }
-            else
-            {
-                newMasterSession = meetingUserSession.OrderBy(x => x.LastModifiedDateForCoHost).FirstOrDefault();
+                if (meeting.AppointmentType == MeetingAppointmentType.Appointment)
+                {
+                    var meetingParticipants = await _meetingDataProvider.GetMeetingParticipantAsync(meeting.Id, true, true, cancellationToken: cancellationToken).ConfigureAwait(false);
+                    
+                    var validParticipants = meetingParticipants.Where(x => x.UserId != currentUserSession.UserId).ToList();
+                    
+                    if (validParticipants.Any())
+                    {
+                        var userIds = validParticipants.Select(x => x.UserId).ToList();
+                        
+                        newMasterSession = meetingUserSession.Where(x => userIds.Contains(x.UserId)).OrderBy(x => x.CreatedDate).FirstOrDefault();
+                    }
+                }
+                else
+                    newMasterSession = meetingUserSession.Where(x => x.CoHost).OrderBy(x => x.LastModifiedDateForCoHost).FirstOrDefault();
 
                 if (newMasterSession == null) return new MeetingUserSession();
             }
