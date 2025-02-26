@@ -7,13 +7,9 @@ namespace SugarTalk.Messages.Dto.Smarties;
 
 public class GetExternalStaffsRequestDto
 {
-    public SyncCollectionFormSystemType? SystemType { get; set; }
+    public SyncCollectionFormSystemType? SystemType { get; set; } = SyncCollectionFormSystemType.WorkWechat;
 
     public List<Guid> Ids { get; set; }
-    
-    public int? PageIndex { get; set; }
-    
-    public int? PageSize { get; set; }
 }
 
 public class GetExternalStaffsResponse : SugarTalkResponse<GetExternalStaffsResponseData>

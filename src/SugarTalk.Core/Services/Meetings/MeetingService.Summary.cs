@@ -135,9 +135,9 @@ public partial class MeetingService
     {
         var meetingParticipants = await _meetingDataProvider.GetMeetingParticipantAsync(meetingId, cancellationToken).ConfigureAwait(false);
 
-        var meetingParticipantsName = await _smartiesClient.GetStaffsRequestAsync(new GetStaffsRequestDto
+        var meetingParticipantsName = await _smartiesClient.GetExternalStaffsAsync(new GetExternalStaffsRequestDto
         {
-            UserIds = meetingParticipants.Select(r => r.ThirdPartyUserId).ToList()
+            Ids = meetingParticipants.Select(r => r.ThirdPartyUserId).ToList()
         }, cancellationToken);
         
         Log.Information("Send message meeting participants names：{@meetingParticipantsName}", meetingParticipantsName);
