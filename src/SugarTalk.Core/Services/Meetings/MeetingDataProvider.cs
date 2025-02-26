@@ -110,7 +110,7 @@ namespace SugarTalk.Core.Services.Meetings
 
         Task AddMeetingParticipantAsync(List<MeetingParticipant> meetingParticipants, bool forSave = true, CancellationToken cancellationToken = default);
 
-        Task<List<MeetingParticipant>> GetMeetingParticipantAsync(Guid meetingId, CancellationToken cancellationToken);
+        Task<List<MeetingParticipant>> GetMeetingParticipantAsync(Guid meetingId, bool? isDesignatedHost = null, bool isUserAccount = false, CancellationToken cancellationToken = default);
     }
     
     public partial class MeetingDataProvider : IMeetingDataProvider
@@ -725,9 +725,27 @@ namespace SugarTalk.Core.Services.Meetings
                 await _unitOfWork.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
         }
         
-        public async Task<List<MeetingParticipant>> GetMeetingParticipantAsync(Guid meetingId, CancellationToken cancellationToken)
+        public async Task<List<MeetingParticipant>> GetMeetingParticipantAsync(Guid meetingId, bool? isDesignatedHost = null, bool isUserAccount = false, CancellationToken cancellationToken = default)
         {
-            return await _repository.Query<MeetingParticipant>().Where(x => x.MeetingId == meetingId).ToListAsync(cancellationToken).ConfigureAwait(false);
+            var query = _repository.Query<MeetingParticipant>().Where(x => x.MeetingId == meetingId);
+
+            if (isDesignatedHost.HasValue)
+                query = query.Where(x => x.IsDesignatedHost == isDesignatedHost.Value);
+            
+            if (isUserAccount)
+                query = from participant in query
+                    join userAccount in _repository.Query<UserAccount>() on participant.ThirdPartyUserId.ToString() equals userAccount.ThirdPartyUserId
+                    select new MeetingParticipant
+                    {
+                        Id = participant.Id,
+                        MeetingId = participant.MeetingId,
+                        ThirdPartyUserId = participant.ThirdPartyUserId,
+                        IsDesignatedHost = participant.IsDesignatedHost,
+                        UserId = userAccount.Id,
+                        CreatedDate = participant.CreatedDate
+                    };
+
+            return await query.ToListAsync(cancellationToken).ConfigureAwait(false);
         }
 
         public async Task<MeetingRecord> GetMeetingRecordAsync(Guid meetingId, CancellationToken cancellationToken)
