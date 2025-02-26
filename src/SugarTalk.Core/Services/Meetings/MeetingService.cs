@@ -904,12 +904,12 @@ namespace SugarTalk.Core.Services.Meetings
             
             foreach (var staff in staffs.Data.Staffs)
             {
-                if (!participantDict.TryGetValue(staff.UserId ?? Guid.Empty, out var participant))
+                if (!participantDict.TryGetValue(staff.Id, out var participant))
                     continue;
                 
                 participants.Add(new GetAppointmentMeetingDetailForParticipantDto
                 {
-                    UserId = staff.UserId ?? Guid.Empty,
+                    UserId = staff.Id,
                     UserName = staff.UserName,
                     IsDesignatedHost = participant.IsDesignatedHost 
                 });
