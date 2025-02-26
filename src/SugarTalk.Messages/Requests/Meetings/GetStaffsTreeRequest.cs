@@ -7,7 +7,7 @@ namespace SugarTalk.Messages.Requests.Meetings;
 
 public class GetStaffsTreeRequest : IRequest
 {
-    public StaffIdSource StaffIdSource { get; set; } = StaffIdSource.UserAccount;
+    public StaffIdSource StaffIdSource { get; set; } = StaffIdSource.Self;
     
     public HierarchyDepth HierarchyDepth { get; set; } = HierarchyDepth.Group;
     

@@ -946,11 +946,15 @@ namespace SugarTalk.Core.Services.Meetings
             
             var participantDict = meetingParticipants.ToDictionary(x => x.ThirdPartyUserId);
             
+            Log.Information("Meeting participant dict: {@participantDict}", participantDict);
+            
             var staffs = await _smartiesClient.GetStaffsRequestAsync(new GetStaffsRequestDto
             {
-                UserIds = participantDict.Keys.ToList()
+                Ids = participantDict.Keys.ToList()
             }, cancellationToken).ConfigureAwait(false);
 
+            Log.Information("Meeting staffs: {@staffs}", staffs);
+            
             var participants = new List<GetAppointmentMeetingDetailForParticipantDto>();
             
             foreach (var staff in staffs.Data.Staffs)
@@ -962,7 +966,7 @@ namespace SugarTalk.Core.Services.Meetings
                 {
                     UserId = staff.UserId ?? Guid.Empty,
                     UserName = staff.UserName,
-                    IsMeetingMaster = participant.IsDesignatedHost 
+                    IsDesignatedHost = participant.IsDesignatedHost 
                 });
             }
             

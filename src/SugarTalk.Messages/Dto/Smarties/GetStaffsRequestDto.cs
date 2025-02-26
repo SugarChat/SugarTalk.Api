@@ -8,7 +8,7 @@ public class GetStaffsRequestDto
 {
     public bool IsActive { get; set; } = true;
 
-    public List<Guid> UserIds { get; set; } = null;
+    public List<Guid> Ids { get; set; } = null;
 }
 
 public class GetStaffsResponse : SugarTalkResponse<GetStaffsResponseData>
