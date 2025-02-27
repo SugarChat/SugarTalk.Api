@@ -481,7 +481,13 @@ public partial class MeetingService
 
     private async Task AddMeetingRecordAsync(Meeting meeting, Guid meetingRecordId, string egressId, CancellationToken cancellationToken)
     {
-        await _meetingDataProvider.PersistMeetingRecordAsync(meeting.Id, meetingRecordId, egressId, cancellationToken).ConfigureAwait(false);
+        MeetingUserSession userSession = null;
+        
+        if (meeting.AppointmentType == MeetingAppointmentType.Appointment && _currentUser.Id != null)
+                userSession = (await _meetingDataProvider.GetMeetingUserSessionsAsync(
+                    new List<int> { _currentUser.Id.Value }, meeting.Id, cancellationToken: cancellationToken).ConfigureAwait(false)).FirstOrDefault();
+
+        await _meetingDataProvider.PersistMeetingRecordAsync(meeting.Id, meetingRecordId, egressId, userSession?.MeetingSubId, cancellationToken).ConfigureAwait(false);
         
         meeting.IsActiveRecord = true;
 
