@@ -318,8 +318,43 @@ namespace SugarTalk.Core.Services.Meetings
                 meeting.UserSessions = meeting.UserSessions
                     .Where(x => x.OnlineType == MeetingUserSessionOnlineType.Online).ToList();
             }
+
+            meeting.Participants = await GetAppointmentMeetingDetailForParticipantAsync(meeting.Id, cancellationToken).ConfigureAwait(false);
             
             return new GetMeetingByNumberResponse { Data = meeting };
+        }
+
+        private async Task<List<AppointmentMeetingDetailForParticipantDto>> GetAppointmentMeetingDetailForParticipantAsync(Guid meetingId, CancellationToken cancellationToken)
+        {
+            var meetingParticipants  = await _meetingDataProvider.GetMeetingParticipantAsync(meetingId, cancellationToken: cancellationToken).ConfigureAwait(false);
+            
+            var participantDict = meetingParticipants.ToDictionary(x => x.ThirdPartyUserId);
+            
+            Log.Information("Meeting participant dict: {@participantDict}", participantDict);
+            
+            var staffs = await _smartiesClient.GetStaffsRequestAsync(new GetStaffsRequestDto
+            {
+                Ids = participantDict.Keys.ToList()
+            }, cancellationToken).ConfigureAwait(false);
+
+            Log.Information("Meeting staffs: {@staffs}", staffs);
+            
+            var participants = new List<AppointmentMeetingDetailForParticipantDto>();
+            
+            foreach (var staff in staffs.Data.Staffs)
+            {
+                if (!participantDict.TryGetValue(staff.Id, out var participant))
+                    continue;
+                
+                participants.Add(new AppointmentMeetingDetailForParticipantDto
+                {
+                    UserId = staff.Id,
+                    UserName = staff.UserName,
+                    IsDesignatedHost = participant.IsDesignatedHost 
+                });
+            }
+            
+            return participants;
         }
 
         public async Task<MeetingJoinedEvent> JoinMeetingAsync(JoinMeetingCommand command, CancellationToken cancellationToken)
