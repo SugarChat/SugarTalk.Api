@@ -125,7 +125,7 @@ public partial class MeetingService
     public async Task<GetMeetingUserSessionByUserIdResponse> GetMeetingUserSessionByUserIdAsync(
         GetMeetingUserSessionByUserIdRequest request, CancellationToken cancellationToken)
     {
-        var user = await _accountDataProvider.GetUserAccountAsync(_currentUser.Id, cancellationToken: cancellationToken).ConfigureAwait(false);
+        var user = await _accountDataProvider.GetUserAccountAsync(request.UserId, cancellationToken: cancellationToken).ConfigureAwait(false);
 
         if (user is null) throw new UnauthorizedAccessException();
         
