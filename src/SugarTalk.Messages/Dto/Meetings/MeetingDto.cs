@@ -152,7 +152,7 @@ public class MeetingParticipantDto
 
 public class AppointmentMeetingDetailForParticipantDto
 {
-    public Guid UserId { get; set; }
+    public Guid ThirdPartyUserId { get; set; }
     
     public string UserName { get; set; }
 

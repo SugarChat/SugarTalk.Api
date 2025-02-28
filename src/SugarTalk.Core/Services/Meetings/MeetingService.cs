@@ -348,7 +348,7 @@ namespace SugarTalk.Core.Services.Meetings
                 
                 participants.Add(new AppointmentMeetingDetailForParticipantDto
                 {
-                    UserId = staff.Id,
+                    ThirdPartyUserId = staff.Id,
                     UserName = staff.UserName,
                     IsDesignatedHost = participant.IsDesignatedHost 
                 });
