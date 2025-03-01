@@ -80,7 +80,7 @@ namespace SugarTalk.Core.Services.Meetings
         Task<List<MeetingSubMeeting>> GetMeetingSubMeetingsAsync(Guid meetingId, CancellationToken cancellationToken);
         
         Task<(int Count, List<AppointmentMeetingDto> Records)> GetAppointmentMeetingsByUserIdAsync(GetAppointmentMeetingsRequest request, CancellationToken cancellationToken);
-
+        
         Task MarkMeetingAsCompletedAsync(Meeting meeting, CancellationToken cancellationToken);
 
         Task UpdateUserSessionsAtMeetingEndAsync(Meeting meeting, List<MeetingUserSession> userSessions, CancellationToken cancellationToken);
@@ -107,6 +107,12 @@ namespace SugarTalk.Core.Services.Meetings
         Task AddMeetingChatVoiceRecordAsync(List<MeetingChatVoiceRecord> meetingChatVoiceRecord, bool forSave = true, CancellationToken cancellationToken = default);
         
         Task<MeetingChatVoiceRecord> GetMeetingChatVoiceRecordAsync(Guid id, CancellationToken cancellationToken);
+
+        Task AddMeetingParticipantAsync(List<MeetingParticipant> meetingParticipants, bool forSave = true, CancellationToken cancellationToken = default);
+
+        Task<List<MeetingParticipant>> GetMeetingParticipantAsync(Guid meetingId, bool? isDesignatedHost = null, bool isUserAccount = false, CancellationToken cancellationToken = default);
+        
+        Task DeleteMeetingParticipantAsync(List<MeetingParticipant> meetingParticipants, bool forSave = true, CancellationToken cancellationToken = default);
     }
     
     public partial class MeetingDataProvider : IMeetingDataProvider
@@ -551,7 +557,7 @@ namespace SugarTalk.Core.Services.Meetings
             
             return (filteredAppointmentMeetingList.Count, appointmentMeetingDtos);
         }
-        
+
         public async Task MarkMeetingAsCompletedAsync(Meeting meeting, CancellationToken cancellationToken)
         {
             if (meeting.AppointmentType == MeetingAppointmentType.Quick)
@@ -711,6 +717,45 @@ namespace SugarTalk.Core.Services.Meetings
         {
             return await _repository.Query<MeetingChatVoiceRecord>(x => x.Id == id)
                 .FirstOrDefaultAsync(cancellationToken).ConfigureAwait(false);
+        }
+
+        public async Task AddMeetingParticipantAsync(List<MeetingParticipant> meetingParticipants, bool forSave = true, CancellationToken cancellationToken = default)
+        {
+            await _repository.InsertAllAsync(meetingParticipants, cancellationToken).ConfigureAwait(false);
+
+            if (forSave)
+                await _unitOfWork.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        }
+        
+        public async Task<List<MeetingParticipant>> GetMeetingParticipantAsync(Guid meetingId, bool? isDesignatedHost = null, bool isUserAccount = false, CancellationToken cancellationToken = default)
+        {
+            var query = _repository.Query<MeetingParticipant>().Where(x => x.MeetingId == meetingId);
+
+            if (isDesignatedHost.HasValue)
+                query = query.Where(x => x.IsDesignatedHost == isDesignatedHost.Value);
+            
+            if (isUserAccount)
+                query = from participant in query
+                    join userAccount in _repository.Query<UserAccount>() on participant.ThirdPartyUserId.ToString() equals userAccount.ThirdPartyUserId
+                    select new MeetingParticipant
+                    {
+                        Id = participant.Id,
+                        MeetingId = participant.MeetingId,
+                        ThirdPartyUserId = participant.ThirdPartyUserId,
+                        IsDesignatedHost = participant.IsDesignatedHost,
+                        UserId = userAccount.Id,
+                        CreatedDate = participant.CreatedDate
+                    };
+
+            return await query.ToListAsync(cancellationToken).ConfigureAwait(false);
+        }
+
+        public async Task DeleteMeetingParticipantAsync(List<MeetingParticipant> meetingParticipants, bool forSave = true, CancellationToken cancellationToken = default)
+        {
+            await _repository.DeleteAllAsync(meetingParticipants, cancellationToken).ConfigureAwait(false);
+
+            if (forSave)
+                await _unitOfWork.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
         }
 
         public async Task<MeetingRecord> GetMeetingRecordAsync(Guid meetingId, CancellationToken cancellationToken)
