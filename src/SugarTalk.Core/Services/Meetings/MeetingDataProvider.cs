@@ -111,6 +111,8 @@ namespace SugarTalk.Core.Services.Meetings
         Task AddMeetingParticipantAsync(List<MeetingParticipant> meetingParticipants, bool forSave = true, CancellationToken cancellationToken = default);
 
         Task<List<MeetingParticipant>> GetMeetingParticipantAsync(Guid meetingId, bool? isDesignatedHost = null, bool isUserAccount = false, CancellationToken cancellationToken = default);
+        
+        Task DeleteMeetingParticipantAsync(List<MeetingParticipant> meetingParticipants, bool forSave = true, CancellationToken cancellationToken = default);
     }
     
     public partial class MeetingDataProvider : IMeetingDataProvider
@@ -746,6 +748,14 @@ namespace SugarTalk.Core.Services.Meetings
                     };
 
             return await query.ToListAsync(cancellationToken).ConfigureAwait(false);
+        }
+
+        public async Task DeleteMeetingParticipantAsync(List<MeetingParticipant> meetingParticipants, bool forSave = true, CancellationToken cancellationToken = default)
+        {
+            await _repository.DeleteAllAsync(meetingParticipants, cancellationToken).ConfigureAwait(false);
+
+            if (forSave)
+                await _unitOfWork.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
         }
 
         public async Task<MeetingRecord> GetMeetingRecordAsync(Guid meetingId, CancellationToken cancellationToken)

@@ -676,7 +676,7 @@ namespace SugarTalk.Core.Services.Meetings
             var user = await _accountDataProvider.CheckCurrentLoggedInUser(cancellationToken).ConfigureAwait(false);
             
             var meeting = await _meetingDataProvider.GetMeetingByIdAsync(command.Id, cancellationToken).ConfigureAwait(false);
-
+            
             ValidateMeetingUpdateConditions(meeting, user);
 
             var updateMeeting = _mapper.Map(command, meeting);
@@ -694,6 +694,27 @@ namespace SugarTalk.Core.Services.Meetings
                 await _meetingDataProvider.UpdateMeetingRepeatRuleAsync(updateMeeting.Id, command.RepeatType, cancellationToken).ConfigureAwait(false);
 
                 await _meetingDataProvider.PersistMeetingSubMeetingsAsync(subMeetingList, cancellationToken).ConfigureAwait(false);
+            }
+
+            if (meeting.AppointmentType == MeetingAppointmentType.Appointment && command.Participants is { Count: > 0 })
+            {
+                var removeMeetingParticipants = await _meetingDataProvider.GetMeetingParticipantAsync(meeting.Id, cancellationToken: cancellationToken).ConfigureAwait(false);
+
+                await _meetingDataProvider.DeleteMeetingParticipantAsync(removeMeetingParticipants, cancellationToken: cancellationToken).ConfigureAwait(false);
+                
+                var meetingParticipants = new List<MeetingParticipant>();
+                        
+                foreach (var participant in command.Participants)
+                {
+                    meetingParticipants.Add(new MeetingParticipant
+                    {
+                        MeetingId = meeting.Id,
+                        ThirdPartyUserId = participant.ThirdPartyUserId,
+                        IsDesignatedHost = participant.IsDesignatedHost
+                    });
+                }
+                    
+                await _meetingDataProvider.AddMeetingParticipantAsync(meetingParticipants, cancellationToken: cancellationToken).ConfigureAwait(false);
             }
             
             await _meetingDataProvider.UpdateMeetingAsync(updateMeeting, cancellationToken).ConfigureAwait(false);
