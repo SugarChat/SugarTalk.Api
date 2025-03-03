@@ -20,6 +20,9 @@ public class MeetingRecord : IEntity
     [Column("record_number"), StringLength(32)]
     public string RecordNumber { get; set; }
     
+    [Column("meeting_sub_id")] 
+    public Guid? MeetingSubId { get; set; }
+
     [Column("meeting_id", TypeName = "char(36)")]
     public Guid MeetingId { get; set; }
     
