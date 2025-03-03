@@ -612,7 +612,13 @@ public partial class MeetingService
         
              var duration = await _ffmpegService.GetAudioDurationAsync(localhostUrl, cancellationToken).ConfigureAwait(false);
 
-             meetingRecord.EndedAt = DateTimeOffset.FromUnixTimeSeconds(meetingRecord.StartedAt?.ToUnixTimeSeconds() ?? 0 + (long)TimeSpan.Parse(duration).TotalSeconds);
+             var seconds = (long)TimeSpan.Parse(duration).TotalSeconds;
+             
+             var startedAt = meetingRecord.StartedAt?.ToUnixTimeSeconds();
+             
+             Log.Information("Meeting record audio duration: {duration}, seconds {seconds}, startAt: {startedAt}, endedAt {@endedAt}", duration, seconds, startedAt, DateTimeOffset.FromUnixTimeSeconds(startedAt ?? 0 + seconds));
+
+             meetingRecord.EndedAt = DateTimeOffset.FromUnixTimeSeconds(startedAt ?? 0 + seconds);
          }
          
          Log.Information("Complete storage meeting record url");
