@@ -493,11 +493,14 @@ public partial class MeetingService
         Log.Information("meeting: {@meeting}; meetingRecordId: {meetingRecordId}; egressId: {egressId}; id: {id}", meeting, meetingRecordId, egressId, id);
         
         MeetingUserSession userSession = null;
-        
-        if (meeting.AppointmentType == MeetingAppointmentType.Appointment)
-                userSession = (await _meetingDataProvider.GetMeetingUserSessionsAsync(
-                    new List<int> { id }, meeting.Id, cancellationToken: cancellationToken).ConfigureAwait(false)).FirstOrDefault();
 
+        if (meeting.AppointmentType == MeetingAppointmentType.Appointment)
+        {
+            Log.Information("Get user session");
+            
+            userSession = (await _meetingDataProvider.GetMeetingUserSessionsAsync(
+                new List<int> { id }, meeting.Id, cancellationToken: cancellationToken).ConfigureAwait(false)).FirstOrDefault();
+        }
         Log.Information("Add meeting record user session: {userSession}", userSession);
         
         await _meetingDataProvider.PersistMeetingRecordAsync(meeting.Id, meetingRecordId, egressId, userSession?.MeetingSubId, cancellationToken).ConfigureAwait(false);
