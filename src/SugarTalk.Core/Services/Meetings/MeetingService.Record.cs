@@ -496,6 +496,8 @@ public partial class MeetingService
                 userSession = (await _meetingDataProvider.GetMeetingUserSessionsAsync(
                     new List<int> { _currentUser.Id.Value }, meeting.Id, cancellationToken: cancellationToken).ConfigureAwait(false)).FirstOrDefault();
 
+        Log.Information("Add meeting record user session: {userSession}", userSession);
+        
         await _meetingDataProvider.PersistMeetingRecordAsync(meeting.Id, meetingRecordId, egressId, userSession?.MeetingSubId, cancellationToken).ConfigureAwait(false);
         
         meeting.IsActiveRecord = true;
@@ -617,6 +619,8 @@ public partial class MeetingService
              localhostUrl = await DownloadWithRetryAsync(presignedUrl, cancellationToken: cancellationToken).ConfigureAwait(false);
         
              var duration = await _ffmpegService.GetAudioDurationAsync(localhostUrl, cancellationToken).ConfigureAwait(false);
+             
+             Log.Information("Meeting record audio duration: {duration}", duration);
 
              meetingRecord.EndedAt = DateTimeOffset.FromUnixTimeSeconds(meetingRecord.StartedAt?.ToUnixTimeSeconds() ?? 0 + (long)TimeSpan.Parse(duration).TotalSeconds);
          }
