@@ -99,6 +99,8 @@ namespace SugarTalk.Core.Services.Meetings
         Task HandleMeetingStatusWhenOutMeetingAsync(int userId, Guid meetingId, Guid? meetingSubId = null, CancellationToken cancellationToken = default);
         
         Task<MeetingSwitchEaResponse> UpdateMeetingChatResponseAsync(MeetingSwitchEaCommand command, CancellationToken cancellationToken);
+
+        Task MeetingUserSpeakRecordAsync(MeetingUserSpeakRecordCommand command, CancellationToken cancellationToken);
     }
     
     public partial class MeetingService : IMeetingService
@@ -950,6 +952,11 @@ namespace SugarTalk.Core.Services.Meetings
                     .Max() + 1 : 1;
 
             userSession.GuestName = $"Anonymity{index}";
+        }
+        
+        public async Task MeetingUserSpeakRecordAsync(MeetingUserSpeakRecordCommand command, CancellationToken cancellationToken)
+        {
+           Log.Information("MeetingUserSpeakRecordAsync: {MeetingNumber}, {@Start}", command.MeetingNumber, command.Record);
         }
     }
 }

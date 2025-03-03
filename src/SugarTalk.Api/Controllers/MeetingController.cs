@@ -364,6 +364,15 @@ public class MeetingController : ControllerBase
         
         return Ok(response);
     }
+    
+    [Route("speak/record"), HttpPost]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    public async Task<IActionResult> MeetingUserSpeakRecordAsync([FromBody] MeetingUserSpeakRecordCommand command)
+    {
+        await _mediator.SendAsync(command).ConfigureAwait(false);
+        
+        return Ok();
+    }
 
     #endregion
 }
