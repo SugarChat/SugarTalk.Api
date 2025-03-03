@@ -459,7 +459,7 @@ public partial class MeetingService
             
             record.Url = command.Url;
             record.UrlStatus = MeetingRecordUrlStatus.Completed;
-            record.EndedAt = DateTimeOffset.FromUnixTimeSeconds(record.StartedAt?.ToUnixTimeSeconds() ?? 0 + (long)TimeSpan.Parse(duration).TotalSeconds);
+            record.EndedAt = DateTimeOffset.FromUnixTimeSeconds((record.StartedAt?.ToUnixTimeSeconds() ?? 0) + (long)TimeSpan.Parse(duration).TotalSeconds);
         }
         
         Log.Information($"Add url for record: record: {record}", record);
@@ -618,7 +618,7 @@ public partial class MeetingService
              
              Log.Information("Meeting record audio duration: {duration}, seconds {seconds}, startAt: {startedAt}, endedAt {@endedAt}", duration, seconds, startedAt, DateTimeOffset.FromUnixTimeSeconds(startedAt ?? 0 + seconds));
 
-             meetingRecord.EndedAt = DateTimeOffset.FromUnixTimeSeconds(startedAt ?? 0 + seconds);
+             meetingRecord.EndedAt = DateTimeOffset.FromUnixTimeSeconds((meetingRecord.StartedAt?.ToUnixTimeSeconds() ?? 0) + seconds);
          }
          
          Log.Information("Complete storage meeting record url");
