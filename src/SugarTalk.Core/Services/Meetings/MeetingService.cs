@@ -106,6 +106,8 @@ namespace SugarTalk.Core.Services.Meetings
         Task<GetAppointmentMeetingDetailResponse> GetAppointmentMeetingsDetailAsync(GetAppointmentMeetingDetailRequest request, CancellationToken cancellationToken);
 
         Task<GetStaffsTreeResponse> GetStaffsTreeAsync(GetStaffsTreeRequest request, CancellationToken cancellationToken);
+
+        Task MeetingUserSpeakRecordAsync(MeetingUserSpeakRecordCommand command, CancellationToken cancellationToken);
     }
     
     public partial class MeetingService : IMeetingService
@@ -1153,6 +1155,11 @@ namespace SugarTalk.Core.Services.Meetings
                     .Max() + 1 : 1;
 
             userSession.GuestName = $"Anonymity{index}";
+        }
+        
+        public async Task MeetingUserSpeakRecordAsync(MeetingUserSpeakRecordCommand command, CancellationToken cancellationToken)
+        {
+           Log.Information("MeetingUserSpeakRecordAsync: {MeetingNumber}, {@Start}", command.MeetingNumber, command.Record);
         }
     }
 }
