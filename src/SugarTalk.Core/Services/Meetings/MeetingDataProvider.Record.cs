@@ -24,7 +24,7 @@ public partial interface IMeetingDataProvider
     
     Task DeleteMeetingRecordAsync(List<Guid> meetingRecordIds, CancellationToken cancellationToken);
     
-    Task PersistMeetingRecordAsync(Guid meetingId, Guid meetingRecordId, string egressId, CancellationToken cancellationToken);
+    Task PersistMeetingRecordAsync(Guid meetingId, Guid meetingRecordId, string egressId, Guid? meetingSubId, CancellationToken cancellationToken);
     
     Task<GetMeetingRecordDetailsResponse> GetMeetingRecordDetailsAsync(Guid recordId, TranslationLanguage? language, CancellationToken cancellationToken);
     
@@ -75,20 +75,27 @@ public partial class MeetingDataProvider
             return (0, new List<MeetingRecordDto>());
         }
 
-        var query = _repository.QueryNoTracking<MeetingRecord>()
-            .Join(_repository.QueryNoTracking<Meeting>(), 
-                record => record.MeetingId, 
-                meeting => meeting.Id,
-                (Record, Meeting) => new { Record, Meeting })
-            .Join(_repository.QueryNoTracking<MeetingUserSession>(), 
-                rm => rm.Meeting.Id,
+        var query = _repository.QueryNoTracking<MeetingUserSession>()
+            .Where(x => x.UserId == currentUserId)
+            .Join(
+                _repository.QueryNoTracking<Meeting>(),
                 session => session.MeetingId,
-                (rm, session) => new { rm.Record, rm.Meeting, session })
-            .Join(_repository.QueryNoTracking<UserAccount>(), 
-                rms => rms.Meeting.MeetingMasterUserId,
-                user => user.Id,
-                (rms, User) => new { rms.Record, rms.Meeting, rms.session, User })
-            .Where(x => x.session.UserId == currentUserId && !x.Record.IsDeleted);
+                Meeting => Meeting.Id,
+                (session, Meeting) => new { session, Meeting }
+            )
+            .Join(
+                _repository.QueryNoTracking<UserAccount>(),
+                temp => temp.Meeting.CreatedBy,
+                User => User.Id,
+                (temp, User) => new { temp.session, temp.Meeting, User }
+            )
+            .Join(
+                _repository.QueryNoTracking<MeetingRecord>(),
+                temp => new { temp.session.MeetingId, temp.session.MeetingSubId },
+                Record => new { Record.MeetingId, Record.MeetingSubId },
+                (temp, Record) => new { temp.Meeting, temp.session, temp.User, Record }
+            )
+            .Where(x => !x.Record.IsDeleted);
 
         query = string.IsNullOrEmpty(request.Keyword) ? query : query.Where(x =>
                 x.Meeting.Title.Contains(request.Keyword) ||
@@ -140,7 +147,7 @@ public partial class MeetingDataProvider
         await _unitOfWork.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
     }
 
-    public async Task PersistMeetingRecordAsync(Guid meetingId, Guid meetingRecordId, string egressId, CancellationToken cancellationToken)
+    public async Task PersistMeetingRecordAsync(Guid meetingId, Guid meetingRecordId, string egressId, Guid? meetingSubId, CancellationToken cancellationToken)
     {
         var meetingRecordTotal = await _repository.Query<MeetingRecord>()
             .CountAsync(x => x.MeetingId == meetingId, cancellationToken).ConfigureAwait(false);
@@ -150,6 +157,7 @@ public partial class MeetingDataProvider
             Id = meetingRecordId,
             MeetingId = meetingId,
             EgressId = egressId,
+            MeetingSubId = meetingSubId,
             StartedAt = DateTimeOffset.Now,
             RecordNumber = GenerateRecordNumber(++meetingRecordTotal)
         }, cancellationToken).ConfigureAwait(false);
