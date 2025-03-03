@@ -487,7 +487,7 @@ public partial class MeetingService
         
         if (meeting.AppointmentType == MeetingAppointmentType.Appointment)
                 userSession = (await _meetingDataProvider.GetMeetingUserSessionsAsync(
-                    new List<int> { id }, meeting.Id, cancellationToken: cancellationToken).ConfigureAwait(false)).FirstOrDefault();
+                    meetingId: meeting.Id, userIds: new List<int> { id },  cancellationToken: cancellationToken).ConfigureAwait(false)).FirstOrDefault();
 
         await _meetingDataProvider.PersistMeetingRecordAsync(meeting.Id, meetingRecordId, egressId, userSession?.MeetingSubId, cancellationToken).ConfigureAwait(false);
         
