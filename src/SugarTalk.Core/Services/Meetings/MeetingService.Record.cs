@@ -497,9 +497,9 @@ public partial class MeetingService
         if (meeting.AppointmentType == MeetingAppointmentType.Appointment)
                 userSession = (await _meetingDataProvider.GetMeetingUserSessionsAsync(
                     meetingId: meeting.Id, userIds: new List<int> { id },  cancellationToken: cancellationToken).ConfigureAwait(false)).FirstOrDefault();
-        
-        Log.Information("Add meeting record user session: {userSession}", userSession);
-        
+
+        Log.Information("Add meeting record user session: {@userSession}", userSession);
+
         await _meetingDataProvider.PersistMeetingRecordAsync(meeting.Id, meetingRecordId, egressId, userSession?.MeetingSubId, cancellationToken).ConfigureAwait(false);
         
         meeting.IsActiveRecord = true;
