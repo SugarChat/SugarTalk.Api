@@ -122,7 +122,7 @@ public partial class MeetingService
 
         if (postResponse is null) throw new Exception("Start Meeting Recording Failed.");
         
-        await AddMeetingRecordAsync(meeting, meetingRecordId, postResponse.EgressId, cancellationToken).ConfigureAwait(false);
+        await AddMeetingRecordAsync(meeting, meetingRecordId, postResponse.EgressId, _currentUser.Id.Value, cancellationToken).ConfigureAwait(false);
       
         _sugarTalkBackgroundJobClient.Schedule<IMediator>(m => m.SendAsync(new MeetingRecordRestartCommand
         {
@@ -479,9 +479,19 @@ public partial class MeetingService
         };
     }
 
-    private async Task AddMeetingRecordAsync(Meeting meeting, Guid meetingRecordId, string egressId, CancellationToken cancellationToken)
+    private async Task AddMeetingRecordAsync(Meeting meeting, Guid meetingRecordId, string egressId, int id, CancellationToken cancellationToken)
     {
-        await _meetingDataProvider.PersistMeetingRecordAsync(meeting.Id, meetingRecordId, egressId, cancellationToken).ConfigureAwait(false);
+        Log.Information("meeting: {@meeting}; meetingRecordId: {meetingRecordId}; egressId: {egressId}; id: {id}", meeting, meetingRecordId, egressId, id);
+        
+        MeetingUserSession userSession = null;
+        
+        if (meeting.AppointmentType == MeetingAppointmentType.Appointment)
+                userSession = (await _meetingDataProvider.GetMeetingUserSessionsAsync(
+                    meetingId: meeting.Id, userIds: new List<int> { id }, onlineType: MeetingUserSessionOnlineType.Online,  cancellationToken: cancellationToken).ConfigureAwait(false)).FirstOrDefault();
+
+        Log.Information("Add meeting record user session: {@userSession}", userSession);
+
+        await _meetingDataProvider.PersistMeetingRecordAsync(meeting.Id, meetingRecordId, egressId, userSession?.MeetingSubId, cancellationToken).ConfigureAwait(false);
         
         meeting.IsActiveRecord = true;
 

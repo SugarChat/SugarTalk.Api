@@ -27,7 +27,8 @@ public partial interface IMeetingDataProvider
     
     Task<bool> IsOtherSharingAsync(MeetingUserSession userSession, CancellationToken cancellationToken);
     
-    Task<List<MeetingUserSession>> GetMeetingUserSessionsAsync(List<int> ids = null,  Guid? meetingId = null, bool? coHost = null, CancellationToken cancellationToken = default);
+    Task<List<MeetingUserSession>> GetMeetingUserSessionsAsync(List<int> ids = null,  Guid? meetingId = null, List<int> userIds = null,
+        bool? coHost = null, MeetingUserSessionOnlineType? onlineType = null, CancellationToken cancellationToken = default);
     
     Task<MeetingUserSessionDto> GetMeetingUserSessionByUserIdAsync(int userId, CancellationToken cancellationToken);
     
@@ -103,18 +104,25 @@ public partial class MeetingDataProvider
             .AnyAsync(x => x.IsSharingScreen, cancellationToken).ConfigureAwait(false);
     }
 
-    public async Task<List<MeetingUserSession>> GetMeetingUserSessionsAsync(List<int> ids = null, Guid? meetingId = null, bool? coHost = null, CancellationToken cancellationToken = default)
+    public async Task<List<MeetingUserSession>> GetMeetingUserSessionsAsync(List<int> ids = null, Guid? meetingId = null, List<int> userIds = null,
+        bool? coHost = null, MeetingUserSessionOnlineType? onlineType = null, CancellationToken cancellationToken = default)
     {
         var query = _repository.Query<MeetingUserSession>();
 
         if (ids is { Count: > 0 })
             query = query.Where(x => ids.Contains(x.Id));
 
+        if (userIds is { Count: > 0 })
+            query = query.Where(x => userIds.Contains(x.UserId));
+
         if (meetingId.HasValue)
             query = query.Where(x => x.MeetingId == meetingId.Value);
 
         if (coHost.HasValue)
             query = query.Where(x => x.CoHost == coHost.Value);
+
+        if (onlineType.HasValue)
+            query = query.Where(x => x.OnlineType == onlineType.Value);
         
         return await query.ToListAsync(cancellationToken).ConfigureAwait(false);
     }
