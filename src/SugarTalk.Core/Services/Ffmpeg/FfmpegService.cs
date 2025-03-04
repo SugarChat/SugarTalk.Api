@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Serilog;
@@ -19,6 +20,8 @@ public interface IFfmpegService : IScopedDependency
     Task<byte[]> ConvertFileFormatAsync(byte[] file, TranscriptionFileType fileType, CancellationToken cancellationToken);
 
     Task<byte[]> VideoToAudioConverterAsync(string url, CancellationToken cancellationToken);
+
+    Task<string> GetAudioDurationAsync(string filePath, CancellationToken cancellationToken);
 }
 
 public class FfmpegService : IFfmpegService
@@ -355,5 +358,50 @@ public class FfmpegService : IFfmpegService
             if (File.Exists(outputFileName))
                 File.Delete(outputFileName);
         }
+    }
+    
+    public async Task<string> GetAudioDurationAsync(string filePath, CancellationToken cancellationToken)
+    {
+        if (!File.Exists(filePath))
+        {
+            Log.Error("File not found: {FilePath}", filePath);
+            return string.Empty;
+        }
+
+        try
+        {
+            var ffmpegCmd = $"-i \"{filePath}\"";
+
+            var processInfo = new ProcessStartInfo
+            {
+                FileName = "ffmpeg",
+                Arguments = ffmpegCmd,
+                RedirectStandardError = true,
+                UseShellExecute = false,
+                CreateNoWindow = true
+            };
+
+            using var process = Process.Start(processInfo);
+
+            if (process is null)
+            {
+                Log.Error("Failed to start ffmpeg process.");
+                return string.Empty;
+            }
+
+            var output = await process.StandardError.ReadToEndAsync();
+            await process.WaitForExitAsync(cancellationToken).ConfigureAwait(false);
+
+            var regex = new Regex(@"Duration:\s(\d{2}:\d{2}:\d{2}\.\d{2})");
+            var match = regex.Match(output);
+
+            return match.Success ? match.Groups[1].Value : string.Empty;
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Error occurred while retrieving audio duration");
+        }
+
+        return string.Empty;
     }
 }

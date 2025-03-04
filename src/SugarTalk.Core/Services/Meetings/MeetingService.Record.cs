@@ -223,7 +223,7 @@ public partial class MeetingService
     {
         var meeting = await _meetingDataProvider.GetMeetingByIdAsync(command.MeetingId, cancellationToken).ConfigureAwait(false);
 
-        var user = await _accountDataProvider.GetUserAccountAsync(_currentUser.Id.Value, cancellationToken: cancellationToken).ConfigureAwait(false);
+        var user = await _accountDataProvider.GetUserAccountAsync(_currentUser.Id, cancellationToken: cancellationToken).ConfigureAwait(false);
         
         var record = (await _meetingDataProvider.GetMeetingRecordsAsync(
             command.MeetingRecordId, cancellationToken: cancellationToken).ConfigureAwait(false)).MaxBy(x => x.CreatedDate);
@@ -411,7 +411,7 @@ public partial class MeetingService
                     return x;
                 }).FirstOrDefault(), cancellationToken).ConfigureAwait(false);
             }
-            catch (Exception e)
+            catch (Exception)
             {
                 await _meetingDataProvider.UpdateMeetingDetailTranslationRecordAsync(meetingSpeeches.Where(x => x.MeetingSpeakDetailId == speak.Id).Select(x =>
                 {
@@ -447,10 +447,15 @@ public partial class MeetingService
         
         record.UrlStatus = MeetingRecordUrlStatus.Failed;
 
+        var localhostUrl = "";
+        
         if ( !command.Url.IsNullOrEmpty() )
         {
+            localhostUrl = await RecordLocalhostAsync(command.Url, cancellationToken: cancellationToken).ConfigureAwait(false);
+            
             record.Url = command.Url;
             record.UrlStatus = MeetingRecordUrlStatus.Completed;
+            record.EndedAt = await ProcessMeetingRecordEndedAt(record.StartedAt, localhostUrl, cancellationToken).ConfigureAwait(false);
         }
         
         Log.Information($"Add url for record: record: {record}", record);
@@ -464,7 +469,7 @@ public partial class MeetingService
              
             await MarkSpeakTranscriptAsSpecifiedStatusAsync(meetingDetails, FileTranscriptionStatus.InProcess, cancellationToken).ConfigureAwait(false);
             
-            await CreateSpeechMaticsJobAsync(record, meetingDetails, cancellationToken).ConfigureAwait(false);
+            await CreateSpeechMaticsJobAsync(record, meetingDetails, localhostUrl, cancellationToken).ConfigureAwait(false);
         }
     }
 
@@ -580,7 +585,9 @@ public partial class MeetingService
         
         var meetingDetails = await _meetingDataProvider.GetMeetingSpeakDetailsAsync(meetingNumber: command.MeetingNumber, recordId: command.RecordId, cancellationToken: cancellationToken).ConfigureAwait(false);
         
-        await CreateSpeechMaticsJobAsync(record, meetingDetails, cancellationToken).ConfigureAwait(false);
+        var localhostUrl = await RecordLocalhostAsync(record?.Url, cancellationToken: cancellationToken).ConfigureAwait(false);
+        
+        await CreateSpeechMaticsJobAsync(record, meetingDetails, localhostUrl, cancellationToken).ConfigureAwait(false);
     }
 
     private async Task UpdateMeetingRecordAsync(MeetingRecord meetingRecord, EgressItemDto egressItem, CancellationToken cancellationToken)
@@ -588,7 +595,16 @@ public partial class MeetingService
          meetingRecord.Url = egressItem.File.Filename;
          meetingRecord.RecordType = MeetingRecordType.EndRecord;
          meetingRecord.UrlStatus = egressItem.File.Filename == null ? MeetingRecordUrlStatus.InProgress : MeetingRecordUrlStatus.Completed;
-
+        
+         var localhostUrl = "";
+         
+         if (!string.IsNullOrEmpty(egressItem.File.Filename))
+         {
+             localhostUrl = await RecordLocalhostAsync(meetingRecord.Url, cancellationToken).ConfigureAwait(false);
+             
+             meetingRecord.EndedAt = await ProcessMeetingRecordEndedAt(meetingRecord.StartedAt, localhostUrl, cancellationToken).ConfigureAwait(false);
+         }
+         
          Log.Information("Complete storage meeting record url");
 
          await _meetingDataProvider.UpdateMeetingRecordAsync(meetingRecord, cancellationToken).ConfigureAwait(false);
@@ -599,18 +615,32 @@ public partial class MeetingService
              
              await MarkSpeakTranscriptAsSpecifiedStatusAsync(meetingDetails, FileTranscriptionStatus.InProcess, cancellationToken).ConfigureAwait(false);
              
-             await CreateSpeechMaticsJobAsync(meetingRecord, meetingDetails, cancellationToken).ConfigureAwait(false);
+             await CreateSpeechMaticsJobAsync(meetingRecord, meetingDetails, localhostUrl, cancellationToken).ConfigureAwait(false);
          }
      }
 
-     private async Task CreateSpeechMaticsJobAsync(MeetingRecord meetingRecord, List<MeetingSpeakDetail> meetingDetails, CancellationToken cancellationToken)
+    private async Task<string> RecordLocalhostAsync(string url, CancellationToken cancellationToken)
+    {
+        Log.Information("Record localhost url: {@url}", url);
+        
+        var presignedUrl = await _awsS3Service.GeneratePresignedUrlAsync(url, 60).ConfigureAwait(false);
+        
+        return await DownloadWithRetryAsync(presignedUrl, cancellationToken: cancellationToken).ConfigureAwait(false);
+    }
+
+    private async Task<DateTimeOffset?> ProcessMeetingRecordEndedAt(DateTimeOffset? startedAt, string localhostUrl, CancellationToken cancellationToken)
+    {
+        Log.Information("Process meeting record ended time: {@startedAt} {@localhostUrl}", startedAt, localhostUrl);
+        
+        var duration = await _ffmpegService.GetAudioDurationAsync(localhostUrl, cancellationToken).ConfigureAwait(false);
+        
+        return DateTimeOffset.FromUnixTimeSeconds((startedAt?.ToUnixTimeSeconds() ?? 0) + (long)TimeSpan.Parse(duration).TotalSeconds);
+    }
+
+    private async Task CreateSpeechMaticsJobAsync(MeetingRecord meetingRecord, List<MeetingSpeakDetail> meetingDetails, string localhostUrl, CancellationToken cancellationToken)
      {
          Log.Information("Create speech matics job meeting record: {@meetingRecord} MeetingDetails:{@meetingDetails}", meetingRecord, meetingDetails);
          
-         var presignedUrl = await _awsS3Service.GeneratePresignedUrlAsync(meetingRecord.Url, 30).ConfigureAwait(false);
-        
-         var localhostUrl = await DownloadWithRetryAsync(presignedUrl, cancellationToken: cancellationToken).ConfigureAwait(false);
-        
          var audio = await _ffmpegService.VideoToAudioConverterAsync(localhostUrl, cancellationToken).ConfigureAwait(false);
          
          var speechMaticsJob = await _smartiesClient.CreateSpeechMaticsJobAsync(new CreateSpeechMaticsJobCommandDto
