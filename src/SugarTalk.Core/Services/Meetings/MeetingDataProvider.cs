@@ -398,7 +398,7 @@ namespace SugarTalk.Core.Services.Meetings
             {
                 query = from history in query
                     join meeting in _repository.QueryNoTracking<Meeting>() on history.MeetingId equals meeting.Id
-                    join user in _repository.QueryNoTracking<UserAccount>() on meeting.MeetingMasterUserId equals user.Id
+                    join user in _repository.QueryNoTracking<UserAccount>() on meeting.CreatedBy equals user.Id
                     where meeting.Title.Contains(keyword) || meeting.MeetingNumber.Contains(keyword) || user.UserName.Contains(keyword)
                     select history;
             }
@@ -436,7 +436,8 @@ namespace SugarTalk.Core.Services.Meetings
             
             var userAccounts = await _accountDataProvider.GetUserAccountsAsync(userIds, cancellationToken).ConfigureAwait(false);
             
-            var attendeesByMeetingId = userSessions.GroupBy(x => x.MeetingId)
+            var attendeesByMeeting = userSessions
+                .GroupBy(x => (x.MeetingId, x.MeetingSubId))
                 .ToDictionary(group => group.Key, group =>
                 {
                     var attendees = group
@@ -447,7 +448,7 @@ namespace SugarTalk.Core.Services.Meetings
             foreach (var meetingHistory in meetingHistoryList)
             {
                 meetingList.TryGetValue(meetingHistory.MeetingId, out var meeting);
-                attendeesByMeetingId.TryGetValue(meetingHistory.MeetingId, out var attendees);
+                attendeesByMeeting.TryGetValue((meetingHistory.MeetingId, meetingHistory.MeetingSubId), out var attendees);
                 
                 meetingHistory.MeetingNumber = meeting?.MeetingNumber;
                 meetingHistory.Title = meeting?.Title;
