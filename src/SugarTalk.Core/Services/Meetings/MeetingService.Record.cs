@@ -487,7 +487,7 @@ public partial class MeetingService
         
         if (meeting.AppointmentType == MeetingAppointmentType.Appointment)
                 userSession = (await _meetingDataProvider.GetMeetingUserSessionsAsync(
-                    meetingId: meeting.Id, userIds: new List<int> { id },  cancellationToken: cancellationToken).ConfigureAwait(false)).FirstOrDefault();
+                    meetingId: meeting.Id, userIds: new List<int> { id }, onlineType: MeetingUserSessionOnlineType.Online,  cancellationToken: cancellationToken).ConfigureAwait(false)).FirstOrDefault();
 
         Log.Information("Add meeting record user session: {@userSession}", userSession);
 
