@@ -451,15 +451,11 @@ public partial class MeetingService
         
         if ( !command.Url.IsNullOrEmpty() )
         {
-            var presignedUrl = await _awsS3Service.GeneratePresignedUrlAsync(command.Url, 60).ConfigureAwait(false);
-        
-            localhostUrl = await DownloadWithRetryAsync(presignedUrl, cancellationToken: cancellationToken).ConfigureAwait(false);
-        
-            var duration = await _ffmpegService.GetAudioDurationAsync(localhostUrl, cancellationToken).ConfigureAwait(false);
+            localhostUrl = await RecordLocalhostAsync(command.Url, cancellationToken: cancellationToken).ConfigureAwait(false);
             
             record.Url = command.Url;
             record.UrlStatus = MeetingRecordUrlStatus.Completed;
-            record.EndedAt = DateTimeOffset.FromUnixTimeSeconds((record.StartedAt?.ToUnixTimeSeconds() ?? 0) + (long)TimeSpan.Parse(duration).TotalSeconds);
+            record.EndedAt = await ProcessMeetingRecordEndedAt(record.StartedAt, localhostUrl, cancellationToken).ConfigureAwait(false);
         }
         
         Log.Information($"Add url for record: record: {record}", record);
@@ -599,9 +595,7 @@ public partial class MeetingService
         
         var meetingDetails = await _meetingDataProvider.GetMeetingSpeakDetailsAsync(meetingNumber: command.MeetingNumber, recordId: command.RecordId, cancellationToken: cancellationToken).ConfigureAwait(false);
         
-        var presignedUrl = await _awsS3Service.GeneratePresignedUrlAsync(record?.Url, 60).ConfigureAwait(false);
-        
-        var localhostUrl = await DownloadWithRetryAsync(presignedUrl, cancellationToken: cancellationToken).ConfigureAwait(false);
+        var localhostUrl = await RecordLocalhostAsync(record?.Url, cancellationToken: cancellationToken).ConfigureAwait(false);
         
         await CreateSpeechMaticsJobAsync(record, meetingDetails, localhostUrl, cancellationToken).ConfigureAwait(false);
     }
@@ -616,21 +610,9 @@ public partial class MeetingService
          
          if (!string.IsNullOrEmpty(egressItem.File.Filename))
          {
-             var presignedUrl = await _awsS3Service.GeneratePresignedUrlAsync(meetingRecord.Url, 60).ConfigureAwait(false);
-        
-             localhostUrl = await DownloadWithRetryAsync(presignedUrl, cancellationToken: cancellationToken).ConfigureAwait(false);
-        
-             var duration = await _ffmpegService.GetAudioDurationAsync(localhostUrl, cancellationToken).ConfigureAwait(false);
+             localhostUrl = await RecordLocalhostAsync(meetingRecord.Url, cancellationToken).ConfigureAwait(false);
              
-             Log.Information("Meeting record audio duration: {duration}", duration);
-
-             var seconds = (long)TimeSpan.Parse(duration).TotalSeconds;
-             
-             var startedAt = meetingRecord.StartedAt?.ToUnixTimeSeconds();
-             
-             Log.Information("Meeting record audio duration: {duration}, seconds {seconds}, startAt: {startedAt}, endedAt {@endedAt}", duration, seconds, startedAt, DateTimeOffset.FromUnixTimeSeconds(startedAt ?? 0 + seconds));
-
-             meetingRecord.EndedAt = DateTimeOffset.FromUnixTimeSeconds((meetingRecord.StartedAt?.ToUnixTimeSeconds() ?? 0) + seconds);
+             meetingRecord.EndedAt = await ProcessMeetingRecordEndedAt(meetingRecord.StartedAt, localhostUrl, cancellationToken).ConfigureAwait(false);
          }
          
          Log.Information("Complete storage meeting record url");
@@ -647,7 +629,25 @@ public partial class MeetingService
          }
      }
 
-     private async Task CreateSpeechMaticsJobAsync(MeetingRecord meetingRecord, List<MeetingSpeakDetail> meetingDetails, string localhostUrl, CancellationToken cancellationToken)
+    private async Task<string> RecordLocalhostAsync(string url, CancellationToken cancellationToken)
+    {
+        Log.Information("Record localhost url: {@url}", url);
+        
+        var presignedUrl = await _awsS3Service.GeneratePresignedUrlAsync(url, 60).ConfigureAwait(false);
+        
+        return await DownloadWithRetryAsync(presignedUrl, cancellationToken: cancellationToken).ConfigureAwait(false);
+    }
+
+    private async Task<DateTimeOffset?> ProcessMeetingRecordEndedAt(DateTimeOffset? startedAt, string localhostUrl, CancellationToken cancellationToken)
+    {
+        Log.Information("Process meeting record ended time: {@startedAt} {@localhostUrl}", startedAt, localhostUrl);
+        
+        var duration = await _ffmpegService.GetAudioDurationAsync(localhostUrl, cancellationToken).ConfigureAwait(false);
+        
+        return DateTimeOffset.FromUnixTimeSeconds((startedAt?.ToUnixTimeSeconds() ?? 0) + (long)TimeSpan.Parse(duration).TotalSeconds);
+    }
+
+    private async Task CreateSpeechMaticsJobAsync(MeetingRecord meetingRecord, List<MeetingSpeakDetail> meetingDetails, string localhostUrl, CancellationToken cancellationToken)
      {
          Log.Information("Create speech matics job meeting record: {@meetingRecord} MeetingDetails:{@meetingDetails}", meetingRecord, meetingDetails);
          
