@@ -1,17 +1,19 @@
-using System.Net;
-using System.Threading;
-using System.Threading.Tasks;
-using AutoMapper;
-using Microsoft.AspNetCore.Http;
+using System;
 using Serilog;
-using SugarTalk.Core.Domain.Account.Exceptions;
+using System.Net;
+using AutoMapper;
+using System.Threading;
 using SugarTalk.Core.Ioc;
-using SugarTalk.Core.Services.Identity;
-using SugarTalk.Messages.Commands.Account;
+using System.Threading.Tasks;
+using Microsoft.AspNetCore.Http;
 using SugarTalk.Messages.Dto.Users;
+using SugarTalk.Core.Services.Caching;
+using SugarTalk.Core.Services.Identity;
 using SugarTalk.Messages.Enums.Account;
 using SugarTalk.Messages.Events.Account;
 using SugarTalk.Messages.Requests.Account;
+using SugarTalk.Messages.Commands.Account;
+using SugarTalk.Core.Domain.Account.Exceptions;
 
 namespace SugarTalk.Core.Services.Account
 {
@@ -33,17 +35,18 @@ namespace SugarTalk.Core.Services.Account
         private readonly IMapper _mapper;
         private readonly ITokenProvider _tokenProvider;
         private readonly IIdentityService _identityService;
+        private readonly IRedisSafeRunner _redisSafeRunner;
         private readonly IHttpContextAccessor _httpContextAccessor;
-        
         private readonly IAccountDataProvider _accountDataProvider;
 
-        public AccountService(IMapper mapper, IIdentityService identityService, IHttpContextAccessor httpContextAccessor, IAccountDataProvider accountDataProvider, ITokenProvider tokenProvider)
+        public AccountService(IMapper mapper, IIdentityService identityService, IRedisSafeRunner redisSafeRunner, IHttpContextAccessor httpContextAccessor, IAccountDataProvider accountDataProvider, ITokenProvider tokenProvider)
         {
             _mapper = mapper;
             _tokenProvider = tokenProvider;
             _identityService = identityService;
             _accountDataProvider = accountDataProvider;
             _httpContextAccessor = httpContextAccessor;
+            _redisSafeRunner = redisSafeRunner;
         }
         
         public async Task<LoginResponse> LoginAsync(LoginRequest request, CancellationToken cancellationToken)
@@ -72,14 +75,17 @@ namespace SugarTalk.Core.Services.Account
 
         public async Task<UserAccountDto> GetOrCreateUserAccountFromThirdPartyAsync(string userId, string userName, UserAccountIssuer issuer, CancellationToken cancellationToken)
         {
-            var userAccount = await _accountDataProvider.GetUserAccountAsync(thirdPartyUserId: userId, includeRoles: true, cancellationToken: cancellationToken).ConfigureAwait(false);
+            return await _redisSafeRunner.ExecuteWithLockAsync($"{userName}-{userId}", async () =>
+            {
+                var userAccount = await _accountDataProvider.GetUserAccountAsync(thirdPartyUserId: userId, includeRoles: true, cancellationToken: cancellationToken).ConfigureAwait(false);
 
-            if (userAccount != null) return userAccount;
-
-            var account = await _accountDataProvider
-                .CreateUserAccountAsync(userName, "123abc", userId, issuer, cancellationToken).ConfigureAwait(false);
-
-            return _mapper.Map<UserAccountDto>(account);
+                if (userAccount != null) return userAccount;
+                
+                var account = await _accountDataProvider
+                    .CreateUserAccountAsync(userName, "123abc", userId, issuer, cancellationToken).ConfigureAwait(false);
+                
+                return _mapper.Map<UserAccountDto>(account);
+            }, wait: TimeSpan.FromSeconds(10), retry: TimeSpan.FromSeconds(1)).ConfigureAwait(false);
         }
 
         public async Task<UserAccountDto> GetOrCreateGuestUserAccountAsync(string userName, CancellationToken cancellationToken)
@@ -88,10 +94,11 @@ namespace SugarTalk.Core.Services.Account
                 username: userName, includeRoles: true, issuer: UserAccountIssuer.Guest, cancellationToken: cancellationToken).ConfigureAwait(false);
             
             if (userAccount != null) return userAccount;
-            
+
+          
             var account = await _accountDataProvider
                 .CreateUserAccountAsync(userName, string.Empty, authType: UserAccountIssuer.Guest, cancellationToken: cancellationToken).ConfigureAwait(false);
-
+             
             return _mapper.Map<UserAccountDto>(account);
         }
 
