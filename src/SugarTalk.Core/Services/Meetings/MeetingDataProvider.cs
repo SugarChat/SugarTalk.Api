@@ -9,6 +9,7 @@ using Newtonsoft.Json;
 using Serilog;
 using SugarTalk.Core.Data;
 using SugarTalk.Core.Domain.Account;
+using SugarTalk.Core.Domain.Foundation;
 using SugarTalk.Core.Domain.Meeting;
 using SugarTalk.Core.Extensions;
 using SugarTalk.Core.Ioc;
@@ -79,7 +80,7 @@ namespace SugarTalk.Core.Services.Meetings
         
         Task<List<MeetingSubMeeting>> GetMeetingSubMeetingsAsync(Guid meetingId, CancellationToken cancellationToken);
         
-        Task<(int Count, List<AppointmentMeetingDto> Records)> GetAppointmentMeetingsByUserIdAsync(GetAppointmentMeetingsRequest request, CancellationToken cancellationToken);
+        Task<(int Count, List<AppointmentMeetingDto> Records)> GetAppointmentMeetingsByUserIdAsync(GetAppointmentMeetingsRequest request, Guid? thirdPartyUserId, CancellationToken cancellationToken);
         
         Task MarkMeetingAsCompletedAsync(Meeting meeting, CancellationToken cancellationToken);
 
@@ -509,28 +510,33 @@ namespace SugarTalk.Core.Services.Meetings
                 .OrderBy(x => x.StartTime).ToListAsync(cancellationToken).ConfigureAwait(false);
         }
 
-        public async Task<(int Count, List<AppointmentMeetingDto> Records)> GetAppointmentMeetingsByUserIdAsync(GetAppointmentMeetingsRequest request, CancellationToken cancellationToken)
+        public async Task<(int Count, List<AppointmentMeetingDto> Records)> GetAppointmentMeetingsByUserIdAsync(GetAppointmentMeetingsRequest request, Guid? thirdPartyUserId, CancellationToken cancellationToken)
         {
             var maxQueryDate = _clock.Now.AddMonths(1).ToUnixTimeSeconds();
             var startOfDay = new DateTimeOffset(_clock.Now.Year, _clock.Now.Month, _clock.Now.Day, 0, 0, 0, TimeSpan.Zero).ToUnixTimeSeconds();
             
             Log.Information("GetAppointmentMeetingsByUserIdAsync maxQueryDate:{@maxQueryDate},startOfDay:{@startofDay}", maxQueryDate, startOfDay);
 
+            var meetingIds = from staff in _repository.Query<RmStaff>()
+                where staff.UserId == thirdPartyUserId
+                join participant in _repository.Query<MeetingParticipant>() on staff.Id equals participant.StaffId
+                select participant.MeetingId;
+                    
             var query =
                 from meeting in _repository.Query<Meeting>()
-                where meeting.Status != MeetingStatus.Cancelled
+                where meeting.Status != MeetingStatus.Cancelled &&
+                      (meeting.MeetingMasterUserId == _currentUser.Id || meeting.CreatedBy == _currentUser.Id || meetingIds.Contains(meeting.Id)) &&
+                      meeting.AppointmentType == MeetingAppointmentType.Appointment
                 join rules in _repository.Query<MeetingRepeatRule>() on meeting.Id equals rules.MeetingId
                 join subMeetings in _repository.Query<MeetingSubMeeting>() on meeting.Id equals subMeetings.MeetingId
                     into subMeetingGroup
                 from subMeeting in subMeetingGroup.DefaultIfEmpty()
-                where (meeting.MeetingMasterUserId == _currentUser.Id || meeting.CreatedBy == _currentUser.Id) &&
-                      meeting.AppointmentType == MeetingAppointmentType.Appointment &&
-                      ((rules.RepeatType == MeetingRepeatType.None &&
+                where (rules.RepeatType == MeetingRepeatType.None &&
                         meeting.StartDate >= startOfDay &&
                         meeting.EndDate <= maxQueryDate) ||
                        (subMeeting != null &&
                         subMeeting.StartTime >= startOfDay &&
-                        subMeeting.EndTime <= maxQueryDate))
+                        subMeeting.EndTime <= maxQueryDate)
                 select new AppointmentMeetingDto
                 {
                     MeetingId = meeting.Id,
@@ -737,12 +743,12 @@ namespace SugarTalk.Core.Services.Meetings
             
             if (isUserAccount)
                 query = from participant in query
-                    join userAccount in _repository.Query<UserAccount>() on participant.ThirdPartyUserId.ToString() equals userAccount.ThirdPartyUserId
+                    join userAccount in _repository.Query<UserAccount>() on participant.StaffId.ToString() equals userAccount.ThirdPartyUserId
                     select new MeetingParticipant
                     {
                         Id = participant.Id,
                         MeetingId = participant.MeetingId,
-                        ThirdPartyUserId = participant.ThirdPartyUserId,
+                        StaffId = participant.StaffId,
                         IsDesignatedHost = participant.IsDesignatedHost,
                         UserId = userAccount.Id,
                         CreatedDate = participant.CreatedDate

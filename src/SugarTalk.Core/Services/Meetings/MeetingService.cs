@@ -208,7 +208,7 @@ namespace SugarTalk.Core.Services.Meetings
             meeting = _mapper.Map(command, meeting);
             meeting.Id = Guid.NewGuid();
             meeting.Status = MeetingStatus.Pending;
-            meeting.MeetingMasterUserId = _currentUser.Id.Value;
+            meeting.MeetingMasterUserId = _currentUser.Id ?? 0;
             meeting.MeetingStreamMode = MeetingStreamMode.LEGACY;
             meeting.SecurityCode = !string.IsNullOrEmpty(command.SecurityCode) ? command.SecurityCode.ToSha256() : null;
             meeting.Password = command.SecurityCode;
@@ -235,23 +235,8 @@ namespace SugarTalk.Core.Services.Meetings
                         RepeatType = command.RepeatType,
                         RepeatUntilDate = command.UtilDate
                     }, cancellationToken).ConfigureAwait(false);
-                    
-                    if (command.Participants is { Count: > 0 }) 
-                    {
-                        var meetingParticipants = new List<MeetingParticipant>();
-                        
-                        foreach (var participant in command.Participants)
-                        {
-                            meetingParticipants.Add(new MeetingParticipant
-                            {
-                                MeetingId = meeting.Id,
-                                ThirdPartyUserId = participant.ThirdPartyUserId,
-                                IsDesignatedHost = participant.IsDesignatedHost
-                            });
-                        }
-                    
-                        await _meetingDataProvider.AddMeetingParticipantAsync(meetingParticipants, cancellationToken: cancellationToken).ConfigureAwait(false);
-                    }
+
+                    await AddMeetingParticipantAsync(meeting.Id, command.Participants, cancellationToken).ConfigureAwait(false);
                     
                     break;
                 }
@@ -266,7 +251,34 @@ namespace SugarTalk.Core.Services.Meetings
             
             return new MeetingScheduledEvent { Meeting = meetingDto };
         }
-        
+
+        private async Task AddMeetingParticipantAsync(Guid meetingId, List<MeetingParticipantDto> participants, CancellationToken cancellationToken)
+        {
+            var userAccount = await _accountDataProvider.GetUserAccountAsync(_currentUser.Id, cancellationToken: cancellationToken).ConfigureAwait(false);
+                        
+            var currentUserStaffInfo = string.IsNullOrEmpty(userAccount.ThirdPartyUserId) ? null : (await _smartiesClient.GetStaffsRequestAsync(new GetStaffsRequestDto
+            {
+                UserIds = new List<Guid>{ Guid.Parse(userAccount.ThirdPartyUserId) } 
+            }, cancellationToken).ConfigureAwait(false)).Data.Staffs.FirstOrDefault();
+                        
+            Log.Information("Get current user staff info: {@currentUserStaffInfo}", currentUserStaffInfo);
+            
+            var meetingParticipants = new List<MeetingParticipant>
+            {
+                new ()
+                {
+                    MeetingId = meetingId,
+                    StaffId = currentUserStaffInfo?.Id ?? Guid.Empty,
+                    IsDesignatedHost = false
+                }
+            };
+                        
+            if(participants is { Count: > 0 })
+                meetingParticipants.AddRange(participants.Select(participant => new MeetingParticipant { MeetingId = meetingId, StaffId = participant.ThirdPartyUserId, IsDesignatedHost = participant.IsDesignatedHost }).ToList());
+
+            await _meetingDataProvider.AddMeetingParticipantAsync(meetingParticipants, cancellationToken: cancellationToken).ConfigureAwait(false);
+        }
+
         public async Task<GetMeetingHistoriesByUserResponse> GetMeetingHistoriesByUserAsync(
             GetMeetingHistoriesByUserRequest request, CancellationToken cancellationToken)
         {
@@ -328,7 +340,7 @@ namespace SugarTalk.Core.Services.Meetings
         {
             var meetingParticipants  = await _meetingDataProvider.GetMeetingParticipantAsync(meetingId, cancellationToken: cancellationToken).ConfigureAwait(false);
             
-            var participantDict = meetingParticipants.ToDictionary(x => x.ThirdPartyUserId);
+            var participantDict = meetingParticipants.ToDictionary(x => x.StaffId);
             
             Log.Information("Meeting participant dict: {@participantDict}", participantDict);
             
@@ -702,19 +714,7 @@ namespace SugarTalk.Core.Services.Meetings
 
                 await _meetingDataProvider.DeleteMeetingParticipantAsync(removeMeetingParticipants, cancellationToken: cancellationToken).ConfigureAwait(false);
                 
-                var meetingParticipants = new List<MeetingParticipant>();
-                        
-                foreach (var participant in command.Participants)
-                {
-                    meetingParticipants.Add(new MeetingParticipant
-                    {
-                        MeetingId = meeting.Id,
-                        ThirdPartyUserId = participant.ThirdPartyUserId,
-                        IsDesignatedHost = participant.IsDesignatedHost
-                    });
-                }
-                    
-                await _meetingDataProvider.AddMeetingParticipantAsync(meetingParticipants, cancellationToken: cancellationToken).ConfigureAwait(false);
+                await AddMeetingParticipantAsync(meeting.Id, command.Participants, cancellationToken).ConfigureAwait(false);
             }
             
             await _meetingDataProvider.UpdateMeetingAsync(updateMeeting, cancellationToken).ConfigureAwait(false);
@@ -996,7 +996,7 @@ namespace SugarTalk.Core.Services.Meetings
 
             if (user is null) throw new UnreachableException();
 
-            var (count, records) = await _meetingDataProvider.GetAppointmentMeetingsByUserIdAsync(request, cancellationToken).ConfigureAwait(false);
+            var (count, records) = await _meetingDataProvider.GetAppointmentMeetingsByUserIdAsync(request, Guid.Parse(user.ThirdPartyUserId), cancellationToken).ConfigureAwait(false);
         
             return new GetAppointmentMeetingsResponse
             {
@@ -1013,7 +1013,7 @@ namespace SugarTalk.Core.Services.Meetings
         {
             var meetingParticipants  = await _meetingDataProvider.GetMeetingParticipantAsync(request.MeetingId, cancellationToken: cancellationToken).ConfigureAwait(false);
             
-            var participantDict = meetingParticipants.ToDictionary(x => x.ThirdPartyUserId);
+            var participantDict = meetingParticipants.ToDictionary(x => x.StaffId);
             
             Log.Information("Meeting participant dict: {@participantDict}", participantDict);
             

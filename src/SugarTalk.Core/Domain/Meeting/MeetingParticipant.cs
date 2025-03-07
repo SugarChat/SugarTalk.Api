@@ -22,9 +22,9 @@ public class MeetingParticipant : IEntity
     [Column("is_designated_host")]
     public bool IsDesignatedHost { get; set; }
     
-    [Column("third_party_user_id")]
-    public Guid ThirdPartyUserId { get; set; }
-
+    [Column("staff_id")]
+    public Guid StaffId { get; set; }
+    
     [Column("created_date")]
     public DateTimeOffset CreatedDate { get; set; }
     
