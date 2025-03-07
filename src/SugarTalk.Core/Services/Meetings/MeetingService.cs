@@ -526,8 +526,11 @@ namespace SugarTalk.Core.Services.Meetings
                     }
                 }
 
-                newMasterSession ??= meetingUserSession.Where(x => x.CoHost).OrderBy(x => x.LastModifiedDateForCoHost).FirstOrDefault();
-
+                if (newMasterSession == null && meetingUserSession.Any(x => x.CoHost))
+                    newMasterSession = meetingUserSession.Where(x => x.CoHost).OrderBy(x => x.LastModifiedDateForCoHost).FirstOrDefault();
+                else
+                    newMasterSession = meetingUserSession.OrderBy(x => x.LastModifiedDateForCoHost).FirstOrDefault();
+                
                 if (newMasterSession == null) return new MeetingUserSession();
             }
                 
