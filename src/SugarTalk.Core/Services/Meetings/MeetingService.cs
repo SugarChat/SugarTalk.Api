@@ -331,12 +331,12 @@ namespace SugarTalk.Core.Services.Meetings
                     .Where(x => x.OnlineType == MeetingUserSessionOnlineType.Online).ToList();
             }
 
-            meeting.Participants = await GetAppointmentMeetingDetailForParticipantAsync(meeting.Id, cancellationToken).ConfigureAwait(false);
+            (meeting.Participants, meeting.ParticipantsCount) = await GetAppointmentMeetingDetailForParticipantAsync(meeting.Id, cancellationToken).ConfigureAwait(false);
             
             return new GetMeetingByNumberResponse { Data = meeting };
         }
 
-        private async Task<List<AppointmentMeetingDetailForParticipantDto>> GetAppointmentMeetingDetailForParticipantAsync(Guid meetingId, CancellationToken cancellationToken)
+        private async Task<(List<AppointmentMeetingDetailForParticipantDto>, int)> GetAppointmentMeetingDetailForParticipantAsync(Guid meetingId, CancellationToken cancellationToken)
         {
             var meetingParticipants  = await _meetingDataProvider.GetMeetingParticipantAsync(meetingId, cancellationToken: cancellationToken).ConfigureAwait(false);
             
@@ -366,7 +366,7 @@ namespace SugarTalk.Core.Services.Meetings
                 });
             }
             
-            return participants;
+            return (participants, participants.Count);
         }
 
         public async Task<MeetingJoinedEvent> JoinMeetingAsync(JoinMeetingCommand command, CancellationToken cancellationToken)
