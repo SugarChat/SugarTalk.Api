@@ -96,6 +96,8 @@ public class MeetingBaseDto
     public bool IsRecorded { get; set; } = false;
 
     public List<AppointmentMeetingDetailForParticipantDto> Participants { get; set; }
+
+    public int ParticipantsCount { get; set; }
     
     public bool? IsMetis { get; set; }
     
