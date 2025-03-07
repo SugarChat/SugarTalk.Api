@@ -7,7 +7,6 @@ using SugarTalk.Core.Ioc;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using SugarTalk.Core.Services.Aws;
-using SugarTalk.Core.Services.Http;
 using SugarTalk.Core.Domain.Meeting;
 using Microsoft.IdentityModel.Tokens;
 using SugarTalk.Core.Services.Ffmpeg;
@@ -34,7 +33,8 @@ public class SmartiesService : ISmartiesService
     private readonly IMeetingDataProvider _meetingDataProvider;
     private readonly ISmartiesDataProvider _smartiesDataProvider;
 
-    public SmartiesService(IAwsS3Service awsS3Service, IFfmpegService ffmpegService, IOpenAiService openAiService, IMeetingService meetingService, IMeetingDataProvider meetingDataProvider, ISmartiesDataProvider smartiesDataProvider, ISugarTalkHttpClientFactory sugarTalkHttpClientFactory)
+    public SmartiesService(IAwsS3Service awsS3Service, IFfmpegService ffmpegService, IOpenAiService openAiService, IMeetingService meetingService
+        ,IMeetingDataProvider meetingDataProvider, ISmartiesDataProvider smartiesDataProvider)
     {
         _awsS3Service = awsS3Service;
         _ffmpegService = ffmpegService;

@@ -2,6 +2,7 @@ using System.Threading;
 using SugarTalk.Core.Ioc;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using System.Linq;
 using SugarTalk.Messages.Dto.Smarties;
 using Smarties.Messages.Requests.Ask;
 using SugarTalk.Core.Settings.Smarties;
@@ -13,8 +14,14 @@ public interface ISmartiesClient : IScopedDependency
     Task<AskGptResponse> PerformQueryAsync(AskGptRequestDto request, CancellationToken cancellationToken);
     
     Task<GetEchoAvatarUserToneResponse> GetEchoAvatarVoiceSettingAsync(GetEchoAvatarVoiceSettingRequestDto request, CancellationToken cancellationToken);
+
+    Task<GetStaffDepartmentHierarchyTreeResponse> GetStaffDepartmentHierarchyTreeAsync(GetStaffDepartmentHierarchyTreeRequest request, CancellationToken cancellationToken);
+
+    Task<GetStaffsResponse> GetStaffsRequestAsync(GetStaffsRequestDto request, CancellationToken cancellationToken);
     
     Task<CreateSpeechMaticsJobResponseDto> CreateSpeechMaticsJobAsync(CreateSpeechMaticsJobCommandDto command, CancellationToken cancellationToken);
+    
+    Task<GetExternalStaffsResponse> GetExternalStaffsAsync(GetExternalStaffsRequestDto request, CancellationToken cancellationToken);
 }
 
 public class SmartiesClient : ISmartiesClient
@@ -45,6 +52,27 @@ public class SmartiesClient : ISmartiesClient
         return await _httpClientFactory.PostAsJsonAsync<AskGptResponse>(
             $"{_smartiesSettings.BaseUrl}/api/Ask/general/query", request, cancellationToken, headers: _headers).ConfigureAwait(false);
     }
+
+    public async Task<GetStaffDepartmentHierarchyTreeResponse> GetStaffDepartmentHierarchyTreeAsync(GetStaffDepartmentHierarchyTreeRequest request, CancellationToken cancellationToken)
+    {
+        return await _httpClientFactory.GetAsync<GetStaffDepartmentHierarchyTreeResponse>(
+            $"{_smartiesSettings.BaseUrl}/api/Foundation/department/staff/hierarchy/tree?StaffIdSource={request.StaffIdSource}&HierarchyDepth={request.HierarchyDepth}&HierarchyStaffRange={request.HierarchyStaffRange}", cancellationToken, headers: _headers).ConfigureAwait(false);
+    }
+
+    public async Task<GetStaffsResponse> GetStaffsRequestAsync(GetStaffsRequestDto request, CancellationToken cancellationToken)
+    {
+        var ids = "";
+        var userIds = "";
+
+        if (request.Ids is { Count: > 0 })
+            ids = request.Ids.Aggregate(ids, (current, id) => current + $"&Ids={id}");
+
+        if (request.UserIds is { Count: > 0 })
+            userIds = request.UserIds.Aggregate(userIds, (current, userId) => current + $"&UserIds={userId}");
+        
+        return await _httpClientFactory.GetAsync<GetStaffsResponse>(
+            $"{_smartiesSettings.BaseUrl}/api/Foundation/staffs?IsActive={request.IsActive}{ids}{userIds}", cancellationToken, headers: _headers).ConfigureAwait(false);
+	}
     
     public async Task<CreateSpeechMaticsJobResponseDto> CreateSpeechMaticsJobAsync(CreateSpeechMaticsJobCommandDto command, CancellationToken cancellationToken)
     {
@@ -61,5 +89,21 @@ public class SmartiesClient : ISmartiesClient
         
         return await _httpClientFactory.PostAsMultipartAsync<CreateSpeechMaticsJobResponseDto>(
             $"{_smartiesSettings.BaseUrl}/api/SpeechMatics/create/job", parameters, files, cancellationToken, headers: _headers).ConfigureAwait(false);
+    }
+
+    public async Task<GetExternalStaffsResponse> GetExternalStaffsAsync(GetExternalStaffsRequestDto request, CancellationToken cancellationToken)
+    {
+        var userIds = "";
+
+        if (request.Ids is { Count: > 0 })
+        {
+            foreach (var userId in request.Ids)
+            {
+                userIds += $"&Ids={userId}";    
+            }
+        }
+        
+        return await _httpClientFactory.GetAsync<GetExternalStaffsResponse>(
+            $"{_smartiesSettings.BaseUrl}/api/Foundation/external/staffs?SystemType={request.SystemType}{userIds}", cancellationToken, headers: _headers).ConfigureAwait(false);
     }
 }
