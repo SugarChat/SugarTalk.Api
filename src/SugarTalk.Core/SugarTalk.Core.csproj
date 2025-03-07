@@ -120,4 +120,8 @@
         <EmbeddedResource Include="DbUp\Scripts_2025\Script0004_modify_meeting_participant.sql" />
     </ItemGroup>
     
+    <ItemGroup>
+        <Folder Include="Jobs\RecurringJobs" />
+    </ItemGroup>
+    
 </Project>
