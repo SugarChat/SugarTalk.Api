@@ -135,7 +135,7 @@ public partial class MeetingService
             var participants = await task;
             return await _smartiesClient.GetExternalStaffsAsync(new GetExternalStaffsRequestDto
             {
-                Ids = participants.Select(r => r.ThirdPartyUserId).ToList()
+                Ids = participants.Select(r => r.StaffId).ToList()
             }, cancellationToken);
         }, cancellationToken, TaskContinuationOptions.OnlyOnRanToCompletion, TaskScheduler.Default).Unwrap();
 
