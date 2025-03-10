@@ -17,6 +17,8 @@ public class AppointmentMeetingDto
     
     public long EndDate { get; set; }
 
+    public string TimeZone { get; set; }
+
     public MeetingStatus Status { get; set; }
     
     public DateTimeOffset CreatedDate { get; set; }
