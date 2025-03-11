@@ -547,6 +547,7 @@ namespace SugarTalk.Core.Services.Meetings
                     Title = meeting.Title,
                     Creator = meeting.CreatedBy,
                     TimeZone = meeting.TimeZone,
+                    RepeatType = rules.RepeatType,
                     AppointmentType = meeting.AppointmentType,
                     CreatedDate = meeting.CreatedDate
                 };
