@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using Mediator.Net.Contracts;
 using SugarTalk.Messages.Dto;
@@ -8,6 +9,7 @@ namespace SugarTalk.Messages.Requests.Meetings;
 
 public class GetAppointmentMeetingsRequest : PageSetting, IRequest
 {
+    public DateTimeOffset UserCurrentTime { get; set; }
 }
 
 public class GetAppointmentMeetingsResponse : SugarTalkResponse<GetAppointmentMeetingsResponseDto>

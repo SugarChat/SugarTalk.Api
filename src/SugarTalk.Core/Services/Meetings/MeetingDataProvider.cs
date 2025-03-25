@@ -506,7 +506,7 @@ namespace SugarTalk.Core.Services.Meetings
         public async Task<(int Count, List<AppointmentMeetingDto> Records)> GetAppointmentMeetingsByUserIdAsync(GetAppointmentMeetingsRequest request, CancellationToken cancellationToken)
         {
             var maxQueryDate = _clock.Now.AddMonths(1).ToUnixTimeSeconds();
-            var startOfDay = new DateTimeOffset(_clock.Now.Year, _clock.Now.Month, _clock.Now.Day, 0, 0, 0, TimeSpan.Zero).ToUnixTimeSeconds();
+            var startOfDay = new DateTimeOffset(request.UserCurrentTime.Year, request.UserCurrentTime.Month, request.UserCurrentTime.Day, 0, 0, 0, TimeSpan.Zero).ToUnixTimeSeconds();
             
             Log.Information("GetAppointmentMeetingsByUserIdAsync maxQueryDate:{@maxQueryDate},startOfDay:{@startofDay}", maxQueryDate, startOfDay);
 
