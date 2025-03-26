@@ -499,6 +499,7 @@ public partial class MeetingService
         await _meetingDataProvider.PersistMeetingRecordAsync(meeting.Id, meetingRecordId, egressId, userSession?.MeetingSubId, cancellationToken).ConfigureAwait(false);
         
         meeting.IsActiveRecord = true;
+        meeting.CurrentEgressId = egressId;
 
         await _meetingDataProvider.UpdateMeetingAsync(meeting, cancellationToken).ConfigureAwait(false);
     }
