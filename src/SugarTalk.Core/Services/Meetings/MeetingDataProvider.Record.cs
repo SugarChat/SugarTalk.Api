@@ -18,7 +18,7 @@ namespace SugarTalk.Core.Services.Meetings;
 
 public partial interface IMeetingDataProvider
 {
-    Task<List<MeetingRecord>> GetMeetingRecordsAsync(Guid? id = null, CancellationToken cancellationToken = default);
+    Task<List<MeetingRecord>> GetMeetingRecordsAsync(Guid? id = null, Guid? meetingId = null, CancellationToken cancellationToken = default);
     
     Task<(int count, List<MeetingRecordDto> items)> GetMeetingRecordsByUserIdAsync(int? currentUserId, GetCurrentUserMeetingRecordRequest request, CancellationToken cancellationToken);
     
@@ -58,13 +58,16 @@ public partial interface IMeetingDataProvider
 public partial class MeetingDataProvider
 {
     public async Task<List<MeetingRecord>> GetMeetingRecordsAsync(
-        Guid? id = null, CancellationToken cancellationToken = default)
+        Guid? id = null, Guid? meetingId = null, CancellationToken cancellationToken = default)
     {
         var query = _repository.Query<MeetingRecord>();
 
         if (id.HasValue)
             query = query.Where(x => x.Id == id.Value);
 
+        if (meetingId.HasValue)
+            query = query.Where(x => x.MeetingId == meetingId.Value && x.RecordType == MeetingRecordType.OnRecord).OrderByDescending(x => x.CreatedDate);
+        
         return await query.ToListAsync(cancellationToken).ConfigureAwait(false);
     }
 
