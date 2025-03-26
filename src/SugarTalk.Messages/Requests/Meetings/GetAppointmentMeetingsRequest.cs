@@ -9,7 +9,7 @@ namespace SugarTalk.Messages.Requests.Meetings;
 
 public class GetAppointmentMeetingsRequest : PageSetting, IRequest
 {
-    public DateTimeOffset UserCurrentTime { get; set; }
+    public DateTimeOffset UserCurrentTime { get; set; } = DateTimeOffset.Now;
 }
 
 public class GetAppointmentMeetingsResponse : SugarTalkResponse<GetAppointmentMeetingsResponseDto>
