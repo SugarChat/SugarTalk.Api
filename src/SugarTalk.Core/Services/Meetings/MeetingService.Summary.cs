@@ -158,7 +158,7 @@ public partial class MeetingService
                 ToUsers = meetingParticipantsName.Data.Staffs.Select(r => r.ExternalSystemStaffId).ToList(),
                 Text = new SendWorkWeChatTextNotificationDto
                 {
-                    Content = $"會議摘要\n\n{abstractString}\n\n會議代辦\n\n{todoString}"
+                    Content = $"會議摘要\n\n{abstractString}\n\n會議待辦\n\n{todoString}"
                 }
             }
         }, cancellationToken).ConfigureAwait(false);
