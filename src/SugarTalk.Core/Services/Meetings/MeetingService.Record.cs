@@ -62,6 +62,8 @@ public partial interface IMeetingService
     Task<GetMeetingRecordCountResponse> GetMeetingRecordCountAsync(GetMeetingRecordCountRequest request, CancellationToken cancellationToken);
     
     Task RetrySpeechMaticsJobAsync(CreateSpeechMaticsJobCommand command, CancellationToken cancellationToken);
+
+    Task<GetMeetingRecordEgressResponse> GetMeetingRecordEgressAsync(GetMeetingRecordEgressRequest request, CancellationToken cancellationToken);
 }
 
 public partial class MeetingService
@@ -499,7 +501,6 @@ public partial class MeetingService
         await _meetingDataProvider.PersistMeetingRecordAsync(meeting.Id, meetingRecordId, egressId, userSession?.MeetingSubId, cancellationToken).ConfigureAwait(false);
         
         meeting.IsActiveRecord = true;
-        meeting.CurrentEgressId = egressId;
 
         await _meetingDataProvider.UpdateMeetingAsync(meeting, cancellationToken).ConfigureAwait(false);
     }
@@ -675,5 +676,16 @@ public partial class MeetingService
          };
          
          await _smartiesDataProvider.CreateSpeechMaticsRecordAsync(meetingSpeechMaticsRecord, cancellationToken: cancellationToken).ConfigureAwait(false);
+     }
+
+     public async Task<GetMeetingRecordEgressResponse> GetMeetingRecordEgressAsync(
+         GetMeetingRecordEgressRequest request, CancellationToken cancellationToken)
+     {
+         var records = await _meetingDataProvider.GetMeetingRecordsAsync(id: request.RecordId, cancellationToken).ConfigureAwait(false);
+         
+         return new GetMeetingRecordEgressResponse
+         {
+             Data = records.FirstOrDefault()?.EgressId
+         };
      }
 }

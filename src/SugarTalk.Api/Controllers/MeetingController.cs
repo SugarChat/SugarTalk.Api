@@ -273,6 +273,15 @@ public class MeetingController : ControllerBase
         return Ok(response);
     }
     
+    [Route("record/egress"), HttpGet]
+    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(GetMeetingRecordEgressResponse))]
+    public async Task<IActionResult> GetMeetingRecordEgressAsync([FromQuery] GetMeetingRecordEgressRequest request)
+    {
+        var response = await _mediator.RequestAsync<GetMeetingRecordEgressRequest, GetMeetingRecordEgressResponse>(request).ConfigureAwait(false);
+
+        return Ok(response);
+    }
+    
     #endregion
     
     #region MeetingUserSession

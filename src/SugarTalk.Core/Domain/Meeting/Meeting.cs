@@ -76,7 +76,4 @@ public class Meeting : IEntity, IHasCreatedFields
 
     [Column("is_active_record")]
     public bool IsActiveRecord { get; set; }
-    
-    [Column("current_egress_id")] 
-    public string CurrentEgressId { get; set; }
 }
