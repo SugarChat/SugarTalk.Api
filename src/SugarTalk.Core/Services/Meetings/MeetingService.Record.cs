@@ -641,7 +641,7 @@ public partial class MeetingService
      public async Task<GetMeetingRecordEgressResponse> GetMeetingRecordEgressAsync(
          GetMeetingRecordEgressRequest request, CancellationToken cancellationToken)
      {
-         var records = await _meetingDataProvider.GetMeetingRecordsAsync(id: request.RecordId, cancellationToken).ConfigureAwait(false);
+         var records = await _meetingDataProvider.GetMeetingRecordsAsync(meetingId: request.MeetingId, cancellationToken: cancellationToken).ConfigureAwait(false);
          
          return new GetMeetingRecordEgressResponse
          {
