@@ -228,7 +228,7 @@ public partial class MeetingService
         var user = await _accountDataProvider.GetUserAccountAsync(_currentUser.Id, cancellationToken: cancellationToken).ConfigureAwait(false);
         
         var record = (await _meetingDataProvider.GetMeetingRecordsAsync(
-            command.MeetingRecordId, cancellationToken: cancellationToken).ConfigureAwait(false)).MaxBy(x => x.CreatedDate);
+            meetingId:command.MeetingId, cancellationToken: cancellationToken).ConfigureAwait(false)).MaxBy(x => x.CreatedDate);
 
         var recordMeetingToken = _liveKitServerUtilService.GenerateTokenForRecordMeeting(user, meeting.MeetingNumber);
         
