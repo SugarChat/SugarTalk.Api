@@ -232,7 +232,7 @@ public partial class MeetingService
 
         var recordMeetingToken = _liveKitServerUtilService.GenerateTokenForRecordMeeting(user, meeting.MeetingNumber);
         
-        await _meetingDataProvider.UpdateMeetingRecordUrlStatusAsync(command.MeetingRecordId, MeetingRecordUrlStatus.InProgress, cancellationToken).ConfigureAwait(false);
+        await _meetingDataProvider.UpdateMeetingRecordUrlStatusAsync(record.Id, MeetingRecordUrlStatus.InProgress, cancellationToken).ConfigureAwait(false);
 
         var stopResponse = await _liveKitClient.StopEgressAsync(
             new StopEgressRequestDto { Token = recordMeetingToken, EgressId = record.EgressId }, cancellationToken).ConfigureAwait(false);
@@ -240,7 +240,7 @@ public partial class MeetingService
         Log.Information("stop meeting recording response: {@stopResponse}", stopResponse);
         
         var speakDetails = await _meetingDataProvider.GetMeetingSpeakDetailsAsync(
-            meetingNumber: meeting.MeetingNumber, recordId: command.MeetingRecordId, cancellationToken: cancellationToken).ConfigureAwait(false);
+            meetingNumber: meeting.MeetingNumber, recordId: record.Id, cancellationToken: cancellationToken).ConfigureAwait(false);
 
         foreach (var speakDetail in speakDetails.Where(speakDetail => speakDetail.SpeakEndTime is null or 0))
         {
@@ -267,7 +267,7 @@ public partial class MeetingService
         { 
             StartDate = _clock.Now, 
             Token = recordMeetingToken, 
-            MeetingRecordId = command.MeetingRecordId,
+            MeetingRecordId = record.Id,
             MeetingId = command.MeetingId, 
             EgressId = record.EgressId,
             ReTryLimit = command.ReTryLimit,
