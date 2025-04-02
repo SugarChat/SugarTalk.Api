@@ -489,18 +489,22 @@ namespace SugarTalk.Core.Services.Meetings
         {
             var meeting = await _meetingDataProvider.GetMeetingByIdAsync(userSession.MeetingId, cancellationToken: cancellationToken).ConfigureAwait(false);
 
-            MeetingUserSession newMasterSession = null;
+            var meetingUserSessions  = new List<MeetingUserSession>();
             
             if (userSession.UserId == meeting.MeetingMasterUserId)
             {
-                newMasterSession = await ProcessingMeetingMasterInheritAsync(meeting, userSession, cancellationToken).ConfigureAwait(false);
+                var newMasterSession = await ProcessingMeetingMasterInheritAsync(meeting, userSession, cancellationToken).ConfigureAwait(false);
             
                 newMasterSession.CoHost = false;
+                
+                meetingUserSessions.Add(newMasterSession);
             }
             
             userSession.CoHost = userSession.UserId == meeting.CreatedBy;
+
+            meetingUserSessions.Add(userSession);
             
-            await _meetingDataProvider.UpdateMeetingUserSessionAsync(new List<MeetingUserSession>{ userSession, newMasterSession }, cancellationToken).ConfigureAwait(false);
+            await _meetingDataProvider.UpdateMeetingUserSessionAsync(meetingUserSessions, cancellationToken).ConfigureAwait(false);
         }
 
         private async Task<MeetingUserSession> ProcessingMeetingMasterInheritAsync(Meeting meeting, MeetingUserSession currentUserSession, CancellationToken cancellationToken)
