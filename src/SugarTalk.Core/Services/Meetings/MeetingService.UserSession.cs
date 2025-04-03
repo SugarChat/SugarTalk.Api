@@ -264,7 +264,7 @@ public partial class MeetingService
 
     private async Task<UpdateMeetingUserSessionRoleResponse> UpdateMeetingUserSessionRoleForCoHostAsync(UpdateMeetingUserSessionRoleCommand command, CancellationToken cancellationToken)
     {
-        var meetingUserSession = (await _meetingDataProvider.GetMeetingUserSessionAsync(command.MeetingId, null, command.UserId, cancellationToken: cancellationToken).ConfigureAwait(false)).FirstOrDefault();
+        var meetingUserSession = (await _meetingDataProvider.GetMeetingUserSessionAsync(command.MeetingId, null, command.UserId, sessionOnlineType: MeetingUserSessionOnlineType.Online, cancellationToken: cancellationToken).ConfigureAwait(false)).FirstOrDefault();
 
         if (meetingUserSession == null) throw new MeetingUserSessionNotFoundException();
 
