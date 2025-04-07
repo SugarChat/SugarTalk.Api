@@ -123,6 +123,24 @@ public class MeetingController : ControllerBase
         return Ok(response);
     }
 
+    [Route("appointment/detail"), HttpGet]
+    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(GetAppointmentMeetingDetailResponse))]
+    public async Task<IActionResult> GetAppointmentMeetingDetailAsync([FromQuery] GetAppointmentMeetingDetailRequest request)
+    {
+        var response = await _mediator.RequestAsync<GetAppointmentMeetingDetailRequest, GetAppointmentMeetingDetailResponse>(request);
+        
+        return Ok(response);
+    }
+
+    [Route("Get/staffs"), HttpGet]
+    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(GetStaffsTreeResponse))]
+    public async Task<IActionResult> GetStaffsTreeAsync([FromQuery] GetStaffsTreeRequest request)
+    {
+        var response = await _mediator.RequestAsync<GetStaffsTreeRequest, GetStaffsTreeResponse>(request);
+        
+        return Ok(response);
+    }
+
     #endregion
 
     #region MeetingHistory
@@ -289,7 +307,25 @@ public class MeetingController : ControllerBase
         
         return Ok(response);
     }
-    
+
+    [Route("update/role"), HttpPost]
+    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(UpdateMeetingUserSessionRoleResponse))]
+    public async Task<IActionResult> UpdateMeetingUserSessionRoleAsync([FromBody] UpdateMeetingUserSessionRoleCommand command)
+    {
+        var response = await _mediator.SendAsync<UpdateMeetingUserSessionRoleCommand, UpdateMeetingUserSessionRoleResponse>(command).ConfigureAwait(false);
+        
+        return Ok(response);
+    }
+
+    [Route("get/all"), HttpGet]
+    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(GetAllMeetingUserSessionsForMeetingIdResponse))]
+    public async Task<IActionResult> GetAllMeetingUserSessionsForMeetingIdAsync([FromQuery] GetAllMeetingUserSessionsForMeetingIdRequest request)
+    {
+        var response = await _mediator.RequestAsync<GetAllMeetingUserSessionsForMeetingIdRequest, GetAllMeetingUserSessionsForMeetingIdResponse>(request).ConfigureAwait(false);
+        
+        return Ok(response);
+    }
+
     [Route("check/rename"), HttpPost]
     [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(CheckRenamePermissionResponse))]
     public async Task<IActionResult> CheckRenamePermissionAsync(CheckRenamePermissionCommand command)
@@ -298,7 +334,7 @@ public class MeetingController : ControllerBase
 
         return Ok(response);
     }
-    
+
     #endregion
     
     #region invite

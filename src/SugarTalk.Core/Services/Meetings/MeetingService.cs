@@ -37,10 +37,13 @@ using SugarTalk.Core.Services.Smarties;
 using SugarTalk.Core.Settings.Aws;
 using SugarTalk.Core.Settings.Meeting;
 using SugarTalk.Core.Settings.Meeting.Feedback;
+using SugarTalk.Core.Settings.PostBoy;
 using SugarTalk.Core.Settings.Smarties;
 using SugarTalk.Messages.Commands.Meetings.Speak;
 using SugarTalk.Messages.Dto.LiveKit.Egress;
+using SugarTalk.Messages.Dto.Smarties;
 using SugarTalk.Messages.Enums.Meeting;
+using SugarTalk.Messages.Enums.Smarties;
 using SugarTalk.Messages.Enums.Speech;
 using SugarTalk.Messages.Events.Meeting;
 using SugarTalk.Messages.Requests.Meetings;
@@ -99,12 +102,15 @@ namespace SugarTalk.Core.Services.Meetings
         Task HandleMeetingStatusWhenOutMeetingAsync(int userId, Guid meetingId, Guid? meetingSubId = null, CancellationToken cancellationToken = default);
         
         Task<MeetingSwitchEaResponse> UpdateMeetingChatResponseAsync(MeetingSwitchEaCommand command, CancellationToken cancellationToken);
+        
+        Task<GetAppointmentMeetingDetailResponse> GetAppointmentMeetingsDetailAsync(GetAppointmentMeetingDetailRequest request, CancellationToken cancellationToken);
+
+        Task<GetStaffsTreeResponse> GetStaffsTreeAsync(GetStaffsTreeRequest request, CancellationToken cancellationToken);
     }
     
     public partial class MeetingService : IMeetingService
     {
         private const string appName = "LiveApp";
-
         private readonly IClock _clock;
         private readonly IMapper _mapper;
         private readonly IUnitOfWork _unitOfWork;
@@ -119,6 +125,7 @@ namespace SugarTalk.Core.Services.Meetings
         private readonly AwsS3Settings _awsS3Settings;
         private readonly ICacheManager _cacheManager;
         private readonly ISmartiesClient _smartiesClient;
+        private readonly PostBoySettings _postBoySettings;
         private readonly SmartiesSettings _smartiesSettings;
         private readonly TranslationClient _translationClient;
         private readonly IMeetingUtilService _meetingUtilService;
@@ -148,6 +155,7 @@ namespace SugarTalk.Core.Services.Meetings
             AwsS3Settings awsS3Settings,
             IAwsS3Service awsS3Service,
             ISmartiesClient smartiesClient,
+            PostBoySettings postBoySettings,
             SmartiesSettings smartiesSettings,
             TranslationClient translationClient,
             IMeetingUtilService meetingUtilService,
@@ -176,6 +184,7 @@ namespace SugarTalk.Core.Services.Meetings
             _smartiesClient = smartiesClient;
             _awsS3Settings = awsS3Settings;
             _httpClientFactory = httpClientFactory;
+            _postBoySettings = postBoySettings;
             _smartiesSettings = smartiesSettings;
             _translationClient = translationClient;
             _meetingUtilService = meetingUtilService;
@@ -199,7 +208,7 @@ namespace SugarTalk.Core.Services.Meetings
             meeting = _mapper.Map(command, meeting);
             meeting.Id = Guid.NewGuid();
             meeting.Status = MeetingStatus.Pending;
-            meeting.MeetingMasterUserId = _currentUser.Id.Value;
+            meeting.MeetingMasterUserId = _currentUser.Id ?? 0;
             meeting.MeetingStreamMode = MeetingStreamMode.LEGACY;
             meeting.SecurityCode = !string.IsNullOrEmpty(command.SecurityCode) ? command.SecurityCode.ToSha256() : null;
             meeting.Password = command.SecurityCode;
@@ -226,6 +235,9 @@ namespace SugarTalk.Core.Services.Meetings
                         RepeatType = command.RepeatType,
                         RepeatUntilDate = command.UtilDate
                     }, cancellationToken).ConfigureAwait(false);
+
+                    await AddMeetingParticipantAsync(meeting.Id, command.Participants, cancellationToken).ConfigureAwait(false);
+                    
                     break;
                 }
                 default:
@@ -239,7 +251,34 @@ namespace SugarTalk.Core.Services.Meetings
             
             return new MeetingScheduledEvent { Meeting = meetingDto };
         }
-        
+
+        private async Task AddMeetingParticipantAsync(Guid meetingId, List<MeetingParticipantDto> participants, CancellationToken cancellationToken)
+        {
+            var userAccount = await _accountDataProvider.GetUserAccountAsync(_currentUser.Id, cancellationToken: cancellationToken).ConfigureAwait(false);
+                        
+            var currentUserStaffInfo = string.IsNullOrEmpty(userAccount.ThirdPartyUserId) ? null : (await _smartiesClient.GetStaffsRequestAsync(new GetStaffsRequestDto
+            {
+                UserIds = new List<Guid>{ Guid.Parse(userAccount.ThirdPartyUserId) } 
+            }, cancellationToken).ConfigureAwait(false)).Data.Staffs.FirstOrDefault();
+                        
+            Log.Information("Get current user staff info: {@currentUserStaffInfo}", currentUserStaffInfo);
+            
+            var meetingParticipants = new List<MeetingParticipant>
+            {
+                new ()
+                {
+                    MeetingId = meetingId,
+                    StaffId = currentUserStaffInfo?.Id ?? Guid.Empty,
+                    IsDesignatedHost = false
+                }
+            };
+                        
+            if(participants is { Count: > 0 })
+                meetingParticipants.AddRange(participants.Select(participant => new MeetingParticipant { MeetingId = meetingId, StaffId = participant.ThirdPartyUserId, IsDesignatedHost = participant.IsDesignatedHost }).ToList());
+
+            await _meetingDataProvider.AddMeetingParticipantAsync(meetingParticipants, cancellationToken: cancellationToken).ConfigureAwait(false);
+        }
+
         public async Task<GetMeetingHistoriesByUserResponse> GetMeetingHistoriesByUserAsync(
             GetMeetingHistoriesByUserRequest request, CancellationToken cancellationToken)
         {
@@ -291,8 +330,43 @@ namespace SugarTalk.Core.Services.Meetings
                 meeting.UserSessions = meeting.UserSessions
                     .Where(x => x.OnlineType == MeetingUserSessionOnlineType.Online).ToList();
             }
+
+            (meeting.Participants, meeting.ParticipantsCount) = await GetAppointmentMeetingDetailForParticipantAsync(meeting.Id, cancellationToken).ConfigureAwait(false);
             
             return new GetMeetingByNumberResponse { Data = meeting };
+        }
+
+        private async Task<(List<AppointmentMeetingDetailForParticipantDto>, int)> GetAppointmentMeetingDetailForParticipantAsync(Guid meetingId, CancellationToken cancellationToken)
+        {
+            var meetingParticipants  = await _meetingDataProvider.GetMeetingParticipantAsync(meetingId, cancellationToken: cancellationToken).ConfigureAwait(false);
+            
+            var participantDict = meetingParticipants.ToDictionary(x => x.StaffId);
+            
+            Log.Information("Meeting participant dict: {@participantDict}", participantDict);
+            
+            var staffs = await _smartiesClient.GetStaffsRequestAsync(new GetStaffsRequestDto
+            {
+                Ids = participantDict.Keys.ToList()
+            }, cancellationToken).ConfigureAwait(false);
+
+            Log.Information("Meeting staffs: {@staffs}", staffs);
+            
+            var participants = new List<AppointmentMeetingDetailForParticipantDto>();
+            
+            foreach (var staff in staffs.Data.Staffs)
+            {
+                if (!participantDict.TryGetValue(staff.Id, out var participant))
+                    continue;
+                
+                participants.Add(new AppointmentMeetingDetailForParticipantDto
+                {
+                    ThirdPartyUserId = staff.Id,
+                    UserName = staff.UserName,
+                    IsDesignatedHost = participant.IsDesignatedHost 
+                });
+            }
+            
+            return (participants, participants.Count);
         }
 
         public async Task<MeetingJoinedEvent> JoinMeetingAsync(JoinMeetingCommand command, CancellationToken cancellationToken)
@@ -344,6 +418,27 @@ namespace SugarTalk.Core.Services.Meetings
                 MeetingUserSetting = _mapper.Map<MeetingUserSettingDto>(userSetting)
             };
         }
+        
+        private async Task HandleAbnormalWithdrawalStatusBeforeAsync(int userId, Guid meetingId, CancellationToken cancellationToken)
+        {
+            var meetingUserSessions = await _meetingDataProvider.GetMeetingUserSessionAsync(
+                meetingId, null, userId, null, cancellationToken: cancellationToken).ConfigureAwait(false);
+            
+            Log.Information("Meeting user sessions before handle abnormal withdrawal status: {@meetingUserSessions}", meetingUserSessions);
+
+            if (meetingUserSessions == null || meetingUserSessions.Count < 0) return;
+
+            meetingUserSessions = meetingUserSessions.Where(x => x.OnlineType == 0).Select(x =>
+            {
+                x.OnlineType = MeetingUserSessionOnlineType.OutMeeting;
+                
+                return x;
+            }).ToList();
+
+            Log.Information("Meeting user sessions after handle abnormal withdrawal status: {@meetingUserSessions}", meetingUserSessions);
+            
+            await _meetingDataProvider.UpdateMeetingUserSessionAsync(meetingUserSessions, cancellationToken).ConfigureAwait(false);
+        }
 
         private void CheckJoinMeetingConditions(MeetingDto meeting, UserAccountDto user)
         {
@@ -393,20 +488,84 @@ namespace SugarTalk.Core.Services.Meetings
         public async Task<MeetingOutedEvent> OutMeetingAsync(OutMeetingCommand command, CancellationToken cancellationToken)
         {
             var userSession = await _meetingDataProvider.GetMeetingUserSessionByMeetingIdAsync(
-                command.MeetingId, command.MeetingSubId, _currentUser?.Id, cancellationToken).ConfigureAwait(false);
+                command.MeetingId, command.MeetingSubId, _currentUser?.Id, null, cancellationToken).ConfigureAwait(false);
 
             if (userSession == null) return new MeetingOutedEvent();
 
             EnrichMeetingUserSessionForOutMeeting(userSession);
             
-            await _meetingDataProvider.UpdateMeetingUserSessionAsync(userSession, cancellationToken).ConfigureAwait(false);
+            await _meetingDataProvider.UpdateMeetingUserSessionAsync(new List<MeetingUserSession>{ userSession }, cancellationToken).ConfigureAwait(false);
             
             await OutLiveKitExistedUserAsync(userName: _currentUser?.Name, meetingId: command.MeetingId, cancellationToken: cancellationToken).ConfigureAwait(false);
 
             await HandleMeetingStatusWhenOutMeetingAsync(
                 userSession.UserId, command.MeetingId, command.MeetingSubId, cancellationToken).ConfigureAwait(false);
 
+            _backgroundJobClient.Enqueue(() => HandlerMeetingUserRoleAsync(userSession, cancellationToken));
+
             return new MeetingOutedEvent();
+        }
+
+        public async Task HandlerMeetingUserRoleAsync(MeetingUserSession userSession, CancellationToken cancellationToken)
+        {
+            var meeting = await _meetingDataProvider.GetMeetingByIdAsync(userSession.MeetingId, cancellationToken: cancellationToken).ConfigureAwait(false);
+
+            var meetingUserSessions  = new List<MeetingUserSession>();
+            
+            if (userSession.UserId == meeting.MeetingMasterUserId)
+            {
+                var newMasterSession = await ProcessingMeetingMasterInheritAsync(meeting, userSession, cancellationToken).ConfigureAwait(false);
+            
+                newMasterSession.CoHost = false;
+                
+                meetingUserSessions.Add(newMasterSession);
+            }
+            
+            userSession.CoHost = userSession.UserId == meeting.CreatedBy;
+
+            meetingUserSessions.Add(userSession);
+            
+            await _meetingDataProvider.UpdateMeetingUserSessionAsync(meetingUserSessions, cancellationToken).ConfigureAwait(false);
+        }
+
+        private async Task<MeetingUserSession> ProcessingMeetingMasterInheritAsync(Meeting meeting, MeetingUserSession currentUserSession, CancellationToken cancellationToken)
+        {
+            var meetingUserSession = await _meetingDataProvider.GetMeetingUserSessionAsync(
+                meeting.Id, null,null, null, MeetingUserSessionOnlineType.Online, cancellationToken).ConfigureAwait(false);
+            
+            var newMasterSession = meetingUserSession.FirstOrDefault(x => x.UserId == meeting.CreatedBy);
+
+            if (newMasterSession == null)
+            {
+                if (meeting.AppointmentType == MeetingAppointmentType.Appointment)
+                {
+                    var meetingParticipants = await _meetingDataProvider.GetMeetingParticipantAsync(meeting.Id, true, true, cancellationToken: cancellationToken).ConfigureAwait(false);
+                    
+                    var validParticipants = meetingParticipants.Where(x => x.UserId != currentUserSession.UserId).ToList();
+                    
+                    if (validParticipants.Any())
+                    {
+                        var userIds = validParticipants.Select(x => x.UserId).ToList();
+                        
+                        newMasterSession = meetingUserSession.Where(x => userIds.Contains(x.UserId)).OrderBy(x => x.CreatedDate).FirstOrDefault();
+                    }
+                }
+
+                if (newMasterSession == null && meetingUserSession.Any(x => x.CoHost))
+                    newMasterSession = meetingUserSession.Where(x => x.CoHost).OrderBy(x => x.LastModifiedDateForCoHost).FirstOrDefault();
+                else
+                    newMasterSession = meetingUserSession.OrderBy(x => x.LastModifiedDateForCoHost).FirstOrDefault();
+                
+                if (newMasterSession == null) return new MeetingUserSession();
+            }
+                
+            meeting.MeetingMasterUserId = newMasterSession.UserId;
+            
+            Log.Information("Update after replacement meeting user sessions: {@coHostUsers}", newMasterSession);
+
+            await _meetingDataProvider.UpdateMeetingAsync(meeting, cancellationToken).ConfigureAwait(false);
+
+            return newMasterSession;
         }
 
         public async Task HandleMeetingStatusWhenOutMeetingAsync(
@@ -417,7 +576,7 @@ namespace SugarTalk.Core.Services.Meetings
             if (meeting is null) throw new MeetingNotFoundException();
             
             var attendingUserSessionsExceptCurrentUser = 
-                await _meetingDataProvider.GetMeetingUserSessionAsync(meetingId, meetingSubId, cancellationToken).ConfigureAwait(false);
+                await _meetingDataProvider.GetMeetingUserSessionAsync(meetingId, meetingSubId, cancellationToken: cancellationToken).ConfigureAwait(false);
 
             attendingUserSessionsExceptCurrentUser = attendingUserSessionsExceptCurrentUser
                 .Where(x => x.UserId != userId)
@@ -462,7 +621,9 @@ namespace SugarTalk.Core.Services.Meetings
             await _meetingDataProvider.PersistMeetingHistoryAsync(meeting, cancellationToken).ConfigureAwait(false);
             
             var updateMeeting = _mapper.Map<Meeting>(meeting);
-            
+
+           updateMeeting.MeetingMasterUserId = updateMeeting.CreatedBy;
+
             await _meetingDataProvider.MarkMeetingAsCompletedAsync(updateMeeting, cancellationToken).ConfigureAwait(false);
             
             var attendingUserSessionIds = meeting.UserSessions.Select(x => x.Id).ToList();
@@ -471,6 +632,12 @@ namespace SugarTalk.Core.Services.Meetings
                 await _meetingDataProvider.GetMeetingUserSessionsByIdsAndMeetingIdAsync(attendingUserSessionIds, meeting.Id, cancellationToken).ConfigureAwait(false);
 
             await _meetingDataProvider.UpdateUserSessionsAtMeetingEndAsync(updateMeeting, updateMeetingUserSessions, cancellationToken).ConfigureAwait(false);
+            
+            var meetingUserSessions = await _meetingDataProvider.GetMeetingUserSessionsAsync(meetingId: meeting.Id, coHost: true, cancellationToken: cancellationToken).ConfigureAwait(false);
+
+            meetingUserSessions = meetingUserSessions.Select(x => { x.CoHost = false; return x; }).ToList();
+            
+            await _meetingDataProvider.UpdateMeetingUserSessionAsync(meetingUserSessions, cancellationToken).ConfigureAwait(false);
             
             return new MeetingEndedEvent
             {
@@ -482,6 +649,8 @@ namespace SugarTalk.Core.Services.Meetings
         public async Task ConnectUserToMeetingAsync(
             UserAccountDto user, MeetingDto meeting, bool? isMuted = null, CancellationToken cancellationToken = default)
         {
+            await HandleAbnormalWithdrawalStatusBeforeAsync(user.Id, meeting.Id, cancellationToken).ConfigureAwait(false);
+            
             var userSession = meeting.UserSessions
                 .Where(x => x.UserId == user.Id)
                 .Select(x => _mapper.Map<MeetingUserSession>(x))
@@ -522,7 +691,7 @@ namespace SugarTalk.Core.Services.Meetings
 
                 if (user.Issuer == UserAccountIssuer.Guest) HandleGuestNameForUserSession(meeting, userSession);
                 
-                await _meetingDataProvider.UpdateMeetingUserSessionAsync(userSession, cancellationToken).ConfigureAwait(false);
+                await _meetingDataProvider.UpdateMeetingUserSessionAsync(new List<MeetingUserSession>{ userSession }, cancellationToken).ConfigureAwait(false);
 
                 var updateUserSession = _mapper.Map<MeetingUserSessionDto>(userSession);
 
@@ -549,7 +718,7 @@ namespace SugarTalk.Core.Services.Meetings
             var user = await _accountDataProvider.CheckCurrentLoggedInUser(cancellationToken).ConfigureAwait(false);
             
             var meeting = await _meetingDataProvider.GetMeetingByIdAsync(command.Id, cancellationToken).ConfigureAwait(false);
-
+            
             ValidateMeetingUpdateConditions(meeting, user);
 
             var updateMeeting = _mapper.Map(command, meeting);
@@ -567,6 +736,15 @@ namespace SugarTalk.Core.Services.Meetings
                 await _meetingDataProvider.UpdateMeetingRepeatRuleAsync(updateMeeting.Id, command.RepeatType, cancellationToken).ConfigureAwait(false);
 
                 await _meetingDataProvider.PersistMeetingSubMeetingsAsync(subMeetingList, cancellationToken).ConfigureAwait(false);
+            }
+
+            if (meeting.AppointmentType == MeetingAppointmentType.Appointment && command.Participants is { Count: > 0 })
+            {
+                var removeMeetingParticipants = await _meetingDataProvider.GetMeetingParticipantAsync(meeting.Id, cancellationToken: cancellationToken).ConfigureAwait(false);
+
+                await _meetingDataProvider.DeleteMeetingParticipantAsync(removeMeetingParticipants, cancellationToken: cancellationToken).ConfigureAwait(false);
+                
+                await AddMeetingParticipantAsync(meeting.Id, command.Participants, cancellationToken).ConfigureAwait(false);
             }
             
             await _meetingDataProvider.UpdateMeetingAsync(updateMeeting, cancellationToken).ConfigureAwait(false);
@@ -848,7 +1026,7 @@ namespace SugarTalk.Core.Services.Meetings
 
             if (user is null) throw new UnreachableException();
 
-            var (count, records) = await _meetingDataProvider.GetAppointmentMeetingsByUserIdAsync(request, cancellationToken).ConfigureAwait(false);
+            var (count, records) = await _meetingDataProvider.GetAppointmentMeetingsByUserIdAsync(request, Guid.Parse(user.ThirdPartyUserId), cancellationToken).ConfigureAwait(false);
         
             return new GetAppointmentMeetingsResponse
             {
@@ -857,6 +1035,61 @@ namespace SugarTalk.Core.Services.Meetings
                     Count = count,
                     Records = records
                 }
+            };
+        }
+
+        public async Task<GetAppointmentMeetingDetailResponse> GetAppointmentMeetingsDetailAsync(
+            GetAppointmentMeetingDetailRequest request, CancellationToken cancellationToken)
+        {
+            var meetingParticipants  = await _meetingDataProvider.GetMeetingParticipantAsync(request.MeetingId, cancellationToken: cancellationToken).ConfigureAwait(false);
+            
+            var participantDict = meetingParticipants.ToDictionary(x => x.StaffId);
+            
+            Log.Information("Meeting participant dict: {@participantDict}", participantDict);
+            
+            var staffs = await _smartiesClient.GetStaffsRequestAsync(new GetStaffsRequestDto
+            {
+                Ids = participantDict.Keys.ToList()
+            }, cancellationToken).ConfigureAwait(false);
+
+            Log.Information("Meeting staffs: {@staffs}", staffs);
+            
+            var participants = new List<GetAppointmentMeetingDetailForParticipantDto>();
+            
+            foreach (var staff in staffs.Data.Staffs)
+            {
+                if (!participantDict.TryGetValue(staff.Id, out var participant))
+                    continue;
+                
+                participants.Add(new GetAppointmentMeetingDetailForParticipantDto
+                {
+                    UserId = staff.Id,
+                    UserName = staff.UserName,
+                    IsDesignatedHost = participant.IsDesignatedHost 
+                });
+            }
+            
+            return new GetAppointmentMeetingDetailResponse
+            {
+                Data = new GetAppointmentMeetingDetailDto
+                {
+                    Participants = participants
+                }
+            };
+        }
+
+        public async Task<GetStaffsTreeResponse> GetStaffsTreeAsync(GetStaffsTreeRequest request, CancellationToken cancellationToken)
+        {
+            var staffs = await _smartiesClient.GetStaffDepartmentHierarchyTreeAsync(new GetStaffDepartmentHierarchyTreeRequest
+            {
+                StaffIdSource = request.StaffIdSource,
+                HierarchyDepth = request.HierarchyDepth,
+                HierarchyStaffRange = request.HierarchyStaffRange
+            }, cancellationToken).ConfigureAwait(false);
+
+            return new GetStaffsTreeResponse
+            {
+                Data = staffs.Data
             };
         }
 

@@ -6,7 +6,7 @@ using SugarTalk.Messages.Enums.Meeting;
 namespace SugarTalk.Core.Domain.Meeting;
 
 [Table("meeting")]
-public class Meeting : IEntity
+public class Meeting : IEntity, IHasCreatedFields
 {
     public Meeting()
     {
@@ -19,6 +19,9 @@ public class Meeting : IEntity
 
     [Column("meeting_master_user_id")] 
     public int MeetingMasterUserId { get; set; }
+
+    [Column("created_by")]
+    public int CreatedBy { get; set; }
 
     [Column("created_date")] 
     public DateTimeOffset CreatedDate { get; set; }
@@ -59,6 +62,9 @@ public class Meeting : IEntity
     [Column("appointment_type")]
     public MeetingAppointmentType AppointmentType { get; set; }
 
+    [Column("is_metis")]
+    public bool? IsMetis { get; set; }
+    
     [Column("is_muted")] 
     public bool IsMuted { get; set; }
 

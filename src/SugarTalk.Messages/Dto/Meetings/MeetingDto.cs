@@ -64,7 +64,9 @@ public class MeetingBaseDto
     public Guid? MeetingRecordId { get; set; }
 
     public string MeetingNumber { get; set; }
-    
+
+    public int CreatedBy { get; set; }
+
     public long StartDate { get; set; }
 
     public long EndDate { get; set; }
@@ -92,6 +94,12 @@ public class MeetingBaseDto
     public bool IsMuted { get; set; } = false;
     
     public bool IsRecorded { get; set; } = false;
+
+    public List<AppointmentMeetingDetailForParticipantDto> Participants { get; set; }
+
+    public int ParticipantsCount { get; set; }
+    
+    public bool? IsMetis { get; set; }
     
     public bool IsPasswordEnabled { get; set; } = false;
 
@@ -127,8 +135,28 @@ public class AddOrUpdateMeetingDto
     public MeetingAppointmentType AppointmentType { get; set; }
     
     public MeetingStreamMode MeetingStreamMode { get; set; }
+
+    public List<MeetingParticipantDto> Participants { get; set; }
+
+    public bool? IsMetis { get; set; }
     
     public bool IsMuted { get; set; } = false;
     
     public bool IsRecorded { get; set; } = false;
+}
+
+public class MeetingParticipantDto
+{
+    public Guid ThirdPartyUserId { get; set; }
+
+    public bool IsDesignatedHost { get; set; }
+}
+
+public class AppointmentMeetingDetailForParticipantDto
+{
+    public Guid ThirdPartyUserId { get; set; }
+    
+    public string UserName { get; set; }
+
+    public bool IsDesignatedHost { get; set; }
 }
