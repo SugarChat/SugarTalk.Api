@@ -388,6 +388,8 @@ namespace SugarTalk.Core.Services.Meetings
             // CheckJoinMeetingConditions(meeting, user);
 
             await OutLiveKitExistedUserAsync(meetingNumber: meeting.MeetingNumber, userName: user.UserName, cancellationToken: cancellationToken).ConfigureAwait(false);
+
+            await HandleAbnormalWithdrawalStatusBeforeAsync(user.Id, meeting.Id, cancellationToken).ConfigureAwait(false);
             
             await ConnectUserToMeetingAsync(user, meeting, command.IsMuted, cancellationToken).ConfigureAwait(false);
 
@@ -417,6 +419,23 @@ namespace SugarTalk.Core.Services.Meetings
                 Meeting = meeting,
                 MeetingUserSetting = _mapper.Map<MeetingUserSettingDto>(userSetting)
             };
+        }
+        
+        private async Task HandleAbnormalWithdrawalStatusBeforeAsync(int userId, Guid meetingId, CancellationToken cancellationToken)
+        {
+            var meetingUserSessions = await _meetingDataProvider.GetMeetingUserSessionAsync(
+                meetingId, null, userId, null, cancellationToken: cancellationToken).ConfigureAwait(false);
+
+            if (meetingUserSessions == null || meetingUserSessions.Count < 0) return;
+
+            var userSessions = meetingUserSessions.Where(x => x.OnlineType == 0).Select(x =>
+            {
+                x.OnlineType = MeetingUserSessionOnlineType.OutMeeting;
+                
+                return x;
+            }).ToList();
+
+            await _meetingDataProvider.UpdateMeetingUserSessionAsync(userSessions, cancellationToken).ConfigureAwait(false);
         }
 
         private void CheckJoinMeetingConditions(MeetingDto meeting, UserAccountDto user)
