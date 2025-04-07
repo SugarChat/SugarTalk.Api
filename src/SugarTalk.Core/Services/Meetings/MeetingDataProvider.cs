@@ -533,6 +533,8 @@ namespace SugarTalk.Core.Services.Meetings
                     Status = meeting.Status,
                     Title = meeting.Title,
                     Creator = meeting.CreatedBy,
+                    TimeZone = meeting.TimeZone,
+                    RepeatType = rules.RepeatType,
                     AppointmentType = meeting.AppointmentType,
                     CreatedDate = meeting.CreatedDate
                 };
