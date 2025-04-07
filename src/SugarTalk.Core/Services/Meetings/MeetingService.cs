@@ -427,6 +427,8 @@ namespace SugarTalk.Core.Services.Meetings
         {
             var meetingUserSessions = await _meetingDataProvider.GetMeetingUserSessionAsync(
                 meetingId, null, userId, null, cancellationToken: cancellationToken).ConfigureAwait(false);
+            
+            Log.Information("Meeting user sessions before handle abnormal withdrawal status: {@meetingUserSessions}", meetingUserSessions);
 
             if (meetingUserSessions == null || meetingUserSessions.Count < 0) return;
 
