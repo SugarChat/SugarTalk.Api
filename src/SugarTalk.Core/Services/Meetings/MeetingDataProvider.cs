@@ -533,6 +533,8 @@ namespace SugarTalk.Core.Services.Meetings
                     EndDate = rules.RepeatType == MeetingRepeatType.None ? meeting.EndDate : subMeeting.EndTime,
                     Status = meeting.Status,
                     Title = meeting.Title,
+                    TimeZone = meeting.TimeZone,
+                    RepeatType = rules.RepeatType,
                     AppointmentType = meeting.AppointmentType,
                     CreatedDate = meeting.CreatedDate
                 };
