@@ -432,14 +432,16 @@ namespace SugarTalk.Core.Services.Meetings
 
             if (meetingUserSessions == null || meetingUserSessions.Count < 0) return;
 
-            var userSessions = meetingUserSessions.Where(x => x.OnlineType == 0).Select(x =>
+            meetingUserSessions = meetingUserSessions.Where(x => x.OnlineType == 0).Select(x =>
             {
                 x.OnlineType = MeetingUserSessionOnlineType.OutMeeting;
                 
                 return x;
             }).ToList();
 
-            await _meetingDataProvider.UpdateMeetingUserSessionAsync(userSessions, cancellationToken).ConfigureAwait(false);
+            Log.Information("Meeting user sessions after handle abnormal withdrawal status: {@meetingUserSessions}", meetingUserSessions);
+            
+            await _meetingDataProvider.UpdateMeetingUserSessionAsync(meetingUserSessions, cancellationToken).ConfigureAwait(false);
         }
 
         private void CheckJoinMeetingConditions(MeetingDto meeting, UserAccountDto user)
