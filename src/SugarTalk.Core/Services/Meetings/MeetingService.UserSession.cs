@@ -149,7 +149,7 @@ public partial class MeetingService
         if (meeting == null) { throw new MeetingNotFoundException(); }
 
         var userSession = await _meetingDataProvider
-            .GetMeetingUserSessionByMeetingIdAsync(request.MeetingId, null, request.UserId, cancellationToken)
+            .GetMeetingUserSessionByMeetingIdAsync(request.MeetingId, null, request.UserId, null, cancellationToken)
             .ConfigureAwait(false);
         if (userSession is null) throw new MeetingUserSessionNotFoundException();
         
@@ -255,7 +255,7 @@ public partial class MeetingService
 
     private async Task UpdateMeetingUserSessionCoHostAsync(Guid meetingId, int creatorId, int userId, bool transferMaster, CancellationToken cancellationToken)
     {
-        var meetUserSession = await _meetingDataProvider.GetMeetingUserSessionByMeetingIdAsync(meetingId, null, userId, cancellationToken).ConfigureAwait(false);
+        var meetUserSession = await _meetingDataProvider.GetMeetingUserSessionByMeetingIdAsync(meetingId, null, userId, MeetingUserSessionOnlineType.Online, cancellationToken: cancellationToken).ConfigureAwait(false);
         
         meetUserSession.CoHost = transferMaster && meetUserSession.UserId == creatorId;
             
@@ -264,7 +264,7 @@ public partial class MeetingService
 
     private async Task<UpdateMeetingUserSessionRoleResponse> UpdateMeetingUserSessionRoleForCoHostAsync(UpdateMeetingUserSessionRoleCommand command, CancellationToken cancellationToken)
     {
-        var meetingUserSession = (await _meetingDataProvider.GetMeetingUserSessionAsync(command.MeetingId, null, command.UserId, cancellationToken: cancellationToken).ConfigureAwait(false)).FirstOrDefault();
+        var meetingUserSession = (await _meetingDataProvider.GetMeetingUserSessionAsync(command.MeetingId, null, command.UserId, sessionOnlineType: MeetingUserSessionOnlineType.Online, cancellationToken: cancellationToken).ConfigureAwait(false)).FirstOrDefault();
 
         if (meetingUserSession == null) throw new MeetingUserSessionNotFoundException();
 

@@ -2,6 +2,7 @@ using System.Threading;
 using SugarTalk.Core.Ioc;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using System.Linq;
 using SugarTalk.Messages.Dto.Smarties;
 using Smarties.Messages.Requests.Ask;
 using SugarTalk.Core.Settings.Smarties;
@@ -60,18 +61,17 @@ public class SmartiesClient : ISmartiesClient
 
     public async Task<GetStaffsResponse> GetStaffsRequestAsync(GetStaffsRequestDto request, CancellationToken cancellationToken)
     {
+        var ids = "";
         var userIds = "";
 
         if (request.Ids is { Count: > 0 })
-        {
-            foreach (var userId in request.Ids)
-            {
-                userIds += $"&Ids={userId}";    
-            }
-        }
+            ids = request.Ids.Aggregate(ids, (current, id) => current + $"&Ids={id}");
+
+        if (request.UserIds is { Count: > 0 })
+            userIds = request.UserIds.Aggregate(userIds, (current, userId) => current + $"&UserIds={userId}");
         
         return await _httpClientFactory.GetAsync<GetStaffsResponse>(
-            $"{_smartiesSettings.BaseUrl}/api/Foundation/staffs?IsActive={request.IsActive}{userIds}", cancellationToken, headers: _headers).ConfigureAwait(false);
+            $"{_smartiesSettings.BaseUrl}/api/Foundation/staffs?IsActive={request.IsActive}{ids}{userIds}", cancellationToken, headers: _headers).ConfigureAwait(false);
 	}
     
     public async Task<CreateSpeechMaticsJobResponseDto> CreateSpeechMaticsJobAsync(CreateSpeechMaticsJobCommandDto command, CancellationToken cancellationToken)

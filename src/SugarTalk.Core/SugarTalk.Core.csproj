@@ -118,10 +118,11 @@
         <EmbeddedResource Include="DbUp\Scripts_2025\Script0002_delete_created_info_for_speech_matics_record.sql" />
         <EmbeddedResource Include="DbUp\Scripts_2025\Script0003_add_cohost_for_meeting_user_sessions.sql" />
         <EmbeddedResource Include="DbUp\Scripts_2025\Script0004_add_meeting_sub_id_for_record.sql" />
+        <EmbeddedResource Include="DbUp\Scripts_2025\Script0004_modify_meeting_participant.sql" />
     </ItemGroup>
     
     <ItemGroup>
-      <Folder Include="Jobs\RecurringJobs" />
+        <Folder Include="Jobs\RecurringJobs" />
     </ItemGroup>
     
 </Project>

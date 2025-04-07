@@ -94,6 +94,10 @@ public class MeetingBaseDto
     public bool IsMuted { get; set; } = false;
     
     public bool IsRecorded { get; set; } = false;
+
+    public List<AppointmentMeetingDetailForParticipantDto> Participants { get; set; }
+
+    public int ParticipantsCount { get; set; }
     
     public bool? IsMetis { get; set; }
     
@@ -144,6 +148,15 @@ public class AddOrUpdateMeetingDto
 public class MeetingParticipantDto
 {
     public Guid ThirdPartyUserId { get; set; }
+
+    public bool IsDesignatedHost { get; set; }
+}
+
+public class AppointmentMeetingDetailForParticipantDto
+{
+    public Guid ThirdPartyUserId { get; set; }
+    
+    public string UserName { get; set; }
 
     public bool IsDesignatedHost { get; set; }
 }

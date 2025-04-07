@@ -135,7 +135,7 @@ public partial class MeetingService
             var participants = await task;
             return await _smartiesClient.GetExternalStaffsAsync(new GetExternalStaffsRequestDto
             {
-                Ids = participants.Select(r => r.ThirdPartyUserId).ToList()
+                Ids = participants.Select(r => r.StaffId).ToList()
             }, cancellationToken);
         }, cancellationToken, TaskContinuationOptions.OnlyOnRanToCompletion, TaskScheduler.Default).Unwrap();
 
@@ -158,7 +158,7 @@ public partial class MeetingService
                 ToUsers = meetingParticipantsName.Data.Staffs.Select(r => r.ExternalSystemStaffId).ToList(),
                 Text = new SendWorkWeChatTextNotificationDto
                 {
-                    Content = $"會議摘要\n\n{abstractString}\n\n會議代辦\n\n{todoString}"
+                    Content = $"會議摘要\n\n{abstractString}\n\n會議待辦\n\n{todoString}"
                 }
             }
         }, cancellationToken).ConfigureAwait(false);
