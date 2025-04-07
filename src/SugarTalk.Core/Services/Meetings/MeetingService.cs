@@ -390,8 +390,6 @@ namespace SugarTalk.Core.Services.Meetings
             // CheckJoinMeetingConditions(meeting, user);
 
             await OutLiveKitExistedUserAsync(meetingNumber: meeting.MeetingNumber, userName: user.UserName, cancellationToken: cancellationToken).ConfigureAwait(false);
-
-            await HandleAbnormalWithdrawalStatusBeforeAsync(user.Id, meeting.Id, cancellationToken).ConfigureAwait(false);
             
             await ConnectUserToMeetingAsync(user, meeting, command.IsMuted, cancellationToken).ConfigureAwait(false);
 
@@ -653,6 +651,8 @@ namespace SugarTalk.Core.Services.Meetings
         public async Task ConnectUserToMeetingAsync(
             UserAccountDto user, MeetingDto meeting, bool? isMuted = null, CancellationToken cancellationToken = default)
         {
+            await HandleAbnormalWithdrawalStatusBeforeAsync(user.Id, meeting.Id, cancellationToken).ConfigureAwait(false);
+            
             var userSession = meeting.UserSessions
                 .Where(x => x.UserId == user.Id)
                 .Select(x => _mapper.Map<MeetingUserSession>(x))
