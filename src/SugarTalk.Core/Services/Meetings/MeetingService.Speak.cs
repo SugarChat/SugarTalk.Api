@@ -257,7 +257,9 @@ public partial class MeetingService
         _backgroundJobClient.Enqueue<IMediator>(x => x.SendAsync(new ProcessSummaryMeetingCommand
         {
             MeetingSummaryId = summary.Id,
-            Language = TranslationLanguage.ZhCn
+            Language = TranslationLanguage.ZhCn,
+            MeetingId = meetingRecord.MeetingId,
+            IsMetis = meeting.IsMetis
         }, cancellationToken), HangfireConstants.MeetingSummaryQueue);
     }
     
