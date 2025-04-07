@@ -25,6 +25,7 @@ using SugarTalk.Core.Services.Smarties;
 using SugarTalk.Core.Settings.Aws;
 using SugarTalk.Core.Settings.Meeting;
 using SugarTalk.Core.Settings.Meeting.Feedback;
+using SugarTalk.Core.Settings.PostBoy;
 using SugarTalk.Core.Settings.Smarties;
 
 namespace SugarTalk.UnitTests;
@@ -66,6 +67,7 @@ public partial class BaseFixture
     private readonly FeedbackSettings _feedbackSettings;
     private readonly SmartiesSettings _smartiesSettings;
     private readonly ISmartiesDataProvider _smartiesDataProvider;
+    private readonly PostBoySettings _postBoySettings;
     
     public BaseFixture()
     {
@@ -87,7 +89,7 @@ public partial class BaseFixture
         _accountDataProvider = MockAccountDataProvider(_mapper, _repository, _unitOfWork, _currentUser);
         _meetingDataProvider = MockMeetingDataProvider(_clock, _mapper, _repository, _unitOfWork, _currentUser, _accountDataProvider);
         _meetingService = MockMeetingService(_clock, _mapper, _unitOfWork, _currentUser, _ffmpegService, _cacheManager, _openAiService, _speechClient, _postBoyClient,
-            _liveKitClient, _fclubClient, _awsS3Settings, _awsS3Service, _smartiesClient, _translationClient, _meetingUtilService,
+            _liveKitClient, _fclubClient, _awsS3Settings, _awsS3Service, _smartiesClient, _postBoySettings, _translationClient, _meetingUtilService,
             _meetingDataProvider, _accountDataProvider, _liveKitServerSetting, _httpClientFactory, _backgroundJobClient,
             _liveKitServerUtilService, _antMediaServerUtilService, _sugarTalkBackgroundJobClient, _meetingInfoSettings, _feedbackSettings, _smartiesSettings, _smartiesDataProvider); 
         _meetingProcessJobService = MockMeetingProcessJobService(_clock, _unitOfWork, _meetingDataProvider);
@@ -118,6 +120,7 @@ public partial class BaseFixture
         AwsS3Settings awsS3Settings,
         IAwsS3Service awsS3Service,
         ISmartiesClient smartiesClient,
+        PostBoySettings postBoySettings,
         TranslationClient translationClient,
         IMeetingUtilService meetingUtilService,
         IMeetingDataProvider meetingDataProvider,
@@ -134,7 +137,7 @@ public partial class BaseFixture
         ISmartiesDataProvider smartiesDataProvider)
     {
         return new MeetingService(
-            clock, mapper, unitOfWork, currentUser, ffmpegService, openAiService, speechClient, postBoyClient, liveKitClient, fclubClient, awsS3Settings, awsS3Service, smartiesClient, smartiesSettings,
+            clock, mapper, unitOfWork, currentUser, ffmpegService, openAiService, speechClient, postBoyClient, liveKitClient, fclubClient, awsS3Settings, awsS3Service, smartiesClient, postBoySettings, smartiesSettings,
             translationClient, meetingUtilService, meetingDataProvider, accountDataProvider, liveKitServerSetting, 
             httpClientFactory, backgroundJobClient, liveKitServerUtilService, antMediaServerUtilService, sugarTalkBackgroundJobClient, null, cacheManager, feedbackSettings, smartiesDataProvider);
     }
