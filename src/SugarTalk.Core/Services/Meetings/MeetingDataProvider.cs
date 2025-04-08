@@ -80,7 +80,7 @@ namespace SugarTalk.Core.Services.Meetings
         
         Task<List<MeetingSubMeeting>> GetMeetingSubMeetingsAsync(Guid meetingId, CancellationToken cancellationToken);
         
-        Task<(int Count, List<AppointmentMeetingDto> Records)> GetAppointmentMeetingsByUserIdAsync(GetAppointmentMeetingsRequest request, Guid? thirdPartyUserId, CancellationToken cancellationToken);
+        Task<(int Count, List<AppointmentMeetingDto> Records)> GetAppointmentMeetingsByUserIdAsync(GetAppointmentMeetingsRequest request, Guid? staffId, CancellationToken cancellationToken);
         
         Task MarkMeetingAsCompletedAsync(Meeting meeting, CancellationToken cancellationToken);
 
@@ -513,17 +513,14 @@ namespace SugarTalk.Core.Services.Meetings
                 .OrderBy(x => x.StartTime).ToListAsync(cancellationToken).ConfigureAwait(false);
         }
 
-        public async Task<(int Count, List<AppointmentMeetingDto> Records)> GetAppointmentMeetingsByUserIdAsync(GetAppointmentMeetingsRequest request, Guid? thirdPartyUserId, CancellationToken cancellationToken)
+        public async Task<(int Count, List<AppointmentMeetingDto> Records)> GetAppointmentMeetingsByUserIdAsync(GetAppointmentMeetingsRequest request, Guid? staffId, CancellationToken cancellationToken)
         {
             var maxQueryDate = _clock.Now.AddMonths(1).ToUnixTimeSeconds();
             var startOfDay = new DateTimeOffset(_clock.Now.Year, _clock.Now.Month, _clock.Now.Day, 0, 0, 0, TimeSpan.Zero).ToUnixTimeSeconds();
             
             Log.Information("GetAppointmentMeetingsByUserIdAsync maxQueryDate:{@maxQueryDate},startOfDay:{@startofDay}", maxQueryDate, startOfDay);
 
-            var meetingIds = from staff in _repository.Query<RmStaff>()
-                where staff.UserId == thirdPartyUserId
-                join participant in _repository.Query<MeetingParticipant>() on staff.Id equals participant.StaffId
-                select participant.MeetingId;
+            var meetingIds = _repository.Query<MeetingParticipant>().Where(x => x.StaffId == staffId).Select(x => x.MeetingId);
                     
             var query =
                 from meeting in _repository.Query<Meeting>()
