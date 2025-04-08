@@ -1028,7 +1028,19 @@ namespace SugarTalk.Core.Services.Meetings
 
             if (user is null) throw new UnreachableException();
 
-            var (count, records) = await _meetingDataProvider.GetAppointmentMeetingsByUserIdAsync(request, Guid.Parse(user.ThirdPartyUserId), cancellationToken).ConfigureAwait(false);
+            Guid? staffId = Guid.Empty;
+            
+            if (!string.IsNullOrEmpty(user.ThirdPartyUserId))
+            {
+                staffId = (await _smartiesClient.GetStaffsRequestAsync(new GetStaffsRequestDto
+                {
+                    UserIds = new List<Guid> { Guid.Parse(user.ThirdPartyUserId) }
+                }, cancellationToken).ConfigureAwait(false)).Data.Staffs.FirstOrDefault()?.Id;
+            }
+            
+            Log.Information("Get appointment meetings by third party user id: {@ThirdPartyUserId}, staff id: {@staffId}", user.ThirdPartyUserId, staffId);
+
+            var (count, records) = await _meetingDataProvider.GetAppointmentMeetingsByUserIdAsync(request, staffId, cancellationToken).ConfigureAwait(false);
         
             return new GetAppointmentMeetingsResponse
             {
