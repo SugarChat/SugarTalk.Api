@@ -1035,6 +1035,8 @@ namespace SugarTalk.Core.Services.Meetings
                     UserIds = new List<Guid> { Guid.Parse(user.ThirdPartyUserId) }
                 }, cancellationToken).ConfigureAwait(false)).Data.Staffs.FirstOrDefault()?.Id;
             }
+            
+            Log.Information("Get appointment meetings by third party user id: {@ThirdPartyUserId}, staff id: {@staffId}", user.ThirdPartyUserId, staffId);
 
             var (count, records) = await _meetingDataProvider.GetAppointmentMeetingsByUserIdAsync(request, staffId, cancellationToken).ConfigureAwait(false);
         
