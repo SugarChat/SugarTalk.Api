@@ -575,6 +575,7 @@ namespace SugarTalk.Core.Services.Meetings
             }
             
             meeting.Status = MeetingStatus.Completed;
+            meeting.IsActiveRecord = false;
             
             await _repository.UpdateAsync(meeting, cancellationToken).ConfigureAwait(false);
             
