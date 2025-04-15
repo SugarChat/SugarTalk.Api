@@ -93,7 +93,7 @@ public partial class MeetingService
         var meetingRecordId = Guid.NewGuid();
         
         var meeting = await _meetingDataProvider
-            .GetMeetingByIdAsync(command.MeetingId, cancellationToken).ConfigureAwait(false);
+            .GetMeetingByIdAsync(command.MeetingId, cancellationToken: cancellationToken).ConfigureAwait(false);
 
         if (meeting is null) throw new MeetingNotFoundException();
 
@@ -145,7 +145,7 @@ public partial class MeetingService
         Log.Information("ReStartMeetingRecordingCommand: {@command}", command);
         
         var meeting = await _meetingDataProvider
-            .GetMeetingByIdAsync(command.MeetingId, cancellationToken).ConfigureAwait(false);
+            .GetMeetingByIdAsync(command.MeetingId, cancellationToken: cancellationToken).ConfigureAwait(false);
 
         if (meeting is null) throw new MeetingNotFoundException();
         
@@ -192,7 +192,7 @@ public partial class MeetingService
         if (record?.UrlStatus != MeetingRecordUrlStatus.Pending)
             return;
         
-        var meeting = await _meetingDataProvider.GetMeetingByIdAsync(command.MeetingId, cancellationToken).ConfigureAwait(false);
+        var meeting = await _meetingDataProvider.GetMeetingByIdAsync(command.MeetingId, cancellationToken: cancellationToken).ConfigureAwait(false);
         
         var recordMeetingToken = _liveKitServerUtilService.GenerateTokenForRecordMeeting(command.User, meeting.MeetingNumber);
         
@@ -223,7 +223,7 @@ public partial class MeetingService
 
     public async Task<StorageMeetingRecordVideoResponse> StorageMeetingRecordVideoAsync(StorageMeetingRecordVideoCommand command, CancellationToken cancellationToken)
     {
-        var meeting = await _meetingDataProvider.GetMeetingByIdAsync(command.MeetingId, cancellationToken).ConfigureAwait(false);
+        var meeting = await _meetingDataProvider.GetMeetingByIdAsync(command.MeetingId, cancellationToken: cancellationToken).ConfigureAwait(false);
 
         var user = await _accountDataProvider.GetUserAccountAsync(_currentUser.Id, cancellationToken: cancellationToken).ConfigureAwait(false);
         
