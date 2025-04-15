@@ -164,7 +164,7 @@ namespace SugarTalk.Core.Services.Meetings
             if (string.IsNullOrEmpty(meetingNumber))
                 query = query.Where(x => x.MeetingNumber == meetingNumber);
             
-            return await query.SingleOrDefaultAsync(x => x.Id == meetingId, cancellationToken).ConfigureAwait(false);
+            return await query.SingleOrDefaultAsync(cancellationToken).ConfigureAwait(false);
         }
 
         public async Task PersistMeetingAsync(Meeting meeting, CancellationToken cancellationToken)
