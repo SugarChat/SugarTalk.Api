@@ -161,7 +161,7 @@ namespace SugarTalk.Core.Services.Meetings
             if (meetingId.HasValue)
                 query = query.Where(x => x.Id == meetingId);
 
-            if (string.IsNullOrEmpty(meetingNumber))
+            if (!string.IsNullOrEmpty(meetingNumber))
                 query = query.Where(x => x.MeetingNumber == meetingNumber);
             
             return await query.SingleOrDefaultAsync(cancellationToken).ConfigureAwait(false);
