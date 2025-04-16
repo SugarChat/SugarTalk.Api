@@ -53,7 +53,7 @@ public partial class MeetingService
         var userSession = await _meetingDataProvider
             .GetMeetingUserSessionByIdAsync(command.MeetingUserSessionId, cancellationToken).ConfigureAwait(false);
 
-        var meeting = await _meetingDataProvider.GetMeetingByIdAsync(userSession.MeetingId, cancellationToken).ConfigureAwait(false);
+        var meeting = await _meetingDataProvider.GetMeetingByIdAsync(userSession.MeetingId, cancellationToken:cancellationToken).ConfigureAwait(false);
 
         if (meeting == null) throw new MeetingNotFoundException();
 
@@ -76,7 +76,7 @@ public partial class MeetingService
         var userSession = await _meetingDataProvider
             .GetMeetingUserSessionByIdAsync(command.MeetingUserSessionId, cancellationToken).ConfigureAwait(false);
 
-        var meeting = await _meetingDataProvider.GetMeetingByIdAsync(userSession.MeetingId, cancellationToken).ConfigureAwait(false);
+        var meeting = await _meetingDataProvider.GetMeetingByIdAsync(userSession.MeetingId, cancellationToken:cancellationToken).ConfigureAwait(false);
         
         if (meeting == null) throw new MeetingNotFoundException();
 
@@ -145,7 +145,7 @@ public partial class MeetingService
     {
         if (request.UserId != _currentUser.Id) throw new UnauthorizedAccessException();
         
-        var meeting = await _meetingDataProvider.GetMeetingByIdAsync(request.MeetingId, cancellationToken).ConfigureAwait(false);
+        var meeting = await _meetingDataProvider.GetMeetingByIdAsync(request.MeetingId, cancellationToken:cancellationToken).ConfigureAwait(false);
         if (meeting == null) { throw new MeetingNotFoundException(); }
 
         var userSession = await _meetingDataProvider
@@ -167,7 +167,7 @@ public partial class MeetingService
         CancellationToken cancellationToken)
     {
         var meeting = await _meetingDataProvider
-            .GetMeetingByIdAsync(command.MeetingId, cancellationToken).ConfigureAwait(false);
+            .GetMeetingByIdAsync(command.MeetingId, cancellationToken: cancellationToken).ConfigureAwait(false);
         if (meeting == null) throw new MeetingNotFoundException();
         if (meeting.MeetingMasterUserId != _currentUser.Id) throw new UnauthorizedAccessException();
 
@@ -278,7 +278,7 @@ public partial class MeetingService
 
     public async Task<CheckRenamePermissionResponse> CheckRenamePermissionAsync(CheckRenamePermissionCommand command, CancellationToken cancellationToken)
     {
-        var meeting = await _meetingDataProvider.GetMeetingByIdAsync(command.MeetingId, cancellationToken).ConfigureAwait(false);
+        var meeting = await _meetingDataProvider.GetMeetingByIdAsync(command.MeetingId, cancellationToken: cancellationToken).ConfigureAwait(false);
         
         if(meeting == null) throw new MeetingNotFoundException();
 

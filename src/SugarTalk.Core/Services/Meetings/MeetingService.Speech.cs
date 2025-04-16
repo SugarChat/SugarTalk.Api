@@ -86,7 +86,7 @@ public partial class MeetingService
 
         meetingSpeechesDto = meetingSpeechesDto.OrderBy(x => x.CreatedDate).ToList();
 
-        var meeting = await _meetingDataProvider.GetMeetingByIdAsync(request.MeetingId, cancellationToken).ConfigureAwait(false);
+        var meeting = await _meetingDataProvider.GetMeetingByIdAsync(request.MeetingId, cancellationToken:cancellationToken).ConfigureAwait(false);
 
         var userSessions = (await GetMeetingByNumberAsync(new GetMeetingByNumberRequest
         {
@@ -130,7 +130,7 @@ public partial class MeetingService
 
         meetingSpeeches = meetingSpeeches.OrderBy(x => x.CreatedDate).ToList();
 
-        var meeting = await _meetingDataProvider.GetMeetingByIdAsync(meetingId, cancellationToken).ConfigureAwait(false);
+        var meeting = await _meetingDataProvider.GetMeetingByIdAsync(meetingId, cancellationToken:cancellationToken).ConfigureAwait(false);
 
         var userSessions = (await GetMeetingByNumberAsync(new GetMeetingByNumberRequest
         {
