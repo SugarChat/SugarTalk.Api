@@ -377,9 +377,18 @@ namespace SugarTalk.Core.Services.Meetings
             
             await _meetingDataProvider.CheckUserKickedFromMeetingAsync(command.MeetingNumber, user.Id, cancellationToken).ConfigureAwait(false);
             
+            var originalMeeting = await _meetingDataProvider.GetMeetingByIdAsync(null, command.MeetingNumber, cancellationToken: cancellationToken).ConfigureAwait(false);
+
+            if (originalMeeting.CreatedBy == user.Id && originalMeeting.MeetingMasterUserId != user.Id)
+            {
+                originalMeeting.MeetingMasterUserId = user.Id;
+                
+                await _meetingDataProvider.UpdateMeetingAsync(originalMeeting, cancellationToken).ConfigureAwait(false);
+            }
+
             var meeting = await _meetingDataProvider.GetMeetingAsync(command.MeetingNumber, cancellationToken: cancellationToken).ConfigureAwait(false);
 
-            if (meeting.MeetingMasterUserId != user.Id && meeting.IsPasswordEnabled)
+            if ((meeting.MeetingMasterUserId != user.Id || meeting.CreatedBy != user.Id) && meeting.IsPasswordEnabled)
             {
                 await _meetingDataProvider
                     .CheckMeetingSecurityCodeAsync(meeting.Id, command.SecurityCode, cancellationToken).ConfigureAwait(false);
@@ -443,7 +452,7 @@ namespace SugarTalk.Core.Services.Meetings
         private void CheckJoinMeetingConditions(MeetingDto meeting, UserAccountDto user)
         {
             //加入未在进行中的会议时判断当前用户是否是主持人，如果不是则判断会议开始时间、会议中是否有主持人。都不符合则抛出异常
-            if (meeting.MeetingMasterUserId == user.Id) return;
+            if (meeting.MeetingMasterUserId == user.Id || meeting.CreatedBy == user.Id) return;
             
             var now = _clock.Now.ToUnixTimeSeconds();
 
@@ -466,7 +475,7 @@ namespace SugarTalk.Core.Services.Meetings
         private async Task OutLiveKitExistedUserAsync(string meetingNumber = null, string userName = null, Guid? meetingId = null, CancellationToken cancellationToken = default)
         {
             if (meetingId.HasValue)
-                meetingNumber = _mapper.Map<MeetingDto>(await _meetingDataProvider.GetMeetingByIdAsync(meetingId.Value, cancellationToken).ConfigureAwait(false)).MeetingNumber;
+                meetingNumber = _mapper.Map<MeetingDto>(await _meetingDataProvider.GetMeetingByIdAsync(meetingId.Value, cancellationToken:cancellationToken).ConfigureAwait(false)).MeetingNumber;
             
             var token = _liveKitServerUtilService.GetMeetingInfoPermission(meetingNumber);
             
@@ -571,7 +580,7 @@ namespace SugarTalk.Core.Services.Meetings
         public async Task HandleMeetingStatusWhenOutMeetingAsync(
             int userId, Guid meetingId, Guid? meetingSubId = null, CancellationToken cancellationToken = default)
         {
-            var meeting = await _meetingDataProvider.GetMeetingByIdAsync(meetingId, cancellationToken).ConfigureAwait(false);
+            var meeting = await _meetingDataProvider.GetMeetingByIdAsync(meetingId, cancellationToken:cancellationToken).ConfigureAwait(false);
             
             if (meeting is null) throw new MeetingNotFoundException();
             
@@ -717,7 +726,7 @@ namespace SugarTalk.Core.Services.Meetings
         {
             var user = await _accountDataProvider.CheckCurrentLoggedInUser(cancellationToken).ConfigureAwait(false);
             
-            var meeting = await _meetingDataProvider.GetMeetingByIdAsync(command.Id, cancellationToken).ConfigureAwait(false);
+            var meeting = await _meetingDataProvider.GetMeetingByIdAsync(command.Id, cancellationToken:cancellationToken).ConfigureAwait(false);
             
             ValidateMeetingUpdateConditions(meeting, user);
 
@@ -867,7 +876,7 @@ namespace SugarTalk.Core.Services.Meetings
         {
             var user = await _accountDataProvider.CheckCurrentLoggedInUser(cancellationToken).ConfigureAwait(false);
             
-            var meeting = await _meetingDataProvider.GetMeetingByIdAsync(command.Id, cancellationToken).ConfigureAwait(false);
+            var meeting = await _meetingDataProvider.GetMeetingByIdAsync(command.Id, cancellationToken:cancellationToken).ConfigureAwait(false);
             
             if (meeting.MeetingMasterUserId != user.Id) 
                 throw new CannotUpdateMeetingWhenMasterUserIdMismatchException();
@@ -1132,7 +1141,7 @@ namespace SugarTalk.Core.Services.Meetings
 
             if (user is null) throw new UnauthorizedAccessException();
 
-            var meeting = await _meetingDataProvider.GetMeetingByIdAsync(request.MeetingId, cancellationToken).ConfigureAwait(false);
+            var meeting = await _meetingDataProvider.GetMeetingByIdAsync(request.MeetingId, cancellationToken:cancellationToken).ConfigureAwait(false);
 
             return new GetMeetingInviteInfoResponse
             {

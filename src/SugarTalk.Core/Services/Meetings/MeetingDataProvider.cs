@@ -29,7 +29,7 @@ namespace SugarTalk.Core.Services.Meetings
     {
         Task<MeetingUserSession> GetMeetingUserSessionByMeetingIdAsync(Guid meetingId, Guid? meetingSubId, int? userId, MeetingUserSessionOnlineType? userSessionOnlineType, CancellationToken cancellationToken);
         
-        Task<Meeting> GetMeetingByIdAsync(Guid meetingId, CancellationToken cancellationToken = default);
+        Task<Meeting> GetMeetingByIdAsync(Guid? meetingId = null, string meetingNumber = null, CancellationToken cancellationToken = default);
         
         Task PersistMeetingAsync(Meeting meeting, CancellationToken cancellationToken);
 
@@ -154,11 +154,17 @@ namespace SugarTalk.Core.Services.Meetings
             return await query.SingleOrDefaultAsync(cancellationToken).ConfigureAwait(false);
         }
 
-        public async Task<Meeting> GetMeetingByIdAsync(Guid meetingId, CancellationToken cancellationToken = default)
+        public async Task<Meeting> GetMeetingByIdAsync(Guid? meetingId = null, string meetingNumber = null, CancellationToken cancellationToken = default)
         {
-            return await _repository.Query<Meeting>().AsNoTracking()
-                .SingleOrDefaultAsync(x => x.Id == meetingId, cancellationToken)
-                .ConfigureAwait(false);
+            var query = _repository.Query<Meeting>().AsNoTracking();
+
+            if (meetingId.HasValue)
+                query = query.Where(x => x.Id == meetingId);
+
+            if (!string.IsNullOrEmpty(meetingNumber))
+                query = query.Where(x => x.MeetingNumber == meetingNumber);
+            
+            return await query.SingleOrDefaultAsync(cancellationToken).ConfigureAwait(false);
         }
 
         public async Task PersistMeetingAsync(Meeting meeting, CancellationToken cancellationToken)
