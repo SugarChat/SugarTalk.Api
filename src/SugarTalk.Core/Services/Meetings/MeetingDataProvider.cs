@@ -691,7 +691,7 @@ namespace SugarTalk.Core.Services.Meetings
         {
             var appointmentMeetings = await _repository.Query<Meeting>()
                 .Where(x => x.AppointmentType == MeetingAppointmentType.Appointment)
-                .Where(x => x.Status == MeetingStatus.Pending || x.Status == MeetingStatus.InProgress)
+                .Where(x => x.Status == MeetingStatus.Pending || x.Status == MeetingStatus.InProgress || x.Status == MeetingStatus.Completed)
                 .ToListAsync(cancellationToken).ConfigureAwait(false);
 
             if (appointmentMeetings is not { Count: > 0 }) return new List<Meeting>();
