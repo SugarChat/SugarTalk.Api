@@ -377,16 +377,17 @@ namespace SugarTalk.Core.Services.Meetings
             
             await _meetingDataProvider.CheckUserKickedFromMeetingAsync(command.MeetingNumber, user.Id, cancellationToken).ConfigureAwait(false);
             
-            var originalMeeting = await _meetingDataProvider.GetMeetingByIdAsync(null, command.MeetingNumber, cancellationToken: cancellationToken).ConfigureAwait(false);
+            var meeting = await _meetingDataProvider.GetMeetingAsync(command.MeetingNumber, cancellationToken: cancellationToken).ConfigureAwait(false);
 
-            if (originalMeeting.CreatedBy == user.Id && originalMeeting.MeetingMasterUserId != user.Id)
+            if (meeting.CreatedBy == user.Id && meeting.MeetingMasterUserId != user.Id)
             {
+                var originalMeeting = await _meetingDataProvider.GetMeetingByIdAsync(null, command.MeetingNumber, cancellationToken: cancellationToken).ConfigureAwait(false);
+                
+                meeting.MeetingMasterUserId = user.Id;
                 originalMeeting.MeetingMasterUserId = user.Id;
                 
                 await _meetingDataProvider.UpdateMeetingAsync(originalMeeting, cancellationToken).ConfigureAwait(false);
             }
-
-            var meeting = await _meetingDataProvider.GetMeetingAsync(command.MeetingNumber, cancellationToken: cancellationToken).ConfigureAwait(false);
 
             if ((meeting.MeetingMasterUserId != user.Id || meeting.CreatedBy != user.Id) && meeting.IsPasswordEnabled)
             {
@@ -540,7 +541,7 @@ namespace SugarTalk.Core.Services.Meetings
         private async Task<MeetingUserSession> ProcessingMeetingMasterInheritAsync(Meeting meeting, MeetingUserSession currentUserSession, CancellationToken cancellationToken)
         {
             var meetingUserSession = await _meetingDataProvider.GetMeetingUserSessionAsync(
-                meeting.Id, null,null, null, MeetingUserSessionOnlineType.Online, cancellationToken).ConfigureAwait(false);
+                meeting.Id, currentUserSession.MeetingSubId,null, null, MeetingUserSessionOnlineType.Online, true, cancellationToken: cancellationToken).ConfigureAwait(false);
             
             var newMasterSession = meetingUserSession.FirstOrDefault(x => x.UserId == meeting.CreatedBy);
 
