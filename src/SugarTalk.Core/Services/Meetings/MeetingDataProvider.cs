@@ -177,7 +177,7 @@ namespace SugarTalk.Core.Services.Meetings
         public async Task<MeetingDto> GetMeetingAsync(
             string meetingNumber = null, Guid? meetingId = null, CancellationToken cancellationToken = default, bool includeUserSessions = true)
         {
-            var query = _repository.QueryNoTracking<Meeting>();
+            var query = _repository.QueryNoTracking<Meeting>().AsNoTracking();
 
             if(!string.IsNullOrEmpty(meetingNumber))
                 query = query.Where(x => x.MeetingNumber == meetingNumber);
