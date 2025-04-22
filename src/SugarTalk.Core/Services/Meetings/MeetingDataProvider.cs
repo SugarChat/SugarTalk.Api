@@ -93,7 +93,7 @@ namespace SugarTalk.Core.Services.Meetings
         
         Task CancelAppointmentMeetingAsync(Guid meetingId, CancellationToken cancellationToken);
 
-        Task<List<MeetingUserSession>> GetMeetingUserSessionAsync(Guid meetingId, Guid? meetingSubId = null, int? userId = null, bool? coHost = null, MeetingUserSessionOnlineType? sessionOnlineType = null, CancellationToken cancellationToken = default);
+        Task<List<MeetingUserSession>> GetMeetingUserSessionAsync(Guid meetingId, Guid? meetingSubId = null, int? userId = null, bool? coHost = null, MeetingUserSessionOnlineType? sessionOnlineType = null, bool notIncludedGuest = false, CancellationToken cancellationToken = default);
         
         Task<List<Meeting>> GetAvailableRepeatMeetingAsync(CancellationToken cancellationToken);
         
@@ -650,7 +650,7 @@ namespace SugarTalk.Core.Services.Meetings
             await _unitOfWork.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
         }
 
-        public async Task<List<MeetingUserSession>> GetMeetingUserSessionAsync(Guid meetingId, Guid? meetingSubId = null, int? userId = null, bool? coHost = null, MeetingUserSessionOnlineType? sessionOnlineType = null,  CancellationToken cancellationToken = default)
+        public async Task<List<MeetingUserSession>> GetMeetingUserSessionAsync(Guid meetingId, Guid? meetingSubId = null, int? userId = null, bool? coHost = null, MeetingUserSessionOnlineType? sessionOnlineType = null, bool notIncludedGuest = false,  CancellationToken cancellationToken = default)
         {
             var query = _repository.QueryNoTracking<MeetingUserSession>().Where(x => x.MeetingId == meetingId);
 
@@ -663,6 +663,9 @@ namespace SugarTalk.Core.Services.Meetings
 
             if (coHost.HasValue)
                 query = query.Where(x => x.CoHost == coHost.Value);
+
+            if (notIncludedGuest)
+                query = query.Where(x => string.IsNullOrEmpty(x.GuestName));
 
             return await query.ToListAsync(cancellationToken).ConfigureAwait(false);
         }
