@@ -704,7 +704,7 @@ namespace SugarTalk.Core.Services.Meetings
 
         public async Task CheckUserKickedFromMeetingAsync(string meetingNumber, int userId, CancellationToken cancellationToken)
         {
-            var isKicked = await _repository.QueryNoTracking<Meeting>()
+            var isKicked = await _repository.QueryNoTracking<Meeting>().AsNoTracking()
                 .Where(x => x.MeetingNumber == meetingNumber)
                 .Join(_repository.QueryNoTracking<MeetingUserSession>(),
                     meeting => meeting.Id,
