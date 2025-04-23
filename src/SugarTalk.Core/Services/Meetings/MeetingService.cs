@@ -376,11 +376,13 @@ namespace SugarTalk.Core.Services.Meetings
             var user = await _accountDataProvider.GetUserAccountAsync(_currentUser?.Id.Value, cancellationToken: cancellationToken).ConfigureAwait(false);
 
             if (user is null) throw new UnauthorizedAccessException();
-            
+          
             await _meetingDataProvider.CheckUserKickedFromMeetingAsync(command.MeetingNumber, user.Id, cancellationToken).ConfigureAwait(false);
             
             var meeting = await _meetingDataProvider.GetMeetingAsync(command.MeetingNumber, cancellationToken: cancellationToken).ConfigureAwait(false);
-
+            
+            await HandleAbnormalWithdrawalStatusBeforeAsync(user.Id, meeting, cancellationToken).ConfigureAwait(false);
+            
             if (meeting.CreatedBy == user.Id && meeting.MeetingMasterUserId != user.Id)
             {
                 var originalMeeting = await _meetingDataProvider.GetMeetingByIdAsync(null, command.MeetingNumber, cancellationToken: cancellationToken).ConfigureAwait(false);
@@ -431,14 +433,18 @@ namespace SugarTalk.Core.Services.Meetings
             };
         }
         
-        private async Task HandleAbnormalWithdrawalStatusBeforeAsync(int userId, Guid meetingId, CancellationToken cancellationToken)
+        private async Task HandleAbnormalWithdrawalStatusBeforeAsync(int userId, MeetingDto meeting, CancellationToken cancellationToken)
         {
-            var meetingUserSessions = await _meetingDataProvider.GetMeetingUserSessionAsync(
-                meetingId, null, userId, null, cancellationToken: cancellationToken).ConfigureAwait(false);
+            if (meeting.AppointmentType != MeetingAppointmentType.Appointment) return;
+            
+            var originalMeetingUserSessions = await _meetingDataProvider.GetMeetingUserSessionAsync(
+                meeting.Id, null, userId, null, cancellationToken: cancellationToken).ConfigureAwait(false);
+            
+            var meetingUserSessions = originalMeetingUserSessions.Where(x => x.UserId == userId && x.MeetingSubId != meeting.MeetingSubId).ToList();
             
             Log.Information("Meeting user sessions before handle abnormal withdrawal status: {@meetingUserSessions}", meetingUserSessions);
 
-            if (meetingUserSessions == null || meetingUserSessions.Count < 0) return;
+            if (meetingUserSessions.Count < 0) return;
 
             meetingUserSessions = meetingUserSessions.Where(x => x.OnlineType == 0).Select(x =>
             {
@@ -661,8 +667,6 @@ namespace SugarTalk.Core.Services.Meetings
         public async Task ConnectUserToMeetingAsync(
             UserAccountDto user, MeetingDto meeting, bool? isMuted = null, CancellationToken cancellationToken = default)
         {
-            await HandleAbnormalWithdrawalStatusBeforeAsync(user.Id, meeting.Id, cancellationToken).ConfigureAwait(false);
-            
             var userSession = meeting.UserSessions
                 .Where(x => x.UserId == user.Id)
                 .Select(x => _mapper.Map<MeetingUserSession>(x))

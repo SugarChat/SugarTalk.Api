@@ -93,7 +93,7 @@ namespace SugarTalk.Core.Services.Meetings
         
         Task CancelAppointmentMeetingAsync(Guid meetingId, CancellationToken cancellationToken);
 
-        Task<List<MeetingUserSession>> GetMeetingUserSessionAsync(Guid meetingId, Guid? meetingSubId = null, int? userId = null, bool? coHost = null, MeetingUserSessionOnlineType? sessionOnlineType = null, bool notIncludedGuest = false, CancellationToken cancellationToken = default);
+        Task<List<MeetingUserSession>> GetMeetingUserSessionAsync(Guid? meetingId = null, Guid? meetingSubId = null, int? userId = null, bool? coHost = null, MeetingUserSessionOnlineType? sessionOnlineType = null, bool notIncludedGuest = false, CancellationToken cancellationToken = default);
         
         Task<List<Meeting>> GetAvailableRepeatMeetingAsync(CancellationToken cancellationToken);
         
@@ -650,9 +650,12 @@ namespace SugarTalk.Core.Services.Meetings
             await _unitOfWork.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
         }
 
-        public async Task<List<MeetingUserSession>> GetMeetingUserSessionAsync(Guid meetingId, Guid? meetingSubId = null, int? userId = null, bool? coHost = null, MeetingUserSessionOnlineType? sessionOnlineType = null, bool notIncludedGuest = false,  CancellationToken cancellationToken = default)
+        public async Task<List<MeetingUserSession>> GetMeetingUserSessionAsync(Guid? meetingId = null, Guid? meetingSubId = null, int? userId = null, bool? coHost = null, MeetingUserSessionOnlineType? sessionOnlineType = null, bool notIncludedGuest = false,  CancellationToken cancellationToken = default)
         {
-            var query = _repository.QueryNoTracking<MeetingUserSession>().Where(x => x.MeetingId == meetingId);
+            var query = _repository.QueryNoTracking<MeetingUserSession>();
+               
+            if(meetingId.HasValue)    
+               query = query.Where(x => x.MeetingId == meetingId);
 
             if (meetingSubId.HasValue) query = query.Where(x => x.MeetingSubId == meetingSubId.Value);
 
