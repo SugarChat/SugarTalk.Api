@@ -103,10 +103,7 @@ public class TrackDto
 
     [JsonProperty("source")]
     public string Source { get; set; }
-
-    [JsonProperty("layers")]
-    public List<string> Layers { get; set; }
-
+    
     [JsonProperty("mine_type")]
     public string MineType { get; set; }
 
