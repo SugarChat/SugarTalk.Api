@@ -95,9 +95,6 @@ public partial class MeetingService
 
         if (meeting is null) throw new MeetingNotFoundException();
 
-        if (meeting.MeetingMasterUserId != _currentUser?.Id) 
-            throw new CannotStartMeetingRecordingException(_currentUser?.Id);
-
         var user = await _accountDataProvider.GetUserAccountAsync(_currentUser.Id, cancellationToken: cancellationToken).ConfigureAwait(false);
 
         var postResponse = await _liveKitClient.StartRoomCompositeEgressAsync(new StartRoomCompositeEgressRequestDto
