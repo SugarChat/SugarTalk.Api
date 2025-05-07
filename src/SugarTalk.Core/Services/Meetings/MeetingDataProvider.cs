@@ -225,7 +225,7 @@ namespace SugarTalk.Core.Services.Meetings
                 updateMeeting.RepeatType = meetingRule.RepeatType;
             }
 
-            var meetingRecord = await GetMeetingRecordAsync(meeting.Id, cancellationToken).ConfigureAwait(false);
+            var meetingRecord = await GetMeetingRecordAsync(meeting.Id, updateMeeting.MeetingSubId, cancellationToken).ConfigureAwait(false);
 
             if (meetingRecord is not null)
             {
@@ -780,10 +780,14 @@ namespace SugarTalk.Core.Services.Meetings
                 await _unitOfWork.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
         }
 
-        public async Task<MeetingRecord> GetMeetingRecordAsync(Guid meetingId, CancellationToken cancellationToken)
+        private async Task<MeetingRecord> GetMeetingRecordAsync(Guid meetingId, Guid? meetingSubId, CancellationToken cancellationToken)
         {
-            return await _repository.QueryNoTracking<MeetingRecord>(x => x.MeetingId == meetingId)
-                .FirstOrDefaultAsync(cancellationToken).ConfigureAwait(false);
+            var quer = _repository.QueryNoTracking<MeetingRecord>().Where(x => x.MeetingId == meetingId);
+
+            if (meetingSubId.HasValue)
+                quer = quer.Where(x => x.MeetingSubId == meetingSubId);
+            
+            return await quer.OrderByDescending(x => x.StartedAt).FirstOrDefaultAsync(cancellationToken).ConfigureAwait(false);
         }
 
         private async Task<List<Meeting>> FilterAppointmentMeetingsWithoutAttendeesAsync(List<Meeting> appointmentMeetings, CancellationToken cancellationToken)
