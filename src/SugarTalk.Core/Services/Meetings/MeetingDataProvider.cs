@@ -784,6 +784,8 @@ namespace SugarTalk.Core.Services.Meetings
 
         public async Task<Guid?> GetMeetingSubIdByMeetingIdAsync(Meeting meeting, CancellationToken cancellationToken)
         {
+            if (meeting.AppointmentType == MeetingAppointmentType.Quick) return null;
+            
             var maxQueryDate = _clock.Now.AddMonths(1).ToUnixTimeSeconds();
             var startOfDay = new DateTimeOffset(_clock.Now.Year, _clock.Now.Month, _clock.Now.Day, 0, 0, 0, TimeSpan.Zero).ToUnixTimeSeconds();
             
