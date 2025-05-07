@@ -114,6 +114,8 @@ namespace SugarTalk.Core.Services.Meetings
         Task<List<MeetingParticipant>> GetMeetingParticipantAsync(Guid meetingId, bool? isDesignatedHost = null, bool isUserAccount = false, CancellationToken cancellationToken = default);
         
         Task DeleteMeetingParticipantAsync(List<MeetingParticipant> meetingParticipants, bool forSave = true, CancellationToken cancellationToken = default);
+
+        Task<Guid?> GetMeetingSubIdByMeetingIdAsync(Meeting meeting, CancellationToken cancellationToken);
     }
     
     public partial class MeetingDataProvider : IMeetingDataProvider
@@ -778,6 +780,28 @@ namespace SugarTalk.Core.Services.Meetings
 
             if (forSave)
                 await _unitOfWork.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        }
+
+        public async Task<Guid?> GetMeetingSubIdByMeetingIdAsync(Meeting meeting, CancellationToken cancellationToken)
+        {
+            var maxQueryDate = _clock.Now.AddMonths(1).ToUnixTimeSeconds();
+            var startOfDay = new DateTimeOffset(_clock.Now.Year, _clock.Now.Month, _clock.Now.Day, 0, 0, 0, TimeSpan.Zero).ToUnixTimeSeconds();
+            
+            var query =
+                from rules in _repository.Query<MeetingRepeatRule>()
+                where rules.MeetingId == meeting.Id
+                join subMeetings in _repository.Query<MeetingSubMeeting>() on meeting.Id equals subMeetings.MeetingId
+                    into subMeetingGroup
+                from subMeeting in subMeetingGroup.DefaultIfEmpty()
+                where (rules.RepeatType == MeetingRepeatType.None &&
+                        meeting.StartDate >= startOfDay &&
+                        meeting.EndDate <= maxQueryDate) ||
+                       (subMeeting != null &&
+                        subMeeting.StartTime >= startOfDay &&
+                        subMeeting.EndTime <= maxQueryDate)
+                select subMeeting.Id;
+           
+            return await query.SingleOrDefaultAsync(cancellationToken).ConfigureAwait(false);
         }
 
         private async Task<MeetingRecord> GetMeetingRecordAsync(Guid meetingId, Guid? meetingSubId, CancellationToken cancellationToken)

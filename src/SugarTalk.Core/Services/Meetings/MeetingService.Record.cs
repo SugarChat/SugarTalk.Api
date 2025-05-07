@@ -247,7 +247,9 @@ public partial class MeetingService
 
         if (stopResponse == null) throw new Exception();
         
-        var participants = await _meetingDataProvider.GetUserSessionsByMeetingIdAsync(command.MeetingId, null, true, true, cancellationToken).ConfigureAwait(false);
+        var meetingSubId = await _meetingDataProvider.GetMeetingSubIdByMeetingIdAsync(meeting: meeting, cancellationToken: cancellationToken).ConfigureAwait(false);
+        
+        var participants = await _meetingDataProvider.GetUserSessionsByMeetingIdAsync(command.MeetingId, meetingSubId, true, true, cancellationToken).ConfigureAwait(false);
         
         var filterGuest = participants.Where(p => p.GuestName == null).ToList();
         Log.Information("filter guest response: {@filterGuest}", filterGuest);
