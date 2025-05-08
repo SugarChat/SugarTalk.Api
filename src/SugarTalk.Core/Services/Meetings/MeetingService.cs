@@ -276,7 +276,7 @@ namespace SugarTalk.Core.Services.Meetings
             };
                         
             if(participants is { Count: > 0 })
-                meetingParticipants.AddRange(participants.Select(participant => new MeetingParticipant { MeetingId = meetingId, StaffId = participant.ThirdPartyUserId, IsDesignatedHost = participant.IsDesignatedHost }).ToList());
+                meetingParticipants.AddRange(participants.DistinctBy(p => p.ThirdPartyUserId).Select(participant => new MeetingParticipant { MeetingId = meetingId, StaffId = participant.ThirdPartyUserId, IsDesignatedHost = participant.IsDesignatedHost }).ToList());
 
             await _meetingDataProvider.AddMeetingParticipantAsync(meetingParticipants, cancellationToken: cancellationToken).ConfigureAwait(false);
         }
