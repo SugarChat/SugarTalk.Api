@@ -229,57 +229,68 @@ public partial class MeetingService
         
         await _meetingDataProvider.UpdateMeetingRecordUrlStatusAsync(command.MeetingRecordId, MeetingRecordUrlStatus.InProgress, cancellationToken).ConfigureAwait(false);
 
-        var stopResponse = await _liveKitClient.StopEgressAsync(
+        try
+        {
+            var stopResponse = await _liveKitClient.StopEgressAsync(
             new StopEgressRequestDto { Token = recordMeetingToken, EgressId = record.EgressId }, cancellationToken).ConfigureAwait(false);
+            
+            Log.Information("stop meeting recording response: {@stopResponse}", stopResponse);
+            
+            var speakDetails = await _meetingDataProvider.GetMeetingSpeakDetailsAsync(
+                meetingNumber: meeting.MeetingNumber, recordId: record.Id, cancellationToken: cancellationToken).ConfigureAwait(false);
 
-        Log.Information("stop meeting recording response: {@stopResponse}", stopResponse);
+            foreach (var speakDetail in speakDetails.Where(speakDetail => speakDetail.SpeakEndTime is null or 0))
+            {
+                speakDetail.SpeakStatus = SpeakStatus.End;
+                speakDetail.SpeakEndTime = DateTimeOffset.Now.ToUnixTimeMilliseconds();
+            }
         
-        var speakDetails = await _meetingDataProvider.GetMeetingSpeakDetailsAsync(
-            meetingNumber: meeting.MeetingNumber, recordId: command.MeetingRecordId, cancellationToken: cancellationToken).ConfigureAwait(false);
+            await _meetingDataProvider.UpdateMeetingSpeakDetailsAsync(speakDetails, true, cancellationToken).ConfigureAwait(false);
 
-        foreach (var speakDetail in speakDetails.Where(speakDetail => speakDetail.SpeakEndTime is null or 0))
-        {
-            speakDetail.SpeakStatus = SpeakStatus.End;
-            speakDetail.SpeakEndTime = DateTimeOffset.Now.ToUnixTimeMilliseconds();
+            if (stopResponse == null) throw new Exception();
+        
+            var participants = await _meetingDataProvider.GetUserSessionsByMeetingIdAsync(command.MeetingId, record.MeetingSubId, true, true, cancellationToken).ConfigureAwait(false);
+        
+            var filterGuest = participants.Where(p => p.GuestName == null).ToList();
+            Log.Information("filter guest response: {@filterGuest}", filterGuest);
+        
+            foreach (var participant in filterGuest)
+            {
+                await AddRecordForAccountAsync(participant.UserName, cancellationToken).ConfigureAwait(false);
+                Log.Information("An exception occurred while processing participants: {@participant}", participant);
+            }
+
+            var storageCommand = new DelayedMeetingRecordingStorageCommand 
+            { 
+                StartDate = _clock.Now, 
+                Token = recordMeetingToken, 
+                MeetingRecordId = record.Id,
+                MeetingId = command.MeetingId, 
+                EgressId = record.EgressId,
+                ReTryLimit = command.ReTryLimit,
+                IsRestartRecord = false
+            };
+
+            meeting.IsActiveRecord = false;
+
+            await _meetingDataProvider.UpdateMeetingAsync(meeting, cancellationToken).ConfigureAwait(false);
+
+            var jobId = _backgroundJobClient.Schedule<IMediator>(m => m.SendAsync(storageCommand, cancellationToken), TimeSpan.FromSeconds(10));
+
+            record.MeetingRecordJobId = jobId;
+        
+            await _meetingDataProvider.UpdateMeetingRecordAsync(record, cancellationToken).ConfigureAwait(false);
+        
+            return new StorageMeetingRecordVideoResponse();
         }
-        
-        await _meetingDataProvider.UpdateMeetingSpeakDetailsAsync(speakDetails, true, cancellationToken).ConfigureAwait(false);
-
-        if (stopResponse == null) throw new Exception();
-        
-        var participants = await _meetingDataProvider.GetUserSessionsByMeetingIdAsync(command.MeetingId, record.MeetingSubId, true, true, cancellationToken).ConfigureAwait(false);
-        
-        var filterGuest = participants.Where(p => p.GuestName == null).ToList();
-        Log.Information("filter guest response: {@filterGuest}", filterGuest);
-        
-        foreach (var participant in filterGuest)
+        catch (Exception e)
         {
-            await AddRecordForAccountAsync(participant.UserName, cancellationToken).ConfigureAwait(false);
-            Log.Information("An exception occurred while processing participants: {@participant}", participant);
+            record.UrlStatus = MeetingRecordUrlStatus.Failed;
+             
+            await _meetingDataProvider.UpdateMeetingRecordAsync(record, cancellationToken).ConfigureAwait(false);
+            
+            return new StorageMeetingRecordVideoResponse();
         }
-
-        var storageCommand = new DelayedMeetingRecordingStorageCommand 
-        { 
-            StartDate = _clock.Now, 
-            Token = recordMeetingToken, 
-            MeetingRecordId = command.MeetingRecordId,
-            MeetingId = command.MeetingId, 
-            EgressId = record.EgressId,
-            ReTryLimit = command.ReTryLimit,
-            IsRestartRecord = false
-        };
-
-        meeting.IsActiveRecord = false;
-
-        await _meetingDataProvider.UpdateMeetingAsync(meeting, cancellationToken).ConfigureAwait(false);
-
-        var jobId = _backgroundJobClient.Schedule<IMediator>(m => m.SendAsync(storageCommand, cancellationToken), TimeSpan.FromSeconds(10));
-
-        record.MeetingRecordJobId = jobId;
-        
-        await _meetingDataProvider.UpdateMeetingRecordAsync(record, cancellationToken).ConfigureAwait(false);
-        
-        return new StorageMeetingRecordVideoResponse();
     }
 
     public async Task<DelayedMeetingRecordingStorageEvent> ExecuteStorageMeetingRecordVideoDelayedJobAsync(
