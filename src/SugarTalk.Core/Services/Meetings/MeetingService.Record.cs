@@ -606,25 +606,34 @@ public partial class MeetingService
          meetingRecord.UrlStatus = egressItem.File.Filename == null ? MeetingRecordUrlStatus.InProgress : MeetingRecordUrlStatus.Completed;
         
          var localhostUrl = "";
-         
-         if (!string.IsNullOrEmpty(egressItem.File.Filename))
-         {
-             localhostUrl = await RecordLocalhostAsync(meetingRecord.Url, cancellationToken).ConfigureAwait(false);
-             
-             meetingRecord.EndedAt = await ProcessMeetingRecordEndedAt(meetingRecord.StartedAt, localhostUrl, cancellationToken).ConfigureAwait(false);
-         }
-         
-         Log.Information("Complete storage meeting record url");
 
-         await _meetingDataProvider.UpdateMeetingRecordAsync(meetingRecord, cancellationToken).ConfigureAwait(false);
-         
-         if (!string.IsNullOrEmpty(meetingRecord.Url))
+         try
          {
-             var meetingDetails = await _meetingDataProvider.GetMeetingDetailsByRecordIdAsync(meetingRecord.Id, cancellationToken).ConfigureAwait(false);
+             if (!string.IsNullOrEmpty(egressItem.File.Filename))
+             {
+                 localhostUrl = await RecordLocalhostAsync(meetingRecord.Url, cancellationToken).ConfigureAwait(false);
              
-             await MarkSpeakTranscriptAsSpecifiedStatusAsync(meetingDetails, FileTranscriptionStatus.InProcess, cancellationToken).ConfigureAwait(false);
+                 meetingRecord.EndedAt = await ProcessMeetingRecordEndedAt(meetingRecord.StartedAt, localhostUrl, cancellationToken).ConfigureAwait(false);
+             }
+         
+             Log.Information("Complete storage meeting record url");
+
+             await _meetingDataProvider.UpdateMeetingRecordAsync(meetingRecord, cancellationToken).ConfigureAwait(false);
+         
+             if (!string.IsNullOrEmpty(meetingRecord.Url))
+             {
+                 var meetingDetails = await _meetingDataProvider.GetMeetingDetailsByRecordIdAsync(meetingRecord.Id, cancellationToken).ConfigureAwait(false);
              
-             await CreateSpeechMaticsJobAsync(meetingRecord, meetingDetails, localhostUrl, cancellationToken).ConfigureAwait(false);
+                 await MarkSpeakTranscriptAsSpecifiedStatusAsync(meetingDetails, FileTranscriptionStatus.InProcess, cancellationToken).ConfigureAwait(false);
+             
+                 await CreateSpeechMaticsJobAsync(meetingRecord, meetingDetails, localhostUrl, cancellationToken).ConfigureAwait(false);
+             }
+         }
+         catch (Exception e)
+         {
+             meetingRecord.UrlStatus = MeetingRecordUrlStatus.Failed;
+             
+             await _meetingDataProvider.UpdateMeetingRecordAsync(meetingRecord, cancellationToken).ConfigureAwait(false);
          }
      }
 
