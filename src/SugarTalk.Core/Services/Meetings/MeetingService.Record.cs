@@ -325,7 +325,7 @@ public partial class MeetingService
         
         Log.Information("get egress info list response: {@egressInfo}", getEgressResponse);
         
-        var egressItem = getEgressResponse?.EgressItems.FirstOrDefault(x => x.EgressId == egressId && x.Status == "EGRESS_COMPLETE");
+        var egressItem = getEgressResponse?.EgressItems.FirstOrDefault(x => x.EgressId == egressId && x.Status == "EGRESS_COMPLETE" || x.Status == "EGRESS_ABORTED");
 
         if (egressItem == null)
             switch (reTryLimit > 0)
