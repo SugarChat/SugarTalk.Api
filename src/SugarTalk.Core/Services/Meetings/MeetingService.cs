@@ -42,8 +42,8 @@ using SugarTalk.Core.Settings.Smarties;
 using SugarTalk.Messages.Commands.Meetings.Speak;
 using SugarTalk.Messages.Dto.LiveKit.Egress;
 using SugarTalk.Messages.Dto.Smarties;
+using SugarTalk.Messages.Enums.Caching;
 using SugarTalk.Messages.Enums.Meeting;
-using SugarTalk.Messages.Enums.Smarties;
 using SugarTalk.Messages.Enums.Speech;
 using SugarTalk.Messages.Events.Meeting;
 using SugarTalk.Messages.Requests.Meetings;
@@ -340,7 +340,7 @@ namespace SugarTalk.Core.Services.Meetings
 
         private async Task<(List<AppointmentMeetingDetailForParticipantDto>, int)> GetAppointmentMeetingDetailForParticipantAsync(Guid meetingId, CancellationToken cancellationToken)
         {
-            var meetingParticipants  = await _meetingDataProvider.GetMeetingParticipantAsync(meetingId, cancellationToken: cancellationToken).ConfigureAwait(false);
+            var meetingParticipants  = await _meetingDataProvider.GetMeetingParticipantAsync(new List<Guid>{ meetingId }, cancellationToken: cancellationToken).ConfigureAwait(false);
             
             var participantDict = meetingParticipants.ToDictionary(x => x.StaffId);
             
@@ -557,7 +557,7 @@ namespace SugarTalk.Core.Services.Meetings
             {
                 if (meeting.AppointmentType == MeetingAppointmentType.Appointment)
                 {
-                    var meetingParticipants = await _meetingDataProvider.GetMeetingParticipantAsync(meeting.Id, true, true, cancellationToken: cancellationToken).ConfigureAwait(false);
+                    var meetingParticipants = await _meetingDataProvider.GetMeetingParticipantAsync(new List<Guid>{ meeting.Id }, true, true, cancellationToken: cancellationToken).ConfigureAwait(false);
                     
                     var validParticipants = meetingParticipants.Where(x => x.UserId != currentUserSession.UserId).ToList();
                     
@@ -656,12 +656,84 @@ namespace SugarTalk.Core.Services.Meetings
             meetingUserSessions = meetingUserSessions.Select(x => { x.CoHost = false; return x; }).ToList();
             
             await _meetingDataProvider.UpdateMeetingUserSessionAsync(meetingUserSessions, cancellationToken).ConfigureAwait(false);
+
+            if (meeting.AppointmentType == MeetingAppointmentType.Appointment)
+                _backgroundJobClient.Enqueue(() => AddOrUpdateMeetingSituationDayAsync(meeting.Id, DateTime.UtcNow, meeting.StartDate, cancellationToken));
             
             return new MeetingEndedEvent
             {
                 MeetingNumber = meeting.MeetingNumber,
                 MeetingUserSessionIds = meeting.UserSessions.Select(x => x.Id).ToList()
             };
+        }
+
+        public async Task AddOrUpdateMeetingSituationDayAsync(Guid meetingId, DateTimeOffset time, long startTime, CancellationToken cancellationToken)
+        {
+            var pacificZone = TimeZoneInfo.FindSystemTimeZoneById("America/Los_Angeles");
+            var pstDateTime = TimeZoneInfo.ConvertTime(time, pacificZone);
+            
+            var startPst = new DateTimeOffset(pstDateTime.Date, pacificZone.GetUtcOffset(pstDateTime.Date));
+            var endPst = startPst.AddDays(1);
+           
+            var meetingSituationDay = await _meetingDataProvider.GetMeetingSituationDayAsync(meetingId, startPst, endPst, cancellationToken).ConfigureAwait(false);
+
+            if (meetingSituationDay != null)
+            {
+                meetingSituationDay.UseCount += 1;
+                
+                await _meetingDataProvider.UpdateMeetingSituationDayAsync(meetingSituationDay, cancellationToken: cancellationToken).ConfigureAwait(false);
+            }
+            else
+            {
+                meetingSituationDay = new MeetingSituationDay
+                {
+                    MeetingId = meetingId,
+                    TimePeriod = await GetTimeSlot(startTime).ConfigureAwait(false),
+                    UseCount = 1,
+                    CreatedDate = pstDateTime
+                };
+                
+                await _meetingDataProvider.AddMeetingSituationDayAsync(meetingSituationDay, cancellationToken: cancellationToken).ConfigureAwait(false);
+            }
+        }
+        
+        private static Task<string> GetTimeSlot(long timestamp)
+        {
+            var laZone = TimeZoneInfo.FindSystemTimeZoneById("America/Los_Angeles");
+            var laTime = TimeZoneInfo.ConvertTime(DateTimeOffset.FromUnixTimeSeconds(timestamp), laZone);
+            var currentTime = laTime.TimeOfDay;
+            
+            var timeSlots = new List<(TimeSpan Start, TimeSpan End)>
+            {
+                (new TimeSpan(13,30,0), new TimeSpan(14,29,59)),
+                (new TimeSpan(14,30,0), new TimeSpan(15,29,59)),
+                (new TimeSpan(15,30,0), new TimeSpan(16,29,59)),
+                (new TimeSpan(16,30,0), new TimeSpan(17,29,59)),
+                (new TimeSpan(17,30,0), new TimeSpan(18,29,59)),
+                (new TimeSpan(18,30,0), new TimeSpan(19,29,59)),
+                (new TimeSpan(19,30,0), new TimeSpan(20,29,59)),
+                (new TimeSpan(20,30,0), new TimeSpan(21,29,59)),
+                (new TimeSpan(21,30,0), new TimeSpan(22,29,59)),
+                (new TimeSpan(22,30,0), new TimeSpan(23,29,59)),
+                (new TimeSpan(23,30,0), new TimeSpan(0,29,59)),
+                (new TimeSpan(0,30,0), new TimeSpan(1,29,59))
+            };
+
+            foreach (var slot in timeSlots)
+            {
+                if (slot.Start <= slot.End)
+                {
+                    if (currentTime >= slot.Start && currentTime <= slot.End)
+                        return Task.FromResult($"{slot.Start:hh\\:mm}-{slot.End:hh\\:mm}");
+                }
+                else
+                {
+                    if (currentTime >= slot.Start || currentTime <= slot.End)
+                        return Task.FromResult($"{slot.Start:hh\\:mm}-{slot.End:hh\\:mm}");
+                }
+            }
+
+            return Task.FromResult("不在指定时间段内");
         }
 
         public async Task ConnectUserToMeetingAsync(
@@ -756,7 +828,7 @@ namespace SugarTalk.Core.Services.Meetings
 
             if (meeting.AppointmentType == MeetingAppointmentType.Appointment && command.Participants is { Count: > 0 })
             {
-                var removeMeetingParticipants = await _meetingDataProvider.GetMeetingParticipantAsync(meeting.Id, cancellationToken: cancellationToken).ConfigureAwait(false);
+                var removeMeetingParticipants = await _meetingDataProvider.GetMeetingParticipantAsync(new List<Guid>{meeting.Id}, cancellationToken: cancellationToken).ConfigureAwait(false);
 
                 await _meetingDataProvider.DeleteMeetingParticipantAsync(removeMeetingParticipants, cancellationToken: cancellationToken).ConfigureAwait(false);
                 
@@ -1069,7 +1141,7 @@ namespace SugarTalk.Core.Services.Meetings
         public async Task<GetAppointmentMeetingDetailResponse> GetAppointmentMeetingsDetailAsync(
             GetAppointmentMeetingDetailRequest request, CancellationToken cancellationToken)
         {
-            var meetingParticipants  = await _meetingDataProvider.GetMeetingParticipantAsync(request.MeetingId, cancellationToken: cancellationToken).ConfigureAwait(false);
+            var meetingParticipants  = await _meetingDataProvider.GetMeetingParticipantAsync(new List<Guid>{ request.MeetingId }, cancellationToken: cancellationToken).ConfigureAwait(false);
             
             var participantDict = meetingParticipants.ToDictionary(x => x.StaffId);
             

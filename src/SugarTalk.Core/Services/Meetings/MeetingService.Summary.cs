@@ -129,7 +129,7 @@ public partial class MeetingService
     
     public async Task ReSendMetisMeetingSummaryAsync(Guid meetingId, string summary, CancellationToken cancellationToken)
     {
-        var meetingParticipantsTask = _meetingDataProvider.GetMeetingParticipantAsync(meetingId, cancellationToken: cancellationToken);
+        var meetingParticipantsTask = _meetingDataProvider.GetMeetingParticipantAsync(new List<Guid>{ meetingId }, cancellationToken: cancellationToken);
         var meetingParticipantsNameTask = meetingParticipantsTask.ContinueWith(async task =>
         {
             var participants = await task;
