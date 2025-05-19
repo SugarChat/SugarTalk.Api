@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using System.Collections.Generic;
 using AutoMapper.QueryableExtensions;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Internal;
 using SugarTalk.Messages.Dto.Translation;
 using SugarTalk.Core.Domain.Meeting;
 using SugarTalk.Core.Domain.Account;
@@ -53,6 +54,14 @@ public partial interface IMeetingDataProvider
         MeetingRestartRecord meetingRestartRecord, bool forSave = true, CancellationToken cancellationToken = default);
     
     Task<List<MeetingRestartRecord>> GetMeetingRecordVoiceRelayStationAsync(Guid meetingId, Guid recordId, CancellationToken cancellationToken);
+
+    Task<MeetingSituationDay> GetMeetingSituationDayAsync(Guid meetingId, DateTimeOffset? startTime, DateTimeOffset? endTime, CancellationToken cancellationToken);
+
+    Task UpdateMeetingSituationDayAsync(MeetingSituationDay meetingSituationDay, bool foreSave = true, CancellationToken cancellationToken = default);
+
+    Task AddMeetingSituationDayAsync(MeetingSituationDay meetingSituationDay, bool foreSave = true, CancellationToken cancellationToken = default);
+
+    Task<List<GetMeetingDataDto>> GetMeetingSituationDaysAsync(DateTimeOffset? startTime, DateTimeOffset? endTime, CancellationToken cancellationToken);
 }
 
 public partial class MeetingDataProvider
@@ -347,5 +356,51 @@ public partial class MeetingDataProvider
             .ProjectTo<MeetingSummaryDto>(_mapper.ConfigurationProvider)
             .FirstOrDefaultAsync(cancellationToken)
             .ConfigureAwait(false);
+    }
+
+    public async Task<MeetingSituationDay> GetMeetingSituationDayAsync(Guid meetingId, DateTimeOffset? startTime,
+        DateTimeOffset? endTime, CancellationToken cancellationToken)
+    {
+        var query = _repository.Query<MeetingSituationDay>().Where(x => x.MeetingId == meetingId);
+
+        if (startTime.HasValue && endTime.HasValue)
+            query = query.Where(x => x.CreatedDate >= startTime && x.CreatedDate < endTime);
+
+        return await query.FirstOrDefaultAsync(cancellationToken).ConfigureAwait(false);
+    }
+
+    public async Task UpdateMeetingSituationDayAsync(MeetingSituationDay meetingSituationDay, bool foreSave = true, CancellationToken cancellationToken = default)
+    {
+        await _repository.UpdateAsync(meetingSituationDay, cancellationToken).ConfigureAwait(false);
+
+        if (foreSave)
+            await _unitOfWork.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+    }
+
+    public async Task AddMeetingSituationDayAsync(MeetingSituationDay meetingSituationDay, bool foreSave = true, CancellationToken cancellationToken = default)
+    {
+        await _repository.InsertAsync(meetingSituationDay, cancellationToken).ConfigureAwait(false);
+
+        if (foreSave)
+            await _unitOfWork.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+    }
+
+    public async Task<List<GetMeetingDataDto>> GetMeetingSituationDaysAsync(DateTimeOffset? startTime, DateTimeOffset? endTime, CancellationToken cancellationToken)
+    {
+        return await (from meetingSituationDay in _repository.QueryNoTracking<MeetingSituationDay>()
+            where meetingSituationDay.CreatedDate >= startTime && meetingSituationDay.CreatedDate < endTime
+            join meeting in _repository.QueryNoTracking<Meeting>() on meetingSituationDay.MeetingId equals meeting.Id
+            join userAccount in _repository.QueryNoTracking<UserAccount>() on meeting.CreatedBy equals userAccount.Id
+            select new GetMeetingDataDto
+            {
+                MeetingName = meeting.Title,
+                MeetingId = meeting.Id,
+                FoundationdId = userAccount.ThirdPartyUserId,
+                MeetingCreator = userAccount.UserName,
+                MeetingStartTime = meeting.StartDate,
+                TimeRange = meetingSituationDay.TimePeriod,
+                MeetingUseCount = meetingSituationDay.UseCount,
+                MeetingDate = meetingSituationDay.CreatedDate
+            }).ToListAsync(cancellationToken);
     }
 }
