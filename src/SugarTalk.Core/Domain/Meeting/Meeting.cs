@@ -76,4 +76,7 @@ public class Meeting : IEntity, IHasCreatedFields
 
     [Column("is_active_record")]
     public bool IsActiveRecord { get; set; }
+    
+    [Column("is_locked")]
+    public bool IsLocked { get; set; }
 }
