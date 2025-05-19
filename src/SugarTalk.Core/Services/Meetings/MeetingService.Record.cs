@@ -64,6 +64,8 @@ public partial interface IMeetingService
     Task RetrySpeechMaticsJobAsync(CreateSpeechMaticsJobCommand command, CancellationToken cancellationToken);
 
     Task<GetMeetingDataResponse> GetMeetingDataAsync(GetMeetingDataRequest request, CancellationToken cancellationToken);
+    
+    Task<GetMeetingDataUserResponse> GetMeetingDataUserAsync(GetMeetingDataUserRequest request, CancellationToken cancellationToken);
 }
 
 public partial class MeetingService
@@ -726,6 +728,25 @@ public partial class MeetingService
         return new GetMeetingDataResponse
         {
             Data = meetingSituationDay
+        };
+    }
+
+    public async Task<GetMeetingDataUserResponse> GetMeetingDataUserAsync(GetMeetingDataUserRequest request, CancellationToken cancellationToken)
+    {
+        var date = request.Day ?? DateTimeOffset.Now;
+        
+        var pacificZone = TimeZoneInfo.FindSystemTimeZoneById("America/Los_Angeles");
+            
+        var pstDateTime = TimeZoneInfo.ConvertTime(date, pacificZone);
+            
+        var pstDate = pstDateTime.Date;
+            
+        var startPst = new DateTimeOffset(pstDate, pacificZone.GetUtcOffset(pstDate));
+        var endPst = startPst.AddDays(1);
+        
+        return new GetMeetingDataUserResponse
+        {
+            Data = await _meetingDataProvider.GetMeetingDataUserAsync(startPst, endPst, cancellationToken).ConfigureAwait(false)
         };
     }
 }

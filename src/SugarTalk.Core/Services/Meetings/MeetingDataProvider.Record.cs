@@ -62,6 +62,8 @@ public partial interface IMeetingDataProvider
     Task AddMeetingSituationDayAsync(MeetingSituationDay meetingSituationDay, bool foreSave = true, CancellationToken cancellationToken = default);
 
     Task<List<GetMeetingDataDto>> GetMeetingSituationDaysAsync(DateTimeOffset? startTime, DateTimeOffset? endTime, CancellationToken cancellationToken);
+
+    Task<List<GetMeetingDataUserDto>> GetMeetingDataUserAsync(DateTimeOffset? startTime, DateTimeOffset? endTime, CancellationToken cancellationToken);
 }
 
 public partial class MeetingDataProvider
@@ -401,6 +403,22 @@ public partial class MeetingDataProvider
                 TimeRange = meetingSituationDay.TimePeriod,
                 MeetingUseCount = meetingSituationDay.UseCount,
                 MeetingDate = meetingSituationDay.CreatedDate
-            }).ToListAsync(cancellationToken);
+            }).OrderByDescending(x => x.MeetingStartTime).ToListAsync(cancellationToken);
+    }
+
+    public async Task<List<GetMeetingDataUserDto>> GetMeetingDataUserAsync(DateTimeOffset? startTime, DateTimeOffset? endTime, CancellationToken cancellationToken)
+    {
+        return await (from userSession in _repository.QueryNoTracking<MeetingUserSession>()
+            where userSession.CreatedDate >= startTime && userSession.CreatedDate < endTime
+            join meeting in _repository.QueryNoTracking<Meeting>() on userSession.MeetingId equals meeting.Id
+            join account in _repository.QueryNoTracking<UserAccount>() on userSession.UserId equals account.Id
+            select new GetMeetingDataUserDto
+            {
+                MeetingId = meeting.Id,
+                FundationId = account.ThirdPartyUserId,
+                UserName = account.UserName,
+                MeetingStartTime = meeting.StartDate,
+                Date = userSession.CreatedDate,
+            }).OrderBy(x => x.MeetingStartTime).ToListAsync(cancellationToken);
     }
 }

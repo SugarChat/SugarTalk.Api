@@ -413,6 +413,15 @@ public class MeetingController : ControllerBase
         
         return Ok(response);
     }
+    
+    [Route("data/user"), HttpGet]
+    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(GetMeetingDataUserResponse))]
+    public async Task<IActionResult> GetMeetingDataUserAsync([FromQuery] GetMeetingDataUserRequest request)
+    {
+        var response = await _mediator.RequestAsync<GetMeetingDataUserRequest, GetMeetingDataUserResponse>(request).ConfigureAwait(false);
+        
+        return Ok(response);
+    }
 
     #endregion
 }           
