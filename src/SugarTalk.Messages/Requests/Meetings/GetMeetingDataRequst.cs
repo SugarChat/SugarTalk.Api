@@ -23,7 +23,7 @@ public class GetMeetingDataDto
 
     public string MeetingNumber { get; set; }
 
-    public string FoundationdId { get; set; }
+    public string FundationId { get; set; }
 
     public string MeetingCreator { get; set; }
 
