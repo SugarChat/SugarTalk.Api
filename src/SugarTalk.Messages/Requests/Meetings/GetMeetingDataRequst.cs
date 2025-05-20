@@ -21,6 +21,8 @@ public class GetMeetingDataDto
 
     public Guid MeetingId { get; set; }
 
+    public string MeetingNumber { get; set; }
+
     public string FoundationdId { get; set; }
 
     public string MeetingCreator { get; set; }
