@@ -712,16 +712,25 @@ public partial class MeetingService
 
     public async Task<GetMeetingDataResponse> GetMeetingDataAsync(GetMeetingDataRequest request, CancellationToken cancellationToken)
     {
-        var date = request.Day ?? DateTimeOffset.Now;
-        
         var pacificZone = TimeZoneInfo.FindSystemTimeZoneById("America/Los_Angeles");
-            
-        var pstDateTime = TimeZoneInfo.ConvertTime(date, pacificZone);
-            
-        var pstDate = pstDateTime.Date;
-            
-        var startPst = new DateTimeOffset(pstDate, pacificZone.GetUtcOffset(pstDate));
-        var endPst = startPst.AddDays(1);
+        
+        DateTimeOffset startPst;
+        DateTimeOffset endPst;
+
+        if (request.Day.HasValue)
+        {
+            var specifiedDate = request.Day.Value.Date;
+            startPst = new DateTimeOffset(specifiedDate, TimeSpan.Zero); // UTC 0 假设原始是 UTC，按需改
+            endPst = startPst.AddDays(1);
+        }
+        else
+        {
+            var now = DateTimeOffset.Now;
+            var pstNow = TimeZoneInfo.ConvertTime(now, pacificZone);
+            var pstDate = pstNow.Date;
+            startPst = new DateTimeOffset(pstDate, pacificZone.GetUtcOffset(pstDate));
+            endPst = startPst.AddDays(1);
+        }
         
         var meetingSituationDay = await _meetingDataProvider.GetMeetingSituationDaysAsync(startPst, endPst, cancellationToken).ConfigureAwait(false);
 
@@ -763,16 +772,25 @@ public partial class MeetingService
 
     public async Task<GetMeetingDataUserResponse> GetMeetingDataUserAsync(GetMeetingDataUserRequest request, CancellationToken cancellationToken)
     {
-        var date = request.Day ?? DateTimeOffset.Now;
-        
         var pacificZone = TimeZoneInfo.FindSystemTimeZoneById("America/Los_Angeles");
-            
-        var pstDateTime = TimeZoneInfo.ConvertTime(date, pacificZone);
-            
-        var pstDate = pstDateTime.Date;
-            
-        var startPst = new DateTimeOffset(pstDate, pacificZone.GetUtcOffset(pstDate));
-        var endPst = startPst.AddDays(1);
+        
+        DateTimeOffset startPst;
+        DateTimeOffset endPst;
+
+        if (request.Day.HasValue)
+        {
+            var specifiedDate = request.Day.Value.Date;
+            startPst = new DateTimeOffset(specifiedDate, TimeSpan.Zero); // UTC 0 假设原始是 UTC，按需改
+            endPst = startPst.AddDays(1);
+        }
+        else
+        {
+            var now = DateTimeOffset.Now;
+            var pstNow = TimeZoneInfo.ConvertTime(now, pacificZone);
+            var pstDate = pstNow.Date;
+            startPst = new DateTimeOffset(pstDate, pacificZone.GetUtcOffset(pstDate));
+            endPst = startPst.AddDays(1);
+        }
         
         return new GetMeetingDataUserResponse
         {

@@ -18,6 +18,8 @@ public class GetMeetingDataUserResponse : SugarTalkResponse<List<GetMeetingDataU
 public class GetMeetingDataUserDto
 {
     public Guid MeetingId { get; set; }
+    
+    public string MeetingNumber { get; set; }
 
     public string FundationId { get; set; }
 

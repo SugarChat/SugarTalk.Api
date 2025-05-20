@@ -400,6 +400,7 @@ public partial class MeetingDataProvider
             {
                 MeetingName = meeting.Title,
                 MeetingId = meeting.Id,
+                MeetingNumber = meeting.MeetingNumber,
                 FoundationdId = userAccount.ThirdPartyUserId,
                 MeetingCreator = userAccount.UserName,
                 MeetingStartTime = meeting.StartDate,
@@ -420,6 +421,7 @@ public partial class MeetingDataProvider
                 MeetingId = meeting.Id,
                 FundationId = account.ThirdPartyUserId,
                 UserName = account.UserName,
+                MeetingNumber = meeting.MeetingNumber,
                 MeetingStartTime = meeting.StartDate,
                 Date = userSession.CreatedDate,
             }).OrderBy(x => x.MeetingStartTime).ToListAsync(cancellationToken);
