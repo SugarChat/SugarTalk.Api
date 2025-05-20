@@ -690,7 +690,7 @@ public partial class MeetingService
         if (request.Day.HasValue)
         {
             var specifiedDate = request.Day.Value.Date;
-            startPst = new DateTimeOffset(specifiedDate, TimeSpan.Zero); // UTC 0 假设原始是 UTC，按需改
+            startPst = new DateTimeOffset(specifiedDate, TimeSpan.Zero);
             endPst = startPst.AddDays(1);
         }
         else
@@ -702,7 +702,10 @@ public partial class MeetingService
             endPst = startPst.AddDays(1);
         }
         
-        var meetingSituationDay = await _meetingDataProvider.GetMeetingSituationDaysAsync(startPst, endPst, cancellationToken).ConfigureAwait(false);
+        var utcStart = startPst.UtcDateTime;
+        var utcEnd = endPst.UtcDateTime;
+        
+        var meetingSituationDay = await _meetingDataProvider.GetMeetingSituationDaysAsync(utcStart, utcEnd, cancellationToken).ConfigureAwait(false);
 
         var meetingIds = meetingSituationDay.Select(x => x.MeetingId).ToList();
         
@@ -762,9 +765,12 @@ public partial class MeetingService
             endPst = startPst.AddDays(1);
         }
         
+        var utcStart = startPst.UtcDateTime;
+        var utcEnd = endPst.UtcDateTime;
+        
         return new GetMeetingDataUserResponse
         {
-            Data = await _meetingDataProvider.GetMeetingDataUserAsync(startPst, endPst, cancellationToken).ConfigureAwait(false)
+            Data = await _meetingDataProvider.GetMeetingDataUserAsync(utcStart, utcEnd, cancellationToken).ConfigureAwait(false)
         };
     }
 }
