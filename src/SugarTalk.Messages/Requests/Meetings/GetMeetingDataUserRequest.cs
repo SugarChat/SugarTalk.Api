@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Mediator.Net.Contracts;
+using Newtonsoft.Json;
 using SugarTalk.Messages.Responses;
 
 namespace SugarTalk.Messages.Requests.Meetings;
@@ -22,7 +23,17 @@ public class GetMeetingDataUserDto
 
     public string UserName { get; set; }
 
+    [JsonIgnore]
     public long MeetingStartTime { get; set; }
+    
+    public string MeetingStartTimePst => 
+        TimeZoneInfo.ConvertTime(DateTimeOffset.FromUnixTimeSeconds(MeetingStartTime), 
+            TimeZoneInfo.FindSystemTimeZoneById("America/Los_Angeles")).ToString("HH:mm");
 
+    [JsonIgnore]
     public DateTimeOffset Date { get; set; }
+    
+    public string MeetingDatePst =>
+        TimeZoneInfo.ConvertTime(Date, TimeZoneInfo.FindSystemTimeZoneById("America/Los_Angeles"))
+            .ToString("yyyy/MM/dd");
 }
