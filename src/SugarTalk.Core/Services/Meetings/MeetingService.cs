@@ -674,8 +674,10 @@ namespace SugarTalk.Core.Services.Meetings
             
             var startPst = new DateTimeOffset(pstDateTime.Date, pacificZone.GetUtcOffset(pstDateTime.Date));
             var endPst = startPst.AddDays(1);
-           
-            var meetingSituationDay = await _meetingDataProvider.GetMeetingSituationDayAsync(meetingId, startPst, endPst, cancellationToken).ConfigureAwait(false);
+            var utcStart = startPst.UtcDateTime;
+            var utcEnd = endPst.UtcDateTime;
+            
+            var meetingSituationDay = await _meetingDataProvider.GetMeetingSituationDayAsync(meetingId, utcStart, utcEnd, cancellationToken).ConfigureAwait(false);
 
             if (meetingSituationDay != null)
             {
@@ -690,7 +692,7 @@ namespace SugarTalk.Core.Services.Meetings
                     MeetingId = meetingId,
                     TimePeriod = await GetTimeSlot(startTime).ConfigureAwait(false),
                     UseCount = 1,
-                    CreatedDate = pstDateTime
+                    CreatedDate = time
                 };
                 
                 await _meetingDataProvider.AddMeetingSituationDayAsync(meetingSituationDay, cancellationToken: cancellationToken).ConfigureAwait(false);

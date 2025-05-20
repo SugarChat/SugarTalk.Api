@@ -401,7 +401,7 @@ public partial class MeetingDataProvider
                 MeetingName = meeting.Title,
                 MeetingId = meeting.Id,
                 MeetingNumber = meeting.MeetingNumber,
-                FoundationdId = userAccount.ThirdPartyUserId,
+                FundationId = userAccount.ThirdPartyUserId,
                 MeetingCreator = userAccount.UserName,
                 MeetingStartTime = meeting.StartDate,
                 TimeRange = meetingSituationDay.TimePeriod,

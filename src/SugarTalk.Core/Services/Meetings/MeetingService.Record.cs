@@ -720,7 +720,8 @@ public partial class MeetingService
         if (request.Day.HasValue)
         {
             var specifiedDate = request.Day.Value.Date;
-            startPst = new DateTimeOffset(specifiedDate, TimeSpan.Zero);
+            var pstOffset = pacificZone.GetUtcOffset(specifiedDate);
+            startPst = new DateTimeOffset(specifiedDate, pstOffset);
             endPst = startPst.AddDays(1);
         }
         else
@@ -734,6 +735,8 @@ public partial class MeetingService
         
         var utcStart = startPst.UtcDateTime;
         var utcEnd = endPst.UtcDateTime;
+        
+        Log.Information("Get meeting data start: {@utcStart} end: {@utcEnd}", utcStart, utcEnd);
         
         var meetingSituationDay = await _meetingDataProvider.GetMeetingSituationDaysAsync(utcStart, utcEnd, cancellationToken).ConfigureAwait(false);
 
@@ -783,7 +786,8 @@ public partial class MeetingService
         if (request.Day.HasValue)
         {
             var specifiedDate = request.Day.Value.Date;
-            startPst = new DateTimeOffset(specifiedDate, TimeSpan.Zero); // UTC 0 假设原始是 UTC，按需改
+            var pstOffset = pacificZone.GetUtcOffset(specifiedDate);
+            startPst = new DateTimeOffset(specifiedDate, pstOffset);
             endPst = startPst.AddDays(1);
         }
         else
