@@ -131,6 +131,12 @@ public class AddOrUpdateMeetingDto
     public DateTimeOffset? UtilDate { get; set; }
     
     public MeetingRepeatType RepeatType { get; set; }
+    
+    public int? Interval { get; set; }
+    
+    public List<DayOfWeek?> SelectedWeekdays { get; set; }
+
+    public List<int?> CustomMonthDays { get; set; }
 
     public MeetingAppointmentType AppointmentType { get; set; }
     
