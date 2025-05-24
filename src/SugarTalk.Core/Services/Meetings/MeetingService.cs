@@ -1194,7 +1194,7 @@ namespace SugarTalk.Core.Services.Meetings
                 var meetingNumber = result.ToString();
                 
                 var meeting = await _meetingDataProvider
-                    .GetMeetingAsync(meetingNumber: meetingNumber, cancellationToken: cancellationToken, includeUserSessions: false)
+                    .GetMeetingByIdAsync(meetingNumber: meetingNumber, cancellationToken: cancellationToken)
                     .ConfigureAwait(false);
 
                 if (meeting == null)
