@@ -1079,7 +1079,6 @@ namespace SugarTalk.Core.Services.Meetings
                         return candidate;
                 }
             }
-
             
             return startDate.AddMonths(1);
         }
