@@ -85,6 +85,14 @@ public class MeetingBaseDto
     
     public MeetingRepeatType RepeatType { get; set; }
     
+    public MeetingCustomizeRepeatType? CustomizeRepeatType { get; set; }
+
+    public int? RepeatInterval { get; set; }
+    
+    public List<DayOfWeek?> RepeatWeekdays { get; set; }
+
+    public List<int?> RepeatMonthDays { get; set; }
+    
     public MeetingStreamMode MeetingStreamMode { get; set; }
     
     public MeetingAppointmentType AppointmentType { get; set; }
@@ -131,12 +139,14 @@ public class AddOrUpdateMeetingDto
     public DateTimeOffset? UtilDate { get; set; }
     
     public MeetingRepeatType RepeatType { get; set; }
-    
-    public int? Interval { get; set; }
-    
-    public List<DayOfWeek?> SelectedWeekdays { get; set; }
 
-    public List<int?> CustomMonthDays { get; set; }
+    public MeetingCustomizeRepeatType? CustomizeRepeatType { get; set; }
+
+    public int? RepeatInterval { get; set; }
+    
+    public List<DayOfWeek?> RepeatWeekdays { get; set; }
+
+    public List<int?> RepeatMonthDays { get; set; }
 
     public MeetingAppointmentType AppointmentType { get; set; }
     
