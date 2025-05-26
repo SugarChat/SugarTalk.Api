@@ -119,6 +119,7 @@
         <EmbeddedResource Include="DbUp\Scripts_2025\Script0003_add_cohost_for_meeting_user_sessions.sql" />
         <EmbeddedResource Include="DbUp\Scripts_2025\Script0004_add_meeting_sub_id_for_record.sql" />
         <EmbeddedResource Include="DbUp\Scripts_2025\Script0004_modify_meeting_participant.sql" />
+        <EmbeddedResource Include="DbUp\Scripts_2025\Script0005_add_customize_repeat_type_for_meeting_repeat_rule.sql" />
     </ItemGroup>
     
     <ItemGroup>

@@ -92,7 +92,8 @@ namespace SugarTalk.Core.Services.Meetings
             MeetingRepeatType repeatType,
             int? interval,
             List<DayOfWeek?> selectedWeekdays,
-            List<int?> customMonthDays, CancellationToken cancellationToken);
+            List<int?> customMonthDays,
+            MeetingCustomizeRepeatType? customizeRepeatType, CancellationToken cancellationToken);
         
         Task<GetAppointmentMeetingsResponse> GetAppointmentMeetingsAsync(GetAppointmentMeetingsRequest request, CancellationToken cancellationToken);
         
@@ -231,15 +232,20 @@ namespace SugarTalk.Core.Services.Meetings
                             command.EndDate,
                             command.UtilDate,
                             command.RepeatType,
-                            command.Interval,
-                            command.SelectedWeekdays,
-                            command.CustomMonthDays, cancellationToken).ConfigureAwait(false);
+                            command.RepeatInterval,
+                            command.RepeatWeekdays,
+                            command.RepeatMonthDays,
+                            command.CustomizeRepeatType, cancellationToken).ConfigureAwait(false);
                 
                     await _meetingDataProvider.PersistMeetingRepeatRuleAsync(new MeetingRepeatRule
                     {
                         MeetingId = meeting.Id,
                         RepeatType = command.RepeatType,
-                        RepeatUntilDate = command.UtilDate
+                        RepeatUntilDate = command.UtilDate,
+                        CustomizeRepeatType = command.CustomizeRepeatType,
+                        RepeatInterval = command.RepeatInterval,
+                        RepeatWeekdays = command.RepeatWeekdays == null ? null : JsonConvert.SerializeObject(command.RepeatWeekdays),
+                        RepeatMonthDays = command.RepeatMonthDays == null ? null : JsonConvert.SerializeObject(command.RepeatMonthDays),
                     }, cancellationToken).ConfigureAwait(false);
 
                     await AddMeetingParticipantAsync(meeting.Id, command.Participants, cancellationToken).ConfigureAwait(false);
@@ -311,12 +317,13 @@ namespace SugarTalk.Core.Services.Meetings
             MeetingRepeatType repeatType,
             int? interval,
             List<DayOfWeek?> selectedWeekdays,
-            List<int?> customMonthDays, CancellationToken cancellationToken)
+            List<int?> customMonthDays,
+            MeetingCustomizeRepeatType? customizeRepeatType, CancellationToken cancellationToken)
         {
             if (utilDate.HasValue && utilDate.Value < _clock.Now)
                 throw new CannotCreateRepeatMeetingWhenUtilDateIsBeforeNowException(); 
             
-            var subMeetingList = GenerateSubMeetings(meetingId, startDate, endDate, utilDate, repeatType, interval, selectedWeekdays, customMonthDays);
+            var subMeetingList = GenerateSubMeetings(meetingId, startDate, endDate, utilDate, repeatType, customizeRepeatType, interval, selectedWeekdays, customMonthDays);
             
             await _meetingDataProvider.PersistMeetingSubMeetingsAsync(subMeetingList, cancellationToken).ConfigureAwait(false);
         }
@@ -740,7 +747,7 @@ namespace SugarTalk.Core.Services.Meetings
             
             if (command.AppointmentType == MeetingAppointmentType.Appointment && command.RepeatType != MeetingRepeatType.None)
             {
-                var subMeetingList = GenerateSubMeetings(updateMeeting.Id, command.StartDate, command.EndDate, command.UtilDate, command.RepeatType, command.Interval, command.SelectedWeekdays, command.CustomMonthDays);
+                var subMeetingList = GenerateSubMeetings(updateMeeting.Id, command.StartDate, command.EndDate, command.UtilDate, command.RepeatType, command.CustomizeRepeatType, command.RepeatInterval, command.RepeatWeekdays, command.RepeatMonthDays);
                 
                 await _meetingDataProvider.UpdateMeetingRepeatRuleAsync(updateMeeting.Id, command.RepeatType, cancellationToken).ConfigureAwait(false);
 
@@ -914,11 +921,11 @@ namespace SugarTalk.Core.Services.Meetings
         
         private List<MeetingSubMeeting> GenerateSubMeetings(
             Guid meetingId, DateTimeOffset startDate, DateTimeOffset endDate, DateTimeOffset? utilDate, MeetingRepeatType repeatType
-            , int? interval, List<DayOfWeek?> selectedWeekdays, List<int?> customMonthDays)
+            ,MeetingCustomizeRepeatType? customizeRepeatType, int? interval, List<DayOfWeek?> selectedWeekdays, List<int?> customMonthDays)
         {
             var subMeetingList = new List<MeetingSubMeeting>();
             
-            var loopCount = utilDate.HasValue ? CalculateLoopCount(startDate, utilDate.Value, repeatType, interval, selectedWeekdays, customMonthDays) : 7;
+            var loopCount = utilDate.HasValue ? CalculateLoopCount(startDate, utilDate.Value, repeatType, customizeRepeatType, interval, selectedWeekdays, customMonthDays) : 7;
 
             for (var i = 0; i < loopCount; i++)
             {
@@ -929,10 +936,10 @@ namespace SugarTalk.Core.Services.Meetings
                 }
                 else
                 {
-                    if (repeatType == MeetingRepeatType.CustomWeekly && 
+                    if (repeatType == MeetingRepeatType.Customize && customizeRepeatType == MeetingCustomizeRepeatType.CustomWeekly && 
                         (selectedWeekdays == null || !selectedWeekdays.Contains(startDate.DayOfWeek)))
                         --i;
-                    else if (repeatType == MeetingRepeatType.CustomMonthly &&
+                    else if (repeatType == MeetingRepeatType.Customize && customizeRepeatType == MeetingCustomizeRepeatType.CustomMonthly &&
                              (customMonthDays == null || !customMonthDays.Contains(startDate.Day)))
                         --i;
                     else
@@ -947,13 +954,13 @@ namespace SugarTalk.Core.Services.Meetings
                     }
                 }
 
-                IncrementDates(ref startDate, ref endDate, repeatType, interval, selectedWeekdays, customMonthDays);
+                IncrementDates(ref startDate, ref endDate, repeatType, customizeRepeatType, interval, selectedWeekdays, customMonthDays);
             }
 
             return subMeetingList;
         }
         
-        private int CalculateLoopCount(DateTimeOffset startDate, DateTimeOffset utilDate, MeetingRepeatType repeatType
+        private int CalculateLoopCount(DateTimeOffset startDate, DateTimeOffset utilDate, MeetingRepeatType repeatType, MeetingCustomizeRepeatType? customizeRepeatType
             , int? interval, List<DayOfWeek?> selectedWeekdays, List<int?> customMonthDays)
         {
             var count = 0;
@@ -965,20 +972,20 @@ namespace SugarTalk.Core.Services.Meetings
                     ++count;
                 }
 
-                startDate = GetNextMeetingDate(startDate, repeatType, interval, selectedWeekdays, customMonthDays);
+                startDate = GetNextMeetingDate(startDate, repeatType, customizeRepeatType, interval, selectedWeekdays, customMonthDays);
             }
             
             return count;
         }
 
-        private void IncrementDates(ref DateTimeOffset startDate, ref DateTimeOffset endDate, MeetingRepeatType repeatType, 
+        private void IncrementDates(ref DateTimeOffset startDate, ref DateTimeOffset endDate, MeetingRepeatType repeatType, MeetingCustomizeRepeatType? customizeRepeatType,
             int? interval, List<DayOfWeek?> selectedWeekdays, List<int?> customMonthDays)
         {
-            startDate = GetNextMeetingDate(startDate, repeatType, interval, selectedWeekdays, customMonthDays);
-            endDate = GetNextMeetingDate(endDate, repeatType, interval, selectedWeekdays, customMonthDays);
+            startDate = GetNextMeetingDate(startDate, repeatType, customizeRepeatType, interval, selectedWeekdays, customMonthDays);
+            endDate = GetNextMeetingDate(endDate, repeatType, customizeRepeatType, interval, selectedWeekdays, customMonthDays);
         }
         
-        private DateTimeOffset GetNextMeetingDate(DateTimeOffset currentDate, MeetingRepeatType repeatType
+        private DateTimeOffset GetNextMeetingDate(DateTimeOffset currentDate, MeetingRepeatType repeatType, MeetingCustomizeRepeatType? customizeRepeatType
             , int? interval, List<DayOfWeek?> selectedWeekdays, List<int?> customMonthDays)
         {
             var nextDate = currentDate;
@@ -998,14 +1005,19 @@ namespace SugarTalk.Core.Services.Meetings
                 case MeetingRepeatType.Monthly:
                     nextDate = currentDate.AddMonths(1);
                     break;
-                case MeetingRepeatType.CustomWeekly:
-                        nextDate = GetNextCustomWeeklyOccurrence(interval ?? 0, currentDate, selectedWeekdays);
-                    break;
-                case MeetingRepeatType.CustomDaily:
-                        nextDate = currentDate.AddDays(interval ?? 0);
-                    break;
-                case MeetingRepeatType.CustomMonthly:
-                        nextDate = GetNextCustomMonthlyOccurrence(currentDate, interval ?? 0, customMonthDays);
+                case MeetingRepeatType.Customize:
+                    switch (customizeRepeatType)
+                    {
+                       case MeetingCustomizeRepeatType.CustomWeekly:
+                           nextDate = GetNextCustomWeeklyOccurrence(interval ?? 0, currentDate, selectedWeekdays);
+                           break;
+                       case MeetingCustomizeRepeatType.CustomMonthly:
+                           nextDate = GetNextCustomWeeklyOccurrence(interval ?? 0, currentDate, selectedWeekdays);
+                           break;
+                       case MeetingCustomizeRepeatType.CustomDaily:
+                           nextDate = currentDate.AddDays(interval ?? 0);
+                           break;
+                    };
                     break;
             }
 

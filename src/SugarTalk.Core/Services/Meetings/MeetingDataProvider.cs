@@ -217,6 +217,10 @@ namespace SugarTalk.Core.Services.Meetings
             if (meetingRule is not null)
             {
                 updateMeeting.RepeatType = meetingRule.RepeatType;
+                updateMeeting.CustomizeRepeatType = meetingRule.CustomizeRepeatType;
+                updateMeeting.RepeatInterval = meetingRule.RepeatInterval;
+                updateMeeting.RepeatWeekdays = meetingRule.RepeatWeekdays != null ? JsonConvert.DeserializeObject<List<DayOfWeek?>>(meetingRule.RepeatWeekdays) : null;
+                updateMeeting.RepeatMonthDays = meetingRule.RepeatMonthDays != null ? JsonConvert.DeserializeObject<List<int?>>(meetingRule.RepeatMonthDays) : null;
             }
 
             var meetingRecord = await GetMeetingRecordAsync(meeting.Id, cancellationToken).ConfigureAwait(false);
