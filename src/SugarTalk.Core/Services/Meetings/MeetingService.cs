@@ -999,16 +999,13 @@ namespace SugarTalk.Core.Services.Meetings
                     nextDate = currentDate.AddMonths(1);
                     break;
                 case MeetingRepeatType.CustomWeekly:
-                    if (interval != null)
-                        nextDate = GetNextCustomWeeklyOccurrence(currentDate, interval.Value, selectedWeekdays);
+                        nextDate = GetNextCustomWeeklyOccurrence(interval ?? 0, currentDate, selectedWeekdays);
                     break;
                 case MeetingRepeatType.CustomDaily:
-                    if (interval != null)
-                        nextDate = currentDate.AddDays(interval.Value);
+                        nextDate = currentDate.AddDays(interval ?? 0);
                     break;
                 case MeetingRepeatType.CustomMonthly:
-                    if (interval != null)
-                        nextDate = GetNextCustomMonthlyOccurrence(currentDate, interval.Value, customMonthDays);
+                        nextDate = GetNextCustomMonthlyOccurrence(currentDate, interval ?? 0, customMonthDays);
                     break;
             }
 
@@ -1027,10 +1024,7 @@ namespace SugarTalk.Core.Services.Meetings
             return weekStart.AddDays(delta);
         }
         
-        private static DateTimeOffset GetNextCustomWeeklyOccurrence(
-            DateTimeOffset startDate,
-            int weekInterval,
-            List<DayOfWeek?> selectedWeekdays)
+        private static DateTimeOffset GetNextCustomWeeklyOccurrence(int weekInterval, DateTimeOffset startDate, List<DayOfWeek?> selectedWeekdays)
         {
             var currentDate = startDate;
             var baseDate = startDate;
