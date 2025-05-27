@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using SugarTalk.Messages.Enums.Meeting;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
@@ -17,6 +18,18 @@ public class MeetingRepeatRule : IEntity
     
     [Column("repeat_type")] 
     public MeetingRepeatType RepeatType { get; set; }
+    
+    [Column("customize_repeat_type")]
+    public MeetingCustomizeRepeatType? CustomizeRepeatType { get; set; }
+    
+    [Column("repeat_interval")]
+    public int? RepeatInterval { get; set; }
+    
+    [Column("repeat_weekdays")]
+    public string RepeatWeekdays { get; set; }
+    
+    [Column("repeat_month_days")]
+    public string RepeatMonthDays { get; set; }
     
     [Column("repeat_until_date")]
     public DateTimeOffset? RepeatUntilDate { get; set; }
