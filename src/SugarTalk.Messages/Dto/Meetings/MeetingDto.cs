@@ -71,6 +71,8 @@ public class MeetingBaseDto
 
     public long EndDate { get; set; }
     
+    public DateTimeOffset? UtilDate { get; set; }
+    
     public long CreatorJoinTime { get; set; }
     
     public string TimeZone { get; set; }
