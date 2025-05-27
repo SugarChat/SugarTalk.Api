@@ -223,6 +223,7 @@ namespace SugarTalk.Core.Services.Meetings
             if (meetingRule is not null)
             {
                 updateMeeting.RepeatType = meetingRule.RepeatType;
+                updateMeeting.UtilDate = meetingRule.RepeatUntilDate;
                 updateMeeting.CustomizeRepeatType = meetingRule.CustomizeRepeatType;
                 updateMeeting.RepeatInterval = meetingRule.RepeatInterval;
                 updateMeeting.RepeatWeekdays = meetingRule.RepeatWeekdays != null ? JsonConvert.DeserializeObject<List<DayOfWeek?>>(meetingRule.RepeatWeekdays) : null;
