@@ -749,7 +749,7 @@ namespace SugarTalk.Core.Services.Meetings
             {
                 var subMeetingList = GenerateSubMeetings(updateMeeting.Id, command.StartDate, command.EndDate, command.UtilDate, command.RepeatType, command.CustomizeRepeatType, command.RepeatInterval, command.RepeatWeekdays, command.RepeatMonthDays);
                 
-                await _meetingDataProvider.UpdateMeetingRepeatRuleAsync(updateMeeting.Id, command.RepeatType, command.CustomizeRepeatType, command.RepeatInterval, command.RepeatWeekdays, command.RepeatMonthDays, cancellationToken).ConfigureAwait(false);
+                await _meetingDataProvider.UpdateMeetingRepeatRuleAsync(updateMeeting.Id, command.RepeatType, command.UtilDate, command.CustomizeRepeatType, command.RepeatInterval, command.RepeatWeekdays, command.RepeatMonthDays, cancellationToken).ConfigureAwait(false);
 
                 await _meetingDataProvider.PersistMeetingSubMeetingsAsync(subMeetingList, cancellationToken).ConfigureAwait(false);
             }

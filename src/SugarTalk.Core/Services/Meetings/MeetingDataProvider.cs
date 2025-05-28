@@ -69,7 +69,7 @@ namespace SugarTalk.Core.Services.Meetings
 
         Task DeleteMeetingSubMeetingsAsync(Guid meetingId, CancellationToken cancellationToken);
         
-        Task UpdateMeetingRepeatRuleAsync(Guid meetingId, MeetingRepeatType repeatType,
+        Task UpdateMeetingRepeatRuleAsync(Guid meetingId, MeetingRepeatType repeatType, DateTimeOffset? unitDate,
             MeetingCustomizeRepeatType? CustomizeRepeatType, int? RepeatInterval, List<DayOfWeek?> RepeatWeekdays, List<int?> RepeatMonthDays, CancellationToken cancellationToken);
 
         Task<(List<MeetingHistoryDto> MeetingHistoryList, int TotalCount)> GetMeetingHistoriesByUserIdAsync(
@@ -387,7 +387,7 @@ namespace SugarTalk.Core.Services.Meetings
             meetingSubMeetings.ForEach(x => x.SubConferenceStatus = MeetingRecordSubConferenceStatus.NotExist);
         }
 
-        public async Task UpdateMeetingRepeatRuleAsync(Guid meetingId, MeetingRepeatType repeatType,
+        public async Task UpdateMeetingRepeatRuleAsync(Guid meetingId, MeetingRepeatType repeatType, DateTimeOffset? unitDate,
             MeetingCustomizeRepeatType? CustomizeRepeatType, int? RepeatInterval, List<DayOfWeek?> RepeatWeekdays, List<int?> RepeatMonthDays, CancellationToken cancellationToken)
         {
             var meetingRepeatRule = await _repository.Query<MeetingRepeatRule>()
@@ -396,6 +396,7 @@ namespace SugarTalk.Core.Services.Meetings
             if (meetingRepeatRule is null) return;
             
             meetingRepeatRule.RepeatType = repeatType;
+            meetingRepeatRule.RepeatUntilDate = unitDate;
             meetingRepeatRule.CustomizeRepeatType = CustomizeRepeatType;
             meetingRepeatRule.RepeatInterval = RepeatInterval;
             meetingRepeatRule.RepeatWeekdays = JsonConvert.SerializeObject(RepeatWeekdays);
