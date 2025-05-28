@@ -73,9 +73,9 @@ public class MeetingProcessJobService : IMeetingProcessJobService
                 appointmentMeeting.Status = MeetingStatus.InProgress;
             }
             
-            if(appointmentMeeting.EndDate <= _clock.Now.ToUnixTimeSeconds())
+            if(appointmentMeeting.EndDate <= _clock.Now.ToUnixTimeSeconds() || appointmentMeeting.StartDate > _clock.Now.ToUnixTimeSeconds())
             {
-                appointmentMeeting.Status = MeetingStatus.Completed;
+                appointmentMeeting.Status = MeetingStatus.Pending;
             }
         }
 
