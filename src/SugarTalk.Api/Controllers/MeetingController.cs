@@ -402,4 +402,26 @@ public class MeetingController : ControllerBase
     }
 
     #endregion
-}
+
+    #region MeetingData
+
+    [Route("data"), HttpGet]
+    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(GetMeetingDataResponse))]
+    public async Task<IActionResult> GetMeetingDataAsync([FromQuery] GetMeetingDataRequest request)
+    {
+        var response = await _mediator.RequestAsync<GetMeetingDataRequest, GetMeetingDataResponse>(request).ConfigureAwait(false);
+        
+        return Ok(response);
+    }
+    
+    [Route("data/user"), HttpGet]
+    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(GetMeetingDataUserResponse))]
+    public async Task<IActionResult> GetMeetingDataUserAsync([FromQuery] GetMeetingDataUserRequest request)
+    {
+        var response = await _mediator.RequestAsync<GetMeetingDataUserRequest, GetMeetingDataUserResponse>(request).ConfigureAwait(false);
+        
+        return Ok(response);
+    }
+
+    #endregion
+}           

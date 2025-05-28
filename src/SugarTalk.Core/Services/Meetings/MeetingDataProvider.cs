@@ -111,7 +111,7 @@ namespace SugarTalk.Core.Services.Meetings
 
         Task AddMeetingParticipantAsync(List<MeetingParticipant> meetingParticipants, bool forSave = true, CancellationToken cancellationToken = default);
 
-        Task<List<MeetingParticipant>> GetMeetingParticipantAsync(Guid meetingId, bool? isDesignatedHost = null, bool isUserAccount = false, CancellationToken cancellationToken = default);
+        Task<List<MeetingParticipant>> GetMeetingParticipantAsync(List<Guid> meetingIds, bool? isDesignatedHost = null, bool isUserAccount = false, CancellationToken cancellationToken = default);
         
         Task DeleteMeetingParticipantAsync(List<MeetingParticipant> meetingParticipants, bool forSave = true, CancellationToken cancellationToken = default);
     }
@@ -749,9 +749,9 @@ namespace SugarTalk.Core.Services.Meetings
                 await _unitOfWork.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
         }
         
-        public async Task<List<MeetingParticipant>> GetMeetingParticipantAsync(Guid meetingId, bool? isDesignatedHost = null, bool isUserAccount = false, CancellationToken cancellationToken = default)
+        public async Task<List<MeetingParticipant>> GetMeetingParticipantAsync(List<Guid> meetingIds, bool? isDesignatedHost = null, bool isUserAccount = false, CancellationToken cancellationToken = default)
         {
-            var query = _repository.Query<MeetingParticipant>().Where(x => x.MeetingId == meetingId);
+            var query = _repository.Query<MeetingParticipant>().Where(x => meetingIds.Contains(x.MeetingId));
 
             if (isDesignatedHost.HasValue)
                 query = query.Where(x => x.IsDesignatedHost == isDesignatedHost.Value);

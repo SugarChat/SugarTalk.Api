@@ -62,6 +62,10 @@ public partial interface IMeetingService
     Task<GetMeetingRecordCountResponse> GetMeetingRecordCountAsync(GetMeetingRecordCountRequest request, CancellationToken cancellationToken);
     
     Task RetrySpeechMaticsJobAsync(CreateSpeechMaticsJobCommand command, CancellationToken cancellationToken);
+
+    Task<GetMeetingDataResponse> GetMeetingDataAsync(GetMeetingDataRequest request, CancellationToken cancellationToken);
+    
+    Task<GetMeetingDataUserResponse> GetMeetingDataUserAsync(GetMeetingDataUserRequest request, CancellationToken cancellationToken);
 }
 
 public partial class MeetingService
@@ -692,4 +696,100 @@ public partial class MeetingService
          
          await _smartiesDataProvider.CreateSpeechMaticsRecordAsync(meetingSpeechMaticsRecord, cancellationToken: cancellationToken).ConfigureAwait(false);
      }
+
+    public async Task<GetMeetingDataResponse> GetMeetingDataAsync(GetMeetingDataRequest request, CancellationToken cancellationToken)
+    {
+        var pacificZone = TimeZoneInfo.FindSystemTimeZoneById("America/Los_Angeles");
+        
+        DateTimeOffset startPst;
+        DateTimeOffset endPst;
+
+        if (request.Day.HasValue)
+        {
+            var specifiedDate = request.Day.Value.Date;
+            var pstOffset = pacificZone.GetUtcOffset(specifiedDate);
+            startPst = new DateTimeOffset(specifiedDate, pstOffset);
+            endPst = startPst.AddDays(1);
+        }
+        else
+        {
+            var now = DateTimeOffset.Now;
+            var pstNow = TimeZoneInfo.ConvertTime(now, pacificZone);
+            var pstDate = pstNow.Date;
+            startPst = new DateTimeOffset(pstDate, pacificZone.GetUtcOffset(pstDate));
+            endPst = startPst.AddDays(1);
+        }
+        
+        var utcStart = startPst.UtcDateTime;
+        var utcEnd = endPst.UtcDateTime;
+        
+        Log.Information("Get meeting data start: {@utcStart} end: {@utcEnd}", utcStart, utcEnd);
+        
+        var meetingSituationDay = await _meetingDataProvider.GetMeetingSituationDaysAsync(utcStart, utcEnd, cancellationToken).ConfigureAwait(false);
+
+        var meetingIds = meetingSituationDay.Select(x => x.MeetingId).ToList();
+        
+        var meetingParticipants  = await _meetingDataProvider.GetMeetingParticipantAsync(meetingIds, cancellationToken: cancellationToken).ConfigureAwait(false);
+            
+        var participantDict = meetingParticipants.DistinctBy(x => x.StaffId).ToDictionary(x => x.StaffId);
+            
+        Log.Information("Meeting participant dict: {@participantDict}", participantDict);
+            
+        var staffs = await _smartiesClient.GetStaffsRequestAsync(new GetStaffsRequestDto
+        {
+            Ids = participantDict.Keys.ToList()
+        }, cancellationToken).ConfigureAwait(false);
+
+        Log.Information("Meeting staffs: {@staffs}", staffs);
+        
+        foreach (var getMeetingData in meetingSituationDay)
+        {
+            
+            foreach (var staff in staffs.Data.Staffs)
+            {
+                if (!participantDict.TryGetValue(staff.Id, out var participant))
+                    continue;
+
+                if (meetingParticipants.Any(x => x.MeetingId == getMeetingData.MeetingId && x.StaffId == staff.Id))
+                    getMeetingData.MeetingPartices.Add(staff.UserName);
+            }
+        }
+        
+        return new GetMeetingDataResponse
+        {
+            Data = meetingSituationDay
+        };
+    }
+
+    public async Task<GetMeetingDataUserResponse> GetMeetingDataUserAsync(GetMeetingDataUserRequest request, CancellationToken cancellationToken)
+    {
+        var pacificZone = TimeZoneInfo.FindSystemTimeZoneById("America/Los_Angeles");
+        
+        DateTimeOffset startPst;
+        DateTimeOffset endPst;
+
+        if (request.Day.HasValue)
+        {
+            var specifiedDate = request.Day.Value.Date;
+            var pstOffset = pacificZone.GetUtcOffset(specifiedDate);
+            startPst = new DateTimeOffset(specifiedDate, pstOffset);
+            endPst = startPst.AddDays(1);
+        }
+        else
+        {
+            var now = DateTimeOffset.Now;
+            var pstNow = TimeZoneInfo.ConvertTime(now, pacificZone);
+            var pstDate = pstNow.Date;
+            startPst = new DateTimeOffset(pstDate, pacificZone.GetUtcOffset(pstDate));
+            endPst = startPst.AddDays(1);
+        }
+        
+        var utcStart = startPst.UtcDateTime;
+        var utcEnd = endPst.UtcDateTime;
+        
+        return new GetMeetingDataUserResponse
+        {
+            Data = await _meetingDataProvider.GetMeetingDataUserAsync(utcStart, utcEnd, cancellationToken).ConfigureAwait(false)
+        };
+    }
 }
