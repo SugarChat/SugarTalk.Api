@@ -381,7 +381,10 @@ namespace SugarTalk.Core.Services.Meetings
             
             var meeting = await _meetingDataProvider.GetMeetingAsync(command.MeetingNumber, cancellationToken: cancellationToken).ConfigureAwait(false);
             
-            if (meeting.IsLocked) throw new InvalidOperationException("The meeting is locked and cannot be joined.");
+            var isMeetingOwnerOrHost = meeting.CreatedBy == user.Id || meeting.MeetingMasterUserId == user.Id;
+            
+            if (meeting.IsLocked && !isMeetingOwnerOrHost)
+                throw new InvalidOperationException("The meeting is locked and cannot be joined.");
 
             if (meeting.MeetingMasterUserId != user.Id && meeting.IsPasswordEnabled)
             {
@@ -1099,14 +1102,14 @@ namespace SugarTalk.Core.Services.Meetings
 
         public async Task<SetMeetingLockStatusResponse> SetMeetingLockStatusResponseAsync(SetMeetingLockStatusCommand command, CancellationToken cancellationToken)
         {
-            var meeting = await _meetingDataProvider.GetMeetingByIdAsync(command.MeetingId, cancellationToken);
+            var meeting = await _meetingDataProvider.GetMeetingByIdAsync(command.MeetingId, cancellationToken).ConfigureAwait(false);
 
             if (meeting == null)
                 throw new InvalidOperationException("Meeting not found.");
 
             meeting.IsLocked = command.IsLocked;
             
-            await _meetingDataProvider.UpdateMeetingAsync(meeting, cancellationToken);
+            await _meetingDataProvider.UpdateMeetingAsync(meeting, cancellationToken).ConfigureAwait(false);
 
             return new SetMeetingLockStatusResponse
             {

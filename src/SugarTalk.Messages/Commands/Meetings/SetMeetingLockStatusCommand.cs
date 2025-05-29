@@ -11,7 +11,6 @@ public class SetMeetingLockStatusCommand : ICommand
     public bool IsLocked { get; set; }
 }
 
-public class SetMeetingLockStatusResponse : SugarTalkResponse
+public class SetMeetingLockStatusResponse : SugarTalkResponse<bool>
 {
-    public bool IsLocked { get; set; }
 }

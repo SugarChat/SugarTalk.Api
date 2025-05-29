@@ -7,7 +7,7 @@ using SugarTalk.Messages.Commands.Meetings;
 
 namespace SugarTalk.Core.Handlers.CommandHandlers.Meetings;
 
-public class SetMeetingLockStatusCommandHandler  : ICommandHandler<SetMeetingLockStatusCommand, SetMeetingLockStatusResponse>
+public class SetMeetingLockStatusCommandHandler : ICommandHandler<SetMeetingLockStatusCommand, SetMeetingLockStatusResponse>
 {
     private readonly IMeetingService _meetingService;
 
