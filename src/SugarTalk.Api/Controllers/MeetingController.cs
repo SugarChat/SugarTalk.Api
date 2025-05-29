@@ -104,7 +104,7 @@ public class MeetingController : ControllerBase
     }
     
     [Route("lock"), HttpPost]
-    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(UpdateMeetingUserSessionRoleResponse))]
+    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(SetMeetingLockStatusResponse))]
     public async Task<IActionResult> SetMeetingLockStatusAsync(SetMeetingLockStatusCommand command)
     {
         var response = await _mediator.SendAsync<SetMeetingLockStatusCommand, SetMeetingLockStatusResponse>(command).ConfigureAwait(false);
