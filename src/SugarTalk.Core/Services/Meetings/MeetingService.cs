@@ -1112,8 +1112,8 @@ namespace SugarTalk.Core.Services.Meetings
             await _meetingDataProvider.UpdateMeetingAsync(meeting, cancellationToken).ConfigureAwait(false);
 
             return new SetMeetingLockStatusResponse
-            {
-                IsLocked = meeting.IsLocked
+            { 
+                Data = meeting.IsLocked
             };
         }
 
