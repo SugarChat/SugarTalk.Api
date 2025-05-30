@@ -754,8 +754,6 @@ public partial class MeetingService
         }, cancellationToken).ConfigureAwait(false);
 
         Log.Information("Meeting staffs: {@staffs}", staffs);
-            
-        var participants = new List<GetAppointmentMeetingDetailForParticipantDto>();
         
         foreach (var getMeetingData in meetingSituationDay)
         {

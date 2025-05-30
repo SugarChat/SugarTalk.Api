@@ -116,6 +116,8 @@ public class MeetingBaseDto
     public bool IsActiveEa { get; set; } = false;
 
     public bool IsActiveRecord { get; set; } = false;
+    
+    public bool IsLocked { get; set; } = false;
 }
 
 public class AddOrUpdateMeetingDto

@@ -102,6 +102,15 @@ public class MeetingController : ControllerBase
 
         return Ok(response);
     }
+    
+    [Route("lock"), HttpPost]
+    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(SetMeetingLockStatusResponse))]
+    public async Task<IActionResult> SetMeetingLockStatusAsync(SetMeetingLockStatusCommand command)
+    {
+        var response = await _mediator.SendAsync<SetMeetingLockStatusCommand, SetMeetingLockStatusResponse>(command).ConfigureAwait(false);
+        
+        return Ok(response);
+    }
 
     #region Appointment Meeting
 

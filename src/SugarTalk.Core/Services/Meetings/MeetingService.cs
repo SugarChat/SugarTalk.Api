@@ -112,6 +112,8 @@ namespace SugarTalk.Core.Services.Meetings
         Task<GetStaffsTreeResponse> GetStaffsTreeAsync(GetStaffsTreeRequest request, CancellationToken cancellationToken);
 
         Task MeetingUserSpeakRecordAsync(MeetingUserSpeakRecordCommand command, CancellationToken cancellationToken);
+        
+        Task<SetMeetingLockStatusResponse> SetMeetingLockStatusResponseAsync(SetMeetingLockStatusCommand command, CancellationToken cancellationToken);
     }
     
     public partial class MeetingService : IMeetingService
@@ -396,6 +398,11 @@ namespace SugarTalk.Core.Services.Meetings
             await _meetingDataProvider.CheckUserKickedFromMeetingAsync(command.MeetingNumber, user.Id, cancellationToken).ConfigureAwait(false);
             
             var meeting = await _meetingDataProvider.GetMeetingAsync(command.MeetingNumber, cancellationToken: cancellationToken).ConfigureAwait(false);
+            
+            var isMeetingOwnerOrHost = meeting.CreatedBy == user.Id || meeting.MeetingMasterUserId == user.Id;
+            
+            if (meeting.IsLocked && !isMeetingOwnerOrHost)
+                throw new InvalidOperationException("The meeting is locked and cannot be joined.");
             
             await HandleAbnormalWithdrawalStatusBeforeAsync(user.Id, meeting, cancellationToken).ConfigureAwait(false);
             
@@ -1304,6 +1311,23 @@ namespace SugarTalk.Core.Services.Meetings
             return new GetStaffsTreeResponse
             {
                 Data = staffs.Data
+            };
+        }
+
+        public async Task<SetMeetingLockStatusResponse> SetMeetingLockStatusResponseAsync(SetMeetingLockStatusCommand command, CancellationToken cancellationToken)
+        {
+            var meeting = await _meetingDataProvider.GetMeetingByIdAsync(command.MeetingId, null, cancellationToken).ConfigureAwait(false);
+
+            if (meeting == null)
+                throw new InvalidOperationException("Meeting not found.");
+
+            meeting.IsLocked = command.IsLocked;
+            
+            await _meetingDataProvider.UpdateMeetingAsync(meeting, cancellationToken).ConfigureAwait(false);
+
+            return new SetMeetingLockStatusResponse
+            { 
+                Data = meeting.IsLocked
             };
         }
 
