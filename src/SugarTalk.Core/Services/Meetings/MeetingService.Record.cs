@@ -62,6 +62,10 @@ public partial interface IMeetingService
     Task<GetMeetingRecordCountResponse> GetMeetingRecordCountAsync(GetMeetingRecordCountRequest request, CancellationToken cancellationToken);
     
     Task RetrySpeechMaticsJobAsync(CreateSpeechMaticsJobCommand command, CancellationToken cancellationToken);
+
+    Task<GetMeetingDataResponse> GetMeetingDataAsync(GetMeetingDataRequest request, CancellationToken cancellationToken);
+    
+    Task<GetMeetingDataUserResponse> GetMeetingDataUserAsync(GetMeetingDataUserRequest request, CancellationToken cancellationToken);
 }
 
 public partial class MeetingService
@@ -91,12 +95,9 @@ public partial class MeetingService
         var meetingRecordId = Guid.NewGuid();
         
         var meeting = await _meetingDataProvider
-            .GetMeetingByIdAsync(command.MeetingId, cancellationToken).ConfigureAwait(false);
+            .GetMeetingByIdAsync(command.MeetingId, cancellationToken: cancellationToken).ConfigureAwait(false);
 
         if (meeting is null) throw new MeetingNotFoundException();
-
-        if (meeting.MeetingMasterUserId != _currentUser?.Id) 
-            throw new CannotStartMeetingRecordingException(_currentUser?.Id);
 
         var user = await _accountDataProvider.GetUserAccountAsync(_currentUser.Id, cancellationToken: cancellationToken).ConfigureAwait(false);
 
@@ -129,7 +130,7 @@ public partial class MeetingService
             User = user,
             MeetingId = meeting.Id,
             MeetingRecordId = meetingRecordId
-        }, cancellationToken), TimeSpan.FromMinutes(55));
+        }, cancellationToken), TimeSpan.FromMinutes(45));
         
         return new MeetingRecordingStartedEvent
         {
@@ -143,7 +144,7 @@ public partial class MeetingService
         Log.Information("ReStartMeetingRecordingCommand: {@command}", command);
         
         var meeting = await _meetingDataProvider
-            .GetMeetingByIdAsync(command.MeetingId, cancellationToken).ConfigureAwait(false);
+            .GetMeetingByIdAsync(command.MeetingId, cancellationToken: cancellationToken).ConfigureAwait(false);
 
         if (meeting is null) throw new MeetingNotFoundException();
         
@@ -176,7 +177,7 @@ public partial class MeetingService
             User = command.User,
             MeetingId = meeting.Id,
             MeetingRecordId = command.MeetingRecordId
-        }, cancellationToken), TimeSpan.FromMinutes(55));
+        }, cancellationToken), TimeSpan.FromMinutes(45));
     }
 
     public async Task GeneralMeetingRecordRestartAsync(
@@ -190,7 +191,7 @@ public partial class MeetingService
         if (record?.UrlStatus != MeetingRecordUrlStatus.Pending)
             return;
         
-        var meeting = await _meetingDataProvider.GetMeetingByIdAsync(command.MeetingId, cancellationToken).ConfigureAwait(false);
+        var meeting = await _meetingDataProvider.GetMeetingByIdAsync(command.MeetingId, cancellationToken: cancellationToken).ConfigureAwait(false);
         
         var recordMeetingToken = _liveKitServerUtilService.GenerateTokenForRecordMeeting(command.User, meeting.MeetingNumber);
         
@@ -221,7 +222,7 @@ public partial class MeetingService
 
     public async Task<StorageMeetingRecordVideoResponse> StorageMeetingRecordVideoAsync(StorageMeetingRecordVideoCommand command, CancellationToken cancellationToken)
     {
-        var meeting = await _meetingDataProvider.GetMeetingByIdAsync(command.MeetingId, cancellationToken).ConfigureAwait(false);
+        var meeting = await _meetingDataProvider.GetMeetingByIdAsync(command.MeetingId, cancellationToken: cancellationToken).ConfigureAwait(false);
 
         var user = await _accountDataProvider.GetUserAccountAsync(_currentUser.Id, cancellationToken: cancellationToken).ConfigureAwait(false);
         
@@ -232,57 +233,68 @@ public partial class MeetingService
         
         await _meetingDataProvider.UpdateMeetingRecordUrlStatusAsync(command.MeetingRecordId, MeetingRecordUrlStatus.InProgress, cancellationToken).ConfigureAwait(false);
 
-        var stopResponse = await _liveKitClient.StopEgressAsync(
+        try
+        {
+            var stopResponse = await _liveKitClient.StopEgressAsync(
             new StopEgressRequestDto { Token = recordMeetingToken, EgressId = record.EgressId }, cancellationToken).ConfigureAwait(false);
+            
+            Log.Information("stop meeting recording response: {@stopResponse}", stopResponse);
+            
+            var speakDetails = await _meetingDataProvider.GetMeetingSpeakDetailsAsync(
+                meetingNumber: meeting.MeetingNumber, recordId: record.Id, cancellationToken: cancellationToken).ConfigureAwait(false);
 
-        Log.Information("stop meeting recording response: {@stopResponse}", stopResponse);
+            foreach (var speakDetail in speakDetails.Where(speakDetail => speakDetail.SpeakEndTime is null or 0))
+            {
+                speakDetail.SpeakStatus = SpeakStatus.End;
+                speakDetail.SpeakEndTime = DateTimeOffset.Now.ToUnixTimeMilliseconds();
+            }
         
-        var speakDetails = await _meetingDataProvider.GetMeetingSpeakDetailsAsync(
-            meetingNumber: meeting.MeetingNumber, recordId: command.MeetingRecordId, cancellationToken: cancellationToken).ConfigureAwait(false);
+            await _meetingDataProvider.UpdateMeetingSpeakDetailsAsync(speakDetails, true, cancellationToken).ConfigureAwait(false);
 
-        foreach (var speakDetail in speakDetails.Where(speakDetail => speakDetail.SpeakEndTime is null or 0))
-        {
-            speakDetail.SpeakStatus = SpeakStatus.End;
-            speakDetail.SpeakEndTime = DateTimeOffset.Now.ToUnixTimeMilliseconds();
+            if (stopResponse == null) throw new Exception();
+        
+            var participants = await _meetingDataProvider.GetUserSessionsByMeetingIdAsync(command.MeetingId, record.MeetingSubId, true, true, cancellationToken).ConfigureAwait(false);
+        
+            var filterGuest = participants.Where(p => p.GuestName == null).ToList();
+            Log.Information("filter guest response: {@filterGuest}", filterGuest);
+        
+            foreach (var participant in filterGuest)
+            {
+                await AddRecordForAccountAsync(participant.UserName, cancellationToken).ConfigureAwait(false);
+                Log.Information("An exception occurred while processing participants: {@participant}", participant);
+            }
+
+            var storageCommand = new DelayedMeetingRecordingStorageCommand 
+            { 
+                StartDate = _clock.Now, 
+                Token = recordMeetingToken, 
+                MeetingRecordId = record.Id,
+                MeetingId = command.MeetingId, 
+                EgressId = record.EgressId,
+                ReTryLimit = command.ReTryLimit,
+                IsRestartRecord = false
+            };
+
+            meeting.IsActiveRecord = false;
+
+            await _meetingDataProvider.UpdateMeetingAsync(meeting, cancellationToken).ConfigureAwait(false);
+
+            var jobId = _backgroundJobClient.Schedule<IMediator>(m => m.SendAsync(storageCommand, cancellationToken), TimeSpan.FromSeconds(10));
+
+            record.MeetingRecordJobId = jobId;
+        
+            await _meetingDataProvider.UpdateMeetingRecordAsync(record, cancellationToken).ConfigureAwait(false);
+        
+            return new StorageMeetingRecordVideoResponse();
         }
-        
-        await _meetingDataProvider.UpdateMeetingSpeakDetailsAsync(speakDetails, true, cancellationToken).ConfigureAwait(false);
-
-        if (stopResponse == null) throw new Exception();
-        
-        var participants = await _meetingDataProvider.GetUserSessionsByMeetingIdAsync(command.MeetingId, null, true, true, cancellationToken).ConfigureAwait(false);
-        
-        var filterGuest = participants.Where(p => p.GuestName == null).ToList();
-        Log.Information("filter guest response: {@filterGuest}", filterGuest);
-        
-        foreach (var participant in filterGuest)
+        catch (Exception e)
         {
-            await AddRecordForAccountAsync(participant.UserName, cancellationToken).ConfigureAwait(false);
-            Log.Information("An exception occurred while processing participants: {@participant}", participant);
+            record.UrlStatus = MeetingRecordUrlStatus.Failed;
+             
+            await _meetingDataProvider.UpdateMeetingRecordAsync(record, cancellationToken).ConfigureAwait(false);
+            
+            return new StorageMeetingRecordVideoResponse();
         }
-
-        var storageCommand = new DelayedMeetingRecordingStorageCommand 
-        { 
-            StartDate = _clock.Now, 
-            Token = recordMeetingToken, 
-            MeetingRecordId = command.MeetingRecordId,
-            MeetingId = command.MeetingId, 
-            EgressId = record.EgressId,
-            ReTryLimit = command.ReTryLimit,
-            IsRestartRecord = false
-        };
-
-        meeting.IsActiveRecord = false;
-
-        await _meetingDataProvider.UpdateMeetingAsync(meeting, cancellationToken).ConfigureAwait(false);
-
-        var jobId = _backgroundJobClient.Schedule<IMediator>(m => m.SendAsync(storageCommand, cancellationToken), TimeSpan.FromSeconds(10));
-
-        record.MeetingRecordJobId = jobId;
-        
-        await _meetingDataProvider.UpdateMeetingRecordAsync(record, cancellationToken).ConfigureAwait(false);
-        
-        return new StorageMeetingRecordVideoResponse();
     }
 
     public async Task<DelayedMeetingRecordingStorageEvent> ExecuteStorageMeetingRecordVideoDelayedJobAsync(
@@ -328,7 +340,7 @@ public partial class MeetingService
         
         Log.Information("get egress info list response: {@egressInfo}", getEgressResponse);
         
-        var egressItem = getEgressResponse?.EgressItems.FirstOrDefault(x => x.EgressId == egressId && x.Status == "EGRESS_COMPLETE");
+        var egressItem = getEgressResponse?.EgressItems.FirstOrDefault(x => x.EgressId == egressId && x.Status is "EGRESS_COMPLETE" or "EGRESS_ABORTED");
 
         if (egressItem == null)
             switch (reTryLimit > 0)
@@ -607,25 +619,34 @@ public partial class MeetingService
          meetingRecord.UrlStatus = egressItem.File.Filename == null ? MeetingRecordUrlStatus.InProgress : MeetingRecordUrlStatus.Completed;
         
          var localhostUrl = "";
-         
-         if (!string.IsNullOrEmpty(egressItem.File.Filename))
-         {
-             localhostUrl = await RecordLocalhostAsync(meetingRecord.Url, cancellationToken).ConfigureAwait(false);
-             
-             meetingRecord.EndedAt = await ProcessMeetingRecordEndedAt(meetingRecord.StartedAt, localhostUrl, cancellationToken).ConfigureAwait(false);
-         }
-         
-         Log.Information("Complete storage meeting record url");
 
-         await _meetingDataProvider.UpdateMeetingRecordAsync(meetingRecord, cancellationToken).ConfigureAwait(false);
-         
-         if (!string.IsNullOrEmpty(meetingRecord.Url))
+         try
          {
-             var meetingDetails = await _meetingDataProvider.GetMeetingDetailsByRecordIdAsync(meetingRecord.Id, cancellationToken).ConfigureAwait(false);
+             if (!string.IsNullOrEmpty(egressItem.File.Filename))
+             {
+                 localhostUrl = await RecordLocalhostAsync(meetingRecord.Url, cancellationToken).ConfigureAwait(false);
              
-             await MarkSpeakTranscriptAsSpecifiedStatusAsync(meetingDetails, FileTranscriptionStatus.InProcess, cancellationToken).ConfigureAwait(false);
+                 meetingRecord.EndedAt = await ProcessMeetingRecordEndedAt(meetingRecord.StartedAt, localhostUrl, cancellationToken).ConfigureAwait(false);
+             }
+         
+             Log.Information("Complete storage meeting record url");
+
+             await _meetingDataProvider.UpdateMeetingRecordAsync(meetingRecord, cancellationToken).ConfigureAwait(false);
+         
+             if (!string.IsNullOrEmpty(meetingRecord.Url))
+             {
+                 var meetingDetails = await _meetingDataProvider.GetMeetingDetailsByRecordIdAsync(meetingRecord.Id, cancellationToken).ConfigureAwait(false);
              
-             await CreateSpeechMaticsJobAsync(meetingRecord, meetingDetails, localhostUrl, cancellationToken).ConfigureAwait(false);
+                 await MarkSpeakTranscriptAsSpecifiedStatusAsync(meetingDetails, FileTranscriptionStatus.InProcess, cancellationToken).ConfigureAwait(false);
+             
+                 await CreateSpeechMaticsJobAsync(meetingRecord, meetingDetails, localhostUrl, cancellationToken).ConfigureAwait(false);
+             }
+         }
+         catch (Exception e)
+         {
+             meetingRecord.UrlStatus = MeetingRecordUrlStatus.Failed;
+             
+             await _meetingDataProvider.UpdateMeetingRecordAsync(meetingRecord, cancellationToken).ConfigureAwait(false);
          }
      }
 
@@ -675,4 +696,100 @@ public partial class MeetingService
          
          await _smartiesDataProvider.CreateSpeechMaticsRecordAsync(meetingSpeechMaticsRecord, cancellationToken: cancellationToken).ConfigureAwait(false);
      }
+
+    public async Task<GetMeetingDataResponse> GetMeetingDataAsync(GetMeetingDataRequest request, CancellationToken cancellationToken)
+    {
+        var pacificZone = TimeZoneInfo.FindSystemTimeZoneById("America/Los_Angeles");
+        
+        DateTimeOffset startPst;
+        DateTimeOffset endPst;
+
+        if (request.Day.HasValue)
+        {
+            var specifiedDate = request.Day.Value.Date;
+            var pstOffset = pacificZone.GetUtcOffset(specifiedDate);
+            startPst = new DateTimeOffset(specifiedDate, pstOffset);
+            endPst = startPst.AddDays(1);
+        }
+        else
+        {
+            var now = DateTimeOffset.Now;
+            var pstNow = TimeZoneInfo.ConvertTime(now, pacificZone);
+            var pstDate = pstNow.Date;
+            startPst = new DateTimeOffset(pstDate, pacificZone.GetUtcOffset(pstDate));
+            endPst = startPst.AddDays(1);
+        }
+        
+        var utcStart = startPst.UtcDateTime;
+        var utcEnd = endPst.UtcDateTime;
+        
+        Log.Information("Get meeting data start: {@utcStart} end: {@utcEnd}", utcStart, utcEnd);
+        
+        var meetingSituationDay = await _meetingDataProvider.GetMeetingSituationDaysAsync(utcStart, utcEnd, cancellationToken).ConfigureAwait(false);
+
+        var meetingIds = meetingSituationDay.Select(x => x.MeetingId).ToList();
+        
+        var meetingParticipants  = await _meetingDataProvider.GetMeetingParticipantAsync(meetingIds, cancellationToken: cancellationToken).ConfigureAwait(false);
+            
+        var participantDict = meetingParticipants.DistinctBy(x => x.StaffId).ToDictionary(x => x.StaffId);
+            
+        Log.Information("Meeting participant dict: {@participantDict}", participantDict);
+            
+        var staffs = await _smartiesClient.GetStaffsRequestAsync(new GetStaffsRequestDto
+        {
+            Ids = participantDict.Keys.ToList()
+        }, cancellationToken).ConfigureAwait(false);
+
+        Log.Information("Meeting staffs: {@staffs}", staffs);
+        
+        foreach (var getMeetingData in meetingSituationDay)
+        {
+            
+            foreach (var staff in staffs.Data.Staffs)
+            {
+                if (!participantDict.TryGetValue(staff.Id, out var participant))
+                    continue;
+
+                if (meetingParticipants.Any(x => x.MeetingId == getMeetingData.MeetingId && x.StaffId == staff.Id))
+                    getMeetingData.MeetingPartices.Add(staff.UserName);
+            }
+        }
+        
+        return new GetMeetingDataResponse
+        {
+            Data = meetingSituationDay
+        };
+    }
+
+    public async Task<GetMeetingDataUserResponse> GetMeetingDataUserAsync(GetMeetingDataUserRequest request, CancellationToken cancellationToken)
+    {
+        var pacificZone = TimeZoneInfo.FindSystemTimeZoneById("America/Los_Angeles");
+        
+        DateTimeOffset startPst;
+        DateTimeOffset endPst;
+
+        if (request.Day.HasValue)
+        {
+            var specifiedDate = request.Day.Value.Date;
+            var pstOffset = pacificZone.GetUtcOffset(specifiedDate);
+            startPst = new DateTimeOffset(specifiedDate, pstOffset);
+            endPst = startPst.AddDays(1);
+        }
+        else
+        {
+            var now = DateTimeOffset.Now;
+            var pstNow = TimeZoneInfo.ConvertTime(now, pacificZone);
+            var pstDate = pstNow.Date;
+            startPst = new DateTimeOffset(pstDate, pacificZone.GetUtcOffset(pstDate));
+            endPst = startPst.AddDays(1);
+        }
+        
+        var utcStart = startPst.UtcDateTime;
+        var utcEnd = endPst.UtcDateTime;
+        
+        return new GetMeetingDataUserResponse
+        {
+            Data = await _meetingDataProvider.GetMeetingDataUserAsync(utcStart, utcEnd, cancellationToken).ConfigureAwait(false)
+        };
+    }
 }

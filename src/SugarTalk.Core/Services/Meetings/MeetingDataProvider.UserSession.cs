@@ -73,7 +73,7 @@ public partial class MeetingDataProvider
     public async Task<List<MeetingUserSessionDto>> GetUserSessionsByMeetingIdAsync(
         Guid meetingId, Guid? meetingSubId, bool isQueryKickedOut = false, bool? includeUserName = false, CancellationToken cancellationToken = default)
     {
-        var query = _repository.QueryNoTracking<MeetingUserSession>()
+        var query = _repository.QueryNoTracking<MeetingUserSession>().AsNoTracking()
             .Where(x => x.MeetingId == meetingId && !x.IsDeleted);
 
         if (!isQueryKickedOut)
