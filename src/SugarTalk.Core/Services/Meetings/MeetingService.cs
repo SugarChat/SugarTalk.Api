@@ -1012,7 +1012,7 @@ namespace SugarTalk.Core.Services.Meetings
                            nextDate = GetNextCustomWeeklyOccurrence(interval ?? 0, currentDate, selectedWeekdays);
                            break;
                        case MeetingCustomizeRepeatType.CustomMonthly:
-                           nextDate = GetNextCustomWeeklyOccurrence(interval ?? 0, currentDate, selectedWeekdays);
+                           nextDate = GetNextCustomMonthlyOccurrence(interval ?? 0, currentDate, customMonthDays);
                            break;
                        case MeetingCustomizeRepeatType.CustomDaily:
                            nextDate = currentDate.AddDays(interval ?? 0);
@@ -1039,18 +1039,30 @@ namespace SugarTalk.Core.Services.Meetings
         private static DateTimeOffset GetNextCustomWeeklyOccurrence(int weekInterval, DateTimeOffset startDate, List<DayOfWeek?> selectedWeekdays)
         {
             var currentDate = startDate;
-            var baseDate = startDate;
+
+            var weekStartDay = DayOfWeek.Monday;
+
+            var sortedWeekdays = selectedWeekdays
+                .Where(d => d.HasValue)
+                .Select(d => d.Value)
+                .OrderBy(d => ((int)d - (int)weekStartDay + 7) % 7)
+                .ToList();
+
+            var startWeekStart = startDate.Date.AddDays(-(startDate.DayOfWeek - weekStartDay + 7) % 7);
 
             for (var weekOffset = 0; weekOffset < 1000; weekOffset++)
             {
-                var weekStart = baseDate.Date.AddDays(weekOffset * weekInterval * 7);
+                var currentWeekStart = startWeekStart.AddDays(weekOffset * weekInterval * 7);
 
-                foreach (var dow in selectedWeekdays.OrderBy(d => d))
+                foreach (var dow in sortedWeekdays)
                 {
-                    var candidate = GetNextWeekdayInWeek(weekStart, dow)
-                        .AddHours(startDate.Hour)
-                        .AddMinutes(startDate.Minute)
-                        .AddSeconds(startDate.Second);
+                    var candidateDate = GetNextWeekdayInWeek(currentWeekStart, dow);
+
+                    var candidate = new DateTimeOffset(
+                        candidateDate.Year, candidateDate.Month, candidateDate.Day,
+                        startDate.Hour, startDate.Minute, startDate.Second,
+                        startDate.Offset
+                    );
 
                     if (candidate > currentDate)
                         return candidate;
@@ -1061,7 +1073,7 @@ namespace SugarTalk.Core.Services.Meetings
         }
         
         private static DateTimeOffset GetNextCustomMonthlyOccurrence(
-            DateTimeOffset startDate, int monthInterval, List<int?> selectedDays)
+            int monthInterval, DateTimeOffset startDate, List<int?> selectedDays)
         {
             var baseDate = startDate;
             var timeOfDay = baseDate.TimeOfDay;
@@ -1075,13 +1087,12 @@ namespace SugarTalk.Core.Services.Meetings
 
                 foreach (var day in selectedDays.OrderBy(d => d))
                 {
-                    
                     if (day < 1 || day > DateTime.DaysInMonth(year, month))
                         continue;
 
                     var candidate = new DateTimeOffset(year, month, day ?? 0, timeOfDay.Hours, timeOfDay.Minutes, timeOfDay.Seconds, baseDate.Offset);
 
-                    if (candidate > startDate)
+                    if (candidate > startDate || candidate == startDate && monthOffset > 0)
                         return candidate;
                 }
             }
