@@ -740,6 +740,23 @@ public partial class MeetingService
         
         var meetingSituationDay = await _meetingDataProvider.GetMeetingSituationDaysAsync(utcStart, utcEnd, cancellationToken).ConfigureAwait(false);
 
+        var userIds = meetingSituationDay.Select(x => x.FundationId).ToList();
+        
+        var userStaffs = await _smartiesClient.GetStaffsRequestAsync(new GetStaffsRequestDto
+        {
+            UserIds = userIds.Select(Guid.Parse).ToList()
+        }, cancellationToken).ConfigureAwait(false);
+
+        meetingSituationDay = meetingSituationDay.Select(x =>
+        {
+            var staff = userStaffs.Data.Staffs.FirstOrDefault(s => s.UserId == s.UserId);
+
+            if (staff != null)
+                x.FundationId = staff.Id.ToString();
+
+            return x;
+        }).ToList();
+        
         var meetingIds = meetingSituationDay.Select(x => x.MeetingId).ToList();
         
         var meetingParticipants  = await _meetingDataProvider.GetMeetingParticipantAsync(meetingIds, cancellationToken: cancellationToken).ConfigureAwait(false);
@@ -800,9 +817,28 @@ public partial class MeetingService
         var utcStart = startPst.UtcDateTime;
         var utcEnd = endPst.UtcDateTime;
         
+        var users = await _meetingDataProvider.GetMeetingDataUserAsync(utcStart, utcEnd, cancellationToken).ConfigureAwait(false);
+        
+        var userIds = users.Select(x => x.UserId).ToList();
+        
+        var userStaffs = await _smartiesClient.GetStaffsRequestAsync(new GetStaffsRequestDto
+        {
+            UserIds = userIds.Select(Guid.Parse).ToList()
+        }, cancellationToken).ConfigureAwait(false);
+
+        users = users.Select(x =>
+        {
+            var staff = userStaffs.Data.Staffs.FirstOrDefault(s => s.UserId == s.UserId);
+
+            if (staff != null)
+                x.FundationId = staff.Id.ToString();
+
+            return x;
+        }).ToList();
+        
         return new GetMeetingDataUserResponse
         {
-            Data = await _meetingDataProvider.GetMeetingDataUserAsync(utcStart, utcEnd, cancellationToken).ConfigureAwait(false)
+            Data = users
         };
     }
 }

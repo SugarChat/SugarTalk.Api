@@ -401,7 +401,7 @@ public partial class MeetingDataProvider
                 MeetingName = meeting.Title,
                 MeetingId = meeting.Id,
                 MeetingNumber = meeting.MeetingNumber,
-                FundationId = userAccount.ThirdPartyUserId,
+                UserId = userAccount.ThirdPartyUserId,
                 MeetingCreator = userAccount.UserName,
                 MeetingStartTime = meeting.StartDate,
                 TimeRange = meetingSituationDay.TimePeriod,
@@ -419,7 +419,7 @@ public partial class MeetingDataProvider
             select new GetMeetingDataUserDto
             {
                 MeetingId = meeting.Id,
-                FundationId = account.ThirdPartyUserId,
+                UserId = account.ThirdPartyUserId,
                 UserName = account.UserName,
                 MeetingNumber = meeting.MeetingNumber,
                 MeetingStartTime = meeting.StartDate,
