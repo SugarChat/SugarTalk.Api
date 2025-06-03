@@ -749,7 +749,7 @@ public partial class MeetingService
 
         meetingSituationDay = meetingSituationDay.Select(x =>
         {
-            var staff = userStaffs.Data.Staffs.FirstOrDefault(s => s.UserId == s.UserId);
+            var staff = userStaffs.Data.Staffs.FirstOrDefault(s => s.UserId == Guid.Parse(x.UserId));
 
             if (staff != null)
                 x.FundationId = staff.Id.ToString();
@@ -828,7 +828,7 @@ public partial class MeetingService
 
         users = users.Select(x =>
         {
-            var staff = userStaffs.Data.Staffs.FirstOrDefault(s => s.UserId == s.UserId);
+            var staff = userStaffs.Data.Staffs.FirstOrDefault(s => s.UserId == Guid.Parse(x.UserId));
 
             if (staff != null)
                 x.FundationId = staff.Id.ToString();
