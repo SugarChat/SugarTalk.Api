@@ -830,6 +830,8 @@ public partial class MeetingService
 
         users = users.Select(x =>
         {
+            if (string.IsNullOrEmpty(x.UserId)) return x;
+            
             var staff = userStaffs.Data.Staffs.FirstOrDefault(s => s.UserId == Guid.Parse(x.UserId));
 
             if (staff != null)
