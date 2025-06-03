@@ -43,6 +43,9 @@ public class GetMeetingDataDto
     [JsonIgnore]
     public DateTimeOffset MeetingDate { get; set; }
 
+    [JsonIgnore]
+    public string UserId { get; set; }
+
     public string MeetingDatePst =>
         TimeZoneInfo.ConvertTime(MeetingDate, TimeZoneInfo.FindSystemTimeZoneById("America/Los_Angeles"))
             .ToString("yyyy/MM/dd");
