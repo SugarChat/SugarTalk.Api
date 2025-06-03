@@ -729,9 +729,11 @@ public partial class MeetingService
 
         var userIds = meetingSituationDay.Select(x => x.FundationId).ToList();
         
+        Log.Information("Get meeting data user ids: {@userIds}", userIds);
+        
         var userStaffs = await _smartiesClient.GetStaffsRequestAsync(new GetStaffsRequestDto
         {
-            UserIds = userIds.Select(Guid.Parse).ToList()
+            UserIds = userIds.Where(x => !string.IsNullOrEmpty(x)).Select(Guid.Parse).ToList()
         }, cancellationToken).ConfigureAwait(false);
 
         meetingSituationDay = meetingSituationDay.Select(x =>
@@ -810,7 +812,7 @@ public partial class MeetingService
         
         var userStaffs = await _smartiesClient.GetStaffsRequestAsync(new GetStaffsRequestDto
         {
-            UserIds = userIds.Select(Guid.Parse).ToList()
+            UserIds = userIds.Where(x => !string.IsNullOrEmpty(x)).Select(Guid.Parse).ToList()
         }, cancellationToken).ConfigureAwait(false);
 
         users = users.Select(x =>
