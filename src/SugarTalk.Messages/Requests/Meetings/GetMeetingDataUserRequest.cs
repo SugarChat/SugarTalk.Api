@@ -33,6 +33,9 @@ public class GetMeetingDataUserDto
             TimeZoneInfo.FindSystemTimeZoneById("America/Los_Angeles")).ToString("HH:mm");
 
     [JsonIgnore]
+    public string UserId { get; set; }
+    
+    [JsonIgnore]
     public DateTimeOffset Date { get; set; }
     
     public string MeetingDatePst =>
