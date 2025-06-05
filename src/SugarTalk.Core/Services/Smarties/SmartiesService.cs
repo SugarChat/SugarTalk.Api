@@ -70,8 +70,6 @@ public class SmartiesService : ISmartiesService
         var speakDetails = new List<MeetingSpeakDetail>();
 
         var originalSpeakInfosCopy = originalSpeakInfos;
-
-        originalSpeakInfos = originalSpeakInfos.Where(x => x.StartTime - x.EndTime > 2).ToList();
         
         foreach (var speakDetail in originalSpeakDetails)
         {
@@ -81,7 +79,7 @@ public class SmartiesService : ISmartiesService
             
             if (speakDetails.Any(x => x.UserId == speakDetail.UserId)) continue;
             
-            var speakInfo = originalSpeakInfos.OrderBy(
+            var speakInfo = originalSpeakInfos.Where(x => x.EndTime - x.StartTime > 1.5).OrderBy(
                 x => Math.Abs(speakDetail.SpeakStartTime - meetingRecord.CreatedDate.ToUnixTimeMilliseconds() - x.StartTime * 1000)).FirstOrDefault();
 
             if (speakInfo == null) continue;
