@@ -70,6 +70,8 @@ public class SmartiesService : ISmartiesService
         var speakDetails = new List<MeetingSpeakDetail>();
 
         var originalSpeakInfosCopy = originalSpeakInfos;
+
+        originalSpeakInfos = originalSpeakInfos.Where(x => x.StartTime - x.EndTime > 2).ToList();
         
         foreach (var speakDetail in originalSpeakDetails)
         {
