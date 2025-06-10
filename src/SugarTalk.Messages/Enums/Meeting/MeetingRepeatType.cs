@@ -20,5 +20,8 @@ public enum MeetingRepeatType
     BiWeekly,
 
     [Description("每月")]
-    Monthly
+    Monthly,
+   
+    [Description("自定义")]
+    Customize
 }
