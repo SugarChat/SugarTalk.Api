@@ -79,8 +79,6 @@ namespace SugarTalk.Core.Services.Meetings
         
         Task PersistMeetingHistoryAsync(MeetingDto meeting, CancellationToken cancellationToken);
         
-        Task<List<MeetingSubMeeting>> GetMeetingSubMeetingsAsync(Guid meetingId, CancellationToken cancellationToken);
-        
         Task<(int Count, List<AppointmentMeetingDto> Records)> GetAppointmentMeetingsByUserIdAsync(GetAppointmentMeetingsRequest request, Guid? staffId, CancellationToken cancellationToken);
         
         Task MarkMeetingAsCompletedAsync(Meeting meeting, CancellationToken cancellationToken);
@@ -194,9 +192,7 @@ namespace SugarTalk.Core.Services.Meetings
             
             if (meeting.AppointmentType == MeetingAppointmentType.Appointment)
             {
-                var subMeetings = await GetMeetingSubMeetingsAsync(meeting.Id, cancellationToken).ConfigureAwait(false);
-
-                var subMeeting = subMeetings.FirstOrDefault(x => x.EndTime > _clock.Now.ToUnixTimeSeconds());
+                var subMeeting = await GetMeetingSubMeetingsAsync(meeting.Id, _clock.Now.ToUnixTimeSeconds(), cancellationToken).ConfigureAwait(false);
                 
                 if (subMeeting != null)
                 {
@@ -524,11 +520,12 @@ namespace SugarTalk.Core.Services.Meetings
             await _repository.InsertAllAsync(meetingHistories, cancellationToken).ConfigureAwait(false);
         }
 
-        public async Task<List<MeetingSubMeeting>> GetMeetingSubMeetingsAsync(Guid meetingId, CancellationToken cancellationToken)
+        private async Task<MeetingSubMeeting> GetMeetingSubMeetingsAsync(Guid meetingId, long nowTime, CancellationToken cancellationToken)
         {
             return await _repository.QueryNoTracking<MeetingSubMeeting>()
                 .Where(x => x.MeetingId == meetingId && x.SubConferenceStatus == MeetingRecordSubConferenceStatus.Default)
-                .OrderBy(x => x.StartTime).ToListAsync(cancellationToken).ConfigureAwait(false);
+                .Where(x => x.EndTime > nowTime)
+                .OrderBy(x => x.StartTime).FirstOrDefaultAsync(cancellationToken).ConfigureAwait(false);
         }
 
         public async Task<(int Count, List<AppointmentMeetingDto> Records)> GetAppointmentMeetingsByUserIdAsync(GetAppointmentMeetingsRequest request, Guid? staffId, CancellationToken cancellationToken)
