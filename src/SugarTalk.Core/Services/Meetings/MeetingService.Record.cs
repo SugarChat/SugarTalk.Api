@@ -255,7 +255,7 @@ public partial class MeetingService
         
             var participants = await _meetingDataProvider.GetUserSessionsByMeetingIdAsync(command.MeetingId, record.MeetingSubId, true, true, cancellationToken).ConfigureAwait(false);
         
-            var filterGuest = participants.Where(p => p.GuestName == null).ToList();
+            var filterGuest = participants.Where(p => p.GuestName == null || p.IsEntryMeeting).ToList();
             Log.Information("filter guest response: {@filterGuest}", filterGuest);
         
             foreach (var participant in filterGuest)
