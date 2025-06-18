@@ -339,7 +339,13 @@ public partial class MeetingService
         var meetingUserSessions = await _meetingDataProvider.GetMeetingUserSessionsAsync(ids: command.Ids, cancellationToken: cancellationToken);
 
         if (command.OnlineType.HasValue)
-            meetingUserSessions.ForEach(x => x.OnlineType = command.OnlineType.Value);
+            meetingUserSessions.ForEach(x =>
+            {
+                if(command.OnlineType == MeetingUserSessionOnlineType.Online)
+                    x.IsEntryMeeting = true;
+                
+                x.OnlineType = command.OnlineType.Value;
+            });
 
         if (command.AllowEntryMeeting.HasValue)
             meetingUserSessions.ForEach(x =>
