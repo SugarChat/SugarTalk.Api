@@ -23,6 +23,10 @@ public class JoinMeetingResponse : SugarTalkResponse<JoinMeetingResponseData>
 public class JoinMeetingResponseData
 {
     public int UserId { get; set; }
+
+    public string UserName { get; set; }
+    
+    public bool IsEntryWaitingRoom { get; set; }
     
     public MeetingDto Meeting { get; set; }
     

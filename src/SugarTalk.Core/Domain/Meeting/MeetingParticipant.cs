@@ -27,7 +27,4 @@ public class MeetingParticipant : IEntity
     
     [Column("created_date")]
     public DateTimeOffset CreatedDate { get; set; }
-    
-    [NotMapped]
-    public int UserId { get; set; }
 }

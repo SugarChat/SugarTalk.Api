@@ -122,6 +122,7 @@
         <EmbeddedResource Include="DbUp\Scripts_2025\Script0005_meeting_situation_day.sql" />
         <EmbeddedResource Include="DbUp\Scripts_2025\Script0005_add_customize_repeat_type_for_meeting_repeat_rule.sql" />
         <EmbeddedResource Include="DbUp\Scripts_2025\Script0006_add_is_locked_to_meeting_table.sql" />
+        <EmbeddedResource Include="DbUp\Scripts_2025\Script0007_add_meeting_waiting_room.sql" />
     </ItemGroup>
     
     <ItemGroup>
