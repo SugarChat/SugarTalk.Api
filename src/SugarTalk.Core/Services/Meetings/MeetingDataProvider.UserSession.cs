@@ -228,7 +228,9 @@ public partial class MeetingDataProvider
                 IsSharingScreen = session.IsSharingScreen,
                 LastModifiedDateForCoHost = session.LastModifiedDateForCoHost,
                 IsMeetingMaster = meeting.MeetingMasterUserId == userAccount.Id,
-                IsMeetingCreator = session.UserId == meeting.CreatedBy
+                IsMeetingCreator = session.UserId == meeting.CreatedBy,
+                AllowEntryMeeting = session.AllowEntryMeeting,
+                IsEntryMeeting = session.IsEntryMeeting
             }).ToListAsync(cancellationToken).ConfigureAwait(false);
     }
 }
