@@ -544,7 +544,7 @@ namespace SugarTalk.Core.Services.Meetings
                         meeting.EndDate <= maxQueryDate) ||
                        (subMeeting != null &&
                         subMeeting.StartTime >= startOfDay &&
-                        subMeeting.EndTime <= maxQueryDate)
+                        subMeeting.EndTime <= maxQueryDate && subMeeting.SubConferenceStatus != MeetingRecordSubConferenceStatus.NotExist)
                 select new AppointmentMeetingDto
                 {
                     MeetingId = meeting.Id,
