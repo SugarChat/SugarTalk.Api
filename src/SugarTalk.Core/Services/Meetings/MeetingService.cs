@@ -1349,14 +1349,34 @@ namespace SugarTalk.Core.Services.Meetings
 
         public async Task<SetMeetingLockStatusResponse> SetMeetingLockStatusResponseAsync(SetMeetingLockStatusCommand command, CancellationToken cancellationToken)
         {
-            var meeting = await _meetingDataProvider.GetMeetingByIdAsync(command.MeetingId, null, cancellationToken).ConfigureAwait(false);
+            var meeting = await _meetingDataProvider.GetMeetingAsync(meetingId: command.MeetingId, includeUserSessions: false, cancellationToken: cancellationToken).ConfigureAwait(false);
 
             if (meeting == null)
                 throw new InvalidOperationException("Meeting not found.");
 
-            meeting.IsLocked = command.IsLocked;
+            if (command.IsLocked.HasValue)
+                meeting.IsLocked = command.IsLocked.Value;
+
+            if (command.IsOpenWaitingRoom.HasValue)
+            {
+                meeting.IsWaitingRoomEnabled = command.IsOpenWaitingRoom.Value;
+                if (meeting.IsWaitingRoomEnabled == false)
+                {
+                    var userSessions = await _meetingDataProvider.GetMeetingUserSessionsAsync(
+                        meetingId: meeting.Id, meetingSubId: meeting.MeetingSubId, onlineType: MeetingUserSessionOnlineType.Waiting, cancellationToken: cancellationToken);
+                
+                    userSessions.ForEach(x =>
+                    {
+                        x.IsEntryMeeting = true;
+                        x.Status = MeetingAttendeeStatus.Present;
+                        x.OnlineType = MeetingUserSessionOnlineType.Online;
+                    });
+                    
+                    await _meetingDataProvider.UpdateMeetingUserSessionAsync(userSessions, cancellationToken).ConfigureAwait(false);
+                }
+            }
             
-            await _meetingDataProvider.UpdateMeetingAsync(meeting, cancellationToken).ConfigureAwait(false);
+            await _meetingDataProvider.UpdateMeetingAsync(_mapper.Map<Meeting>(meeting), cancellationToken).ConfigureAwait(false);
 
             return new SetMeetingLockStatusResponse
             { 
