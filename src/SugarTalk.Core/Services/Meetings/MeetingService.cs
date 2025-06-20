@@ -1255,7 +1255,12 @@ namespace SugarTalk.Core.Services.Meetings
 
             return new SetMeetingLockStatusResponse
             { 
-                Data = meeting.IsLocked
+                Data = new SetMeetingLockStatusDto
+                {
+                    MeetingId = meeting.Id,
+                    IsLocked = meeting.IsLocked,
+                    IsOpenWaitingRoom = meeting.IsWaitingRoomEnabled
+                }
             };
         }
 
