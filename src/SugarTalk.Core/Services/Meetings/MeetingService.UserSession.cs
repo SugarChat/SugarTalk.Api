@@ -339,6 +339,7 @@ public partial class MeetingService
         var meetingUserSessions = await _meetingDataProvider.GetMeetingUserSessionsAsync(ids: command.Ids, cancellationToken: cancellationToken);
 
         if (command.OnlineType.HasValue)
+        {
             meetingUserSessions.ForEach(x =>
             {
                 if(command.OnlineType == MeetingUserSessionOnlineType.Online)
@@ -346,6 +347,19 @@ public partial class MeetingService
                 
                 x.OnlineType = command.OnlineType.Value;
             });
+
+            if (command.OnlineType == MeetingUserSessionOnlineType.Waiting)
+            {
+                var meeting = await _meetingDataProvider.GetMeetingByIdAsync(meetingUserSessions.First().MeetingId, cancellationToken: cancellationToken).ConfigureAwait(false);
+
+                if (meeting.IsWaitingRoomEnabled == false)
+                {
+                    meeting.IsWaitingRoomEnabled = true;
+                
+                    await _meetingDataProvider.UpdateMeetingAsync(meeting, cancellationToken).ConfigureAwait(false);
+                }
+            }
+        }
 
         if (command.AllowEntryMeeting.HasValue)
             meetingUserSessions.ForEach(x =>

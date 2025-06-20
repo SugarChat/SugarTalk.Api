@@ -8,7 +8,9 @@ public class SetMeetingLockStatusCommand : ICommand
 {
     public Guid MeetingId { get; set; }
     
-    public bool IsLocked { get; set; }
+    public bool? IsLocked { get; set; }
+
+    public bool? IsOpenWaitingRoom { get; set; }
 }
 
 public class SetMeetingLockStatusResponse : SugarTalkResponse<bool>
