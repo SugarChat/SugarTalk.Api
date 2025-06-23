@@ -260,7 +260,7 @@ public partial class MeetingService
             
         Log.Information("Get meeting participant dict: {@participantDict}", participantDict);
 
-        if (participantDict.Any())
+        if (!participantDict.Any())
             return new List<RmStaffDto>();
 
         var staffs = await _smartiesClient.GetStaffsRequestAsync(new GetStaffsRequestDto
