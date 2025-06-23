@@ -226,9 +226,12 @@ public partial class MeetingService
         var meetingUserSessions = await _meetingDataProvider.GetAllMeetingUserSessionsAsync(request.MeetingId, cancellationToken).ConfigureAwait(false);
         
         var staffs = await GetMeetingParticipantsAsync(request.MeetingId, cancellationToken).ConfigureAwait(false);
-
-        var noEntryMeetingUsers = staffs.Where(x => !meetingUserSessions.Select(s => s.UserName).ToList().Contains(x.UserName)).ToList();
-
+        
+        var noEntryMeetingUsers = new List<RmStaffDto>();
+        
+        if (staffs.Any())
+            noEntryMeetingUsers = staffs.Where(x => !meetingUserSessions.Select(s => s.UserName).ToList().Contains(x.UserName)).ToList();    
+        
         var userAccount = new List<UserAccount>();
         
         if (noEntryMeetingUsers.Any())
@@ -256,7 +259,10 @@ public partial class MeetingService
         var participantDict = meetingParticipants.ToDictionary(x => x.StaffId);
             
         Log.Information("Get meeting participant dict: {@participantDict}", participantDict);
-            
+
+        if (participantDict.Any())
+            return new List<RmStaffDto>();
+
         var staffs = await _smartiesClient.GetStaffsRequestAsync(new GetStaffsRequestDto
         {
             Ids = participantDict.Keys.ToList()
