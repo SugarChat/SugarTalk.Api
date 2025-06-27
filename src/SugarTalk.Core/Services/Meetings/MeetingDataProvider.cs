@@ -27,7 +27,7 @@ namespace SugarTalk.Core.Services.Meetings
 {
     public partial interface IMeetingDataProvider : IScopedDependency
     {
-        Task<MeetingUserSession> GetMeetingUserSessionByMeetingIdAsync(Guid meetingId, Guid? meetingSubId, int? userId, MeetingUserSessionOnlineType? userSessionOnlineType, CancellationToken cancellationToken);
+        Task<MeetingUserSession> GetMeetingUserSessionByMeetingIdAsync(Guid meetingId, Guid? meetingSubId, int? userId, List<MeetingUserSessionOnlineType> userSessionOnlineType, CancellationToken cancellationToken);
         
         Task<Meeting> GetMeetingByIdAsync(Guid? meetingId = null, string meetingNumber = null, CancellationToken cancellationToken = default);
         
@@ -137,7 +137,7 @@ namespace SugarTalk.Core.Services.Meetings
         }
 
         public async Task<MeetingUserSession> GetMeetingUserSessionByMeetingIdAsync(Guid meetingId, Guid? meetingSubId,
-            int? userId, MeetingUserSessionOnlineType? userSessionOnlineType, CancellationToken cancellationToken)
+            int? userId, List<MeetingUserSessionOnlineType> userSessionOnlineTypes, CancellationToken cancellationToken)
         {
             var query = _repository
                 .QueryNoTracking<MeetingUserSession>()
@@ -148,8 +148,8 @@ namespace SugarTalk.Core.Services.Meetings
                 query = query.Where(e => e.MeetingSubId == meetingSubId);
             }
 
-            if (userSessionOnlineType.HasValue)
-                query = query.Where(e => e.OnlineType == userSessionOnlineType);
+            if (userSessionOnlineTypes != null && userSessionOnlineTypes.Any())
+                query = query.Where(e => userSessionOnlineTypes.Contains(e.OnlineType));
 
             return await query.SingleOrDefaultAsync(cancellationToken).ConfigureAwait(false);
         }
