@@ -302,7 +302,7 @@ public partial class MeetingService
 
     private async Task UpdateMeetingUserSessionCoHostAsync(Guid meetingId, int creatorId, int userId, bool transferMaster, CancellationToken cancellationToken)
     {
-        var meetUserSession = await _meetingDataProvider.GetMeetingUserSessionByMeetingIdAsync(meetingId, null, userId, MeetingUserSessionOnlineType.Online, cancellationToken: cancellationToken).ConfigureAwait(false);
+        var meetUserSession = await _meetingDataProvider.GetMeetingUserSessionByMeetingIdAsync(meetingId, null, userId, new List<MeetingUserSessionOnlineType>{ MeetingUserSessionOnlineType.Online }, cancellationToken: cancellationToken).ConfigureAwait(false);
         
         meetUserSession.CoHost = transferMaster && meetUserSession.UserId == creatorId;
             
