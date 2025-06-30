@@ -1282,11 +1282,6 @@ namespace SugarTalk.Core.Services.Meetings
 
             var (count, records) = await _meetingDataProvider.GetAppointmentMeetingsByUserIdAsync(request, staffId, cancellationToken).ConfigureAwait(false);
         
-            var updateMeetingSubStatus = records.Where(x => x.MeetingSubStatus == MeetingRecordSubConferenceStatus.NotExist).ToList();
-
-            if (updateMeetingSubStatus.Any())
-                _backgroundJobClient.Enqueue(() => UpdateMeetingSubStatusAsync(updateMeetingSubStatus, cancellationToken));
-            
             return new GetAppointmentMeetingsResponse
             {
                 Data = new GetAppointmentMeetingsResponseDto()
@@ -1295,20 +1290,6 @@ namespace SugarTalk.Core.Services.Meetings
                     Records = records
                 }
             };
-        }
-
-        public async Task UpdateMeetingSubStatusAsync(List<AppointmentMeetingDto> meetings, CancellationToken cancellationToken)
-        {
-            var subIds = meetings.Where(x => x.MeetingSubId != null).Select(x => x.MeetingSubId.Value).ToList();
-            
-            var meetingSubs = await _meetingDataProvider.GetMeetingSubMeetingsAsync(subIds, cancellationToken).ConfigureAwait(false);
-            
-            meetingSubs.ForEach(x =>
-            {
-                x.SubConferenceStatus = MeetingRecordSubConferenceStatus.Default;
-            });
-            
-            await _meetingDataProvider.UpdateMeetingSubAsync(meetingSubs, cancellationToken: cancellationToken).ConfigureAwait(false);
         }
 
         public async Task<GetAppointmentMeetingDetailResponse> GetAppointmentMeetingsDetailAsync(
