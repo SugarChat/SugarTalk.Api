@@ -9,7 +9,6 @@ using Newtonsoft.Json;
 using Serilog;
 using SugarTalk.Core.Data;
 using SugarTalk.Core.Domain.Account;
-using SugarTalk.Core.Domain.Foundation;
 using SugarTalk.Core.Domain.Meeting;
 using SugarTalk.Core.Extensions;
 using SugarTalk.Core.Ioc;
@@ -114,8 +113,6 @@ namespace SugarTalk.Core.Services.Meetings
         Task<List<MeetingParticipant>> GetMeetingParticipantAsync(List<Guid> meetingIds, bool? isDesignatedHost = null, CancellationToken cancellationToken = default);
         
         Task DeleteMeetingParticipantAsync(List<MeetingParticipant> meetingParticipants, bool forSave = true, CancellationToken cancellationToken = default);
-
-        Task UpdateMeetingSubAsync(List<MeetingSubMeeting> subMeetings, bool forSave = true, CancellationToken cancellationToken = default);
     }
     
     public partial class MeetingDataProvider : IMeetingDataProvider
@@ -546,7 +543,7 @@ namespace SugarTalk.Core.Services.Meetings
                         meeting.EndDate <= maxQueryDate) ||
                        (subMeeting != null &&
                         subMeeting.StartTime >= startOfDay &&
-                        subMeeting.EndTime <= maxQueryDate)
+                        subMeeting.EndTime <= maxQueryDate && subMeeting.SubConferenceStatus == MeetingRecordSubConferenceStatus.Default)
                 select new AppointmentMeetingDto
                 {
                     MeetingId = meeting.Id,
@@ -559,9 +556,7 @@ namespace SugarTalk.Core.Services.Meetings
                     TimeZone = meeting.TimeZone,
                     RepeatType = rules.RepeatType,
                     AppointmentType = meeting.AppointmentType,
-                    CreatedDate = meeting.CreatedDate,
-                    MeetingSubStatus = subMeeting != null ? subMeeting.SubConferenceStatus : null,
-                    MeetingSubId = subMeeting != null ? subMeeting.Id : null
+                    CreatedDate = meeting.CreatedDate
                 };
 
             var appointmentMeetingList = await query.ToListAsync(cancellationToken).ConfigureAwait(false);
@@ -810,14 +805,6 @@ namespace SugarTalk.Core.Services.Meetings
                 UserAccountIssuer.Wiltechs => userAccount.UserName,
                 _ => throw new Exception("Issuer inexistence")
             };
-        }
-
-        public async Task UpdateMeetingSubAsync(List<MeetingSubMeeting> subMeetings, bool forSave = true, CancellationToken cancellationToken = default)
-        {
-            await _repository.UpdateAllAsync(subMeetings, cancellationToken).ConfigureAwait(false);
-            
-            if (forSave)
-                await _unitOfWork.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
         }
     }
 }

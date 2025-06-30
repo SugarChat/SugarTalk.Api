@@ -1,5 +1,4 @@
 using System;
-using Newtonsoft.Json;
 using SugarTalk.Messages.Enums.Meeting;
 
 namespace SugarTalk.Messages.Dto.Meetings;
@@ -27,10 +26,4 @@ public class AppointmentMeetingDto
     public MeetingStatus Status { get; set; }
     
     public DateTimeOffset CreatedDate { get; set; }
-    
-    [JsonIgnore]
-    public MeetingRecordSubConferenceStatus? MeetingSubStatus { get; set; }
-
-    [JsonIgnore]
-    public Guid? MeetingSubId { get; set; }
 }
