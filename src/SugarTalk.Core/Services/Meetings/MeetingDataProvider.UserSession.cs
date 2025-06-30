@@ -21,7 +21,7 @@ public partial interface IMeetingDataProvider
     Task UpdateMeetingUserSessionAsync(List<MeetingUserSession> userSessions, CancellationToken cancellationToken);
 
     Task<List<MeetingUserSessionDto>> GetUserSessionsByMeetingIdAsync(
-        Guid meetingId, Guid? meetingSubId, bool isQueryKickedOut = false, bool? includeUserName = false, CancellationToken cancellationToken = default);
+        Guid meetingId, Guid? meetingSubId, bool isQueryKickedOut = false, bool? includeUserName = false, bool IsEntryMeeting = false, CancellationToken cancellationToken = default);
     
     Task RemoveMeetingUserSessionsIfRequiredAsync(int userId, Guid meetingId, CancellationToken cancellationToken);
     
@@ -71,20 +71,19 @@ public partial class MeetingDataProvider
     }
 
     public async Task<List<MeetingUserSessionDto>> GetUserSessionsByMeetingIdAsync(
-        Guid meetingId, Guid? meetingSubId, bool isQueryKickedOut = false, bool? includeUserName = false, CancellationToken cancellationToken = default)
+        Guid meetingId, Guid? meetingSubId, bool isQueryKickedOut = false, bool? includeUserName = false, bool IsEntryMeeting = false, CancellationToken cancellationToken = default)
     {
         var query = _repository.QueryNoTracking<MeetingUserSession>().AsNoTracking()
             .Where(x => x.MeetingId == meetingId && !x.IsDeleted);
 
         if (!isQueryKickedOut)
-        {
             query = query.Where(x => x.OnlineType != MeetingUserSessionOnlineType.KickOutMeeting);
-        }
         
         if (meetingSubId is not null)
-        {
             query = query.Where(x => x.MeetingSubId == meetingSubId);
-        }
+
+        if (IsEntryMeeting)
+            query = query.Where(x => x.IsEntryMeeting);
 
         var userSessions = await query.ToListAsync(cancellationToken).ConfigureAwait(false);
         
