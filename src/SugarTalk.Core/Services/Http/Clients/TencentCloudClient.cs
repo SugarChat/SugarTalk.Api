@@ -33,15 +33,7 @@ public class TencentCloudClient : ITencentCloudClient
             SecretKey = _tencentCloudSetting.SecretKey
         };
 
-        var clientProfile = new ClientProfile
-        {
-            HttpProfile = new HttpProfile
-            {
-                Endpoint = _tencentCloudSetting.BaseUrl 
-            }
-        };
-
-        return new TrtcClient(cred, _tencentCloudSetting.Region, clientProfile);
+        return new TrtcClient(cred, _tencentCloudSetting.Region);
     }
 
     public async Task<CreateCloudRecordingResponse> CreateCloudRecordingAsync(CreateCloudRecordingRequest request, CancellationToken cancellationToken)
