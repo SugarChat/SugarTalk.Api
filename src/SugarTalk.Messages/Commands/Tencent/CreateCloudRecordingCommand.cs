@@ -84,13 +84,13 @@ public class VideoParams
     
     public ulong? Gop { get; set; }
 }
+
 public class StartCloudRecordingResponse : SugarTalkResponse<CreateCloudRecordingResponseResult>
 {
 }
 
 public class CreateCloudRecordingResponseResult 
 {
-    
     public string TaskId { get; set; }
     
     public string RequestId { get; set; }
