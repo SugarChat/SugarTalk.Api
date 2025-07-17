@@ -27,7 +27,7 @@ public class TencentController : ControllerBase
         return Ok(response);
     }
     
-    [Route("cloudRecord/Stop"), HttpPost]
+    [Route("cloudRecord/stop"), HttpPost]
     [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(StopCloudRecordingResponse))]
     public async Task<IActionResult> StopCloudRecordingAsync([FromBody] StopCloudRecordingCommand command)
     {
@@ -37,7 +37,7 @@ public class TencentController : ControllerBase
     }
     
     
-    [Route("cloudRecord/Update"), HttpPost]
+    [Route("cloudRecord/update"), HttpPost]
     [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(UpdateCloudRecordingResponse))]
     public async Task<IActionResult> UpdateCloudRecordingAsync([FromBody] UpdateCloudRecordingCommand command)
     {
