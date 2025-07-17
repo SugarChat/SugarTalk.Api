@@ -53,7 +53,6 @@ public class TencentClient : ITencentClient
         request.StorageParams.CloudStorage.Region = _tencentCloudSetting.CosRegion;
         request.StorageParams.CloudStorage.AccessKey = _tencentCloudSetting.CosAccessKey;
         request.StorageParams.CloudStorage.SecretKey = _tencentCloudSetting.CosSecretKey;
-        request.StorageParams.CloudStorage.FileNamePrefix = _tencentCloudSetting.CosFileNamePrefix;
         
         Log.Information("CreateCloudRecordingAsync request: {request}", request);
         

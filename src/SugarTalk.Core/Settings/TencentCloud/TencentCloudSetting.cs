@@ -13,7 +13,6 @@ public class TencentCloudSetting: IConfigurationSetting
         CosBucket =  configuration.GetValue<string>("Tencent:StorageParams:Bucket");
         CosAccessKey =  configuration.GetValue<string>("Tencent:StorageParams:AccessKey");
         CosSecretKey =  configuration.GetValue<string>("Tencent:StorageParams:SecretKey");
-        CosFileNamePrefix =  configuration.GetValue<string[]>("Tencent:StorageParams:FileNamePrefix");
     }
     
     public string SecretId { get; set; }
@@ -29,6 +28,4 @@ public class TencentCloudSetting: IConfigurationSetting
     public string CosAccessKey { get; set; }
     
     public string CosSecretKey { get; set; }
-    
-    public string[] CosFileNamePrefix { get; set; }
 }
