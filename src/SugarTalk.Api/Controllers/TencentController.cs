@@ -1,8 +1,8 @@
 using Mediator.Net;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using SugarTalk.Core.Services.Http.Clients;
 using SugarTalk.Messages.Commands.Tencent;
+using SugarTalk.Messages.Requests.Tencent;
 
 namespace SugarTalk.Api.Controllers;
 
@@ -16,6 +16,15 @@ public class TencentController : ControllerBase
     public TencentController(IMediator mediator)
     {
         _mediator = mediator;
+    }
+
+    [Route("cloud/key"), HttpGet]
+    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(GetTencentCloudKeyResponse))]
+    public async Task<IActionResult> GetTencentCloudKey()
+    {
+        var response = await _mediator.RequestAsync<GetTencentCloudKeyRequest, GetTencentCloudKeyResponse>(new GetTencentCloudKeyRequest());
+        
+        return Ok(response);
     }
     
     [Route("cloudRecord/create"), HttpPost]
