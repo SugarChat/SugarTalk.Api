@@ -54,7 +54,7 @@ public class TencentClient : ITencentClient
             {
                 Vendor = 0,
                 Bucket = _tencentCloudSetting.CosBucket,
-                Region = _tencentCloudSetting.CosRegion,
+                Region = _tencentCloudSetting.Region,
                 AccessKey = _tencentCloudSetting.CosAccessKey,
                 SecretKey = _tencentCloudSetting.CosSecretKey,
             }
