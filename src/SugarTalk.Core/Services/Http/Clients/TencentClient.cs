@@ -48,11 +48,17 @@ public class TencentClient : ITencentClient
     {
         var client = CreateClient();
 
-        request.StorageParams.CloudStorage.Vendor = 0;
-        request.StorageParams.CloudStorage.Bucket = _tencentCloudSetting.CosBucket;
-        request.StorageParams.CloudStorage.Region = _tencentCloudSetting.CosRegion;
-        request.StorageParams.CloudStorage.AccessKey = _tencentCloudSetting.CosAccessKey;
-        request.StorageParams.CloudStorage.SecretKey = _tencentCloudSetting.CosSecretKey;
+        request.StorageParams = new StorageParams
+        {
+            CloudStorage = new CloudStorage
+            {
+                Vendor = 0,
+                Bucket = _tencentCloudSetting.CosBucket,
+                Region = _tencentCloudSetting.CosRegion,
+                AccessKey = _tencentCloudSetting.CosAccessKey,
+                SecretKey = _tencentCloudSetting.CosSecretKey,
+            }
+        };
         
         Log.Information("CreateCloudRecordingAsync request: {request}", request);
         
