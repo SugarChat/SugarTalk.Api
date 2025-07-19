@@ -1,16 +1,11 @@
 using System;
+using Mediator.Net.Contracts;
 using SugarTalk.Messages.Responses;
 
 namespace SugarTalk.Messages.Requests.Tencent;
 
-public class GetTencentCloudKeyRequest : ICachingRequest
+public class GetTencentCloudKeyRequest : IRequest
 {
-    public string GetCacheKey()
-    {
-        return $"{nameof(GetTencentCloudKeyRequest)}";
-    }
-
-    public TimeSpan? GetCacheExpiration() => TimeSpan.FromMinutes(1);
 }
 
 public class GetTencentCloudKeyResponse : SugarTalkResponse<GetTencentCloudKeyResponseData>
