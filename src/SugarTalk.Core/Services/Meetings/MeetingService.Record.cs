@@ -731,14 +731,45 @@ public partial class MeetingService
         
         Log.Information("Get meeting data user ids: {@userIds}", userIds);
         
-        var userStaffs = await _smartiesClient.GetStaffsRequestAsync(new GetStaffsRequestDto
+        var batchSize = 30;
+        var allResults = new List<RmStaffDto>();
+        
+        var cleanedUserIds = userIds.Where(x => !string.IsNullOrWhiteSpace(x)).Select(Guid.Parse).ToList();
+
+        using var semaphore = new SemaphoreSlim(4);
+        var tasks = new List<Task>();
+
+        foreach (var batch in cleanedUserIds.Chunk(batchSize))
         {
-            UserIds = userIds.Where(x => !string.IsNullOrEmpty(x)).Select(Guid.Parse).ToList()
-        }, cancellationToken).ConfigureAwait(false);
+            await semaphore.WaitAsync(cancellationToken);
+
+            tasks.Add(Task.Run(async () =>
+            {
+                try
+                {
+                    var result = await _smartiesClient.GetStaffsRequestAsync(
+                        new GetStaffsRequestDto { UserIds = batch.ToList() }, cancellationToken).ConfigureAwait(false);
+
+                    if (result?.Data?.Staffs != null)
+                        lock (allResults)
+                            allResults.AddRange(result.Data.Staffs);
+                }
+                catch (Exception ex)
+                {
+                    Log.Information("Get meeting data staffs error: {@ex}", ex);
+                }
+                finally
+                {
+                    semaphore.Release();
+                }
+            }));
+        }
+
+        await Task.WhenAll(tasks);
 
         meetingSituationDay = meetingSituationDay.Select(x =>
         {
-            var staff = userStaffs.Data.Staffs.FirstOrDefault(s => s.UserId == Guid.Parse(x.UserId));
+            var staff = allResults.FirstOrDefault(s => s.UserId == Guid.Parse(x.UserId));
 
             if (staff != null)
                 x.FundationId = staff.Id.ToString();
@@ -810,16 +841,47 @@ public partial class MeetingService
         
         var userIds = users.Select(x => x.UserId).ToList();
         
-        var userStaffs = await _smartiesClient.GetStaffsRequestAsync(new GetStaffsRequestDto
+        var batchSize = 30;
+        var allResults = new List<RmStaffDto>();
+        
+        var cleanedUserIds = userIds.Where(x => !string.IsNullOrWhiteSpace(x)).Select(Guid.Parse).ToList();
+
+        using var semaphore = new SemaphoreSlim(4);
+        var tasks = new List<Task>();
+
+        foreach (var batch in cleanedUserIds.Chunk(batchSize))
         {
-            UserIds = userIds.Where(x => !string.IsNullOrEmpty(x)).Select(Guid.Parse).ToList()
-        }, cancellationToken).ConfigureAwait(false);
+            await semaphore.WaitAsync(cancellationToken);
+
+            tasks.Add(Task.Run(async () =>
+            {
+                try
+                {
+                    var result = await _smartiesClient.GetStaffsRequestAsync(
+                        new GetStaffsRequestDto { UserIds = batch.ToList() }, cancellationToken).ConfigureAwait(false);
+
+                    if (result?.Data?.Staffs != null)
+                        lock (allResults)
+                            allResults.AddRange(result.Data.Staffs);
+                }
+                catch (Exception ex)
+                {
+                    Log.Information("Get meeting data staffs error: {@ex}", ex);
+                }
+                finally
+                {
+                    semaphore.Release();
+                }
+            }));
+        }
+
+        await Task.WhenAll(tasks);
 
         users = users.Select(x =>
         {
             if (string.IsNullOrEmpty(x.UserId)) return x;
             
-            var staff = userStaffs.Data.Staffs.FirstOrDefault(s => s.UserId == Guid.Parse(x.UserId));
+            var staff = allResults.FirstOrDefault(s => s.UserId == Guid.Parse(x.UserId));
 
             if (staff != null)
                 x.FundationId = staff.Id.ToString();

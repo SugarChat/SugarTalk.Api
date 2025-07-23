@@ -333,8 +333,7 @@ namespace SugarTalk.Core.Services.Meetings
         public async Task<GetMeetingByNumberResponse> GetMeetingByNumberAsync(GetMeetingByNumberRequest request,
             CancellationToken cancellationToken)
         {
-            var meeting = await _meetingDataProvider
-                .GetMeetingAsync(request.MeetingNumber, cancellationToken: cancellationToken, includeUserSessions: request.IncludeUserSession).ConfigureAwait(false);
+            var meeting = await _meetingDataProvider.GetMeetingAsync(request.MeetingNumber, cancellationToken: cancellationToken, includeUserSessions: request.IncludeUserSession).ConfigureAwait(false);
 
             meeting.AppName = appName;
 
