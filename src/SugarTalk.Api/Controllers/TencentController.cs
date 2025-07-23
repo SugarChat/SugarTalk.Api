@@ -54,4 +54,14 @@ public class TencentController : ControllerBase
 
         return Ok(response);
     }
+    
+    [AllowAnonymous]
+    [Route("cloudRecord/callback"), HttpPost]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    public async Task<IActionResult> CloudRecordingCallBackAsync([FromBody] CloudRecordingCallBackCommand command)
+    {
+        await _mediator.SendAsync(command);
+
+        return Ok();
+    }
 }

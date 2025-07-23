@@ -1,10 +1,12 @@
 using System.Threading;
 using System.Threading.Tasks;
 using AutoMapper;
+using Serilog;
 using SugarTalk.Core.Ioc;
 using SugarTalk.Core.Services.Http.Clients;
 using SugarTalk.Core.Settings.TencentCloud;
 using SugarTalk.Messages.Commands.Tencent;
+using SugarTalk.Messages.Extensions;
 using SugarTalk.Messages.Requests.Tencent;
 using TencentCloud.Trtc.V20190722.Models;
 
@@ -19,6 +21,8 @@ public interface ITencentService : IScopedDependency
     Task<StopCloudRecordingResponse> StopCloudRecordingAsync(StopCloudRecordingCommand command, CancellationToken cancellationToken);
     
     Task<UpdateCloudRecordingResponse> UpdateCloudRecordingAsync(UpdateCloudRecordingCommand command, CancellationToken cancellationToken);
+
+    Task CloudRecordingCallBackAsync(CloudRecordingCallBackCommand command, CancellationToken cancellationToken);
 }
 
 public class TencentService : ITencentService
@@ -59,5 +63,10 @@ public class TencentService : ITencentService
     public async Task<UpdateCloudRecordingResponse> UpdateCloudRecordingAsync(UpdateCloudRecordingCommand command, CancellationToken cancellationToken)
     {
         return await _tencentClient.ModifyCloudRecordingAsync(_mapper.Map<ModifyCloudRecordingRequest>(command), cancellationToken).ConfigureAwait(false);
+    }
+
+    public async Task CloudRecordingCallBackAsync(CloudRecordingCallBackCommand command, CancellationToken cancellationToken)
+    {
+        Log.Information("CloudRecordingCallBackAsync  command: {@command}, eventType: {@eventType}", command, command.EventType.GetDescription());
     }
 }
