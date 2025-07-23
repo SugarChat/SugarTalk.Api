@@ -65,9 +65,10 @@ public class TencentClient : ITencentClient
         var response = await client.CreateCloudRecording(request).ConfigureAwait(false);
         
         Log.Information("CreateCloudRecordingAsync response: {response}", response);
+        
+        Log.Information("TaskId: {taskId}, RequestId: {requestId}", response.TaskId, response.RequestId);
 
         return _mapper.Map<StartCloudRecordingResponse>(response);
-
     }
     
     public async Task<StopCloudRecordingResponse> StopCloudRecordingAsync(DeleteCloudRecordingRequest request, CancellationToken cancellationToken)
