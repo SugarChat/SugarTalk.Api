@@ -68,7 +68,10 @@ public class TencentClient : ITencentClient
         
         Log.Information("TaskId: {taskId}, RequestId: {requestId}", response.TaskId, response.RequestId);
 
-        return _mapper.Map<StartCloudRecordingResponse>(response);
+        return new StartCloudRecordingResponse()
+        {
+            Data = _mapper.Map<CreateCloudRecordingResponseResult>(response)
+        };
     }
     
     public async Task<StopCloudRecordingResponse> StopCloudRecordingAsync(DeleteCloudRecordingRequest request, CancellationToken cancellationToken)
@@ -80,8 +83,11 @@ public class TencentClient : ITencentClient
         var response = await client.DeleteCloudRecording(request).ConfigureAwait(false);
         
         Log.Information("StopCloudRecordingAsync response: {response}", response);
-
-        return _mapper.Map<StopCloudRecordingResponse>(response);
+       
+        return new StopCloudRecordingResponse()
+        {
+            Data = _mapper.Map<StopCloudRecordingResponseResult>(response)
+        };
     }
     
     public async Task<UpdateCloudRecordingResponse> ModifyCloudRecordingAsync(ModifyCloudRecordingRequest request, CancellationToken cancellationToken)
@@ -94,6 +100,9 @@ public class TencentClient : ITencentClient
         
         Log.Information("ModifyCloudRecordingAsync response: {response}", response);
 
-        return _mapper.Map<UpdateCloudRecordingResponse>(response);
+        return new UpdateCloudRecordingResponse()
+        {
+            Data = _mapper.Map<UpdateCloudRecordingResponseResult>(response)
+        };
     }
 }
