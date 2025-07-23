@@ -63,10 +63,10 @@ public class TencentMapping: Profile
 
         CreateMap<WaterMarkTimestamp, TencentCloud.Trtc.V20190722.Models.WaterMarkTimestamp>().ReverseMap();
         
-        CreateMap<StartCloudRecordingResponse, CreateCloudRecordingResponse>().ReverseMap();
+        CreateMap<CreateCloudRecordingResponseResult, CreateCloudRecordingResponse>().ReverseMap();
         
-        CreateMap<StopCloudRecordingResponse, DeleteCloudRecordingResponse>().ReverseMap();
+        CreateMap<StopCloudRecordingResponseResult, DeleteCloudRecordingResponse>().ReverseMap();
         
-        CreateMap<UpdateCloudRecordingResponse, ModifyCloudRecordingResponse>().ReverseMap();
+        CreateMap<UpdateCloudRecordingResponseResult, ModifyCloudRecordingResponse>().ReverseMap();
     }
 }
