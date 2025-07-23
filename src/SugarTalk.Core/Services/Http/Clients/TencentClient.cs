@@ -64,9 +64,7 @@ public class TencentClient : ITencentClient
         
         var response = await client.CreateCloudRecording(request).ConfigureAwait(false);
         
-        Log.Information("CreateCloudRecordingAsync response: {response}", response);
-        
-        Log.Information("TaskId: {taskId}, RequestId: {requestId}", response.TaskId, response.RequestId);
+        Log.Information("CreateCloudRecordingAsync TaskId: {taskId}, RequestId: {requestId}", response.TaskId, response.RequestId);
 
         return new StartCloudRecordingResponse()
         {
@@ -82,7 +80,7 @@ public class TencentClient : ITencentClient
         
         var response = await client.DeleteCloudRecording(request).ConfigureAwait(false);
         
-        Log.Information("StopCloudRecordingAsync response: {response}", response);
+        Log.Information("StopCloudRecordingAsync TaskId: {taskId}, RequestId: {requestId}", response.TaskId, response.RequestId);
        
         return new StopCloudRecordingResponse()
         {
@@ -98,7 +96,7 @@ public class TencentClient : ITencentClient
         
         var response = await client.ModifyCloudRecording(request).ConfigureAwait(false);
         
-        Log.Information("ModifyCloudRecordingAsync response: {response}", response);
+        Log.Information("ModifyCloudRecordingAsync TaskId: {taskId}, RequestId: {requestId}", response.TaskId, response.RequestId);
 
         return new UpdateCloudRecordingResponse()
         {
