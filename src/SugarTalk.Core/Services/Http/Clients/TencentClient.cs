@@ -60,11 +60,11 @@ public class TencentClient : ITencentClient
             }
         };
         
-        Log.Information("CreateCloudRecordingAsync request: {request}", request);
+        Log.Information("CreateCloudRecordingAsync request: {@request}", request);
         
         var response = await client.CreateCloudRecording(request).ConfigureAwait(false);
         
-        Log.Information("CreateCloudRecordingAsync TaskId: {taskId}, RequestId: {requestId}", response.TaskId, response.RequestId);
+        Log.Information("CreateCloudRecordingAsync response: {@response}", response);
 
         return new StartCloudRecordingResponse()
         {
@@ -76,11 +76,12 @@ public class TencentClient : ITencentClient
     {
         var client = CreateClient();
         
-        Log.Information("StopCloudRecordingAsync request: {request}", request);
+        Log.Information("StopCloudRecordingAsync request: {@request}", request);
         
         var response = await client.DeleteCloudRecording(request).ConfigureAwait(false);
         
-        Log.Information("StopCloudRecordingAsync TaskId: {taskId}, RequestId: {requestId}", response.TaskId, response.RequestId);
+
+        Log.Information("StopCloudRecordingAsync response: {@response}", response);
        
         return new StopCloudRecordingResponse()
         {
@@ -92,11 +93,11 @@ public class TencentClient : ITencentClient
     {
         var client = CreateClient();
         
-        Log.Information("ModifyCloudRecordingAsync request: {request}", request);
+        Log.Information("ModifyCloudRecordingAsync request: {@request}", request);
         
         var response = await client.ModifyCloudRecording(request).ConfigureAwait(false);
         
-        Log.Information("ModifyCloudRecordingAsync TaskId: {taskId}, RequestId: {requestId}", response.TaskId, response.RequestId);
+        Log.Information("ModifyCloudRecordingAsync response: {@response}", response);
 
         return new UpdateCloudRecordingResponse()
         {

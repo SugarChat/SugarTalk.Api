@@ -148,7 +148,7 @@ public class TencentService : ITencentService
         
         switch (command.EventType)
         {
-            case CloudRecordingEventType.CloudRecordingVodCommit :
+            case CloudRecordingEventType.CloudRecordingMp4Stop :
                 
                 var payload = command.EventInfo.Payload.ToObject<CloudRecordingVodCommitPayloadDto>();
                
