@@ -150,11 +150,11 @@ public class TencentService : ITencentService
         {
             case CloudRecordingEventType.CloudRecordingMp4Stop :
                 
-                var payload = command.EventInfo.Payload.ToObject<CloudRecordingVodCommitPayloadDto>();
-               
-                if (!string.IsNullOrEmpty(payload.Errmsg)) throw new Exception($"CloudRecordingCallBackAsync CloudRecordingVodCommit exception: {payload.Errmsg}");
+                var payload = command.EventInfo.Payload.ToObject<CloudRecordingMp4StopPayloadDto>().FileMessage.FirstOrDefault();
                 
-                await HandleRecordingCompletedAsync(command.EventInfo.TaskId, payload.VideoUrl, payload.EndTimeStamp, cancellationToken).ConfigureAwait(false);
+                var videoUrl = $"{_tencentCloudSetting.CosBaseUrl}/{_tencentCloudSetting.CosFileNamePrefix}/{command.EventInfo.TaskId}/{payload.FileName}";
+                
+                await HandleRecordingCompletedAsync(command.EventInfo.TaskId, videoUrl, payload.EndTimeStamp, cancellationToken).ConfigureAwait(false);
                 break;
             default:
                 Log.Information("CloudRecordingCallBackAsync  command: {@command}, eventType: {@eventType}", command, command.EventType.GetDescription());
