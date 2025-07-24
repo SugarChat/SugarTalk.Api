@@ -88,7 +88,7 @@ public class TencentClient : ITencentClient
         
 
         Log.Information("StopCloudRecordingAsync response: {@response}", response);
-       
+        
         return new StopCloudRecordingResponse()
         {
             Data = _mapper.Map<StopCloudRecordingResponseResult>(response)

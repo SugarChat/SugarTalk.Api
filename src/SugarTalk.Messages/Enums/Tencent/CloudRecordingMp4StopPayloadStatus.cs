@@ -2,14 +2,14 @@ using System.ComponentModel;
 
 namespace SugarTalk.Messages.Enums.Tencent;
 
-public enum CloudRecordingVodCommitPayloadStatus
+public enum CloudRecordingMp4StopPayloadStatus
 {
-    [Description("正常上传至点播平台")]
+    [Description("录制 MP4 任务正常退出")]
     Success = 0,
     
     [Description("滞留在服务器或备份存储上")]
     StuckInServer = 1,
     
-    [Description("上传任务异常")]
+    [Description("录制 MP4 任务异常退出")]
     UploadError = 2
 }
