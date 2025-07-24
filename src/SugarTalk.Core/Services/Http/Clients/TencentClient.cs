@@ -62,7 +62,7 @@ public class TencentClient : ITencentClient
                 Region = _tencentCloudSetting.Region,
                 AccessKey = _tencentCloudSetting.SecretId,
                 SecretKey = _tencentCloudSetting.SecretKey,
-                FileNamePrefix = new string[]{ "sugartalk" }
+                FileNamePrefix = new string[]{ _tencentCloudSetting.CosFileNamePrefix }
             }
         };
         
