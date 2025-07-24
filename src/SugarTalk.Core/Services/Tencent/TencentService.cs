@@ -53,6 +53,7 @@ public class TencentService : ITencentService
 {
     private readonly IMapper _mapper;
     private readonly ICurrentUser _currentUser;
+    private readonly IFClubClient _fclubClient;
     private readonly TencentClient _tencentClient;
     private readonly IFfmpegService _ffmpegService;
     private readonly ISmartiesClient _smartiesClient;
@@ -64,6 +65,7 @@ public class TencentService : ITencentService
     public TencentService(
         IMapper mapper,
         ICurrentUser currentUser,
+        IFClubClient fclubClient,
         TencentClient tencentClient,
         IFfmpegService ffmpegService,
         ISmartiesClient smartiesClient,
@@ -74,6 +76,7 @@ public class TencentService : ITencentService
     {
         _mapper = mapper;
         _currentUser = currentUser;
+        _fclubClient = fclubClient;
         _tencentClient = tencentClient;
         _ffmpegService = ffmpegService;
         _smartiesClient = smartiesClient;
@@ -148,13 +151,9 @@ public class TencentService : ITencentService
         
         switch (command.EventType)
         {
-            case CloudRecordingEventType.CloudRecordingMp4Stop :
-                
-                var payload = command.EventInfo.Payload.ToObject<CloudRecordingMp4StopPayloadDto>().FileMessage.FirstOrDefault();
-                
-                var videoUrl = $"{_tencentCloudSetting.CosBaseUrl}/{_tencentCloudSetting.CosFileNamePrefix}/{command.EventInfo.TaskId}/{payload.FileName}";
-                
-                await HandleRecordingCompletedAsync(command.EventInfo.TaskId, videoUrl, payload.EndTimeStamp, cancellationToken).ConfigureAwait(false);
+            case CloudRecordingEventType.CloudRecordingMp4Stop:
+                var fileMessages = command.EventInfo.Payload.ToObject<CloudRecordingMp4StopPayloadDto>();
+                await HandleRecordingCompletedAsync(command, fileMessages, cancellationToken).ConfigureAwait(false);
                 break;
             default:
                 Log.Information("CloudRecordingCallBackAsync  command: {@command}, eventType: {@eventType}", command, command.EventType.GetDescription());
@@ -163,9 +162,22 @@ public class TencentService : ITencentService
      
     }
 
-    public async Task HandleRecordingCompletedAsync(string taskId, string url, long endTimeStamp, CancellationToken cancellationToken)
+    public async Task HandleRecordingCompletedAsync(CloudRecordingCallBackCommand command, CloudRecordingMp4StopPayloadDto payload, CancellationToken cancellationToken)
     {
-        var record = (await _meetingDataProvider.GetMeetingRecordsAsync(egressId: taskId, cancellationToken: cancellationToken).ConfigureAwait(false)).FirstOrDefault();
+        var record = (await _meetingDataProvider.GetMeetingRecordsAsync(egressId: command.EventInfo.TaskId, cancellationToken: cancellationToken).ConfigureAwait(false)).FirstOrDefault();
+        
+        var url = "";
+        var endTimeStamp = payload.FileMessage.Max(x => x.EndTimeStamp);
+        
+        if (payload.FileMessage.Count > 1)
+        {
+            var videoUrls = payload.FileMessage.Select(x => $"{_tencentCloudSetting.CosBaseUrl}/{_tencentCloudSetting.CosFileNamePrefix}/{command.EventInfo.TaskId}/{x.FileName}").ToList();
+            
+            url = await CombineMeetingRecordVideoAsync(record.Id, videoUrls, cancellationToken).ConfigureAwait(false);
+
+            if (!string.IsNullOrEmpty(url)) return;
+        }
+        else url = $"{_tencentCloudSetting.CosBaseUrl}/{_tencentCloudSetting.CosFileNamePrefix}/{command.EventInfo.TaskId}/{payload.FileMessage.FirstOrDefault().FileName}";
         
         if (!string.IsNullOrEmpty(url))
         {
@@ -184,17 +196,31 @@ public class TencentService : ITencentService
              
             await MarkSpeakTranscriptAsSpecifiedStatusAsync(meetingDetails, FileTranscriptionStatus.InProcess, cancellationToken).ConfigureAwait(false);
             
-            var localhostUrl = await RecordLocalhostAsync(url, cancellationToken: cancellationToken).ConfigureAwait(false);
+            var localhostUrl = await DownloadWithRetryAsync(url, cancellationToken: cancellationToken).ConfigureAwait(false);
             
             await CreateSpeechMaticsJobAsync(record, meetingDetails, localhostUrl, cancellationToken).ConfigureAwait(false);
         }
     }
     
-    private async Task<string> RecordLocalhostAsync(string url, CancellationToken cancellationToken)
+    private async Task<string> CombineMeetingRecordVideoAsync(Guid meetingRecordId, List<string> videoUrls, CancellationToken cancellationToken)
     {
-        Log.Information("Record localhost url: {@url}", url);
+        Log.Information("Combine urls: {@urls}", videoUrls);
         
-        return await DownloadWithRetryAsync(url, cancellationToken: cancellationToken).ConfigureAwait(false);
+        try{
+            var response = await _fclubClient.CombineMp4VideosTaskAsync(new CombineMp4VideosTaskDto
+            {
+                urls = videoUrls,
+                UploadId = meetingRecordId,
+                filePath = $"SugarTalk/{meetingRecordId}.mp4"
+            }, cancellationToken).ConfigureAwait(false);
+            
+            return response.Data.ToString();
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, @"Combine url upload failed, {urls}", JsonConvert.SerializeObject(videoUrls)); 
+            throw;
+        }
     }
     
     private async Task MarkSpeakTranscriptAsSpecifiedStatusAsync(

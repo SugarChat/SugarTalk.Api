@@ -64,6 +64,8 @@ public partial interface IMeetingDataProvider
     Task<List<GetMeetingDataDto>> GetMeetingSituationDaysAsync(DateTimeOffset? startTime, DateTimeOffset? endTime, CancellationToken cancellationToken);
 
     Task<List<GetMeetingDataUserDto>> GetMeetingDataUserAsync(DateTimeOffset? startTime, DateTimeOffset? endTime, CancellationToken cancellationToken);
+    
+    Task AddMeetingRestartRecordsAsync(List<MeetingRestartRecord> meetingRestartRecords, CancellationToken cancellationToken);
 }
 
 public partial class MeetingDataProvider
@@ -425,5 +427,12 @@ public partial class MeetingDataProvider
                 MeetingStartTime = meeting.StartDate,
                 Date = userSession.CreatedDate,
             }).OrderBy(x => x.MeetingStartTime).ToListAsync(cancellationToken);
+    }
+
+    public async Task AddMeetingRestartRecordsAsync(List<MeetingRestartRecord> meetingRestartRecords, CancellationToken cancellationToken)
+    {
+        await _repository.InsertAllAsync(meetingRestartRecords, cancellationToken).ConfigureAwait(false);
+
+        await _unitOfWork.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
     }
 }
