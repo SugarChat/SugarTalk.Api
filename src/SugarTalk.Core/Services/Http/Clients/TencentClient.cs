@@ -52,7 +52,7 @@ public class TencentClient : ITencentClient
         var client = CreateClient();
 
         request.UserId = Guid.NewGuid().ToString();
-        request.UserSig = GetUserSig( request.UserId);
+        request.UserSig = GetUserSig(request.UserId);
         request.StorageParams = new StorageParams
         {
             CloudStorage = new CloudStorage
