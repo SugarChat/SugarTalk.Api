@@ -246,12 +246,10 @@ public class TencentService : ITencentService
             try
             {
                 var temporaryFile = $"{Guid.NewGuid()}.mp4";
-                var uploadUrl = await GetUrlAsync(url, cancellationToken).ConfigureAwait(false);
                 
-                Log.Information("Uploading url: {url}, temporaryFile: {temporaryFile}", uploadUrl, temporaryFile);
+                Log.Information("Uploading url: {url}, temporaryFile: {temporaryFile}", url, temporaryFile);
 
-                using var response = await Client.GetAsync(
-                    uploadUrl, HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
+                using var response = await Client.GetAsync(url, HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
                 
                 response.EnsureSuccessStatusCode();
 
@@ -280,14 +278,6 @@ public class TencentService : ITencentService
         }
 
         return null!;
-    }
-    
-    private async Task<string> GetUrlAsync(string url, CancellationToken cancellationToken)
-    {
-        if (!url.StartsWith("http"))
-            return await _awsS3Service.GeneratePresignedUrlAsync(url, 30).ConfigureAwait(false);
-        
-        return url;
     }
     
     private static readonly HttpClient Client = new HttpClient { Timeout = TimeSpan.FromSeconds(300) };
