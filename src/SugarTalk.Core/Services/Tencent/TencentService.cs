@@ -1,20 +1,38 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using AutoMapper;
+using COSXML;
+using COSXML.Auth;
+using COSXML.Transfer;
+using Newtonsoft.Json;
 using Serilog;
 using SugarTalk.Core.Domain.Meeting;
 using Serilog;
+using SugarTalk.Core.Domain.SpeechMatics;
 using SugarTalk.Core.Ioc;
+using SugarTalk.Core.Services.Aws;
 using SugarTalk.Core.Services.Exceptions;
+using SugarTalk.Core.Services.Ffmpeg;
 using SugarTalk.Core.Services.Http.Clients;
 using SugarTalk.Core.Services.Identity;
 using SugarTalk.Core.Services.Meetings;
+using SugarTalk.Core.Services.Smarties;
+using SugarTalk.Core.Settings.Smarties;
 using SugarTalk.Core.Settings.TencentCloud;
 using SugarTalk.Messages.Commands.Tencent;
+using SugarTalk.Messages.Dto.FClub;
+using SugarTalk.Messages.Dto.Smarties;
+using SugarTalk.Messages.Dto.Tencent;
 using SugarTalk.Messages.Enums.Meeting;
+using SugarTalk.Messages.Enums.Meeting.Speak;
+using SugarTalk.Messages.Enums.Smarties;
+using SugarTalk.Messages.Enums.SpeechMatics;
+using SugarTalk.Messages.Enums.Tencent;
 using SugarTalk.Messages.Extensions;
 using SugarTalk.Messages.Requests.Tencent;
 using TencentCloud.Trtc.V20190722.Models;
@@ -37,16 +55,36 @@ public interface ITencentService : IScopedDependency
 public class TencentService : ITencentService
 {
     private readonly IMapper _mapper;
+    private readonly IAwsS3Service _awsS3Service;
     private readonly ICurrentUser _currentUser;
     private readonly TencentClient _tencentClient;
+    private readonly IFfmpegService _ffmpegService;
+    private readonly ISmartiesClient _smartiesClient;
+    private readonly SmartiesSettings _smartiesSettings;
+    private readonly ISmartiesDataProvider _smartiesDataProvider;
     private readonly IMeetingDataProvider _meetingDataProvider;
     private readonly TencentCloudSetting _tencentCloudSetting;
 
-    public TencentService(IMapper mapper, ICurrentUser currentUser, TencentClient tencentClient, IMeetingDataProvider meetingDataProvider, TencentCloudSetting tencentCloudSetting)
+    public TencentService(
+        IMapper mapper,
+        IAwsS3Service awsS3Service,
+        ICurrentUser currentUser,
+        TencentClient tencentClient,
+        IFfmpegService ffmpegService,
+        ISmartiesClient smartiesClient,
+        SmartiesSettings smartiesSettings,
+        ISmartiesDataProvider smartiesDataProvider,
+        IMeetingDataProvider meetingDataProvider,
+        TencentCloudSetting tencentCloudSetting)
     {
         _mapper = mapper;
+        _awsS3Service = awsS3Service;
         _currentUser = currentUser;
         _tencentClient = tencentClient;
+        _ffmpegService = ffmpegService;
+        _smartiesClient = smartiesClient;
+        _smartiesSettings = smartiesSettings;
+        _smartiesDataProvider = smartiesDataProvider;
         _meetingDataProvider = meetingDataProvider;
         _tencentCloudSetting = tencentCloudSetting;
     }
@@ -113,5 +151,147 @@ public class TencentService : ITencentService
     public async Task CloudRecordingCallBackAsync(CloudRecordingCallBackCommand command, CancellationToken cancellationToken)
     {
         Log.Information("CloudRecordingCallBackAsync  command: {@command}, eventType: {@eventType}", command, command.EventType.GetDescription());
+        
+        switch (command.EventType)
+        {
+            case CloudRecordingEventType.CloudRecordingVodCommit :
+                
+                var payload = command.EventInfo.Payload.ToObject<CloudRecordingVodCommitPayloadDto>();
+               
+                if (!string.IsNullOrEmpty(payload.Errmsg)) throw new Exception($"CloudRecordingCallBackAsync CloudRecordingVodCommit exception: {payload.Errmsg}");
+                
+                await HandleRecordingCompletedAsync(command.EventInfo.TaskId, payload.VideoUrl, payload.EndTimeStamp, cancellationToken).ConfigureAwait(false);
+                break;
+            default:
+                Log.Information("CloudRecordingCallBackAsync  command: {@command}, eventType: {@eventType}", command, command.EventType.GetDescription());
+                break;
+        }
+     
     }
+
+    public async Task HandleRecordingCompletedAsync(string taskId, string url, long endTimeStamp, CancellationToken cancellationToken)
+    {
+        var record = (await _meetingDataProvider.GetMeetingRecordsAsync(egressId: taskId, cancellationToken: cancellationToken).ConfigureAwait(false)).FirstOrDefault();
+        
+        if (!string.IsNullOrEmpty(url))
+        {
+            record.UrlStatus = MeetingRecordUrlStatus.Completed;
+            record.EndedAt = DateTimeOffset.FromUnixTimeMilliseconds(endTimeStamp);
+        }
+        
+        Log.Information($"Add url for record: meetingRecord: {record}", record);
+        
+        await _meetingDataProvider.UpdateMeetingRecordAsync(record, cancellationToken).ConfigureAwait(false);
+        
+        if (!string.IsNullOrEmpty(record.Url))
+        {
+            var meetingDetails = await _meetingDataProvider
+                .GetMeetingDetailsByRecordIdAsync(record.Id, cancellationToken).ConfigureAwait(false);
+             
+            await MarkSpeakTranscriptAsSpecifiedStatusAsync(meetingDetails, FileTranscriptionStatus.InProcess, cancellationToken).ConfigureAwait(false);
+            
+            var localhostUrl = await RecordLocalhostAsync(url, cancellationToken: cancellationToken).ConfigureAwait(false);
+            
+            await CreateSpeechMaticsJobAsync(record, meetingDetails, localhostUrl, cancellationToken).ConfigureAwait(false);
+        }
+    }
+    
+    private async Task<string> RecordLocalhostAsync(string url, CancellationToken cancellationToken)
+    {
+        Log.Information("Record localhost url: {@url}", url);
+        
+        var presignedUrl = await _awsS3Service.GeneratePresignedUrlAsync(url, 60).ConfigureAwait(false);
+        
+        return await DownloadWithRetryAsync(presignedUrl, cancellationToken: cancellationToken).ConfigureAwait(false);
+    }
+    
+    private async Task MarkSpeakTranscriptAsSpecifiedStatusAsync(
+        List<MeetingSpeakDetail> details, FileTranscriptionStatus status, CancellationToken cancellationToken)
+    {
+        details.ForEach(x => x.FileTranscriptionStatus = status);
+        
+        await _meetingDataProvider.UpdateMeetingSpeakDetailsAsync(details, cancellationToken: cancellationToken).ConfigureAwait(false);
+    }
+    
+    private async Task CreateSpeechMaticsJobAsync(MeetingRecord meetingRecord, List<MeetingSpeakDetail> meetingDetails, string localhostUrl, CancellationToken cancellationToken)
+    {
+        Log.Information("Create speech matics job meeting record: {@meetingRecord} MeetingDetails:{@meetingDetails}", meetingRecord, meetingDetails);
+         
+        var audio = await _ffmpegService.VideoToAudioConverterAsync(localhostUrl, cancellationToken).ConfigureAwait(false);
+         
+        var speechMaticsJob = await _smartiesClient.CreateSpeechMaticsJobAsync(new CreateSpeechMaticsJobCommandDto
+        {
+            Language = "zh",
+            RecordContent = audio,
+            Url = _smartiesSettings.SpeechMaticsUrl,
+            Key = _smartiesSettings.SpeechMaticsApiKey,
+            SourceSystem = TranscriptionJobSystem.SmartTalk,
+            RecordName = meetingRecord.Url
+        }, cancellationToken).ConfigureAwait(false);
+
+        Log.Information("Create SpeechMatics job: {@speechMaticsJob}", speechMaticsJob.Result);
+
+        var meetingSpeechMaticsRecord = new SpeechMaticsRecord
+        {
+            Status = SpeechMaticsStatus.Sent,
+            MeetingRecordId = meetingRecord.Id,
+            TranscriptionJobId = speechMaticsJob.Result,
+            MeetingNumber = meetingDetails.FirstOrDefault()?.MeetingNumber
+        };
+         
+        await _smartiesDataProvider.CreateSpeechMaticsRecordAsync(meetingSpeechMaticsRecord, cancellationToken: cancellationToken).ConfigureAwait(false);
+    }
+    
+    public async Task<string> DownloadWithRetryAsync(string url, int maxRetries = 5, CancellationToken cancellationToken = default)
+    {
+        for (var i = 0; i < maxRetries; i++)
+        {
+            try
+            {
+                var temporaryFile = $"{Guid.NewGuid()}.mp4";
+                var uploadUrl = await GetUrlAsync(url, cancellationToken).ConfigureAwait(false);
+                
+                Log.Information("Uploading url: {url}, temporaryFile: {temporaryFile}", uploadUrl, temporaryFile);
+
+                using var response = await Client.GetAsync(
+                    uploadUrl, HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
+                
+                response.EnsureSuccessStatusCode();
+
+                await using var contentStream = await response.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false);
+
+                await using var fileStream = new FileStream(temporaryFile, FileMode.Create, FileAccess.Write);
+               
+                await contentStream.CopyToAsync(fileStream, 8192, cancellationToken).ConfigureAwait(false);
+
+                return temporaryFile;
+            }
+            catch (TaskCanceledException ex) when (ex.InnerException is TimeoutException)
+            {
+                Log.Warning($"Timeout occurred while downloading {url}, retrying... ({i + 1}/{maxRetries})");
+                
+                if (i != maxRetries - 1) continue;
+                
+                Log.Error($"Failed to download {url} after {maxRetries} retries.");
+                throw;
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, $"Error occurred while downloading {url}");
+                throw;
+            }
+        }
+
+        return null!;
+    }
+    
+    private async Task<string> GetUrlAsync(string url, CancellationToken cancellationToken)
+    {
+        if (!url.StartsWith("http"))
+            return await _awsS3Service.GeneratePresignedUrlAsync(url, 30).ConfigureAwait(false);
+        
+        return url;
+    }
+    
+    private static readonly HttpClient Client = new HttpClient { Timeout = TimeSpan.FromSeconds(300) };
 }
