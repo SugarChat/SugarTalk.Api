@@ -52,7 +52,6 @@ public interface ITencentService : IScopedDependency
 public class TencentService : ITencentService
 {
     private readonly IMapper _mapper;
-    private readonly IAwsS3Service _awsS3Service;
     private readonly ICurrentUser _currentUser;
     private readonly TencentClient _tencentClient;
     private readonly IFfmpegService _ffmpegService;
@@ -64,7 +63,6 @@ public class TencentService : ITencentService
 
     public TencentService(
         IMapper mapper,
-        IAwsS3Service awsS3Service,
         ICurrentUser currentUser,
         TencentClient tencentClient,
         IFfmpegService ffmpegService,
@@ -75,7 +73,6 @@ public class TencentService : ITencentService
         TencentCloudSetting tencentCloudSetting)
     {
         _mapper = mapper;
-        _awsS3Service = awsS3Service;
         _currentUser = currentUser;
         _tencentClient = tencentClient;
         _ffmpegService = ffmpegService;
@@ -197,9 +194,7 @@ public class TencentService : ITencentService
     {
         Log.Information("Record localhost url: {@url}", url);
         
-        var presignedUrl = await _awsS3Service.GeneratePresignedUrlAsync(url, 60).ConfigureAwait(false);
-        
-        return await DownloadWithRetryAsync(presignedUrl, cancellationToken: cancellationToken).ConfigureAwait(false);
+        return await DownloadWithRetryAsync(url, cancellationToken: cancellationToken).ConfigureAwait(false);
     }
     
     private async Task MarkSpeakTranscriptAsSpecifiedStatusAsync(
