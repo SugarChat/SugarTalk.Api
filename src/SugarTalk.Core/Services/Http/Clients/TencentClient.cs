@@ -60,11 +60,11 @@ public class TencentClient : ITencentClient
             }
         };
         
-        Log.Information("CreateCloudRecordingAsync request: {request}", request);
+        Log.Information("CreateCloudRecordingAsync request: {@request}", request);
         
         var response = await client.CreateCloudRecording(request).ConfigureAwait(false);
         
-        Log.Information("CreateCloudRecordingAsync response: {response}", response);
+        Log.Information("CreateCloudRecordingAsync response: {@response}", response);
 
         return _mapper.Map<StartCloudRecordingResponse>(response);
 
@@ -74,11 +74,11 @@ public class TencentClient : ITencentClient
     {
         var client = CreateClient();
         
-        Log.Information("StopCloudRecordingAsync request: {request}", request);
+        Log.Information("StopCloudRecordingAsync request: {@request}", request);
         
         var response = await client.DeleteCloudRecording(request).ConfigureAwait(false);
         
-        Log.Information("StopCloudRecordingAsync response: {response}", response);
+        Log.Information("StopCloudRecordingAsync response: {@response}", response);
 
         return _mapper.Map<StopCloudRecordingResponse>(response);
     }
@@ -87,11 +87,11 @@ public class TencentClient : ITencentClient
     {
         var client = CreateClient();
         
-        Log.Information("ModifyCloudRecordingAsync request: {request}", request);
+        Log.Information("ModifyCloudRecordingAsync request: {@request}", request);
         
         var response = await client.ModifyCloudRecording(request).ConfigureAwait(false);
         
-        Log.Information("ModifyCloudRecordingAsync response: {response}", response);
+        Log.Information("ModifyCloudRecordingAsync response: {@response}", response);
 
         return _mapper.Map<UpdateCloudRecordingResponse>(response);
     }
