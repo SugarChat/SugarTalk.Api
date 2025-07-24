@@ -1,3 +1,5 @@
+using System;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using AutoMapper;
@@ -6,6 +8,7 @@ using Serilog;
 using SugarTalk.Core.Ioc;
 using SugarTalk.Core.Settings.TencentCloud;
 using SugarTalk.Messages.Commands.Tencent;
+using SugarTalk.Messages.Dto.Tencent;
 using TencentCloud.Common;
 using TencentCloud.Common.Profile;
 using TencentCloud.Trtc.V20190722;
@@ -48,6 +51,8 @@ public class TencentClient : ITencentClient
     {
         var client = CreateClient();
 
+        request.UserId = Guid.NewGuid().ToString();
+        request.UserSig = GetUserSig( request.UserId);
         request.StorageParams = new StorageParams
         {
             CloudStorage = new CloudStorage
@@ -57,6 +62,7 @@ public class TencentClient : ITencentClient
                 Region = _tencentCloudSetting.Region,
                 AccessKey = _tencentCloudSetting.SecretId,
                 SecretKey = _tencentCloudSetting.SecretKey,
+                FileNamePrefix = new string[]{ "sugartalk" }
             }
         };
         
@@ -102,5 +108,19 @@ public class TencentClient : ITencentClient
         {
             Data = _mapper.Map<UpdateCloudRecordingResponseResult>(response)
         };
+    }
+    
+    public string GetUserSig(string userId)
+    {
+        var api = new TencentTlsSigApIv2(int.Parse(_tencentCloudSetting.AppId), _tencentCloudSetting.SDKSecretKey);
+        return api.GenSig(Utf16To8(userId));
+    }
+    
+    public static string Utf16To8(string input)
+    {
+        if (string.IsNullOrEmpty(input)) return input;
+        var utf16Bytes = Encoding.Unicode.GetBytes(input);
+        var utf8Bytes = Encoding.Convert(Encoding.Unicode, Encoding.UTF8, utf16Bytes);
+        return Encoding.UTF8.GetString(utf8Bytes);
     }
 }
