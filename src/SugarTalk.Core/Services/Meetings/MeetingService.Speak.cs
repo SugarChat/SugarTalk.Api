@@ -95,9 +95,7 @@ public partial class MeetingService
         
         try
         {
-            var presignedUrl = await _awsS3Service.GeneratePresignedUrlAsync(meetingRecord.Url, 30).ConfigureAwait(false);
-
-            localhostUrl = await DownloadWithRetryAsync(presignedUrl, cancellationToken: cancellationToken).ConfigureAwait(false);
+            localhostUrl = await DownloadWithRetryAsync(meetingRecord.Url, cancellationToken: cancellationToken).ConfigureAwait(false);
 
             var audio = await _ffmpegService.VideoToAudioConverterAsync(localhostUrl, cancellationToken);
             
@@ -192,12 +190,11 @@ public partial class MeetingService
             try
             {
                 var temporaryFile = $"{Guid.NewGuid()}.mp4";
-                var uploadUrl = await GetUrlAsync(url, cancellationToken).ConfigureAwait(false);
                 
-                Log.Information("Uploading url: {url}, temporaryFile: {temporaryFile}", uploadUrl, temporaryFile);
+                Log.Information("Uploading url: {url}, temporaryFile: {temporaryFile}", url, temporaryFile);
 
                 using var response = await Client.GetAsync(
-                    uploadUrl, HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
+                    url, HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
                 
                 response.EnsureSuccessStatusCode();
 
@@ -226,14 +223,6 @@ public partial class MeetingService
         }
 
         return null!;
-    }
-    
-    private async Task<string> GetUrlAsync(string url, CancellationToken cancellationToken)
-    {
-        if (!url.StartsWith("http"))
-            return await _awsS3Service.GeneratePresignedUrlAsync(url, 30).ConfigureAwait(false);
-        
-        return url;
     }
     
     public async Task ProcessMeetingSummaryAsync(List<MeetingSpeakDetail> speakDetails, MeetingRecord meetingRecord, CancellationToken cancellationToken)

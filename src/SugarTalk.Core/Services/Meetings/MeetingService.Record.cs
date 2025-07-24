@@ -652,11 +652,7 @@ public partial class MeetingService
 
     private async Task<string> RecordLocalhostAsync(string url, CancellationToken cancellationToken)
     {
-        Log.Information("Record localhost url: {@url}", url);
-        
-        var presignedUrl = await _awsS3Service.GeneratePresignedUrlAsync(url, 60).ConfigureAwait(false);
-        
-        return await DownloadWithRetryAsync(presignedUrl, cancellationToken: cancellationToken).ConfigureAwait(false);
+        return await DownloadWithRetryAsync(url, cancellationToken: cancellationToken).ConfigureAwait(false);
     }
 
     private async Task<DateTimeOffset?> ProcessMeetingRecordEndedAt(DateTimeOffset? startedAt, string localhostUrl, CancellationToken cancellationToken)
