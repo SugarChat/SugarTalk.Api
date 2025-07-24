@@ -9,10 +9,6 @@ public class CreateCloudRecordingCommand : ICommand
 
     public string RoomId { get; set; }
     
-    public string UserId { get; set; }
-    
-    public string UserSig { get; set; }
-    
     public RecordParams RecordParams { get; set; }
     
     public ulong? RoomIdType { get; set; }
