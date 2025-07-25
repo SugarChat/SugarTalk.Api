@@ -400,7 +400,7 @@ namespace SugarTalk.Core.Services.Meetings
             
             var meeting = await _meetingDataProvider.GetMeetingAsync(command.MeetingNumber, cancellationToken: cancellationToken).ConfigureAwait(false);
             
-            var meetingRecord = (await _meetingDataProvider.GetMeetingRecordsAsync(id: meeting.Id, cancellationToken: cancellationToken).ConfigureAwait(false)).FirstOrDefault();
+            var meetingRecord = (await _meetingDataProvider.GetMeetingRecordsAsync(meetingId: meeting.Id, cancellationToken: cancellationToken).ConfigureAwait(false)).FirstOrDefault();
             
             Log.Information("SugarTalk get meetingRecord from JoinMeetingAsync :{meetingRecord}", meetingRecord);
             
