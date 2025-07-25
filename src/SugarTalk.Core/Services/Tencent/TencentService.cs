@@ -186,7 +186,7 @@ public class TencentService : ITencentService
         var meeting = await _meetingDataProvider.GetMeetingByIdAsync(meetingNumber: command.EventInfo.RoomId, cancellationToken: cancellationToken).ConfigureAwait(false);
         
         var record = (await _meetingDataProvider.GetMeetingRecordsAsync(
-            meeting.Id, cancellationToken: cancellationToken).ConfigureAwait(false)).MaxBy(x => x.CreatedDate);
+            meetingId: meeting.Id, cancellationToken: cancellationToken).ConfigureAwait(false)).MaxBy(x => x.CreatedDate);
         
         Log.Information("meeting:{@meeting}; record:{@record}", meeting, record);
         
