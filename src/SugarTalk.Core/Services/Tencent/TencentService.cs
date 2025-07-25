@@ -205,7 +205,7 @@ public class TencentService : ITencentService
             
             await _meetingDataProvider.UpdateMeetingSpeakDetailsAsync(speakDetails, true, cancellationToken).ConfigureAwait(false);
             
-            var participants = await _meetingDataProvider.GetUserSessionsByMeetingIdAsync(meeting.Id, record.MeetingSubId, true, true, cancellationToken).ConfigureAwait(false);
+            var participants = await _meetingDataProvider.GetUserSessionsByMeetingIdAsync(meeting.Id, record.MeetingSubId, true, true, true, cancellationToken).ConfigureAwait(false);
         
             var filterGuest = participants.Where(p => p.GuestName == null).ToList();
             Log.Information("filter guest response: {@filterGuest}", filterGuest);
