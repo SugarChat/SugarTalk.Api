@@ -397,6 +397,8 @@ namespace SugarTalk.Core.Services.Meetings
             
             var meeting = await _meetingDataProvider.GetMeetingAsync(command.MeetingNumber, cancellationToken: cancellationToken).ConfigureAwait(false);
             
+            var meetingRecord = (await _meetingDataProvider.GetMeetingRecordsAsync(id: meeting.Id, cancellationToken: cancellationToken).ConfigureAwait(false)).FirstOrDefault();
+            
             var isMeetingOwnerOrHost = meeting.CreatedBy == user.Id || meeting.MeetingMasterUserId == user.Id;
             
             if (meeting.IsLocked && !isMeetingOwnerOrHost)
@@ -450,6 +452,7 @@ namespace SugarTalk.Core.Services.Meetings
             {
                 UserId = user.Id,
                 Meeting = meeting,
+                TaskId = meetingRecord.EgressId,
                 MeetingUserSetting = _mapper.Map<MeetingUserSettingDto>(userSetting)
             };
         }
