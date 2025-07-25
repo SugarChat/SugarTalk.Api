@@ -184,6 +184,7 @@ public class TencentService : ITencentService
         
         if (!string.IsNullOrEmpty(url))
         {
+            record.Url = url;
             record.UrlStatus = MeetingRecordUrlStatus.Completed;
             record.EndedAt = DateTimeOffset.FromUnixTimeMilliseconds(endTimeStamp);
         }
