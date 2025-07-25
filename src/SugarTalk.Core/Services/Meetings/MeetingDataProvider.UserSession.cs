@@ -21,13 +21,13 @@ public partial interface IMeetingDataProvider
     Task UpdateMeetingUserSessionAsync(List<MeetingUserSession> userSessions, CancellationToken cancellationToken);
 
     Task<List<MeetingUserSessionDto>> GetUserSessionsByMeetingIdAsync(
-        Guid meetingId, Guid? meetingSubId, bool isQueryKickedOut = false, bool? includeUserName = false, CancellationToken cancellationToken = default);
+        Guid meetingId, Guid? meetingSubId, bool isQueryKickedOut = false, bool? includeUserName = false, bool isEntryMeeting = false, CancellationToken cancellationToken = default);
     
     Task RemoveMeetingUserSessionsIfRequiredAsync(int userId, Guid meetingId, CancellationToken cancellationToken);
     
     Task<bool> IsOtherSharingAsync(MeetingUserSession userSession, CancellationToken cancellationToken);
     
-    Task<List<MeetingUserSession>> GetMeetingUserSessionsAsync(List<int> ids = null,  Guid? meetingId = null, List<int> userIds = null,
+    Task<List<MeetingUserSession>> GetMeetingUserSessionsAsync(List<int> ids = null,  Guid? meetingId = null, Guid? meetingSubId = null, List<int> userIds = null,
         bool? coHost = null, MeetingUserSessionOnlineType? onlineType = null, CancellationToken cancellationToken = default);
     
     Task<MeetingUserSessionDto> GetMeetingUserSessionByUserIdAsync(int userId, CancellationToken cancellationToken);
@@ -71,20 +71,19 @@ public partial class MeetingDataProvider
     }
 
     public async Task<List<MeetingUserSessionDto>> GetUserSessionsByMeetingIdAsync(
-        Guid meetingId, Guid? meetingSubId, bool isQueryKickedOut = false, bool? includeUserName = false, CancellationToken cancellationToken = default)
+        Guid meetingId, Guid? meetingSubId, bool isQueryKickedOut = false, bool? includeUserName = false, bool isEntryMeeting = false, CancellationToken cancellationToken = default)
     {
         var query = _repository.QueryNoTracking<MeetingUserSession>().AsNoTracking()
             .Where(x => x.MeetingId == meetingId && !x.IsDeleted);
 
         if (!isQueryKickedOut)
-        {
             query = query.Where(x => x.OnlineType != MeetingUserSessionOnlineType.KickOutMeeting);
-        }
         
         if (meetingSubId is not null)
-        {
             query = query.Where(x => x.MeetingSubId == meetingSubId);
-        }
+
+        if (isEntryMeeting)
+            query = query.Where(x => x.IsEntryMeeting);
 
         var userSessions = await query.ToListAsync(cancellationToken).ConfigureAwait(false);
         
@@ -104,7 +103,7 @@ public partial class MeetingDataProvider
             .AnyAsync(x => x.IsSharingScreen, cancellationToken).ConfigureAwait(false);
     }
 
-    public async Task<List<MeetingUserSession>> GetMeetingUserSessionsAsync(List<int> ids = null, Guid? meetingId = null, List<int> userIds = null,
+    public async Task<List<MeetingUserSession>> GetMeetingUserSessionsAsync(List<int> ids = null, Guid? meetingId = null, Guid? meetingSubId = null, List<int> userIds = null,
         bool? coHost = null, MeetingUserSessionOnlineType? onlineType = null, CancellationToken cancellationToken = default)
     {
         var query = _repository.Query<MeetingUserSession>();
@@ -117,6 +116,9 @@ public partial class MeetingDataProvider
 
         if (meetingId.HasValue)
             query = query.Where(x => x.MeetingId == meetingId.Value);
+
+        if (meetingSubId.HasValue)
+            query = query.Where(x => x.MeetingSubId == meetingSubId.Value);
 
         if (coHost.HasValue)
             query = query.Where(x => x.CoHost == coHost.Value);
@@ -144,6 +146,7 @@ public partial class MeetingDataProvider
                 LastJoinTime = userSession.LastJoinTime,
                 MeetingSubId = userSession.MeetingSubId,
                 IsSharingScreen = userSession.IsSharingScreen,
+                IsEntryMeeting = userSession.IsEntryMeeting,
                 IsMeetingMaster = meeting.MeetingMasterUserId == userSession.UserId
             }).FirstOrDefaultAsync(cancellationToken).ConfigureAwait(false);
     }
@@ -207,7 +210,7 @@ public partial class MeetingDataProvider
     public async Task<List<MeetingUserSessionDto>> GetAllMeetingUserSessionsAsync(
         Guid meetingId, CancellationToken cancellationToken)
     {
-        return await (from session in _repository.Query<MeetingUserSession>().Where(x => x.MeetingId == meetingId && x.OnlineType == MeetingUserSessionOnlineType.Online)
+        return await (from session in _repository.Query<MeetingUserSession>().Where(x => x.MeetingId == meetingId && (x.OnlineType == MeetingUserSessionOnlineType.Online || x.OnlineType == MeetingUserSessionOnlineType.Waiting))
             join userAccount in _repository.Query<UserAccount>() on session.UserId equals userAccount.Id
             join meeting in _repository.Query<Meeting>() on session.MeetingId equals meeting.Id
             orderby session.LastJoinTime
@@ -227,7 +230,9 @@ public partial class MeetingDataProvider
                 IsSharingScreen = session.IsSharingScreen,
                 LastModifiedDateForCoHost = session.LastModifiedDateForCoHost,
                 IsMeetingMaster = meeting.MeetingMasterUserId == userAccount.Id,
-                IsMeetingCreator = session.UserId == meeting.CreatedBy
+                IsMeetingCreator = session.UserId == meeting.CreatedBy,
+                AllowEntryMeeting = session.AllowEntryMeeting,
+                IsEntryMeeting = session.IsEntryMeeting
             }).ToListAsync(cancellationToken).ConfigureAwait(false);
     }
 }

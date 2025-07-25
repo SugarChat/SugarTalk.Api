@@ -39,7 +39,7 @@ namespace SugarTalk.Core.Services.Account
         
         Task AllocateUserToRoleAsync(int userId, int roleId, CancellationToken cancellationToken);
         
-        Task<List<UserAccount>> GetUserAccountsAsync(List<int> userIds, CancellationToken cancellationToken);
+        Task<List<UserAccount>> GetUserAccountsAsync(List<int> userIds = null, List<string> userNames = null, CancellationToken cancellationToken = default);
         
         Task<List<UserAccount>> GetUserAccountsAsync(int userId, CancellationToken cancellationToken);
         
@@ -170,12 +170,17 @@ namespace SugarTalk.Core.Services.Account
             }
         }
 
-        public async Task<List<UserAccount>> GetUserAccountsAsync(List<int> userIds, CancellationToken cancellationToken)
+        public async Task<List<UserAccount>> GetUserAccountsAsync(List<int> userIds = null, List<string> userNames = null, CancellationToken cancellationToken = default)
         {
-            if (userIds is not { Count: > 0 }) return new List<UserAccount>();
+            var query = _repository.QueryNoTracking<UserAccount>();
 
-            return await _repository.QueryNoTracking<UserAccount>()
-                .Where(x => userIds.Contains(x.Id)).ToListAsync(cancellationToken).ConfigureAwait(false);
+            if (userIds != null && userIds.Any())
+                query = query.Where(x => userIds.Contains(x.Id));
+
+            if (userNames != null && userNames.Any())
+                query = query.Where(x => userNames.Contains(x.UserName));
+            
+            return await query.ToListAsync(cancellationToken).ConfigureAwait(false);
         }
 
         public async Task<List<UserAccount>> GetUserAccountsAsync(int userId, CancellationToken cancellationToken)

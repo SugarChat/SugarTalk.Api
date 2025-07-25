@@ -66,6 +66,12 @@ public class MeetingUserSession : IEntity
     [Column("last_modified_date_for_co_host")]
     public DateTimeOffset? LastModifiedDateForCoHost { get; set; }
 
+    [Column("is_entry_meeting")]
+    public bool IsEntryMeeting { get; set; }
+
+    [Column("allow_entry_meeting")]
+    public bool AllowEntryMeeting { get; set; }
+
     [NotMapped]
     public bool IsMeetingMaster { get; set; }
 }

@@ -118,6 +118,8 @@ public class MeetingBaseDto
     public bool IsActiveRecord { get; set; } = false;
     
     public bool IsLocked { get; set; } = false;
+
+    public bool IsWaitingRoomEnabled { get; set; }
 }
 
 public class AddOrUpdateMeetingDto
@@ -163,6 +165,8 @@ public class AddOrUpdateMeetingDto
     public bool IsMuted { get; set; } = false;
     
     public bool IsRecorded { get; set; } = false;
+
+    public bool IsWaitingRoomEnabled { get; set; } = false;
 }
 
 public class MeetingParticipantDto
