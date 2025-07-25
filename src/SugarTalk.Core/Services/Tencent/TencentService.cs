@@ -160,11 +160,89 @@ public class TencentService : ITencentService
                 await HandleRecordingCompletedAsync(command, fileMessages, cancellationToken).ConfigureAwait(false);
                 
                 break;
+            case CloudRecordingEventType.CloudRecordingRecorderStop:
             default:
                 Log.Information("CloudRecordingCallBackAsync  command: {@command}, eventType: {@eventType}", command, command.EventType.GetDescription());
                 break;
         }
      
+    }
+
+    private async Task MarkSpeakTranscriptAsSpecifiedStatusAsync()
+    {
+        // var meeting = await _meetingDataProvider.GetMeetingByIdAsync(command.MeetingId, cancellationToken: cancellationToken).ConfigureAwait(false);
+        //
+        // var user = await _accountDataProvider.GetUserAccountAsync(_currentUser.Id, cancellationToken: cancellationToken).ConfigureAwait(false);
+        //
+        // var record = (await _meetingDataProvider.GetMeetingRecordsAsync(
+        //     meetingId:command.MeetingId, cancellationToken: cancellationToken).ConfigureAwait(false)).MaxBy(x => x.CreatedDate);
+        //
+        // var recordMeetingToken = _liveKitServerUtilService.GenerateTokenForRecordMeeting(user, meeting.MeetingNumber);
+        //
+        // await _meetingDataProvider.UpdateMeetingRecordUrlStatusAsync(record.Id, MeetingRecordUrlStatus.InProgress, cancellationToken).ConfigureAwait(false);
+        //
+        // try
+        // {
+        //     var stopResponse = await _liveKitClient.StopEgressAsync(
+        //     new StopEgressRequestDto { Token = recordMeetingToken, EgressId = record.EgressId }, cancellationToken).ConfigureAwait(false);
+        //     
+        //     Log.Information("stop meeting recording response: {@stopResponse}", stopResponse);
+        //     
+        //     var speakDetails = await _meetingDataProvider.GetMeetingSpeakDetailsAsync(
+        //         meetingNumber: meeting.MeetingNumber, recordId: record.Id, cancellationToken: cancellationToken).ConfigureAwait(false);
+        //
+        //     foreach (var speakDetail in speakDetails.Where(speakDetail => speakDetail.SpeakEndTime is null or 0))
+        //     {
+        //         speakDetail.SpeakStatus = SpeakStatus.End;
+        //         speakDetail.SpeakEndTime = DateTimeOffset.Now.ToUnixTimeMilliseconds();
+        //     }
+        //     
+        //     await _meetingDataProvider.UpdateMeetingSpeakDetailsAsync(speakDetails, true, cancellationToken).ConfigureAwait(false);
+        //
+        //     if (stopResponse == null) throw new Exception();
+        //
+        //     var participants = await _meetingDataProvider.GetUserSessionsByMeetingIdAsync(command.MeetingId, record.MeetingSubId, true, true, true, cancellationToken).ConfigureAwait(false);
+        //
+        //     var filterGuest = participants.Where(p => p.GuestName == null || p.IsEntryMeeting).ToList();
+        //     Log.Information("filter guest response: {@filterGuest}", filterGuest);
+        //
+        //     foreach (var participant in filterGuest)
+        //     {
+        //         await AddRecordForAccountAsync(participant.UserName, cancellationToken).ConfigureAwait(false);
+        //         Log.Information("An exception occurred while processing participants: {@participant}", participant);
+        //     }
+        //
+        //     var storageCommand = new DelayedMeetingRecordingStorageCommand 
+        //     { 
+        //         StartDate = _clock.Now, 
+        //         Token = recordMeetingToken, 
+        //         MeetingRecordId = record.Id,
+        //         MeetingId = command.MeetingId, 
+        //         EgressId = record.EgressId,
+        //         ReTryLimit = command.ReTryLimit,
+        //         IsRestartRecord = false
+        //     };
+        //
+        //     meeting.IsActiveRecord = false;
+        //
+        //     await _meetingDataProvider.UpdateMeetingAsync(meeting, cancellationToken).ConfigureAwait(false);
+        //
+        //     var jobId = _backgroundJobClient.Schedule<IMediator>(m => m.SendAsync(storageCommand, cancellationToken), TimeSpan.FromSeconds(10));
+        //
+        //     record.MeetingRecordJobId = jobId;
+        //
+        //     await _meetingDataProvider.UpdateMeetingRecordAsync(record, cancellationToken).ConfigureAwait(false);
+        //
+        //     return new StorageMeetingRecordVideoResponse();
+        // }
+        // catch (Exception e)
+        // {
+        //     record.UrlStatus = MeetingRecordUrlStatus.Failed;
+        //      
+        //     await _meetingDataProvider.UpdateMeetingRecordAsync(record, cancellationToken).ConfigureAwait(false);
+        //     
+        //     return new StorageMeetingRecordVideoResponse();
+        // }
     }
 
     public async Task HandleRecordingCompletedAsync(CloudRecordingCallBackCommand command, CloudRecordingMp4StopPayloadDto payload, CancellationToken cancellationToken)
