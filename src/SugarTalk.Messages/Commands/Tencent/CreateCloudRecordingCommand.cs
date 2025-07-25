@@ -1,3 +1,4 @@
+using System;
 using Mediator.Net.Contracts;
 using SugarTalk.Messages.Responses;
 
@@ -90,4 +91,6 @@ public class CreateCloudRecordingResponseResult
     public string TaskId { get; set; }
     
     public string RequestId { get; set; }
+    
+    public Guid MeetingRecordId { get; set; }
 }

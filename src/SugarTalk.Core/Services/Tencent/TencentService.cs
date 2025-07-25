@@ -113,6 +113,8 @@ public class TencentService : ITencentService
         
         await AddMeetingRecordAsync(meeting, meetingRecordId, recordingTask.Data.TaskId, _currentUser.Id.Value, cancellationToken).ConfigureAwait(false);
 
+        recordingTask.Data.MeetingRecordId = meetingRecordId;
+        
         return recordingTask;
     }
     
