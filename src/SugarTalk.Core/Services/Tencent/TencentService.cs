@@ -198,6 +198,8 @@ public class TencentService : ITencentService
             var meetingDetails = await _meetingDataProvider
                 .GetMeetingDetailsByRecordIdAsync(record.Id, cancellationToken).ConfigureAwait(false);
              
+            if (!meetingDetails.Any()) return;
+            
             await MarkSpeakTranscriptAsSpecifiedStatusAsync(meetingDetails, FileTranscriptionStatus.InProcess, cancellationToken).ConfigureAwait(false);
             
             var localhostUrl = await DownloadWithRetryAsync(url, cancellationToken: cancellationToken).ConfigureAwait(false);
