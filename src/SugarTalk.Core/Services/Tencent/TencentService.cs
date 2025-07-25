@@ -179,7 +179,6 @@ public class TencentService : ITencentService
                 Log.Information("CloudRecordingCallBackAsync  command: {@command}, eventType: {@eventType}", command, command.EventType.GetDescription());
                 break;
         }
-     
     }
 
     private async Task MarkSpeakTranscriptAsSpecifiedStatusAsync(CloudRecordingCallBackCommand command, CancellationToken cancellationToken)
@@ -189,12 +188,16 @@ public class TencentService : ITencentService
         var record = (await _meetingDataProvider.GetMeetingRecordsAsync(
             meeting.Id, cancellationToken: cancellationToken).ConfigureAwait(false)).MaxBy(x => x.CreatedDate);
         
+        Log.Information("meeting:{@meeting}; record:{@record}", meeting, record);
+        
         await _meetingDataProvider.UpdateMeetingRecordUrlStatusAsync(record.Id, MeetingRecordUrlStatus.InProgress, cancellationToken).ConfigureAwait(false);
         
         try
         {
             var participants = await _meetingDataProvider.GetUserSessionsByMeetingIdAsync(meeting.Id, record.MeetingSubId, true, true, cancellationToken).ConfigureAwait(false);
         
+            Log.Information("participants: {@participants}", participants);
+            
             var filterGuest = participants.Where(p => p.GuestName == null).ToList();
             Log.Information("filter guest response: {@filterGuest}", filterGuest);
         
