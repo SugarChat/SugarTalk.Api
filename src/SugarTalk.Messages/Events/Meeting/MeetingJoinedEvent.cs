@@ -11,7 +11,9 @@ public class MeetingJoinedEvent : IEvent
     public string UserName { get; set; }
 
     public bool IsEntryWaitingRoom { get; set; }
-
+    
+    public string TaskId { get; set; }
+    
     public MeetingDto Meeting { get; set; }
     
     public MeetingUserSettingDto MeetingUserSetting { get; set; }

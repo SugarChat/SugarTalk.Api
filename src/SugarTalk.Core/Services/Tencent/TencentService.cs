@@ -147,13 +147,16 @@ public class TencentService : ITencentService
 
     public async Task CloudRecordingCallBackAsync(CloudRecordingCallBackCommand command, CancellationToken cancellationToken)
     {
-        Log.Information("CloudRecordingCallBackAsync  command: {@command}, eventType: {@eventType}", command, command.EventType.GetDescription());
-        
         switch (command.EventType)
         {
             case CloudRecordingEventType.CloudRecordingMp4Stop:
+                
+                Log.Information("CloudRecordingCallBackAsync  command: {@command}, eventType: {@eventType}", command, command.EventType.GetDescription());
+                
                 var fileMessages = command.EventInfo.Payload.ToObject<CloudRecordingMp4StopPayloadDto>();
+                
                 await HandleRecordingCompletedAsync(command, fileMessages, cancellationToken).ConfigureAwait(false);
+                
                 break;
             default:
                 Log.Information("CloudRecordingCallBackAsync  command: {@command}, eventType: {@eventType}", command, command.EventType.GetDescription());
@@ -181,6 +184,7 @@ public class TencentService : ITencentService
         
         if (!string.IsNullOrEmpty(url))
         {
+            record.Url = url;
             record.UrlStatus = MeetingRecordUrlStatus.Completed;
             record.EndedAt = DateTimeOffset.FromUnixTimeMilliseconds(endTimeStamp);
         }
