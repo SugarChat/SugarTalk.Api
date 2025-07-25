@@ -184,8 +184,7 @@ public class TencentService : ITencentService
 
     private async Task MarkSpeakTranscriptAsSpecifiedStatusAsync(CloudRecordingCallBackCommand command, CancellationToken cancellationToken)
     {
-        var meeting = await _meetingDataProvider
-            .GetMeetingByIdAsync(meetingNumber: command.EventInfo.RoomId, cancellationToken: cancellationToken).ConfigureAwait(false);
+        var meeting = await _meetingDataProvider.GetMeetingByIdAsync(meetingNumber: command.EventInfo.RoomId, cancellationToken: cancellationToken).ConfigureAwait(false);
         
         var record = (await _meetingDataProvider.GetMeetingRecordsAsync(
             meeting.Id, cancellationToken: cancellationToken).ConfigureAwait(false)).MaxBy(x => x.CreatedDate);
@@ -194,17 +193,6 @@ public class TencentService : ITencentService
         
         try
         {
-            var speakDetails = await _meetingDataProvider.GetMeetingSpeakDetailsAsync(
-                meetingNumber: meeting.MeetingNumber, recordId: record.Id, cancellationToken: cancellationToken).ConfigureAwait(false);
-        
-            foreach (var speakDetail in speakDetails.Where(speakDetail => speakDetail.SpeakEndTime is null or 0))
-            {
-                speakDetail.SpeakStatus = SpeakStatus.End;
-                speakDetail.SpeakEndTime = DateTimeOffset.Now.ToUnixTimeMilliseconds();
-            }
-            
-            await _meetingDataProvider.UpdateMeetingSpeakDetailsAsync(speakDetails, true, cancellationToken).ConfigureAwait(false);
-            
             var participants = await _meetingDataProvider.GetUserSessionsByMeetingIdAsync(meeting.Id, record.MeetingSubId, true, true, true, cancellationToken).ConfigureAwait(false);
         
             var filterGuest = participants.Where(p => p.GuestName == null).ToList();
@@ -245,6 +233,17 @@ public class TencentService : ITencentService
         
         var url = "";
         var endTimeStamp = payload.FileMessage.Max(x => x.EndTimeStamp);
+        
+        var speakDetails = await _meetingDataProvider.GetMeetingSpeakDetailsAsync(
+            meetingNumber: command.EventInfo.RoomId, recordId: record.Id, cancellationToken: cancellationToken).ConfigureAwait(false);
+        
+        foreach (var speakDetail in speakDetails.Where(speakDetail => speakDetail.SpeakEndTime is null or 0))
+        {
+            speakDetail.SpeakStatus = SpeakStatus.End;
+            speakDetail.SpeakEndTime = DateTimeOffset.Now.ToUnixTimeMilliseconds();
+        }
+            
+        await _meetingDataProvider.UpdateMeetingSpeakDetailsAsync(speakDetails, true, cancellationToken).ConfigureAwait(false);
         
         if (payload.FileMessage.Count > 1)
         {
