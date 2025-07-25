@@ -12,7 +12,9 @@ using SugarTalk.Core.Domain.Meeting;
 using Serilog;
 using SugarTalk.Core.Domain.SpeechMatics;
 using SugarTalk.Core.Ioc;
+using SugarTalk.Core.Services.Account;
 using SugarTalk.Core.Services.Aws;
+using SugarTalk.Core.Services.Caching;
 using SugarTalk.Core.Services.Exceptions;
 using SugarTalk.Core.Services.Ffmpeg;
 using SugarTalk.Core.Services.Http.Clients;
@@ -23,8 +25,10 @@ using SugarTalk.Core.Settings.Smarties;
 using SugarTalk.Core.Settings.TencentCloud;
 using SugarTalk.Messages.Commands.Tencent;
 using SugarTalk.Messages.Dto.FClub;
+using SugarTalk.Messages.Dto.Meetings;
 using SugarTalk.Messages.Dto.Smarties;
 using SugarTalk.Messages.Dto.Tencent;
+using SugarTalk.Messages.Enums.Caching;
 using SugarTalk.Messages.Enums.Meeting;
 using SugarTalk.Messages.Enums.Meeting.Speak;
 using SugarTalk.Messages.Enums.Smarties;
@@ -54,6 +58,7 @@ public class TencentService : ITencentService
     private readonly IMapper _mapper;
     private readonly ICurrentUser _currentUser;
     private readonly IFClubClient _fclubClient;
+    private readonly ICacheManager _cacheManager;
     private readonly TencentClient _tencentClient;
     private readonly IFfmpegService _ffmpegService;
     private readonly ISmartiesClient _smartiesClient;
@@ -61,22 +66,26 @@ public class TencentService : ITencentService
     private readonly ISmartiesDataProvider _smartiesDataProvider;
     private readonly IMeetingDataProvider _meetingDataProvider;
     private readonly TencentCloudSetting _tencentCloudSetting;
-
+    private readonly IAccountDataProvider _accountDataProvider;
+    
     public TencentService(
         IMapper mapper,
         ICurrentUser currentUser,
         IFClubClient fclubClient,
+        ICacheManager cacheManager,
         TencentClient tencentClient,
         IFfmpegService ffmpegService,
         ISmartiesClient smartiesClient,
         SmartiesSettings smartiesSettings,
         ISmartiesDataProvider smartiesDataProvider,
         IMeetingDataProvider meetingDataProvider,
-        TencentCloudSetting tencentCloudSetting)
+        TencentCloudSetting tencentCloudSetting,
+        IAccountDataProvider accountDataProvider)
     {
         _mapper = mapper;
         _currentUser = currentUser;
         _fclubClient = fclubClient;
+        _cacheManager = cacheManager;
         _tencentClient = tencentClient;
         _ffmpegService = ffmpegService;
         _smartiesClient = smartiesClient;
@@ -84,6 +93,7 @@ public class TencentService : ITencentService
         _smartiesDataProvider = smartiesDataProvider;
         _meetingDataProvider = meetingDataProvider;
         _tencentCloudSetting = tencentCloudSetting;
+        _accountDataProvider = accountDataProvider;
     }
 
     public GetTencentCloudKeyResponse GetTencentCloudKey(GetTencentCloudKeyRequest request)
@@ -160,11 +170,73 @@ public class TencentService : ITencentService
                 await HandleRecordingCompletedAsync(command, fileMessages, cancellationToken).ConfigureAwait(false);
                 
                 break;
+            case CloudRecordingEventType.CloudRecordingRecorderStop:
+
+                await MarkSpeakTranscriptAsSpecifiedStatusAsync(command, cancellationToken).ConfigureAwait(false);
+                
+                break;
             default:
                 Log.Information("CloudRecordingCallBackAsync  command: {@command}, eventType: {@eventType}", command, command.EventType.GetDescription());
                 break;
         }
      
+    }
+
+    private async Task MarkSpeakTranscriptAsSpecifiedStatusAsync(CloudRecordingCallBackCommand command, CancellationToken cancellationToken)
+    {
+        var meeting = await _meetingDataProvider
+            .GetMeetingByIdAsync(meetingNumber: command.EventInfo.RoomId, cancellationToken: cancellationToken).ConfigureAwait(false);
+        
+        var record = (await _meetingDataProvider.GetMeetingRecordsAsync(
+            meeting.Id, cancellationToken: cancellationToken).ConfigureAwait(false)).MaxBy(x => x.CreatedDate);
+        
+        await _meetingDataProvider.UpdateMeetingRecordUrlStatusAsync(record.Id, MeetingRecordUrlStatus.InProgress, cancellationToken).ConfigureAwait(false);
+        
+        try
+        {
+            var speakDetails = await _meetingDataProvider.GetMeetingSpeakDetailsAsync(
+                meetingNumber: meeting.MeetingNumber, recordId: record.Id, cancellationToken: cancellationToken).ConfigureAwait(false);
+        
+            foreach (var speakDetail in speakDetails.Where(speakDetail => speakDetail.SpeakEndTime is null or 0))
+            {
+                speakDetail.SpeakStatus = SpeakStatus.End;
+                speakDetail.SpeakEndTime = DateTimeOffset.Now.ToUnixTimeMilliseconds();
+            }
+            
+            await _meetingDataProvider.UpdateMeetingSpeakDetailsAsync(speakDetails, true, cancellationToken).ConfigureAwait(false);
+            
+            var participants = await _meetingDataProvider.GetUserSessionsByMeetingIdAsync(meeting.Id, record.MeetingSubId, true, true, cancellationToken).ConfigureAwait(false);
+        
+            var filterGuest = participants.Where(p => p.GuestName == null).ToList();
+            Log.Information("filter guest response: {@filterGuest}", filterGuest);
+        
+            foreach (var participant in filterGuest)
+            {
+                await AddRecordForAccountAsync(participant.UserName, cancellationToken).ConfigureAwait(false);
+                Log.Information("An exception occurred while processing participants: {@participant}", participant);
+            }
+            
+            meeting.IsActiveRecord = false;
+
+            await _meetingDataProvider.UpdateMeetingAsync(meeting, cancellationToken).ConfigureAwait(false);
+        }
+        catch (Exception e)
+        {
+            record.UrlStatus = MeetingRecordUrlStatus.Failed;
+             
+            await _meetingDataProvider.UpdateMeetingRecordAsync(record, cancellationToken).ConfigureAwait(false);
+        }
+    }
+    
+    private async Task AddRecordForAccountAsync(string currentUserName, CancellationToken cancellationToken)
+    {
+        var recordKey = currentUserName;
+        
+        var recordCount = await _cacheManager.GetOrAddAsync(recordKey, () => Task.FromResult(new RecordCountDto(recordKey)), CachingType.RedisCache, cancellationToken: cancellationToken).ConfigureAwait(false);
+
+        recordCount.Count += 1;
+
+        await _cacheManager.SetAsync(recordKey, recordCount, CachingType.RedisCache, cancellationToken: cancellationToken).ConfigureAwait(false);
     }
 
     public async Task HandleRecordingCompletedAsync(CloudRecordingCallBackCommand command, CloudRecordingMp4StopPayloadDto payload, CancellationToken cancellationToken)
