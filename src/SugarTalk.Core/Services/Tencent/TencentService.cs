@@ -9,16 +9,15 @@ using AutoMapper;
 using Newtonsoft.Json;
 using Serilog;
 using SugarTalk.Core.Domain.Meeting;
-using Serilog;
 using SugarTalk.Core.Domain.SpeechMatics;
 using SugarTalk.Core.Ioc;
 using SugarTalk.Core.Services.Account;
-using SugarTalk.Core.Services.Aws;
 using SugarTalk.Core.Services.Caching;
 using SugarTalk.Core.Services.Exceptions;
 using SugarTalk.Core.Services.Ffmpeg;
 using SugarTalk.Core.Services.Http.Clients;
 using SugarTalk.Core.Services.Identity;
+using SugarTalk.Core.Services.Jobs;
 using SugarTalk.Core.Services.Meetings;
 using SugarTalk.Core.Services.Smarties;
 using SugarTalk.Core.Settings.Smarties;
@@ -66,7 +65,7 @@ public class TencentService : ITencentService
     private readonly ISmartiesDataProvider _smartiesDataProvider;
     private readonly IMeetingDataProvider _meetingDataProvider;
     private readonly TencentCloudSetting _tencentCloudSetting;
-    private readonly IAccountDataProvider _accountDataProvider;
+    private readonly ISugarTalkBackgroundJobClient _sugarTalkBackgroundJobClient;
     
     public TencentService(
         IMapper mapper,
@@ -80,7 +79,7 @@ public class TencentService : ITencentService
         ISmartiesDataProvider smartiesDataProvider,
         IMeetingDataProvider meetingDataProvider,
         TencentCloudSetting tencentCloudSetting,
-        IAccountDataProvider accountDataProvider)
+        ISugarTalkBackgroundJobClient sugarTalkBackgroundJobClient)
     {
         _mapper = mapper;
         _currentUser = currentUser;
@@ -93,7 +92,7 @@ public class TencentService : ITencentService
         _smartiesDataProvider = smartiesDataProvider;
         _meetingDataProvider = meetingDataProvider;
         _tencentCloudSetting = tencentCloudSetting;
-        _accountDataProvider = accountDataProvider;
+        _sugarTalkBackgroundJobClient = sugarTalkBackgroundJobClient;
     }
 
     public GetTencentCloudKeyResponse GetTencentCloudKey(GetTencentCloudKeyRequest request)
@@ -268,22 +267,27 @@ public class TencentService : ITencentService
         Log.Information($"Add url for record: meetingRecord: {record}", record);
         
         await _meetingDataProvider.UpdateMeetingRecordAsync(record, cancellationToken).ConfigureAwait(false);
-        
+
+        _sugarTalkBackgroundJobClient.Enqueue(() => CreatingMeetingRecordTranslationAsync(record, cancellationToken));
+    }
+
+    public async Task CreatingMeetingRecordTranslationAsync(MeetingRecord record, CancellationToken cancellationToken)
+    {
         if (!string.IsNullOrEmpty(record.Url))
         {
-            var meetingDetails = await _meetingDataProvider
-                .GetMeetingDetailsByRecordIdAsync(record.Id, cancellationToken).ConfigureAwait(false);
+            var meetingDetails = await _meetingDataProvider.GetMeetingDetailsByRecordIdAsync(
+                record.Id, cancellationToken).ConfigureAwait(false);
              
             if (!meetingDetails.Any()) return;
             
             await MarkSpeakTranscriptAsSpecifiedStatusAsync(meetingDetails, FileTranscriptionStatus.InProcess, cancellationToken).ConfigureAwait(false);
             
-            var localhostUrl = await DownloadWithRetryAsync(url, cancellationToken: cancellationToken).ConfigureAwait(false);
+            var localhostUrl = await DownloadWithRetryAsync(record.Url, cancellationToken: cancellationToken).ConfigureAwait(false);
             
             await CreateSpeechMaticsJobAsync(record, meetingDetails, localhostUrl, cancellationToken).ConfigureAwait(false);
         }
     }
-    
+
     private async Task<string> CombineMeetingRecordVideoAsync(Guid meetingRecordId, List<string> videoUrls, CancellationToken cancellationToken)
     {
         Log.Information("Combine urls: {@urls}", videoUrls);
