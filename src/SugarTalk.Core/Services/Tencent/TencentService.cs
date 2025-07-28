@@ -65,7 +65,6 @@ public class TencentService : ITencentService
     private readonly ISmartiesDataProvider _smartiesDataProvider;
     private readonly IMeetingDataProvider _meetingDataProvider;
     private readonly TencentCloudSetting _tencentCloudSetting;
-    private readonly ISugarTalkBackgroundJobClient _sugarTalkBackgroundJobClient;
     
     public TencentService(
         IMapper mapper,
@@ -78,8 +77,7 @@ public class TencentService : ITencentService
         SmartiesSettings smartiesSettings,
         ISmartiesDataProvider smartiesDataProvider,
         IMeetingDataProvider meetingDataProvider,
-        TencentCloudSetting tencentCloudSetting,
-        ISugarTalkBackgroundJobClient sugarTalkBackgroundJobClient)
+        TencentCloudSetting tencentCloudSetting)
     {
         _mapper = mapper;
         _currentUser = currentUser;
@@ -92,7 +90,6 @@ public class TencentService : ITencentService
         _smartiesDataProvider = smartiesDataProvider;
         _meetingDataProvider = meetingDataProvider;
         _tencentCloudSetting = tencentCloudSetting;
-        _sugarTalkBackgroundJobClient = sugarTalkBackgroundJobClient;
     }
 
     public GetTencentCloudKeyResponse GetTencentCloudKey(GetTencentCloudKeyRequest request)
@@ -268,11 +265,6 @@ public class TencentService : ITencentService
         
         await _meetingDataProvider.UpdateMeetingRecordAsync(record, cancellationToken).ConfigureAwait(false);
 
-        _sugarTalkBackgroundJobClient.Enqueue(() => CreatingMeetingRecordTranslationAsync(record, cancellationToken));
-    }
-
-    public async Task CreatingMeetingRecordTranslationAsync(MeetingRecord record, CancellationToken cancellationToken)
-    {
         if (!string.IsNullOrEmpty(record.Url))
         {
             var meetingDetails = await _meetingDataProvider.GetMeetingDetailsByRecordIdAsync(
