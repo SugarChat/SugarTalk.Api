@@ -52,7 +52,7 @@ public class TencentClient : ITencentClient
         var client = CreateClient();
 
         request.UserId = Guid.NewGuid().ToString();
-        request.UserSig = GetUserSig( request.UserId);
+        request.UserSig = GetUserSig(request.UserId);
         request.StorageParams = new StorageParams
         {
             CloudStorage = new CloudStorage
@@ -62,15 +62,15 @@ public class TencentClient : ITencentClient
                 Region = _tencentCloudSetting.Region,
                 AccessKey = _tencentCloudSetting.SecretId,
                 SecretKey = _tencentCloudSetting.SecretKey,
-                FileNamePrefix = new string[]{ "sugartalk" }
+                FileNamePrefix = new string[]{ _tencentCloudSetting.CosFileNamePrefix }
             }
         };
         
-        Log.Information("CreateCloudRecordingAsync request: {request}", request);
+        Log.Information("CreateCloudRecordingAsync request: {@request}", request);
         
         var response = await client.CreateCloudRecording(request).ConfigureAwait(false);
         
-        Log.Information("CreateCloudRecordingAsync TaskId: {taskId}, RequestId: {requestId}", response.TaskId, response.RequestId);
+        Log.Information("CreateCloudRecordingAsync response: {@response}", response);
 
         return new StartCloudRecordingResponse()
         {
@@ -82,12 +82,12 @@ public class TencentClient : ITencentClient
     {
         var client = CreateClient();
         
-        Log.Information("StopCloudRecordingAsync request: {request}", request);
+        Log.Information("StopCloudRecordingAsync request: {@request}", request);
         
         var response = await client.DeleteCloudRecording(request).ConfigureAwait(false);
         
-        Log.Information("StopCloudRecordingAsync TaskId: {taskId}, RequestId: {requestId}", response.TaskId, response.RequestId);
-       
+        Log.Information("StopCloudRecordingAsync response: {@response}", response);
+        
         return new StopCloudRecordingResponse()
         {
             Data = _mapper.Map<StopCloudRecordingResponseResult>(response)
@@ -98,11 +98,11 @@ public class TencentClient : ITencentClient
     {
         var client = CreateClient();
         
-        Log.Information("ModifyCloudRecordingAsync request: {request}", request);
+        Log.Information("ModifyCloudRecordingAsync request: {@request}", request);
         
         var response = await client.ModifyCloudRecording(request).ConfigureAwait(false);
         
-        Log.Information("ModifyCloudRecordingAsync TaskId: {taskId}, RequestId: {requestId}", response.TaskId, response.RequestId);
+        Log.Information("ModifyCloudRecordingAsync response: {@response}", response);
 
         return new UpdateCloudRecordingResponse()
         {
