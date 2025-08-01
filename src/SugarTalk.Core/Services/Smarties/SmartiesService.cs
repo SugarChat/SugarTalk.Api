@@ -130,7 +130,10 @@ public class SmartiesService : ISmartiesService
         
         try
         {
-            var recordUrl = await _awsS3Service.GeneratePresignedUrlAsync(meetingRecord.Url, 30).ConfigureAwait(false);
+            var recordUrl = meetingRecord.Url;
+            
+            if (!recordUrl.StartsWith("http"))
+                recordUrl = await _awsS3Service.GeneratePresignedUrlAsync(meetingRecord.Url, 30).ConfigureAwait(false);
         
             localhostUrl = await _meetingService.DownloadWithRetryAsync(recordUrl, cancellationToken: cancellationToken).ConfigureAwait(false);
 
