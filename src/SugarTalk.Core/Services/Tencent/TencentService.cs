@@ -261,7 +261,7 @@ public class TencentService : ITencentService
             record.EndedAt = DateTimeOffset.FromUnixTimeMilliseconds(endTimeStamp);
         }
         
-        Log.Information($"Add url for record: meetingRecord: {record}", record);
+        Log.Information("Add url for record: meetingRecord: {@record}", record);
         
         await _meetingDataProvider.UpdateMeetingRecordAsync(record, cancellationToken).ConfigureAwait(false);
 
