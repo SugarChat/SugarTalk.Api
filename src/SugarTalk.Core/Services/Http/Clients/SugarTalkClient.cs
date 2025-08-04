@@ -35,7 +35,7 @@ public class SugarTalkClient : ISugarTalkClient
         Log.Information("SugarTalkClient.CloudRecordingCallBackCommand: {@callBackCommand}", callBackCommand);
         
         var response = await _httpClientFactory
-            .PostAsJsonAsync<string>($"{_sugarTalkSettings.BaseUrl}/api/Tencent/cloudRecord/callback", callBackCommand, cancellationToken, headers: _headers).ConfigureAwait(false);
+            .PostAsJsonAsync<string>($"{_sugarTalkSettings.BaseUrl}/Tencent/cloudRecord/callback", callBackCommand, cancellationToken, headers: _headers).ConfigureAwait(false);
         
         Log.Information("SugarTalkClient.CloudRecordingCallBackCommand: {@response}", response);
     }
