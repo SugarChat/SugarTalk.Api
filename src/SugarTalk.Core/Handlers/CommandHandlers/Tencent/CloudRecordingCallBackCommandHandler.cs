@@ -6,7 +6,6 @@ using SugarTalk.Core.Services.Http.Clients;
 using SugarTalk.Core.Services.Jobs;
 using SugarTalk.Core.Services.Tencent;
 using SugarTalk.Messages.Commands.Tencent;
-using SugarTalk.Messages.Dto.SugarTalk;
 
 namespace SugarTalk.Core.Handlers.CommandHandlers.Tencent;
 
@@ -24,15 +23,13 @@ public class CloudRecordingCallBackCommandHandler : ICommandHandler<CloudRecordi
     public async Task Handle(IReceiveContext<CloudRecordingCallBackCommand> context, CancellationToken cancellationToken)
     {
         _sugarTalkBackgroundJobClient.Enqueue<ITencentService>(x => x.CloudRecordingCallBackAsync(context.Message, cancellationToken));
-        
-        var callBackDto = new CloudRecordingCallBackDto
+      
+        _sugarTalkBackgroundJobClient.Enqueue<ISugarTalkClient>(client => client.CloudRecordingCallBackAsync(new CloudRecordingCallBackCommand
         {
             EventType = context.Message.EventType,
             EventGroupId = context.Message.EventGroupId,
             CallbackTs = context.Message.CallbackTs,
             EventInfo = context.Message.EventInfo,
-        };
-        
-        _sugarTalkBackgroundJobClient.Enqueue<ISugarTalkClient>(client => client.CloudRecordingCallBackAsync(callBackDto, cancellationToken));
+        }, cancellationToken));
     }
 }

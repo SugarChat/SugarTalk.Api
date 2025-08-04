@@ -1,15 +1,16 @@
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using Serilog;
 using SugarTalk.Core.Ioc;
 using SugarTalk.Core.Settings.SuagrTalk;
-using SugarTalk.Messages.Dto.SugarTalk;
+using SugarTalk.Messages.Commands.Tencent;
 
 namespace SugarTalk.Core.Services.Http.Clients;
 
 public interface ISugarTalkClient : IScopedDependency
 {
-    Task CloudRecordingCallBackAsync(CloudRecordingCallBackDto request, CancellationToken cancellationToken);
+    Task CloudRecordingCallBackAsync(CloudRecordingCallBackCommand callBackCommand, CancellationToken cancellationToken);
 }
 
 public class SugarTalkClient : ISugarTalkClient
@@ -29,9 +30,13 @@ public class SugarTalkClient : ISugarTalkClient
         };
     }
 
-    public async Task CloudRecordingCallBackAsync(CloudRecordingCallBackDto callBackDto, CancellationToken cancellationToken)
+    public async Task CloudRecordingCallBackAsync(CloudRecordingCallBackCommand callBackCommand, CancellationToken cancellationToken)
     {
-        await _httpClientFactory.PostAsJsonAsync<string>(
-                $"{_sugarTalkSettings.BaseUrl}/api/Tencent/cloudRecord/callback", callBackDto, cancellationToken, headers: _headers).ConfigureAwait(false);
+        Log.Information("SugarTalkClient.CloudRecordingCallBackCommand: {@callBackCommand}", callBackCommand);
+        
+        var response = await _httpClientFactory
+            .PostAsJsonAsync<string>($"{_sugarTalkSettings.BaseUrl}/api/Tencent/cloudRecord/callback", callBackCommand, cancellationToken, headers: _headers).ConfigureAwait(false);
+        
+        Log.Information("SugarTalkClient.CloudRecordingCallBackCommand: {@response}", response);
     }
 }
