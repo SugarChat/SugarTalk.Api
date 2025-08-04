@@ -32,6 +32,6 @@ public class SugarTalkClient : ISugarTalkClient
     public async Task CloudRecordingCallBackAsync(CloudRecordingCallBackDto callBackDto, CancellationToken cancellationToken)
     {
         await _httpClientFactory.PostAsJsonAsync<string>(
-                $"{_sugarTalkSettings.BaseUrl}/api/Ask/general/query", callBackDto, cancellationToken, headers: _headers).ConfigureAwait(false);
+                $"{_sugarTalkSettings.BaseUrl}/api/Tencent/cloudRecord/callback", callBackDto, cancellationToken, headers: _headers).ConfigureAwait(false);
     }
 }
