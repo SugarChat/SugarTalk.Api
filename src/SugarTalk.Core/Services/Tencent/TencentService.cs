@@ -229,6 +229,8 @@ public class TencentService : ITencentService
     public async Task HandleRecordingCompletedAsync(CloudRecordingCallBackCommand command, CloudRecordingMp4StopPayloadDto payload, CancellationToken cancellationToken)
     {
         var record = (await _meetingDataProvider.GetMeetingRecordsAsync(egressId: command.EventInfo.TaskId, cancellationToken: cancellationToken).ConfigureAwait(false)).FirstOrDefault();
+
+        if (record == null) return;
         
         var url = "";
         var endTimeStamp = payload.FileMessage.Max(x => x.EndTimeStamp);
