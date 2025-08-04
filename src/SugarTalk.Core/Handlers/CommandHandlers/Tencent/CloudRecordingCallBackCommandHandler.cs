@@ -24,12 +24,12 @@ public class CloudRecordingCallBackCommandHandler : ICommandHandler<CloudRecordi
     {
         _sugarTalkBackgroundJobClient.Enqueue<ITencentService>(x => x.CloudRecordingCallBackAsync(context.Message, cancellationToken));
       
-        _sugarTalkBackgroundJobClient.Enqueue<ISugarTalkClient>(client => client.CloudRecordingCallBackAsync(new CloudRecordingCallBackCommand
-        {
-            EventType = context.Message.EventType,
-            EventGroupId = context.Message.EventGroupId,
-            CallbackTs = context.Message.CallbackTs,
-            EventInfo = context.Message.EventInfo,
-        }, cancellationToken));
+        // _sugarTalkBackgroundJobClient.Enqueue<ISugarTalkClient>(client => client.CloudRecordingCallBackAsync(new CloudRecordingCallBackCommand
+        // {
+        //     EventType = context.Message.EventType,
+        //     EventGroupId = context.Message.EventGroupId,
+        //     CallbackTs = context.Message.CallbackTs,
+        //     EventInfo = context.Message.EventInfo,
+        // }, cancellationToken));
     }
 }
