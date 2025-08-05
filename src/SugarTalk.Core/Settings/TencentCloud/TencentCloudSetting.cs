@@ -12,8 +12,8 @@ public class TencentCloudSetting: IConfigurationSetting
         SecretKey = configuration.GetValue<string>("Tencent:SecretKey");
         Region = configuration.GetValue<string>("Tencent:Region");
         CosBucket =  configuration.GetValue<string>("Tencent:StorageParams:Bucket");
-        CosAccessKey =  configuration.GetValue<string>("Tencent:StorageParams:AccessKey");
-        CosSecretKey =  configuration.GetValue<string>("Tencent:StorageParams:SecretKey");
+        CosBaseUrl =  configuration.GetValue<string>("Tencent:StorageParams:CosBaseUrl");
+        CosFileNamePrefix =  configuration.GetValue<string>("Tencent:StorageParams:FileNamePrefix");
     }
     
     public string AppId { get; set; }
@@ -27,8 +27,8 @@ public class TencentCloudSetting: IConfigurationSetting
     public string Region { get; set; }
     
     public string CosBucket { get; set; }
+
+    public string CosBaseUrl { get; set; }
     
-    public string CosAccessKey { get; set; }
-    
-    public string CosSecretKey { get; set; }
+    public string CosFileNamePrefix { get; set; }
 }

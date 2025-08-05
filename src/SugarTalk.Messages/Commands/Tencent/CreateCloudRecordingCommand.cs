@@ -1,3 +1,4 @@
+using System;
 using Mediator.Net.Contracts;
 using SugarTalk.Messages.Responses;
 
@@ -8,10 +9,6 @@ public class CreateCloudRecordingCommand : ICommand
     public ulong? SdkAppId { get; set; }
 
     public string RoomId { get; set; }
-    
-    public string UserId { get; set; }
-    
-    public string UserSig { get; set; }
     
     public RecordParams RecordParams { get; set; }
     
@@ -94,4 +91,6 @@ public class CreateCloudRecordingResponseResult
     public string TaskId { get; set; }
     
     public string RequestId { get; set; }
+    
+    public Guid MeetingRecordId { get; set; }
 }

@@ -8,6 +8,8 @@ public class MeetingJoinedEvent : IEvent
 {
     public int UserId { get; set; }
     
+    public string TaskId { get; set; }
+    
     public MeetingDto Meeting { get; set; }
     
     public MeetingUserSettingDto MeetingUserSetting { get; set; }
