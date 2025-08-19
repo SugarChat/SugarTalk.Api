@@ -194,7 +194,7 @@ public class TencentService : ITencentService
         
             Log.Information("participants: {@participants}", participants);
             
-            var filterGuest = participants.Where(p => p.GuestName == null).ToList();
+            var filterGuest = participants.Where(p => p.GuestName == null).DistinctBy(x => x.UserName).ToList();
             Log.Information("filter guest response: {@filterGuest}", filterGuest);
         
             foreach (var participant in filterGuest)
