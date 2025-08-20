@@ -1,4 +1,6 @@
+using System;
 using Microsoft.Extensions.Configuration;
+using SugarTalk.Messages.Enums.Tencent;
 
 namespace SugarTalk.Core.Settings.TencentCloud;
 
@@ -14,6 +16,7 @@ public class TencentCloudSetting: IConfigurationSetting
         CosBucket =  configuration.GetValue<string>("Tencent:StorageParams:Bucket");
         CosBaseUrl =  configuration.GetValue<string>("Tencent:StorageParams:CosBaseUrl");
         CosFileNamePrefix =  configuration.GetValue<string>("Tencent:StorageParams:FileNamePrefix");
+        RecordingResolution = Enum.Parse<ScreenRecordingResolution>(configuration.GetValue<string>("Tencent:RecordingResolution"), true);
     }
     
     public string AppId { get; set; }
@@ -31,4 +34,6 @@ public class TencentCloudSetting: IConfigurationSetting
     public string CosBaseUrl { get; set; }
     
     public string CosFileNamePrefix { get; set; }
+    
+    public ScreenRecordingResolution RecordingResolution { get; set; }
 }
