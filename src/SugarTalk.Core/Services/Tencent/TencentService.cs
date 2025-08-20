@@ -99,7 +99,8 @@ public class TencentService : ITencentService
             Data = new GetTencentCloudKeyResponseData
             {
                 AppId = _tencentCloudSetting.AppId,
-                SDKSecretKey = _tencentCloudSetting.SDKSecretKey
+                SDKSecretKey = _tencentCloudSetting.SDKSecretKey,
+                Resolution = _tencentCloudSetting.RecordingResolution
             }
         };
     }
