@@ -39,6 +39,7 @@ using SugarTalk.Core.Settings.Meeting;
 using SugarTalk.Core.Settings.Meeting.Feedback;
 using SugarTalk.Core.Settings.PostBoy;
 using SugarTalk.Core.Settings.Smarties;
+using SugarTalk.Core.Settings.TencentCloud;
 using SugarTalk.Messages.Commands.Meetings.Speak;
 using SugarTalk.Messages.Dto.LiveKit.Egress;
 using SugarTalk.Messages.Dto.Smarties;
@@ -148,6 +149,7 @@ namespace SugarTalk.Core.Services.Meetings
         private readonly MeetingInfoSettings _meetingInfoSettings;
         private readonly FeedbackSettings _feedbackSettings;
         private readonly ISmartiesDataProvider _smartiesDataProvider;
+        private readonly TencentCloudSetting _tencentCloudSetting;
         
         public MeetingService(
             IClock clock,
@@ -175,7 +177,7 @@ namespace SugarTalk.Core.Services.Meetings
             ILiveKitServerUtilService liveKitServerUtilService,
             IAntMediaServerUtilService antMediaServerUtilService,
             ISugarTalkBackgroundJobClient sugarTalkBackgroundJobClient, 
-            MeetingInfoSettings meetingInfoSettings, ICacheManager cacheManager, FeedbackSettings feedbackSettings, ISmartiesDataProvider smartiesDataProvider)
+            MeetingInfoSettings meetingInfoSettings, ICacheManager cacheManager, FeedbackSettings feedbackSettings, ISmartiesDataProvider smartiesDataProvider, TencentCloudSetting tencentCloudSetting)
         {
             _clock = clock;
             _mapper = mapper;
@@ -206,6 +208,7 @@ namespace SugarTalk.Core.Services.Meetings
             _meetingInfoSettings = meetingInfoSettings;
             _feedbackSettings = feedbackSettings;
             _smartiesDataProvider = smartiesDataProvider;
+            _translationClient = translationClient;
         }
         
         public async Task<MeetingScheduledEvent> ScheduleMeetingAsync(ScheduleMeetingCommand command, CancellationToken cancellationToken)
@@ -459,6 +462,7 @@ namespace SugarTalk.Core.Services.Meetings
                 IsEntryWaitingRoom = meetingUserSession.OnlineType == MeetingUserSessionOnlineType.Waiting,
                 UserName = user.Issuer == UserAccountIssuer.Guest ? meetingUserSession.GuestName : user.UserName,
                 TaskId = meetingRecord?.EgressId,
+                RecordingResolution = _tencentCloudSetting.RecordingResolution,
                 MeetingUserSetting = _mapper.Map<MeetingUserSettingDto>(userSetting)
             };
         }

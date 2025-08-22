@@ -31,6 +31,8 @@ public class JoinMeetingResponseData
     public MeetingDto Meeting { get; set; }
     
     public string TaskId { get; set; }
+
+    public string RecordingResolution { get; set; }
     
     public MeetingUserSettingDto MeetingUserSetting { get; set; }
 }
