@@ -2,6 +2,7 @@ using Mediator.Net.Contracts;
 using SugarTalk.Messages.Attributes;
 using SugarTalk.Messages.Dto.Meetings;
 using SugarTalk.Messages.Dto.Meetings.User;
+using SugarTalk.Messages.Enums.Tencent;
 using SugarTalk.Messages.Responses;
 
 namespace SugarTalk.Messages.Commands.Meetings;
@@ -32,7 +33,7 @@ public class JoinMeetingResponseData
     
     public string TaskId { get; set; }
 
-    public string RecordingResolution { get; set; }
+    public ScreenRecordingResolution RecordingResolution { get; set; }
     
     public MeetingUserSettingDto MeetingUserSetting { get; set; }
 }

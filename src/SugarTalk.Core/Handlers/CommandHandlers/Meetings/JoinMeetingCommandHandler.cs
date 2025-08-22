@@ -32,6 +32,7 @@ namespace SugarTalk.Core.Handlers.CommandHandlers.Meetings
                     UserName = @event.UserName,
                     IsEntryWaitingRoom = @event.IsEntryWaitingRoom,
                     TaskId = @event.TaskId,
+                    RecordingResolution = @event.RecordingResolution,
                     MeetingUserSetting = @event.MeetingUserSetting
                 }
             };

@@ -209,6 +209,7 @@ namespace SugarTalk.Core.Services.Meetings
             _feedbackSettings = feedbackSettings;
             _smartiesDataProvider = smartiesDataProvider;
             _translationClient = translationClient;
+            _tencentCloudSetting = tencentCloudSetting;
         }
         
         public async Task<MeetingScheduledEvent> ScheduleMeetingAsync(ScheduleMeetingCommand command, CancellationToken cancellationToken)
