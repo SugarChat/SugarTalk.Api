@@ -208,7 +208,6 @@ namespace SugarTalk.Core.Services.Meetings
             _meetingInfoSettings = meetingInfoSettings;
             _feedbackSettings = feedbackSettings;
             _smartiesDataProvider = smartiesDataProvider;
-            _translationClient = translationClient;
             _tencentCloudSetting = tencentCloudSetting;
         }
         
