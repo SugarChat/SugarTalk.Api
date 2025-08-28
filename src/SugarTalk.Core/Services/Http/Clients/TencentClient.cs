@@ -13,6 +13,7 @@ using TencentCloud.Common;
 using TencentCloud.Common.Profile;
 using TencentCloud.Trtc.V20190722;
 using TencentCloud.Trtc.V20190722.Models;
+using RecordParams = TencentCloud.Trtc.V20190722.Models.RecordParams;
 
 namespace SugarTalk.Core.Services.Http.Clients;
 
@@ -53,6 +54,8 @@ public class TencentClient : ITencentClient
 
         request.UserId = Guid.NewGuid().ToString();
         request.UserSig = GetUserSig(request.UserId);
+        request.RecordParams ??= new RecordParams();
+        request.RecordParams.MaxIdleTime = 180;
         request.StorageParams = new StorageParams
         {
             CloudStorage = new CloudStorage

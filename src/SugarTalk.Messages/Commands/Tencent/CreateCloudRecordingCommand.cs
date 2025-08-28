@@ -27,8 +27,6 @@ public class RecordParams
 {
     public ulong? RecordMode { get; set; }
     
-    public ulong? MaxIdleTime { get; set; }
-    
     public ulong? StreamType { get; set; }
     
     public SubscribeStreamUserIds SubscribeStreamUserIds { get; set; }
