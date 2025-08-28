@@ -13,9 +13,10 @@ public class TencentCloudSetting: IConfigurationSetting
         SecretId = configuration.GetValue<string>("Tencent:SecretId");
         SecretKey = configuration.GetValue<string>("Tencent:SecretKey");
         Region = configuration.GetValue<string>("Tencent:Region");
-        CosBucket =  configuration.GetValue<string>("Tencent:StorageParams:Bucket");
-        CosBaseUrl =  configuration.GetValue<string>("Tencent:StorageParams:CosBaseUrl");
-        CosFileNamePrefix =  configuration.GetValue<string>("Tencent:StorageParams:FileNamePrefix");
+        CosBucket = configuration.GetValue<string>("Tencent:StorageParams:Bucket");
+        CosBaseUrl = configuration.GetValue<string>("Tencent:StorageParams:CosBaseUrl");
+        CosFileNamePrefix = configuration.GetValue<string>("Tencent:StorageParams:FileNamePrefix");
+        RecordingMaxIdleTime = configuration.GetValue<ulong>("Tencent:RecordParams:MaxIdleTime");
         RecordingResolution = Enum.Parse<ScreenRecordingResolution>(configuration.GetValue<string>("Tencent:RecordingResolution"), true);
     }
     
@@ -34,6 +35,8 @@ public class TencentCloudSetting: IConfigurationSetting
     public string CosBaseUrl { get; set; }
     
     public string CosFileNamePrefix { get; set; }
+    
+    public ulong RecordingMaxIdleTime { get; set; }
     
     public ScreenRecordingResolution RecordingResolution { get; set; }
 }
