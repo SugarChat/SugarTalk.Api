@@ -24,12 +24,15 @@ public interface ITencentClient : IScopedDependency
     Task<StopCloudRecordingResponse> StopCloudRecordingAsync(DeleteCloudRecordingRequest request, CancellationToken cancellationToken);
 
     Task<UpdateCloudRecordingResponse> ModifyCloudRecordingAsync(ModifyCloudRecordingRequest request, CancellationToken cancellationToken);
+
+    Task DisbandRoomAsync(DismissRoomRequest request, CancellationToken cancellationToken);
 }
 
 public class TencentClient : ITencentClient
 {
     private readonly IMapper _mapper;
     private readonly TencentCloudSetting _tencentCloudSetting;
+    private ITencentClient _tencentClientImplementation;
 
     public TencentClient(IMapper mapper, TencentCloudSetting tencentCloudSetting)
     {
@@ -56,6 +59,7 @@ public class TencentClient : ITencentClient
         request.UserSig = GetUserSig(request.UserId);
         request.RecordParams ??= new RecordParams();
         request.RecordParams.MaxIdleTime = _tencentCloudSetting.RecordingMaxIdleTime;
+        request.RoomIdType ??= 1;
         request.StorageParams = new StorageParams
         {
             CloudStorage = new CloudStorage
@@ -112,7 +116,18 @@ public class TencentClient : ITencentClient
             Data = _mapper.Map<UpdateCloudRecordingResponseResult>(response)
         };
     }
-    
+
+    public async Task DisbandRoomAsync(DismissRoomRequest request, CancellationToken cancellationToken)
+    {
+        var client = CreateClient();
+        
+        Log.Information("DisbandRoomAsync request: {@request}", request);
+        
+        var response = await client.DismissRoom(request).ConfigureAwait(false);
+        
+        Log.Information("DisbandRoomAsync response: {@response}", response);
+    }
+
     public string GetUserSig(string userId)
     {
         var api = new TencentTlsSigApIv2(int.Parse(_tencentCloudSetting.AppId), _tencentCloudSetting.SDKSecretKey);

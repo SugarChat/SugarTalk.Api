@@ -50,6 +50,7 @@ using SugarTalk.Messages.Events.Meeting;
 using SugarTalk.Messages.Requests.Meetings;
 using SugarTalk.Messages.Events.Meeting.User;
 using SugarTalk.Messages.Requests.Meetings.User;
+using TencentCloud.Trtc.V20190722.Models;
 
 namespace SugarTalk.Core.Services.Meetings
 {
@@ -127,6 +128,7 @@ namespace SugarTalk.Core.Services.Meetings
         private readonly IPostBoyClient _postBoyClient;
         private readonly ILiveKitClient _liveKitClient;
         private readonly IFClubClient _fclubClient;
+        private readonly ITencentClient _tencentClient;
         private readonly IOpenAiService _openAiService;
         private readonly IAwsS3Service _awsS3Service;
         private readonly AwsS3Settings _awsS3Settings;
@@ -158,6 +160,7 @@ namespace SugarTalk.Core.Services.Meetings
             IOpenAiService openAiService,
             ISpeechClient speechClient,
             IPostBoyClient postBoyClient,
+            ITencentClient tencentClient,
             ILiveKitClient liveKitClient,
             IFClubClient fclubClient,
             AwsS3Settings awsS3Settings,
@@ -187,6 +190,7 @@ namespace SugarTalk.Core.Services.Meetings
             _postBoyClient = postBoyClient;
             _liveKitClient = liveKitClient;
             _fclubClient = fclubClient;
+            _tencentClient = tencentClient;
             _awsS3Service = awsS3Service;
             _cacheManager = cacheManager;
             _smartiesClient = smartiesClient;
@@ -688,6 +692,11 @@ namespace SugarTalk.Core.Services.Meetings
 
             if (meeting.AppointmentType == MeetingAppointmentType.Appointment)
                 _backgroundJobClient.Enqueue(() => AddOrUpdateMeetingSituationDayAsync(meeting.Id, DateTime.UtcNow, meeting.StartDate, cancellationToken));
+
+            await _tencentClient.DisbandRoomAsync(new DismissRoomRequest
+            {
+                RoomId = ulong.TryParse(meeting.MeetingNumber, out var value) ? value : null
+            }, cancellationToken).ConfigureAwait(false);
             
             return new MeetingEndedEvent
             {
