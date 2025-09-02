@@ -46,6 +46,7 @@
       <PackageReference Include="StackExchange.Redis" Version="2.6.104" />
       <PackageReference Include="System.ComponentModel.Annotations" Version="5.0.0" />
       <PackageReference Include="System.Net.Http" Version="4.3.4" />
+      <PackageReference Include="TencentCloudSDK.Trtc" Version="3.0.1273" />
       <PackageReference Include="TiktokenSharp" Version="1.0.9" />
     </ItemGroup>
 
@@ -119,6 +120,9 @@
         <EmbeddedResource Include="DbUp\Scripts_2025\Script0003_add_cohost_for_meeting_user_sessions.sql" />
         <EmbeddedResource Include="DbUp\Scripts_2025\Script0004_add_meeting_sub_id_for_record.sql" />
         <EmbeddedResource Include="DbUp\Scripts_2025\Script0004_modify_meeting_participant.sql" />
+        <EmbeddedResource Include="DbUp\Scripts_2025\Script0005_add_customize_repeat_type_for_meeting_repeat_rule.sql" />
+        <EmbeddedResource Include="DbUp\Scripts_2025\Script0005_meeting_situation_day.sql" />
+        <EmbeddedResource Include="DbUp\Scripts_2025\Script0006_add_is_locked_to_meeting_table.sql" />
     </ItemGroup>
     
     <ItemGroup>

@@ -15,6 +15,7 @@
     </PropertyGroup>
 
     <ItemGroup>
+      <PackageReference Include="ComponentAce.Compression.Libs.zlib" Version="1.0.4" />
       <PackageReference Include="Kurento.NET" Version="1.1.1" />
       <PackageReference Include="Mediator.Net" Version="4.7.0" />
       <PackageReference Include="Mediator.Net.Autofac" Version="4.7.0" />
