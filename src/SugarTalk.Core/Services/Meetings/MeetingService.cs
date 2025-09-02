@@ -211,7 +211,7 @@ namespace SugarTalk.Core.Services.Meetings
         
         public async Task<MeetingScheduledEvent> ScheduleMeetingAsync(ScheduleMeetingCommand command, CancellationToken cancellationToken)
         {
-            var meetingNumber = GenerateMeetingNumber();
+            var meetingNumber = await GenerateMeetingNumber(cancellationToken).ConfigureAwait(false);
             
             var meeting = await GenerateMeetingInfoFromThirdPartyServicesAsync(meetingNumber, cancellationToken).ConfigureAwait(false);
             meeting = _mapper.Map(command, meeting);
@@ -1209,15 +1209,26 @@ namespace SugarTalk.Core.Services.Meetings
             return workday != DayOfWeek.Saturday && workday != DayOfWeek.Sunday;
         }
 
-        private string GenerateMeetingNumber()
+        private async Task<string> GenerateMeetingNumber(CancellationToken cancellationToken)
         {
-            var result = new StringBuilder();
-            for (var i = 0; i < 5; i++)
+            while (true)
             {
-                var r = new Random(Guid.NewGuid().GetHashCode());
-                result.Append(r.Next(0, 10));
+                var result = new StringBuilder();
+                for (var i = 0; i < 5; i++)
+                {
+                    var r = new Random(Guid.NewGuid().GetHashCode());
+                    result.Append(r.Next(0, 10));
+                }
+
+                var meetingNumber = result.ToString();
+                
+                var meeting = await _meetingDataProvider
+                    .GetMeetingByIdAsync(meetingNumber: meetingNumber, cancellationToken: cancellationToken)
+                    .ConfigureAwait(false);
+
+                if (meeting == null)
+                    return meetingNumber;
             }
-            return result.ToString();
         }
 
         private MeetingUserSession GenerateNewUserSessionFromUser(UserAccountDto user, Guid meetingId,
