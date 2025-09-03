@@ -704,7 +704,8 @@ namespace SugarTalk.Core.Services.Meetings
 
             await _tencentClient.DisbandRoomAsync(new DismissRoomRequest
             {
-                RoomId = ulong.TryParse(meeting.MeetingNumber, out var value) ? value : null
+                SdkAppId =  ulong.TryParse(_tencentCloudSetting.AppId, out var appId) ? appId : null,
+                RoomId = ulong.TryParse(meeting.MeetingNumber, out var meetingNumber) ? meetingNumber : null
             }, cancellationToken).ConfigureAwait(false);
             
             return new MeetingEndedEvent
