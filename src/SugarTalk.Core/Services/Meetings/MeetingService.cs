@@ -821,12 +821,12 @@ namespace SugarTalk.Core.Services.Meetings
 
                 meeting.AddUserSession(addUserSession);
                 
-                // meeting.MeetingTokenFromLiveKit = user.Issuer switch
-                // {
-                //     UserAccountIssuer.Guest => _liveKitServerUtilService.GenerateTokenForGuest(user.UserName, addUserSession.GuestName, meeting.MeetingNumber),
-                //     UserAccountIssuer.Self or UserAccountIssuer.Wiltechs => _liveKitServerUtilService.GenerateTokenForJoinMeeting(user, meeting.MeetingNumber),
-                //     _ => throw new ArgumentOutOfRangeException()
-                // };
+                meeting.MeetingTokenFromLiveKit = user.Issuer switch
+                {
+                    UserAccountIssuer.Guest => _liveKitServerUtilService.GenerateTokenForGuest(user.UserName, addUserSession.GuestName, meeting.MeetingNumber),
+                    UserAccountIssuer.Self or UserAccountIssuer.Wiltechs => _liveKitServerUtilService.GenerateTokenForJoinMeeting(user, meeting.MeetingNumber),
+                    _ => throw new ArgumentOutOfRangeException()
+                };
 
                 return addUserSession;
             }
