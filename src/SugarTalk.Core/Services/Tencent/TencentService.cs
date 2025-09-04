@@ -262,7 +262,7 @@ public class TencentService : ITencentService
         
         if (!string.IsNullOrEmpty(url))
         {
-            localhostUrl = await DownloadWithRetryAsync(record.Url, cancellationToken: cancellationToken).ConfigureAwait(false);
+            localhostUrl = await DownloadWithRetryAsync(url, cancellationToken: cancellationToken).ConfigureAwait(false);
             
             record.Url = url;
             record.UrlStatus = MeetingRecordUrlStatus.Completed;
