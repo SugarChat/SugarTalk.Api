@@ -122,23 +122,46 @@ public class TencentClient : ITencentClient
     public async Task DisbandRoomAsync(DismissRoomRequest request, CancellationToken cancellationToken)
     {
         var client = CreateClient();
-        
-        Log.Information("DisbandRoomAsync request: {@request}", request);
-        
-        var response = await client.DismissRoom(request).ConfigureAwait(false);
-        
-        Log.Information("DisbandRoomAsync response: {@response}", response);
+        try
+        {
+            Log.Information("DisbandRoomAsync request: {@request}", request);
+            
+            var response = await client.DismissRoom(request).ConfigureAwait(false);
+            
+            Log.Information("DisbandRoomAsync response: {@response}", response);
+        }
+        catch (Exception ex)
+        {
+            if (ex.Message.Contains("room not exist", StringComparison.OrdinalIgnoreCase))
+            {
+                Log.Warning("DismissRoomByStrRoomIdAsync: Room not exist. Request: {@request}", request);
+                return;
+            }
+            throw;
+        }
     }
 
     public async Task DismissRoomByStrRoomIdAsync(DismissRoomByStrRoomIdRequest request, CancellationToken cancellationToken)
     {
         var client = CreateClient();
         
-        Log.Information("DismissRoomByStrRoomIdAsync request: {@request}", request);
-        
-        var response = await client.DismissRoomByStrRoomId(request).ConfigureAwait(false);
-        
-        Log.Information("DismissRoomByStrRoomIdAsync response: {@response}", response);
+        try
+        {
+            Log.Information("DismissRoomByStrRoomIdRequest request: {@request}", request);
+            
+            var response = await client.DismissRoomByStrRoomId(request).ConfigureAwait(false);
+            Log.Information("DismissRoomByStrRoomIdAsync response: {@response}", response);
+        }
+        catch (Exception ex)
+        {
+            if (ex.Message.Contains("room not exist", StringComparison.OrdinalIgnoreCase))
+            {
+                Log.Warning("DismissRoomByStrRoomIdAsync: Room not exist. Request: {@request}", request);
+                return;
+            }
+            
+            throw;
+        }
     }
 
     public string GetUserSig(string userId)
