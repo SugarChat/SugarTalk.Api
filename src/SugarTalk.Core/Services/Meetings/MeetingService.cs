@@ -708,6 +708,12 @@ namespace SugarTalk.Core.Services.Meetings
                 RoomId = ulong.TryParse(meeting.MeetingNumber, out var meetingNumber) ? meetingNumber : null
             }, cancellationToken).ConfigureAwait(false);
             
+            await _tencentClient.DismissRoomByStrRoomIdAsync(new DismissRoomByStrRoomIdRequest
+            {
+                SdkAppId =  ulong.TryParse(_tencentCloudSetting.AppId, out var appIdStr) ? appIdStr : null,
+                RoomId = meeting.MeetingNumber
+            }, cancellationToken).ConfigureAwait(false);
+            
             return new MeetingEndedEvent
             {
                 MeetingNumber = meeting.MeetingNumber,

@@ -26,6 +26,8 @@ public interface ITencentClient : IScopedDependency
     Task<UpdateCloudRecordingResponse> ModifyCloudRecordingAsync(ModifyCloudRecordingRequest request, CancellationToken cancellationToken);
 
     Task DisbandRoomAsync(DismissRoomRequest request, CancellationToken cancellationToken);
+    
+    Task DismissRoomByStrRoomIdAsync(DismissRoomByStrRoomIdRequest request, CancellationToken cancellationToken);
 }
 
 public class TencentClient : ITencentClient
@@ -126,6 +128,17 @@ public class TencentClient : ITencentClient
         var response = await client.DismissRoom(request).ConfigureAwait(false);
         
         Log.Information("DisbandRoomAsync response: {@response}", response);
+    }
+
+    public async Task DismissRoomByStrRoomIdAsync(DismissRoomByStrRoomIdRequest request, CancellationToken cancellationToken)
+    {
+        var client = CreateClient();
+        
+        Log.Information("DismissRoomByStrRoomIdAsync request: {@request}", request);
+        
+        var response = await client.DismissRoomByStrRoomId(request).ConfigureAwait(false);
+        
+        Log.Information("DismissRoomByStrRoomIdAsync response: {@response}", response);
     }
 
     public string GetUserSig(string userId)
