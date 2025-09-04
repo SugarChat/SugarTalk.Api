@@ -59,7 +59,6 @@ public class TencentClient : ITencentClient
         request.UserSig = GetUserSig(request.UserId);
         request.RecordParams ??= new RecordParams();
         request.RecordParams.MaxIdleTime = _tencentCloudSetting.RecordingMaxIdleTime;
-        request.RoomIdType = 1;
         request.StorageParams = new StorageParams
         {
             CloudStorage = new CloudStorage
