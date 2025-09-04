@@ -257,7 +257,6 @@ public partial class MeetingDataProvider
         if (meetingRecord == null) return;
 
         meetingRecord.UrlStatus = urlStatus;
-        meetingRecord.EndedAt = DateTimeOffset.Now;
 
         await _unitOfWork.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
     }
