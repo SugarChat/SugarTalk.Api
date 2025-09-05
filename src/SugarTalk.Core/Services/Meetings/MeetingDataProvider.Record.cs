@@ -90,66 +90,67 @@ public partial class MeetingDataProvider
     public async Task<(int count, List<MeetingRecordDto> items)> GetMeetingRecordsByUserIdAsync(int? currentUserId, GetCurrentUserMeetingRecordRequest request, CancellationToken cancellationToken)
     {
         if (currentUserId == null)
-        {
             return (0, new List<MeetingRecordDto>());
+
+        var baseQuery =
+            from session in _repository.QueryNoTracking<MeetingUserSession>()
+            join meeting in _repository.QueryNoTracking<Meeting>()
+                on session.MeetingId equals meeting.Id
+            join user in _repository.QueryNoTracking<UserAccount>()
+                on meeting.CreatedBy equals user.Id
+            join record in _repository.QueryNoTracking<MeetingRecord>()
+                on new { session.MeetingId, session.MeetingSubId }
+                equals new { record.MeetingId, record.MeetingSubId }
+            where session.UserId == currentUserId
+                  && !record.IsDeleted
+            select new { meeting, user, record };
+        
+        if (!string.IsNullOrEmpty(request.Keyword))
+        {
+            baseQuery = baseQuery.Where(x =>
+                x.meeting.Title.Contains(request.Keyword) ||
+                x.meeting.MeetingNumber.Contains(request.Keyword) ||
+                x.user.UserName.Contains(request.Keyword));
         }
 
-        var query = _repository.QueryNoTracking<MeetingUserSession>()
-            .Where(x => x.UserId == currentUserId)
-            .Join(
-                _repository.QueryNoTracking<Meeting>(),
-                session => session.MeetingId,
-                Meeting => Meeting.Id,
-                (session, Meeting) => new { session, Meeting }
-            )
-            .Join(
-                _repository.QueryNoTracking<UserAccount>(),
-                temp => temp.Meeting.CreatedBy,
-                User => User.Id,
-                (temp, User) => new { temp.session, temp.Meeting, User }
-            )
-            .Join(
-                _repository.QueryNoTracking<MeetingRecord>(),
-                temp => new { temp.session.MeetingId, temp.session.MeetingSubId },
-                Record => new { Record.MeetingId, Record.MeetingSubId },
-                (temp, Record) => new { temp.Meeting, temp.session, temp.User, Record }
-            )
-            .Where(x => !x.Record.IsDeleted);
+        if (!string.IsNullOrEmpty(request.MeetingTitle))
+            baseQuery = baseQuery.Where(x => x.meeting.Title.Contains(request.MeetingTitle));
 
-        query = string.IsNullOrEmpty(request.Keyword) ? query : query.Where(x =>
-                x.Meeting.Title.Contains(request.Keyword) ||
-                x.Meeting.MeetingNumber.Contains(request.Keyword) ||
-                x.User.UserName.Contains(request.Keyword));
+        if (!string.IsNullOrEmpty(request.MeetingNumber))
+            baseQuery = baseQuery.Where(x => x.meeting.MeetingNumber.Contains(request.MeetingNumber));
 
-        query = string.IsNullOrEmpty(request.MeetingTitle) ? query : query.Where(x => x.Meeting.Title.Contains(request.MeetingTitle));
-        query = string.IsNullOrEmpty(request.MeetingNumber) ? query : query.Where(x => x.Meeting.MeetingNumber.Contains(request.MeetingNumber));
-        query = string.IsNullOrEmpty(request.Creator) ? query : query.Where(x => x.User.UserName.Contains(request.Creator));
-
-        var countQuery = query.GroupBy(x => x.Record.Id).Select(g => g.First());
-        var total = await countQuery.CountAsync(cancellationToken).ConfigureAwait(false);
+        if (!string.IsNullOrEmpty(request.Creator))
+            baseQuery = baseQuery.Where(x => x.user.UserName.Contains(request.Creator));
         
-        var joinResult = await query
-            .OrderByDescending(x => x.Record.CreatedDate)
-            .Skip((request.PageSetting.Page - 1) * request.PageSetting.PageSize)
-            .Take(request.PageSetting.PageSize)
+        var total = await baseQuery
+            .Select(x => x.record.Id)
+            .Distinct()
+            .CountAsync(cancellationToken);
+        
+        var items = await baseQuery
+            .OrderByDescending(x => x.record.CreatedDate)
             .Select(x => new MeetingRecordDto
             {
-                MeetingRecordId = x.Record.Id,
-                MeetingId = x.Meeting.Id,
-                MeetingNumber = x.Meeting.MeetingNumber,
-                RecordNumber = x.Record.RecordNumber,
-                Title = x.Meeting.Title,
-                StartDate = x.Record.StartedAt.HasValue ? x.Record.StartedAt.Value.ToUnixTimeSeconds() : 0,
-                EndDate = x.Record.EndedAt.HasValue ? x.Record.EndedAt.Value.ToUnixTimeSeconds() : 0,
-                Timezone = x.Meeting.TimeZone,
-                MeetingCreator = x.User.UserName,
-                Duration = CalculateMeetingDuration(x.Record.StartedAt.HasValue ? x.Record.StartedAt.Value.ToUnixTimeSeconds() : 0, x.Record.EndedAt.HasValue ? x.Record.EndedAt.Value.ToUnixTimeSeconds() : 0),
-                Url = x.Record.Url,
-                UrlStatus = x.Record.UrlStatus
-            }).ToListAsync(cancellationToken);
-        
-        var items = joinResult.GroupBy(x => x.MeetingRecordId).Select(g => g.First()).ToList();
-        
+                MeetingRecordId = x.record.Id,
+                MeetingId = x.meeting.Id,
+                MeetingNumber = x.meeting.MeetingNumber,
+                RecordNumber = x.record.RecordNumber,
+                Title = x.meeting.Title,
+                StartDate = x.record.StartedAt.HasValue ? x.record.StartedAt.Value.ToUnixTimeSeconds() : 0,
+                EndDate = x.record.EndedAt.HasValue ? x.record.EndedAt.Value.ToUnixTimeSeconds() : 0,
+                Timezone = x.meeting.TimeZone,
+                MeetingCreator = x.user.UserName,
+                Duration = CalculateMeetingDuration(
+                    x.record.StartedAt.HasValue ? x.record.StartedAt.Value.ToUnixTimeSeconds() : 0,
+                    x.record.EndedAt.HasValue ? x.record.EndedAt.Value.ToUnixTimeSeconds() : 0),
+                Url = x.record.Url,
+                UrlStatus = x.record.UrlStatus
+            })
+            .Distinct()
+            .Skip((request.PageSetting.Page - 1) * request.PageSetting.PageSize)
+            .Take(request.PageSetting.PageSize)
+            .ToListAsync(cancellationToken);
+
         return (total, items);
     }
 
