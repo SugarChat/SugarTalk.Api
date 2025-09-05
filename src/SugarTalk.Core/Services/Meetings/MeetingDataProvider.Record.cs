@@ -89,64 +89,68 @@ public partial class MeetingDataProvider
 
     public async Task<(int count, List<MeetingRecordDto> items)> GetMeetingRecordsByUserIdAsync(int? currentUserId, GetCurrentUserMeetingRecordRequest request, CancellationToken cancellationToken)
     {
-        if (currentUserId == null)
-        {
-            return (0, new List<MeetingRecordDto>());
-        }
+        if (currentUserId == null) return (0, new List<MeetingRecordDto>());
 
-        var query = _repository.QueryNoTracking<MeetingUserSession>()
+        var originalQuery = await _repository.QueryNoTracking<MeetingUserSession>()
             .Where(x => x.UserId == currentUserId)
-            .Join(
-                _repository.QueryNoTracking<Meeting>(),
-                session => session.MeetingId,
-                Meeting => Meeting.Id,
-                (session, Meeting) => new { session, Meeting }
-            )
-            .Join(
-                _repository.QueryNoTracking<UserAccount>(),
-                temp => temp.Meeting.CreatedBy,
-                User => User.Id,
-                (temp, User) => new { temp.session, temp.Meeting, User }
-            )
-            .Join(
-                _repository.QueryNoTracking<MeetingRecord>(),
-                temp => new { temp.session.MeetingId, temp.session.MeetingSubId },
-                Record => new { Record.MeetingId, Record.MeetingSubId },
-                (temp, Record) => new { temp.Meeting, temp.session, temp.User, Record }
-            )
-            .Where(x => !x.Record.IsDeleted);
+            .Join(_repository.QueryNoTracking<MeetingRecord>().Where(x => !x.IsDeleted),
+                session => new { session.MeetingId, session.MeetingSubId },
+                record => new { record.MeetingId, record.MeetingSubId },
+                (session, record) => new { session, record }).ToListAsync(cancellationToken).ConfigureAwait(false);
 
-        query = string.IsNullOrEmpty(request.Keyword) ? query : query.Where(x =>
-                x.Meeting.Title.Contains(request.Keyword) ||
-                x.Meeting.MeetingNumber.Contains(request.Keyword) ||
-                x.User.UserName.Contains(request.Keyword));
+        var meetingIds = originalQuery.Select(x => x.session.MeetingId).ToList();
 
-        query = string.IsNullOrEmpty(request.MeetingTitle) ? query : query.Where(x => x.Meeting.Title.Contains(request.MeetingTitle));
-        query = string.IsNullOrEmpty(request.MeetingNumber) ? query : query.Where(x => x.Meeting.MeetingNumber.Contains(request.MeetingNumber));
-        query = string.IsNullOrEmpty(request.Creator) ? query : query.Where(x => x.User.UserName.Contains(request.Creator));
+        var query = from meeting in _repository.QueryNoTracking<Meeting>().Where(x => meetingIds.Contains(x.Id))
+            join user in _repository.QueryNoTracking<UserAccount>() on meeting.CreatedBy equals user.Id
+            select new { meeting, user};
 
-        var countQuery = query.GroupBy(x => x.Record.Id).Select(g => g.First());
-        var total = await countQuery.CountAsync(cancellationToken).ConfigureAwait(false);
+        if (!string.IsNullOrEmpty(request.Keyword))
+            query = query.Where(x => x.meeting.Title.Contains(request.Keyword) || 
+                                     x.meeting.MeetingNumber.Contains(request.Keyword) ||
+                                     x.user.UserName.Contains(request.Keyword));
+
+        if (!string.IsNullOrEmpty(request.MeetingTitle))
+            query = query.Where(x => x.meeting.Title.Contains(request.MeetingTitle));
         
-        var joinResult = await query
-            .OrderByDescending(x => x.Record.CreatedDate)
+        if (!string.IsNullOrEmpty(request.MeetingNumber))
+            query = query.Where(x => x.meeting.MeetingNumber.Contains(request.MeetingNumber));
+
+        if (!string.IsNullOrEmpty(request.Creator))
+            query = query.Where(x => x.user.UserName.Contains(request.Creator));
+
+        var meetings = await query.ToListAsync(cancellationToken).ConfigureAwait(false);
+        
+        var targetQuery = meetings.Select(x =>
+        {
+            var record = originalQuery.FirstOrDefault(s => s.record.MeetingId == x.meeting.Id);
+            if (record == null) return null;
+
+            return new { x.meeting, x.user, record.record, record.session};
+        }).ToList();
+        
+        var countQuery = targetQuery.GroupBy(x => x.record.Id).Select(g => g.First());
+        
+        var total = countQuery.Count();
+        
+        var joinResult = targetQuery
+            .OrderByDescending(x => x.record.CreatedDate)
             .Skip((request.PageSetting.Page - 1) * request.PageSetting.PageSize)
             .Take(request.PageSetting.PageSize)
             .Select(x => new MeetingRecordDto
             {
-                MeetingRecordId = x.Record.Id,
-                MeetingId = x.Meeting.Id,
-                MeetingNumber = x.Meeting.MeetingNumber,
-                RecordNumber = x.Record.RecordNumber,
-                Title = x.Meeting.Title,
-                StartDate = x.Record.StartedAt.HasValue ? x.Record.StartedAt.Value.ToUnixTimeSeconds() : 0,
-                EndDate = x.Record.EndedAt.HasValue ? x.Record.EndedAt.Value.ToUnixTimeSeconds() : 0,
-                Timezone = x.Meeting.TimeZone,
-                MeetingCreator = x.User.UserName,
-                Duration = CalculateMeetingDuration(x.Record.StartedAt.HasValue ? x.Record.StartedAt.Value.ToUnixTimeSeconds() : 0, x.Record.EndedAt.HasValue ? x.Record.EndedAt.Value.ToUnixTimeSeconds() : 0),
-                Url = x.Record.Url,
-                UrlStatus = x.Record.UrlStatus
-            }).ToListAsync(cancellationToken);
+                MeetingRecordId = x.record.Id,
+                MeetingId = x.meeting.Id,
+                MeetingNumber = x.meeting.MeetingNumber,
+                RecordNumber = x.record.RecordNumber,
+                Title = x.meeting.Title,
+                StartDate = x.record.StartedAt.HasValue ? x.record.StartedAt.Value.ToUnixTimeSeconds() : 0,
+                EndDate = x.record.EndedAt.HasValue ? x.record.EndedAt.Value.ToUnixTimeSeconds() : 0,
+                Timezone = x.meeting.TimeZone,
+                MeetingCreator = x.user.UserName,
+                Duration = CalculateMeetingDuration(x.record.StartedAt.HasValue ? x.record.StartedAt.Value.ToUnixTimeSeconds() : 0, x.record.EndedAt.HasValue ? x.record.EndedAt.Value.ToUnixTimeSeconds() : 0),
+                Url = x.record.Url,
+                UrlStatus = x.record.UrlStatus
+            }).ToList();
         
         var items = joinResult.GroupBy(x => x.MeetingRecordId).Select(g => g.First()).ToList();
         
