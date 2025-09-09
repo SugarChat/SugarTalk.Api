@@ -13,7 +13,9 @@ using TencentCloud.Common;
 using TencentCloud.Common.Profile;
 using TencentCloud.Trtc.V20190722;
 using TencentCloud.Trtc.V20190722.Models;
+using MixTranscodeParams = TencentCloud.Trtc.V20190722.Models.MixTranscodeParams;
 using RecordParams = TencentCloud.Trtc.V20190722.Models.RecordParams;
+using VideoParams = TencentCloud.Trtc.V20190722.Models.VideoParams;
 
 namespace SugarTalk.Core.Services.Http.Clients;
 
@@ -72,6 +74,18 @@ public class TencentClient : ITencentClient
                 AccessKey = _tencentCloudSetting.SecretId,
                 SecretKey = _tencentCloudSetting.SecretKey,
                 FileNamePrefix = new string[]{ _tencentCloudSetting.CosFileNamePrefix }
+            }
+        };
+
+        request.MixTranscodeParams = new MixTranscodeParams()
+        {
+            VideoParams = new VideoParams()
+            {
+                Width = 1920,
+                Height = 1080,
+                Fps = 15,
+                BitRate = 500000,
+                Gop = 10
             }
         };
         
