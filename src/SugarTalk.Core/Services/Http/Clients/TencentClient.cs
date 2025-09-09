@@ -149,7 +149,7 @@ public class TencentClient : ITencentClient
                     Width = 1280,
                     Height = 720,
                     Fps = 30,
-                    BitRate = 3000000,
+                    BitRate = 1500000,
                     Gop = 10
                 };
 
