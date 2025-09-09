@@ -236,6 +236,7 @@ public class TencentService : ITencentService
         if (record == null) return;
         
         var url = "";
+        var localhostUrl = "";
         var endTimeStamp = payload.FileMessage.Max(x => x.EndTimeStamp);
         
         var speakDetails = await _meetingDataProvider.GetMeetingSpeakDetailsAsync(
@@ -261,9 +262,11 @@ public class TencentService : ITencentService
         
         if (!string.IsNullOrEmpty(url))
         {
+            localhostUrl = await DownloadWithRetryAsync(url, cancellationToken: cancellationToken).ConfigureAwait(false);
+            
             record.Url = url;
             record.UrlStatus = MeetingRecordUrlStatus.Completed;
-            record.EndedAt = DateTimeOffset.FromUnixTimeMilliseconds(endTimeStamp);
+            record.EndedAt = await ProcessMeetingRecordEndedAt(record.StartedAt, localhostUrl, cancellationToken).ConfigureAwait(false);
         }
         
         Log.Information("Add url for record: meetingRecord: {@record}", record);
@@ -279,10 +282,17 @@ public class TencentService : ITencentService
             
             await MarkSpeakTranscriptAsSpecifiedStatusAsync(meetingDetails, FileTranscriptionStatus.InProcess, cancellationToken).ConfigureAwait(false);
             
-            var localhostUrl = await DownloadWithRetryAsync(record.Url, cancellationToken: cancellationToken).ConfigureAwait(false);
-            
             await CreateSpeechMaticsJobAsync(record, meetingDetails, localhostUrl, cancellationToken).ConfigureAwait(false);
         }
+    }
+    
+    private async Task<DateTimeOffset?> ProcessMeetingRecordEndedAt(DateTimeOffset? startedAt, string localhostUrl, CancellationToken cancellationToken)
+    {
+        Log.Information("Process meeting record ended time: {@startedAt} {@localhostUrl}", startedAt, localhostUrl);
+        
+        var duration = await _ffmpegService.GetAudioDurationAsync(localhostUrl, cancellationToken).ConfigureAwait(false);
+        
+        return DateTimeOffset.FromUnixTimeSeconds((startedAt?.ToUnixTimeSeconds() ?? 0) + (long)TimeSpan.Parse(duration).TotalSeconds);
     }
 
     private async Task<string> CombineMeetingRecordVideoAsync(Guid meetingRecordId, List<string> videoUrls, CancellationToken cancellationToken)
