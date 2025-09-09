@@ -76,13 +76,6 @@ public class TencentClient : ITencentClient
                 FileNamePrefix = new string[]{ _tencentCloudSetting.CosFileNamePrefix }
             }
         };
-
-
-        request.MixTranscodeParams = new MixTranscodeParams()
-        {
-            VideoParams = GetVideoParams(_tencentCloudSetting.RecordingResolution)
-
-        };
         
         Log.Information("CreateCloudRecordingAsync request: {@request}", request);
         
@@ -127,52 +120,6 @@ public class TencentClient : ITencentClient
         {
             Data = _mapper.Map<UpdateCloudRecordingResponseResult>(response)
         };
-    }
-    
-    public VideoParams GetVideoParams(ScreenRecordingResolution resolutionLevel)
-    {
-        switch (resolutionLevel)
-        {
-            case ScreenRecordingResolution.High:
-                return new VideoParams()
-                {
-                    Width = 1920,
-                    Height = 1080,
-                    Fps = 60,
-                    BitRate = 3000000,
-                    Gop = 10
-                };
-
-            case ScreenRecordingResolution.Medium:
-                return new VideoParams()
-                {
-                    Width = 1280,
-                    Height = 720,
-                    Fps = 30,
-                    BitRate = 1500000,
-                    Gop = 10
-                };
-
-            case ScreenRecordingResolution.Low:
-                return new VideoParams()
-                {
-                    Width = 640,
-                    Height = 360,
-                    Fps = 15,
-                    BitRate = 500000,
-                    Gop = 10
-                };
-
-            default:
-                return new VideoParams()
-                {
-                    Width = 640,
-                    Height = 360,
-                    Fps = 15,
-                    BitRate = 500000,
-                    Gop = 10
-                };
-        }
     }
 
     public async Task DisbandRoomAsync(DismissRoomRequest request, CancellationToken cancellationToken)
