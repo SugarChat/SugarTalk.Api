@@ -751,17 +751,32 @@ public partial class MeetingService
             
         Log.Information("Meeting participant dict: {@participantDict}", participantDict);
             
-        var staffs = await _smartiesClient.GetStaffsRequestAsync(new GetStaffsRequestDto
-        {
-            Ids = participantDict.Keys.ToList()
-        }, cancellationToken).ConfigureAwait(false);
+        const int batchSize = 50;
+        var staffResults = new List<RmStaffDto>();
 
-        Log.Information("Meeting staffs: {@staffs}", staffs);
+        var staffIds = participantDict.Keys.ToList();
+
+        for (var i = 0; i < staffIds.Count; i += batchSize)
+        {
+            var batch = staffIds.Skip(i).Take(batchSize).ToList();
+
+            var staffs = await _smartiesClient.GetStaffsRequestAsync(
+                new GetStaffsRequestDto
+                {
+                    Ids = batch
+                },
+                cancellationToken
+            ).ConfigureAwait(false);
+
+            if (staffs != null)
+                staffResults.AddRange(staffs.Data.Staffs);
+        }
+
+        Log.Information("Meeting staffs: {@staffs}", staffResults);
         
         foreach (var getMeetingData in meetingSituationDay)
         {
-            
-            foreach (var staff in staffs.Data.Staffs)
+            foreach (var staff in staffResults)
             {
                 if (!participantDict.TryGetValue(staff.Id, out var participant))
                     continue;
