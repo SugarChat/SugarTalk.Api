@@ -71,6 +71,8 @@ public class MeetingBaseDto
 
     public long EndDate { get; set; }
     
+    public DateTimeOffset? UtilDate { get; set; }
+    
     public long CreatorJoinTime { get; set; }
     
     public string TimeZone { get; set; }
@@ -84,6 +86,14 @@ public class MeetingBaseDto
     public string SecurityCode { get; set;}
     
     public MeetingRepeatType RepeatType { get; set; }
+    
+    public MeetingCustomizeRepeatType? CustomizeRepeatType { get; set; }
+
+    public int? RepeatInterval { get; set; }
+    
+    public List<DayOfWeek?> RepeatWeekdays { get; set; }
+
+    public List<int?> RepeatMonthDays { get; set; }
     
     public MeetingStreamMode MeetingStreamMode { get; set; }
     
@@ -135,6 +145,14 @@ public class AddOrUpdateMeetingDto
     public DateTimeOffset? UtilDate { get; set; }
     
     public MeetingRepeatType RepeatType { get; set; }
+
+    public MeetingCustomizeRepeatType? CustomizeRepeatType { get; set; }
+
+    public int? RepeatInterval { get; set; }
+    
+    public List<DayOfWeek?> RepeatWeekdays { get; set; }
+
+    public List<int?> RepeatMonthDays { get; set; }
 
     public MeetingAppointmentType AppointmentType { get; set; }
     

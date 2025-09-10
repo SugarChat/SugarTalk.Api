@@ -63,7 +63,7 @@ public class SmartiesService : ISmartiesService
         
         Log.Information("SpeechMatics originalSpeakDetails: {@originalSpeakDetails}", originalSpeakDetails);
         
-        var meetingRecord = (await _meetingDataProvider.GetMeetingRecordsAsync(speechMaticsRecord.MeetingRecordId, cancellationToken).ConfigureAwait(false)).FirstOrDefault();
+        var meetingRecord = (await _meetingDataProvider.GetMeetingRecordsAsync(speechMaticsRecord.MeetingRecordId, cancellationToken: cancellationToken).ConfigureAwait(false)).FirstOrDefault();
 
         Log.Information("SpeechMatics meetingRecord: {@meetingRecord}", meetingRecord);
         
@@ -130,7 +130,10 @@ public class SmartiesService : ISmartiesService
         
         try
         {
-            var recordUrl = await _awsS3Service.GeneratePresignedUrlAsync(meetingRecord.Url, 30).ConfigureAwait(false);
+            var recordUrl = meetingRecord.Url;
+            
+            if (!recordUrl.StartsWith("http"))
+                recordUrl = await _awsS3Service.GeneratePresignedUrlAsync(meetingRecord.Url, 30).ConfigureAwait(false);
         
             localhostUrl = await _meetingService.DownloadWithRetryAsync(recordUrl, cancellationToken: cancellationToken).ConfigureAwait(false);
 

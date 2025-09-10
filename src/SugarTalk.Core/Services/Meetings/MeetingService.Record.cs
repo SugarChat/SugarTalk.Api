@@ -727,6 +727,22 @@ public partial class MeetingService
         
         var meetingSituationDay = await _meetingDataProvider.GetMeetingSituationDaysAsync(utcStart, utcEnd, cancellationToken).ConfigureAwait(false);
 
+        var userIds = meetingSituationDay.Select(x => x.FundationId).ToList();
+        
+        Log.Information("Get meeting data user ids: {@userIds}", userIds);
+        
+        var allStaffs = await GetStaffsAsync(userIds, cancellationToken).ConfigureAwait(false);
+
+        meetingSituationDay = meetingSituationDay.Select(x =>
+        {
+            var staff = allStaffs.FirstOrDefault(s => s.UserId == Guid.Parse(x.UserId));
+
+            if (staff != null)
+                x.FundationId = staff.Id.ToString();
+
+            return x;
+        }).ToList();
+        
         var meetingIds = meetingSituationDay.Select(x => x.MeetingId).ToList();
         
         var meetingParticipants  = await _meetingDataProvider.GetMeetingParticipantAsync(meetingIds, cancellationToken: cancellationToken).ConfigureAwait(false);
@@ -787,9 +803,68 @@ public partial class MeetingService
         var utcStart = startPst.UtcDateTime;
         var utcEnd = endPst.UtcDateTime;
         
+        var users = await _meetingDataProvider.GetMeetingDataUserAsync(utcStart, utcEnd, cancellationToken).ConfigureAwait(false);
+        
+        var userIds = users.Select(x => x.UserId).ToList();
+
+        var staffs = await GetStaffsAsync(userIds, cancellationToken).ConfigureAwait(false);
+
+        users = users.Select(x =>
+        {
+            if (string.IsNullOrEmpty(x.UserId)) return x;
+            
+            var staff = staffs.FirstOrDefault(s => s.UserId == Guid.Parse(x.UserId));
+
+            if (staff != null)
+                x.FundationId = staff.Id.ToString();
+
+            return x;
+        }).ToList();
+        
         return new GetMeetingDataUserResponse
         {
-            Data = await _meetingDataProvider.GetMeetingDataUserAsync(utcStart, utcEnd, cancellationToken).ConfigureAwait(false)
+            Data = users
         };
+    }
+
+    private async Task<List<RmStaffDto>> GetStaffsAsync(List<string> userIds, CancellationToken cancellationToken)
+    {
+        var batchSize = 30;
+        var allResults = new List<RmStaffDto>();
+        
+        var cleanedUserIds = userIds.Where(x => !string.IsNullOrWhiteSpace(x)).Select(Guid.Parse).ToList();
+
+        using var semaphore = new SemaphoreSlim(4);
+        var tasks = new List<Task>();
+
+        foreach (var batch in cleanedUserIds.Chunk(batchSize))
+        {
+            await semaphore.WaitAsync(cancellationToken);
+
+            tasks.Add(Task.Run(async () =>
+            {
+                try
+                {
+                    var result = await _smartiesClient.GetStaffsRequestAsync(
+                        new GetStaffsRequestDto { UserIds = batch.ToList() }, cancellationToken).ConfigureAwait(false);
+
+                    if (result?.Data?.Staffs != null)
+                        lock (allResults)
+                            allResults.AddRange(result.Data.Staffs);
+                }
+                catch (Exception ex)
+                {
+                    Log.Information("Get meeting data staffs error: {@ex}", ex);
+                }
+                finally
+                {
+                    semaphore.Release();
+                }
+            }));
+        }
+
+        await Task.WhenAll(tasks);
+
+        return allResults;
     }
 }

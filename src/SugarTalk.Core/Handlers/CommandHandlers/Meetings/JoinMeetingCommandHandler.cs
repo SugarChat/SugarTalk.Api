@@ -29,8 +29,8 @@ namespace SugarTalk.Core.Handlers.CommandHandlers.Meetings
                 {
                     UserId = @event.UserId,
                     Meeting = @event.Meeting,
-                    UserName = @event.UserName,
-                    IsEntryWaitingRoom = @event.IsEntryWaitingRoom,
+                    TaskId = @event.TaskId,
+                    RecordingResolution = @event.RecordingResolution,
                     MeetingUserSetting = @event.MeetingUserSetting
                 }
             };
