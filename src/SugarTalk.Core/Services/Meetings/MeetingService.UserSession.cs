@@ -3,11 +3,14 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using Serilog;
+using SugarTalk.Core.Domain.Account;
 using SugarTalk.Core.Domain.Meeting;
 using SugarTalk.Core.Services.Exceptions;
 using SugarTalk.Messages.Dto.Meetings;
 using SugarTalk.Messages.Events.Meeting;
 using SugarTalk.Messages.Commands.Meetings;
+using SugarTalk.Messages.Dto.Smarties;
 using SugarTalk.Messages.Requests.Meetings;
 using SugarTalk.Messages.Enums.Meeting;
 
@@ -44,6 +47,8 @@ public partial interface IMeetingService
 
     Task<CheckRenamePermissionResponse> CheckRenamePermissionAsync(CheckRenamePermissionCommand command,
         CancellationToken cancellationToken);
+
+    Task<UpdateMeetingUserSessionTypeResponse> UpdateMeetingUserSessionTypAsync(UpdateMeetingUserSessionTypeCommand command, CancellationToken cancellationToken);
 }
 
 public partial class MeetingService
@@ -130,6 +135,10 @@ public partial class MeetingService
         if (user is null) throw new UnauthorizedAccessException();
         
         var userSession = await _meetingDataProvider.GetMeetingUserSessionByUserIdAsync(request.UserId, cancellationToken).ConfigureAwait(false);
+
+        userSession.IsEntryMeeting = true;
+        userSession.OnlineType = MeetingUserSessionOnlineType.Online;
+        await _meetingDataProvider.UpdateMeetingUserSessionAsync(new List<MeetingUserSession>{ _mapper.Map<MeetingUserSession>(userSession) }, cancellationToken).ConfigureAwait(false);
         
         var userSessionDto = _mapper.Map<MeetingUserSessionDto>(userSession);
         userSessionDto.UserName = user.UserName;
@@ -216,14 +225,52 @@ public partial class MeetingService
     {
         var meetingUserSessions = await _meetingDataProvider.GetAllMeetingUserSessionsAsync(request.MeetingId, cancellationToken).ConfigureAwait(false);
         
+        var staffs = await GetMeetingParticipantsAsync(request.MeetingId, cancellationToken).ConfigureAwait(false);
+        
+        var noEntryMeetingUsers = new List<RmStaffDto>();
+        
+        if (staffs.Any())
+            noEntryMeetingUsers = staffs.Where(x => !meetingUserSessions.Select(s => s.UserName).ToList().Contains(x.UserName)).ToList();    
+        
+        var userAccount = new List<UserAccount>();
+        
+        if (noEntryMeetingUsers.Any())
+             userAccount = await _accountDataProvider.GetUserAccountsAsync(userNames: noEntryMeetingUsers.Select(x => x.UserName).ToList(), cancellationToken: cancellationToken).ConfigureAwait(false);
+            
         return new GetAllMeetingUserSessionsForMeetingIdResponse
         {
             Data = new GetAllMeetingUserSessionsForMeetingIdDto
             {
-                MeetingUserSessions = _mapper.Map<List<MeetingUserSessionDto>>(meetingUserSessions),
+                MeetingUserSessions = _mapper.Map<List<MeetingUserSessionDto>>(meetingUserSessions.Where(x => x.OnlineType == MeetingUserSessionOnlineType.Online).ToList()),
+                InMeetingCount = meetingUserSessions.Count(x => x.OnlineType == MeetingUserSessionOnlineType.Online),
+                WaitingRoomUserSessions = _mapper.Map<List<MeetingUserSessionDto>>(meetingUserSessions.Where(x => x.OnlineType == MeetingUserSessionOnlineType.Waiting).ToList()),
+                WaitingRoomCount = meetingUserSessions.Count(x => x.OnlineType == MeetingUserSessionOnlineType.Waiting),
+                NoJoinMeetingUsers = _mapper.Map<List<NoJoinMeetingUserSessionsDto>>(userAccount),
+                NoEntryMeetingCount = userAccount.Count,
                 Count = meetingUserSessions.Count(x => x.IsMeetingMaster || x.CoHost)
             }
         };
+    }
+
+    private async Task<List<RmStaffDto>> GetMeetingParticipantsAsync(Guid meetingId, CancellationToken cancellationToken)
+    {
+        var meetingParticipants  = await _meetingDataProvider.GetMeetingParticipantAsync(new List<Guid>{ meetingId }, cancellationToken: cancellationToken).ConfigureAwait(false);
+            
+        var participantDict = meetingParticipants.ToDictionary(x => x.StaffId);
+            
+        Log.Information("Get meeting participant dict: {@participantDict}", participantDict);
+
+        if (!participantDict.Any())
+            return new List<RmStaffDto>();
+
+        var staffs = await _smartiesClient.GetStaffsRequestAsync(new GetStaffsRequestDto
+        {
+            Ids = participantDict.Keys.ToList()
+        }, cancellationToken).ConfigureAwait(false);
+
+        Log.Information("Meeting staffs: {@staffs}", staffs);
+        
+        return staffs.Data.Staffs;
     }
 
     public async Task<UpdateMeetingUserSessionRoleResponse> UpdateMeetingUserSessionRoleAsync(
@@ -255,7 +302,7 @@ public partial class MeetingService
 
     private async Task UpdateMeetingUserSessionCoHostAsync(Guid meetingId, int creatorId, int userId, bool transferMaster, CancellationToken cancellationToken)
     {
-        var meetUserSession = await _meetingDataProvider.GetMeetingUserSessionByMeetingIdAsync(meetingId, null, userId, MeetingUserSessionOnlineType.Online, cancellationToken: cancellationToken).ConfigureAwait(false);
+        var meetUserSession = await _meetingDataProvider.GetMeetingUserSessionByMeetingIdAsync(meetingId, null, userId, new List<MeetingUserSessionOnlineType>{ MeetingUserSessionOnlineType.Online }, cancellationToken: cancellationToken).ConfigureAwait(false);
         
         meetUserSession.CoHost = transferMaster && meetUserSession.UserId == creatorId;
             
@@ -290,6 +337,48 @@ public partial class MeetingService
             {
                 CanRename = hasPermission
             }
+        };
+    }
+
+    public async Task<UpdateMeetingUserSessionTypeResponse> UpdateMeetingUserSessionTypAsync(UpdateMeetingUserSessionTypeCommand command, CancellationToken cancellationToken)
+    {
+        var meetingUserSessions = await _meetingDataProvider.GetMeetingUserSessionsAsync(ids: command.Ids, cancellationToken: cancellationToken);
+
+        if (command.OnlineType.HasValue)
+        {
+            meetingUserSessions.ForEach(x =>
+            {
+                if(command.OnlineType == MeetingUserSessionOnlineType.Online)
+                    x.IsEntryMeeting = true;
+                
+                x.OnlineType = command.OnlineType.Value;
+            });
+
+            if (command.OnlineType == MeetingUserSessionOnlineType.Waiting)
+            {
+                var meeting = await _meetingDataProvider.GetMeetingByIdAsync(meetingUserSessions.First().MeetingId, cancellationToken: cancellationToken).ConfigureAwait(false);
+
+                if (meeting.IsWaitingRoomEnabled == false)
+                {
+                    meeting.IsWaitingRoomEnabled = true;
+                
+                    await _meetingDataProvider.UpdateMeetingAsync(meeting, cancellationToken).ConfigureAwait(false);
+                }
+            }
+        }
+
+        if (command.AllowEntryMeeting.HasValue)
+            meetingUserSessions.ForEach(x =>
+            {
+                x.AllowEntryMeeting = command.AllowEntryMeeting.Value;
+                x.OnlineType = MeetingUserSessionOnlineType.Online;
+            });
+        
+        await _meetingDataProvider.UpdateMeetingUserSessionAsync(meetingUserSessions, cancellationToken).ConfigureAwait(false);
+        
+        return new UpdateMeetingUserSessionTypeResponse
+        {
+            Data = _mapper.Map<List<MeetingUserSessionDto>>(meetingUserSessions)
         };
     }
 }

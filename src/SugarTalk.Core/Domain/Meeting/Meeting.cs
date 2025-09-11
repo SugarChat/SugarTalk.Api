@@ -79,4 +79,7 @@ public class Meeting : IEntity, IHasCreatedFields
     
     [Column("is_locked")]
     public bool IsLocked { get; set; }
+
+    [Column("is_waiting_room_enabled")]
+    public bool IsWaitingRoomEnabled { get; set; }
 }

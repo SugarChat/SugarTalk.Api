@@ -8,9 +8,13 @@ namespace SugarTalk.Messages.Events.Meeting;
 public class MeetingJoinedEvent : IEvent
 {
     public int UserId { get; set; }
+
+    public string UserName { get; set; }
+
+    public bool IsEntryWaitingRoom { get; set; }
     
     public string TaskId { get; set; }
-    
+
     public MeetingDto Meeting { get; set; }
     
     public ScreenRecordingResolution RecordingResolution { get; set; }

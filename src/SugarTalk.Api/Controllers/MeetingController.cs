@@ -343,6 +343,15 @@ public class MeetingController : ControllerBase
 
         return Ok(response);
     }
+    
+    [Route("update/type"), HttpPost]
+    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(UpdateMeetingUserSessionTypeResponse))]
+    public async Task<IActionResult> UpdateMeetingUserSessionTypeAsync([FromBody] UpdateMeetingUserSessionTypeCommand command)
+    {
+        var response = await _mediator.SendAsync<UpdateMeetingUserSessionTypeCommand, UpdateMeetingUserSessionTypeResponse>(command).ConfigureAwait(false);
+        
+        return Ok(response);
+    }
 
     #endregion
     

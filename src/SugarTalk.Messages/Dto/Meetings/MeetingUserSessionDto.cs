@@ -37,4 +37,8 @@ public class MeetingUserSessionDto
     public DateTimeOffset? LastModifiedDateForCoHost { get; set; }
 
     public bool? IsMeetingCreator { get; set; }
+    
+    public bool IsEntryMeeting { get; set; }
+    
+    public bool AllowEntryMeeting { get; set; }
 }

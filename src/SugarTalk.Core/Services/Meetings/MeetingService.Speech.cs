@@ -80,7 +80,7 @@ public partial class MeetingService
         var userIds = meetingSpeeches.Select(x => x.UserId).ToList();
 
         var users = await _accountDataProvider
-            .GetUserAccountsAsync(userIds, cancellationToken).ConfigureAwait(false);
+            .GetUserAccountsAsync(userIds, cancellationToken: cancellationToken).ConfigureAwait(false);
 
         var userIdsFromGuest = users.Where(x => x.Issuer == UserAccountIssuer.Guest).Select(x => x.Id).ToList();
 
@@ -124,7 +124,7 @@ public partial class MeetingService
         var userIds = meetingSpeeches.Select(x => x.UserId).ToList();
 
         var users = await _accountDataProvider
-            .GetUserAccountsAsync(userIds, cancellationToken).ConfigureAwait(false);
+            .GetUserAccountsAsync(userIds, cancellationToken: cancellationToken).ConfigureAwait(false);
 
         var userIdsFromGuest = users.Where(x => x.Issuer == UserAccountIssuer.Guest).Select(x => x.Id).ToList();
 
