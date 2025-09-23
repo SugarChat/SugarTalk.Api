@@ -14,7 +14,7 @@ public class MeetingJoinedEvent : IEvent
     public bool IsEntryWaitingRoom { get; set; }
     
     public string TaskId { get; set; }
-    
+
     public MeetingDto Meeting { get; set; }
     
     public ScreenRecordingResolution RecordingResolution { get; set; }

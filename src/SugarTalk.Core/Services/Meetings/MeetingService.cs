@@ -349,11 +349,6 @@ namespace SugarTalk.Core.Services.Meetings
 
             if (request.IncludeUserSession && meeting.UserSessions.Any())
             {
-                if (meeting.UserSessions.All(x => x.UserId != _currentUser.Id))
-                {
-                    throw new UnauthorizedAccessException();
-                }
-
                 meeting.UserSessions = meeting.UserSessions
                     .Where(x => x.OnlineType == MeetingUserSessionOnlineType.Online).ToList();
             }

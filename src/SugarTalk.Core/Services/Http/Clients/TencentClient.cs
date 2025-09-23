@@ -3,15 +3,14 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using AutoMapper;
-using Newtonsoft.Json;
 using Serilog;
 using SugarTalk.Core.Ioc;
 using SugarTalk.Core.Settings.TencentCloud;
 using SugarTalk.Messages.Commands.Tencent;
 using SugarTalk.Messages.Dto.Tencent;
 using SugarTalk.Messages.Enums.Tencent;
+using SugarTalk.Messages.Requests.Tencent;
 using TencentCloud.Common;
-using TencentCloud.Common.Profile;
 using TencentCloud.Trtc.V20190722;
 using TencentCloud.Trtc.V20190722.Models;
 using MixTranscodeParams = TencentCloud.Trtc.V20190722.Models.MixTranscodeParams;
@@ -31,6 +30,8 @@ public interface ITencentClient : IScopedDependency
     Task DisbandRoomAsync(DismissRoomRequest request, CancellationToken cancellationToken);
     
     Task DismissRoomByStrRoomIdAsync(DismissRoomByStrRoomIdRequest request, CancellationToken cancellationToken);
+
+    Task<GetTencentVideoUsageResponse> GetVideoUsageAsync(GetTencentVideoUsageRequest request, CancellationToken cancellationToken);
 }
 
 public class TencentClient : ITencentClient
@@ -179,5 +180,22 @@ public class TencentClient : ITencentClient
         var utf16Bytes = Encoding.Unicode.GetBytes(input);
         var utf8Bytes = Encoding.Convert(Encoding.Unicode, Encoding.UTF8, utf16Bytes);
         return Encoding.UTF8.GetString(utf8Bytes);
+    }
+
+    public async Task<GetTencentVideoUsageResponse> GetVideoUsageAsync(GetTencentVideoUsageRequest request, CancellationToken cancellationToken)
+    {
+        var client = CreateClient();
+        
+        var req = new DescribeTrtcUsageRequest();
+        req.StartTime = request.CurrentDate.ToString("yy-MM-dd") + " 00:00:00";
+        req.EndTime = request.CurrentDate.AddDays(1).ToString("yy-MM-dd") + " 00:00:00";
+        req.SdkAppId = Convert.ToUInt64(_tencentCloudSetting.AppId);
+        
+        var resp = client.DescribeTrtcUsageSync(req);
+
+        return new GetTencentVideoUsageResponse
+        {
+            Data = resp
+        };
     }
 }
