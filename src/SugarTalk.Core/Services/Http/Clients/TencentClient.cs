@@ -187,8 +187,8 @@ public class TencentClient : ITencentClient
         var client = CreateClient();
         
         var req = new DescribeTrtcUsageRequest();
-        req.StartTime = request.CurrentDate.ToString("yy-MM-dd") + " 00:00:00";
-        req.EndTime = request.CurrentDate.AddDays(1).ToString("yy-MM-dd") + " 00:00:00";
+        req.StartTime = request.CurrentDate.ToString("yyyy-MM-dd") + " 00:00:00";
+        req.EndTime = request.CurrentDate.AddDays(1).ToString("yyyy-MM-dd") + " 00:00:00";
         req.SdkAppId = Convert.ToUInt64(_tencentCloudSetting.AppId);
         
         var resp = client.DescribeTrtcUsageSync(req);
