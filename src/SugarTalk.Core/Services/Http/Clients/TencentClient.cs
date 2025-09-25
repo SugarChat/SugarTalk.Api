@@ -181,13 +181,18 @@ public class TencentClient : ITencentClient
 
     public async Task<GetTencentVideoUsageResponse> GetVideoUsageAsync(GetTencentVideoUsageRequest request, CancellationToken cancellationToken)
     {
+        var diff = (7 + (request.CurrentDate.DayOfWeek - DayOfWeek.Monday)) % 7;
+        var weekStart = request.CurrentDate.Date.AddDays(-diff);
+        
         var client = CreateClient();
         
-        var req = new DescribeTrtcUsageRequest();
-        req.StartTime = request.CurrentDate.ToString("yyyy-MM-dd") + " 00:00:00";
-        req.EndTime = request.CurrentDate.AddDays(1).ToString("yyyy-MM-dd") + " 00:00:00";
-        req.SdkAppId = Convert.ToUInt64(_tencentCloudSetting.AppId);
-        
+        var req = new DescribeTrtcUsageRequest
+        {
+            StartTime = weekStart.ToString("yyyy-MM-dd") + " 00:00:00",
+            EndTime = request.CurrentDate.ToString("yyyy-MM-dd") + " 11:59:59",
+            SdkAppId = Convert.ToUInt64(_tencentCloudSetting.AppId)
+        };
+
         var resp = client.DescribeTrtcUsageSync(req);
 
         return new GetTencentVideoUsageResponse

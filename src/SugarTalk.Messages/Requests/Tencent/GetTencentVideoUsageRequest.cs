@@ -7,7 +7,7 @@ namespace SugarTalk.Messages.Requests.Tencent;
 
 public class GetTencentVideoUsageRequest : IRequest
 {
-    public DateTimeOffset CurrentDate { get; set; }
+    public DateTimeOffset CurrentDate { get; set; } = DateTimeOffset.Now;
 }
 
 public class GetTencentVideoUsageResponse : SugarTalkResponse<DescribeTrtcUsageResponse>
