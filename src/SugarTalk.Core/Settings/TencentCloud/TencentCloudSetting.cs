@@ -18,6 +18,7 @@ public class TencentCloudSetting: IConfigurationSetting
         CosFileNamePrefix = configuration.GetValue<string>("Tencent:StorageParams:FileNamePrefix");
         RecordingMaxIdleTime = configuration.GetValue<ulong>("Tencent:RecordParams:MaxIdleTime");
         RecordingResolution = Enum.Parse<ScreenRecordingResolution>(configuration.GetValue<string>("Tencent:RecordingResolution"), true);
+        TotalMonthlyUsage = configuration.GetValue<double>("Tencent:TotalMonthlyUsage");
     }
     
     public string AppId { get; set; }
@@ -39,4 +40,6 @@ public class TencentCloudSetting: IConfigurationSetting
     public ulong RecordingMaxIdleTime { get; set; }
     
     public ScreenRecordingResolution RecordingResolution { get; set; }
+
+    public double TotalMonthlyUsage { get; set; }
 }

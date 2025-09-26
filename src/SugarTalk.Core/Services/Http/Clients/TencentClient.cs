@@ -1,13 +1,18 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using AutoMapper;
 using Serilog;
 using SugarTalk.Core.Ioc;
+using SugarTalk.Core.Services.Caching;
 using SugarTalk.Core.Settings.TencentCloud;
 using SugarTalk.Messages.Commands.Tencent;
 using SugarTalk.Messages.Dto.Tencent;
+using SugarTalk.Messages.Enums.Caching;
+using SugarTalk.Messages.Enums.Tencent;
 using SugarTalk.Messages.Requests.Tencent;
 using TencentCloud.Common;
 using TencentCloud.Trtc.V20190722;
@@ -34,12 +39,13 @@ public interface ITencentClient : IScopedDependency
 public class TencentClient : ITencentClient
 {
     private readonly IMapper _mapper;
+    private readonly ICacheManager _cacheManager;
     private readonly TencentCloudSetting _tencentCloudSetting;
-    private ITencentClient _tencentClientImplementation;
 
-    public TencentClient(IMapper mapper, TencentCloudSetting tencentCloudSetting)
+    public TencentClient(IMapper mapper, ICacheManager cacheManager, TencentCloudSetting tencentCloudSetting)
     {
         _mapper = mapper;
+        _cacheManager = cacheManager;
         _tencentCloudSetting = tencentCloudSetting;
     }
     
@@ -181,23 +187,70 @@ public class TencentClient : ITencentClient
 
     public async Task<GetTencentVideoUsageResponse> GetVideoUsageAsync(GetTencentVideoUsageRequest request, CancellationToken cancellationToken)
     {
-        var diff = (7 + (request.CurrentDate.DayOfWeek - DayOfWeek.Monday)) % 7;
-        var weekStart = request.CurrentDate.Date.AddDays(-diff);
+        var firstDay = new DateTimeOffset(request.CurrentDate.Year, request.CurrentDate.Month, 1, 0, 0, 0, request.CurrentDate.Offset);
         
         var client = CreateClient();
         
         var req = new DescribeTrtcUsageRequest
         {
-            StartTime = weekStart.ToString("yyyy-MM-dd") + " 00:00:00",
+            StartTime = firstDay.ToString("yyyy-MM-dd HH:mm:ss"),
             EndTime = request.CurrentDate.ToString("yyyy-MM-dd") + " 11:59:59",
             SdkAppId = Convert.ToUInt64(_tencentCloudSetting.AppId)
         };
 
         var resp = client.DescribeTrtcUsageSync(req);
 
+        Log.Information("Tencent Meeting Usage:{@resp}", resp);
+        
+        var usageCount = resp.UsageList.Sum(x => Convert.ToDouble(x.UsageValue[3]));
+        var percentage = usageCount/_tencentCloudSetting.TotalMonthlyUsage;
+        var week = GetWeekOfMonth(request.CurrentDate);
+        
+        var thresholds = new Dictionary<int, double>
+        {
+            { 1, 0.25 },
+            { 2, 0.50 },
+            { 3, 0.75 },
+            { 4, 1.00 },
+            { 5, 1.00 }
+        };
+        
+        Log.Information($"It is currently the {week} week，used:{percentage}", week, percentage);
+        
+        if (thresholds.TryGetValue(week, out var threshold))
+        {
+            if (percentage >= threshold)
+            {
+                var yesterdayUsage = await _cacheManager.GetAsync<string>($"tencent-usage-{request.CurrentDate.AddDays(-1):yyyy-MM-dd}", CachingType.RedisCache, cancellationToken: cancellationToken).ConfigureAwait(false);
+                
+                await _cacheManager.SetAsync($"tencent-usage-{request.CurrentDate:yyyy-MM-dd}", ScreenRecordingResolution.Low.ToString(), CachingType.RedisCache, expiry: TimeSpan.FromDays(7), cancellationToken: cancellationToken).ConfigureAwait(false);
+
+                Log.Information($"Yesterday usage:{yesterdayUsage}", yesterdayUsage);
+                
+                if (yesterdayUsage == "Low")
+                {
+                    return new GetTencentVideoUsageResponse
+                    {
+                        Data = ScreenRecordingResolution.Low
+                    };
+                }
+                
+                return new GetTencentVideoUsageResponse
+                {
+                    Data = ScreenRecordingResolution.High
+                };
+            }
+        }
+        
         return new GetTencentVideoUsageResponse
         {
-            Data = resp
+            Data = ScreenRecordingResolution.High
         };
+    }
+    
+    private static int GetWeekOfMonth(DateTimeOffset date)
+    {
+        var dayOfMonth = date.Day;
+        return (int)Math.Ceiling(dayOfMonth / 7.0);
     }
 }
