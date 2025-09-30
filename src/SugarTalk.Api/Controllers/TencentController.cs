@@ -65,7 +65,7 @@ public class TencentController : ControllerBase
         return Ok();
     }
     
-    [Route("cloudRecord/get"), HttpGet]
+    [Route("cloud/record"), HttpGet]
     [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(GetTencentVideoUsageResponse))]
     public async Task<IActionResult> GetTencentVideoUsageAsync([FromQuery] GetTencentVideoUsageRequest request)
     {
