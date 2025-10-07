@@ -197,7 +197,7 @@ namespace SugarTalk.Core.Services.Meetings
             {
                 var subMeetings = await GetMeetingSubMeetingsAsync(new []{meeting.Id}, cancellationToken).ConfigureAwait(false);
 
-                var subMeeting = subMeetings.FirstOrDefault(x => x.EndTime > _clock.Now.ToUnixTimeSeconds());
+                var subMeeting = subMeetings.Where(x => x.EndTime > _clock.Now.ToUnixTimeSeconds()).OrderBy(x => x.StartTime).FirstOrDefault();
                 
                 if (subMeeting != null)
                 {
