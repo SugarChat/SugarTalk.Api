@@ -202,7 +202,7 @@ public class TencentClient : ITencentClient
 
         Log.Information("Tencent Meeting Usage:{@resp}", resp);
 
-        var usageCount = resp.UsageList.Sum(x => Convert.ToDouble(x.UsageValue[3]) * 9 + Convert.ToDouble(x.UsageValue[0]) + Convert.ToDouble(x.UsageValue[1]));
+        var usageCount = resp.UsageList.Sum(x =>  Convert.ToDouble(x.UsageValue[0]) + Convert.ToDouble(x.UsageValue[1]) * 2 + Convert.ToDouble(x.UsageValue[3]) * 9);
         var percentage = usageCount/_tencentCloudSetting.TotalMonthlyUsage;
         var week = GetWeekOfMonth(request.CurrentDate);
         
