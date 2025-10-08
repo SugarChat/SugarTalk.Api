@@ -19,6 +19,7 @@ public class TencentCloudSetting: IConfigurationSetting
         RecordingMaxIdleTime = configuration.GetValue<ulong>("Tencent:RecordParams:MaxIdleTime");
         RecordingResolution = Enum.Parse<ScreenRecordingResolution>(configuration.GetValue<string>("Tencent:RecordingResolution"), true);
         TotalMonthlyUsage = configuration.GetValue<double>("Tencent:TotalMonthlyUsage");
+        RobotUrl = configuration.GetValue<string>("Tencent:RobotUrl");
     }
     
     public string AppId { get; set; }
@@ -42,4 +43,6 @@ public class TencentCloudSetting: IConfigurationSetting
     public ScreenRecordingResolution RecordingResolution { get; set; }
 
     public double TotalMonthlyUsage { get; set; }
+
+    public string RobotUrl { get; set; }
 }

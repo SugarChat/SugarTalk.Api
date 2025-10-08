@@ -36,6 +36,8 @@ public interface ITencentClient : IScopedDependency
     Task DismissRoomByStrRoomIdAsync(DismissRoomByStrRoomIdRequest request, CancellationToken cancellationToken);
 
     Task<GetTencentVideoUsageResponse> GetVideoUsageAsync(GetTencentVideoUsageRequest request, CancellationToken cancellationToken);
+
+    public DescribeTrtcUsageResponse GetTencentUsageAsync(string startTime, string endTime);
 }
 
 public class TencentClient : ITencentClient
@@ -196,7 +198,7 @@ public class TencentClient : ITencentClient
         var req = new DescribeTrtcUsageRequest
         {
             StartTime = firstDay.ToString("yyyy-MM-dd HH:mm:ss"),
-            EndTime = request.CurrentDate.ToString("yyyy-MM-dd") + " 11:59:59",
+            EndTime = request.CurrentDate.ToString("yyyy-MM-dd") + " 23:59:59",
             SdkAppId = Convert.ToUInt64(_tencentCloudSetting.AppId)
         };
 
@@ -248,6 +250,20 @@ public class TencentClient : ITencentClient
         {
             Data = ScreenRecordingResolution.High
         };
+    }
+    
+    public DescribeTrtcUsageResponse GetTencentUsageAsync(string startTime, string endTime)
+    {
+        var client = CreateClient();
+        
+        var req = new DescribeTrtcUsageRequest
+        {
+            StartTime = startTime,
+            EndTime = endTime,
+            SdkAppId = Convert.ToUInt64(_tencentCloudSetting.AppId)
+        };
+
+        return client.DescribeTrtcUsageSync(req);
     }
     
     private static int GetWeekOfMonth(DateTimeOffset date)
