@@ -73,4 +73,13 @@ public class TencentController : ControllerBase
 
         return Ok(response);
     }
+    
+    [Route("Broadcast"), HttpGet]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetTencentVideoUsageAsync([FromBody] TencentUsageBroadcastCommand command)
+    {
+        await _mediator.SendAsync(command);
+
+        return Ok();
+    }
 }
