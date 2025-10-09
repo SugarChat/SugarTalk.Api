@@ -422,14 +422,9 @@ public class TencentService : ITencentService
 
         var residueUsage = _tencentCloudSetting.TotalMonthlyUsage - audio - SD * 2 - HD * 4 - fullHD * 9;
 
-        var yesterdayUsage = new TrtcUsage();
+        var dayUsage = usages.UsageList.First(x => x.TimeKey.Contains(command.CurrentDate.ToString("yyyy-MM-dd")));
         
-        if (command.CurrentDate.Day != 1)
-            yesterdayUsage = usages.UsageList.First(x => x.TimeKey.Contains(command.CurrentDate.AddDays(-1).ToString("yyyy-MM-dd")));   
-        else
-            yesterdayUsage = usages.UsageList.First(x => x.TimeKey.Contains(command.CurrentDate.ToString("yyyy-MM-dd"))); 
-        
-        var text = new SendWorkWechatGroupRobotTextDto { Content = $"SugarTalk每日监测\n{command.CurrentDate.AddDays(-1):yyyy-MM-dd}\n语音(分钟): {yesterdayUsage.UsageValue[0]}\n标清(分钟): {yesterdayUsage.UsageValue[1]}\n高清(分钟): {yesterdayUsage.UsageValue[2]}\n超高清(分钟): {yesterdayUsage.UsageValue[3]}\n预计扣除套餐包用量(点数): {yesterdayUsage.UsageValue[0] + yesterdayUsage.UsageValue[1]*2 + yesterdayUsage.UsageValue[2]*4 + yesterdayUsage.UsageValue[3]*9}\n预计剩余总用量(点数): {residueUsage}"};
+        var text = new SendWorkWechatGroupRobotTextDto { Content = $"SugarTalk每日监测\n{command.CurrentDate:yyyy-MM-dd}\n语音(分钟): {dayUsage.UsageValue[0]}\n标清(分钟): {dayUsage.UsageValue[1]}\n高清(分钟): {dayUsage.UsageValue[2]}\n超高清(分钟): {dayUsage.UsageValue[3]}\n预计扣除套餐包用量(点数): {dayUsage.UsageValue[0] + dayUsage.UsageValue[1]*2 + dayUsage.UsageValue[2]*4 + dayUsage.UsageValue[3]*9}\n预计剩余总用量(点数): {residueUsage}"};
         text.MentionedMobileList = "@all";
         
         await _weChatClient.SendWorkWechatRobotMessagesAsync(_tencentCloudSetting.RobotUrl, new SendWorkWechatGroupRobotMessageDto
