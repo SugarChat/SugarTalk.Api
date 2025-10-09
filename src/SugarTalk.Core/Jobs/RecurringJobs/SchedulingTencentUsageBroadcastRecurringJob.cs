@@ -21,7 +21,7 @@ public class SchedulingTencentUsageBroadcastRecurringJob : IRecurringJob
 
     public string JobId => nameof(SchedulingTencentUsageBroadcastRecurringJob);
 
-    public string CronExpression => "1 0 * * *";
+    public string CronExpression => "0 0 * * *";
 
 
     public TimeZoneInfo TimeZone => TimeZoneInfo.FindSystemTimeZoneById("Asia/Shanghai");
