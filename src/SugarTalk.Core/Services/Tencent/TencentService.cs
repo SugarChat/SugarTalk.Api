@@ -405,28 +405,28 @@ public class TencentService : ITencentService
 
         var usages = _tencentClient.GetTencentUsageAsync(startTime.ToString("yyyy-MM-dd HH:mm:ss"), endTime);
 
-        Log.Information("Tencent usage response: {@usages}", usages);
+        Log.Information("Fetched Tencent usage data from {Start} to {End}: {@UsageSummary}", startTime, endTime, usages);
         
-        var audio = 0;
-        var SD = 0;
-        var HD = 0;
-        var fullHD = 0;
-        
-        foreach (var usage in usages.UsageList)
-        {
-            audio += Convert.ToInt32(usage.UsageValue[0]);
-            SD += Convert.ToInt32(usage.UsageValue[1]);
-            HD += Convert.ToInt32(usage.UsageValue[2]);
-            fullHD += Convert.ToInt32(usage.UsageValue[3]);
-        }
+        var audio = usages.UsageList.Sum(x => Convert.ToInt32(x.UsageValue[0]));
+        var SD = usages.UsageList.Sum(x => Convert.ToInt32(x.UsageValue[1]));
+        var HD = usages.UsageList.Sum(x => Convert.ToInt32(x.UsageValue[2]));
+        var fullHD = usages.UsageList.Sum(x => Convert.ToInt32(x.UsageValue[3]));
 
         var residueUsage = _tencentCloudSetting.TotalMonthlyUsage - audio - SD * 2 - HD * 4 - fullHD * 9;
 
-        var dayUsage = usages.UsageList.First(x => x.TimeKey.Contains(command.CurrentDate.ToString("yyyy-MM-dd")));
+        var dayUsage = usages.UsageList.FirstOrDefault(x => x.TimeKey.Contains(command.CurrentDate.ToString("yyyy-MM-dd")));
         
-        var text = new SendWorkWechatGroupRobotTextDto { Content = $"SugarTalk每日监测\n{command.CurrentDate:yyyy-MM-dd}\n语音(分钟): {dayUsage.UsageValue[0]}\n标清(分钟): {dayUsage.UsageValue[1]}\n高清(分钟): {dayUsage.UsageValue[2]}\n超高清(分钟): {dayUsage.UsageValue[3]}\n预计扣除套餐包用量(点数): {dayUsage.UsageValue[0] + dayUsage.UsageValue[1]*2 + dayUsage.UsageValue[2]*4 + dayUsage.UsageValue[3]*9}\n预计剩余总用量(点数): {residueUsage}"};
-        text.MentionedMobileList = "@all";
+        if (dayUsage == null)
+        {
+            Log.Information("No usage data found for {Date}", command.CurrentDate.ToString("yyyy-MM-dd"));
+            return;
+        }
         
+        var text = new SendWorkWechatGroupRobotTextDto
+        {
+            Content = $"SugarTalk每日监测\n{command.CurrentDate:yyyy-MM-dd}\n语音(分钟): {dayUsage.UsageValue[0]}\n标清(分钟): {dayUsage.UsageValue[1]}\n高清(分钟): {dayUsage.UsageValue[2]}\n超高清(分钟): {dayUsage.UsageValue[3]}\n预计扣除套餐包用量(点数): {dayUsage.UsageValue[0] + dayUsage.UsageValue[1] * 2 + dayUsage.UsageValue[2] * 4 + dayUsage.UsageValue[3] * 9}\n预计剩余总用量(点数): {residueUsage}"
+        };
+
         await _weChatClient.SendWorkWechatRobotMessagesAsync(_tencentCloudSetting.RobotUrl, new SendWorkWechatGroupRobotMessageDto
         {
             MsgType = "text",
