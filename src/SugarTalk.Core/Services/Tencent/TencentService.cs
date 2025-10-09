@@ -403,7 +403,7 @@ public class TencentService : ITencentService
         var startTime = new DateTimeOffset(command.CurrentDate.Year, command.CurrentDate.Month, 1, 0, 0, 0, command.CurrentDate.Offset);
         var endTime = command.CurrentDate.ToString("yyyy-MM-dd") + " 23:59:59";
 
-        var usages = _tencentClient.GetTencentUsageAsync(startTime.ToString("yyyy-MM-dd HH:mm:ss"), endTime);
+        var usages = _tencentClient.GetTencentUsageAsync(startTime.AddDays(-1).ToString("yyyy-MM-dd HH:mm:ss"), endTime);
 
         Log.Information("Fetched Tencent usage data from {Start} to {End}: {@UsageSummary}", startTime, endTime, usages);
         
