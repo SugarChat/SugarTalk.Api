@@ -11,13 +11,11 @@ using Serilog;
 using SugarTalk.Core.Domain.Meeting;
 using SugarTalk.Core.Domain.SpeechMatics;
 using SugarTalk.Core.Ioc;
-using SugarTalk.Core.Services.Account;
 using SugarTalk.Core.Services.Caching;
 using SugarTalk.Core.Services.Exceptions;
 using SugarTalk.Core.Services.Ffmpeg;
 using SugarTalk.Core.Services.Http.Clients;
 using SugarTalk.Core.Services.Identity;
-using SugarTalk.Core.Services.Jobs;
 using SugarTalk.Core.Services.Meetings;
 using SugarTalk.Core.Services.Smarties;
 using SugarTalk.Core.Settings.Smarties;
@@ -27,6 +25,7 @@ using SugarTalk.Messages.Dto.FClub;
 using SugarTalk.Messages.Dto.Meetings;
 using SugarTalk.Messages.Dto.Smarties;
 using SugarTalk.Messages.Dto.Tencent;
+using SugarTalk.Messages.Dto.WeChat;
 using SugarTalk.Messages.Enums.Caching;
 using SugarTalk.Messages.Enums.Meeting;
 using SugarTalk.Messages.Enums.Meeting.Speak;
@@ -50,6 +49,8 @@ public interface ITencentService : IScopedDependency
     Task<UpdateCloudRecordingResponse> UpdateCloudRecordingAsync(UpdateCloudRecordingCommand command, CancellationToken cancellationToken);
 
     Task CloudRecordingCallBackAsync(CloudRecordingCallBackCommand command, CancellationToken cancellationToken);
+
+    Task TencentUsageBroadcastAsync(TencentUsageBroadcastCommand command, CancellationToken cancellationToken);
 }
 
 public class TencentService : ITencentService
@@ -65,6 +66,7 @@ public class TencentService : ITencentService
     private readonly ISmartiesDataProvider _smartiesDataProvider;
     private readonly IMeetingDataProvider _meetingDataProvider;
     private readonly TencentCloudSetting _tencentCloudSetting;
+    private readonly IWeChatClient _weChatClient;
     
     public TencentService(
         IMapper mapper,
@@ -77,7 +79,8 @@ public class TencentService : ITencentService
         SmartiesSettings smartiesSettings,
         ISmartiesDataProvider smartiesDataProvider,
         IMeetingDataProvider meetingDataProvider,
-        TencentCloudSetting tencentCloudSetting)
+        TencentCloudSetting tencentCloudSetting,
+        IWeChatClient weChatClient)
     {
         _mapper = mapper;
         _currentUser = currentUser;
@@ -90,6 +93,7 @@ public class TencentService : ITencentService
         _smartiesDataProvider = smartiesDataProvider;
         _meetingDataProvider = meetingDataProvider;
         _tencentCloudSetting = tencentCloudSetting;
+        _weChatClient = weChatClient;
     }
 
     public GetTencentCloudKeyResponse GetTencentCloudKey(GetTencentCloudKeyRequest request)
@@ -393,6 +397,42 @@ public class TencentService : ITencentService
 
         return null!;
     }
-    
+
+    public async Task TencentUsageBroadcastAsync(TencentUsageBroadcastCommand command, CancellationToken cancellationToken)
+    {
+        var startTime = new DateTimeOffset(command.CurrentDate.Year, command.CurrentDate.Month, 1, 0, 0, 0, command.CurrentDate.Offset);
+        var endTime = command.CurrentDate.ToString("yyyy-MM-dd") + " 23:59:59";
+
+        var usages = _tencentClient.GetTencentUsageAsync(startTime.AddDays(-1).ToString("yyyy-MM-dd HH:mm:ss"), endTime);
+
+        Log.Information("Fetched Tencent usage data from {Start} to {End}: {@UsageSummary}", startTime, endTime, usages);
+        
+        var audio = usages.UsageList.Sum(x => Convert.ToInt32(x.UsageValue[0]));
+        var SD = usages.UsageList.Sum(x => Convert.ToInt32(x.UsageValue[1]));
+        var HD = usages.UsageList.Sum(x => Convert.ToInt32(x.UsageValue[2]));
+        var fullHD = usages.UsageList.Sum(x => Convert.ToInt32(x.UsageValue[3]));
+
+        var residueUsage = _tencentCloudSetting.TotalMonthlyUsage + _tencentCloudSetting.AdditionalMonthlyUsage - audio - SD * 2 - HD * 4 - fullHD * 9;
+
+        var dayUsage = usages.UsageList.FirstOrDefault(x => x.TimeKey.Contains(command.CurrentDate.ToString("yyyy-MM-dd")));
+        
+        if (dayUsage == null)
+        {
+            Log.Information("No usage data found for {Date}", command.CurrentDate.ToString("yyyy-MM-dd"));
+            return;
+        }
+        
+        var text = new SendWorkWechatGroupRobotTextDto
+        {
+            Content = $"SugarTalk每日监测\n{command.CurrentDate:yyyy-MM-dd}\n语音(分钟): {dayUsage.UsageValue[0]}\n标清(分钟): {dayUsage.UsageValue[1]}\n高清(分钟): {dayUsage.UsageValue[2]}\n超高清(分钟): {dayUsage.UsageValue[3]}\n预计扣除套餐包用量(点数): {dayUsage.UsageValue[0] + dayUsage.UsageValue[1] * 2 + dayUsage.UsageValue[2] * 4 + dayUsage.UsageValue[3] * 9}\n预计剩余总用量(点数): {residueUsage}"
+        };
+
+        await _weChatClient.SendWorkWechatRobotMessagesAsync(_tencentCloudSetting.RobotUrl, new SendWorkWechatGroupRobotMessageDto
+        {
+            MsgType = "text",
+            Text = text
+        }, cancellationToken).ConfigureAwait(false);
+    }
+
     private static readonly HttpClient Client = new HttpClient { Timeout = TimeSpan.FromSeconds(300) };
 }
