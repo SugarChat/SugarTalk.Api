@@ -203,7 +203,7 @@ public class TencentClient : ITencentClient
         var resp = client.DescribeTrtcUsageSync(req);
 
         Log.Information("Tencent Meeting Usage:{@resp}", resp);
-        
+
         var audio = resp.UsageList.Sum(x => Convert.ToInt32(x.UsageValue[0]));
         var SD = resp.UsageList.Sum(x => Convert.ToInt32(x.UsageValue[1]));
         var HD = resp.UsageList.Sum(x => Convert.ToInt32(x.UsageValue[2]));
@@ -211,6 +211,7 @@ public class TencentClient : ITencentClient
         
         var usageCount = audio + SD*2 + HD *4 + fullHD*9;
         var percentage = usageCount/(_tencentCloudSetting.TotalMonthlyUsage + _tencentCloudSetting.AdditionalMonthlyUsage);
+
         var week = GetWeekOfMonth(request.CurrentDate);
         
         var thresholds = new Dictionary<int, double>
