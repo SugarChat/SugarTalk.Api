@@ -412,7 +412,7 @@ public class TencentService : ITencentService
         var HD = usages.UsageList.Sum(x => Convert.ToInt32(x.UsageValue[2]));
         var fullHD = usages.UsageList.Sum(x => Convert.ToInt32(x.UsageValue[3]));
 
-        var residueUsage = _tencentCloudSetting.TotalMonthlyUsage - audio - SD * 2 - HD * 4 - fullHD * 9;
+        var residueUsage = _tencentCloudSetting.TotalMonthlyUsage + _tencentCloudSetting.AdditionalMonthlyUsage - audio - SD * 2 - HD * 4 - fullHD * 9;
 
         var dayUsage = usages.UsageList.FirstOrDefault(x => x.TimeKey.Contains(command.CurrentDate.ToString("yyyy-MM-dd")));
         
