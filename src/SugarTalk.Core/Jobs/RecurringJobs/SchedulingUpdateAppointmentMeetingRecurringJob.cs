@@ -21,5 +21,5 @@ public class SchedulingUpdateAppointmentMeetingRecurringJob : IRecurringJob
     public string JobId => nameof(SchedulingUpdateAppointmentMeetingRecurringJob);
 
     // 每天 12：01 执行
-    public string CronExpression => "1 0 * * * ";
+    public string CronExpression => "1 0 * * * "; 
 }

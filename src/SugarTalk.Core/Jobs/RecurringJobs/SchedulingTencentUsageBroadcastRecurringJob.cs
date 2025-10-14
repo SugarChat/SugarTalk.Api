@@ -23,6 +23,5 @@ public class SchedulingTencentUsageBroadcastRecurringJob : IRecurringJob
 
     public string CronExpression => "0 0 * * *";
 
-
     public TimeZoneInfo TimeZone => TimeZoneInfo.FindSystemTimeZoneById("Asia/Shanghai");
 }
