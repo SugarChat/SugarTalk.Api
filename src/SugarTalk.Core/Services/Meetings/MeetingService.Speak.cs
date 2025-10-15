@@ -40,39 +40,41 @@ public partial class MeetingService
 {
     public async Task<MeetingSpeakRecordedEvent> RecordMeetingSpeakAsync(RecordMeetingSpeakCommand command, CancellationToken cancellationToken)
     {
-        var speakDetail = command.Id.HasValue switch
-        {
-            true => await EndRecordUserSpeakDetailAsync(command, cancellationToken).ConfigureAwait(false),
-            false => await StartRecordUserSpeakDetailAsync(command, cancellationToken).ConfigureAwait(false)
-        };
+        return await _redisSafeRunner.ExecuteWithLockAsync($"generate-speak-id-{command.MeetingRecordId}-{_currentUser.Id.Value}",
+            async () =>
+            {
+                var speakDetail = command.Id.HasValue switch
+                {
+                    true => await EndRecordUserSpeakDetailAsync(command, cancellationToken).ConfigureAwait(false),
+                    false => await StartRecordUserSpeakDetailAsync(command, cancellationToken).ConfigureAwait(false)
+                };
 
-        var result = (await _meetingDataProvider.GetMeetingSpeakDetailsAsync(
-            new List<int>{ speakDetail.Id }, cancellationToken: cancellationToken).ConfigureAwait(false)).FirstOrDefault();
-        
-        return new MeetingSpeakRecordedEvent
-        {
-            MeetingSpeakDetail = _mapper.Map<MeetingSpeakDetailDto>(result)
-        };
+                var result = (await _meetingDataProvider.GetMeetingSpeakDetailsAsync(
+                        new List<int> { speakDetail.Id }, cancellationToken: cancellationToken).ConfigureAwait(false))
+                    .FirstOrDefault();
+
+                return new MeetingSpeakRecordedEvent
+                {
+                    MeetingSpeakDetail = _mapper.Map<MeetingSpeakDetailDto>(result)
+                };
+            }, wait: TimeSpan.FromSeconds(10), retry: TimeSpan.FromSeconds(1));
     }
 
     private async Task<MeetingSpeakDetail> StartRecordUserSpeakDetailAsync(RecordMeetingSpeakCommand command, CancellationToken cancellationToken)
     {
-        return await _redisSafeRunner.ExecuteWithLockAsync($"generate-speak-id-{command.MeetingRecordId}", async () =>
+        var speakDetail = new MeetingSpeakDetail
         {
-            var speakDetail = new MeetingSpeakDetail
-            {
-                TrackId = command.TrackId,
-                Username = _currentUser.Name,
-                UserId = _currentUser.Id.Value,
-                MeetingNumber = command.MeetingNumber,
-                MeetingRecordId = command.MeetingRecordId,
-                SpeakStartTime = command.SpeakStartTime.Value
-            };
+            TrackId = command.TrackId,
+            Username = _currentUser.Name,
+            UserId = _currentUser.Id.Value,
+            MeetingNumber = command.MeetingNumber,
+            MeetingRecordId = command.MeetingRecordId,
+            SpeakStartTime = command.SpeakStartTime.Value
+        };
 
-            await _meetingDataProvider.AddMeetingSpeakDetailAsync(speakDetail, cancellationToken: cancellationToken).ConfigureAwait(false);
+        await _meetingDataProvider.AddMeetingSpeakDetailAsync(speakDetail, cancellationToken: cancellationToken).ConfigureAwait(false);
 
-            return speakDetail;
-        }, wait: TimeSpan.FromSeconds(5), retry: TimeSpan.FromSeconds(1));
+        return speakDetail;
     }
     
     private async Task<MeetingSpeakDetail> EndRecordUserSpeakDetailAsync(RecordMeetingSpeakCommand command, CancellationToken cancellationToken)
