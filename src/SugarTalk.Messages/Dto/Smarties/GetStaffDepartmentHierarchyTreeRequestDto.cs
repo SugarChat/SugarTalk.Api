@@ -46,4 +46,6 @@ public class StaffHierarchyUserDto
     public string Id { get; set; }
     
     public string UserName { get; set; }
+
+    public MeetingStaffStatus MeetingStaffStatus { get; set; }
 }
