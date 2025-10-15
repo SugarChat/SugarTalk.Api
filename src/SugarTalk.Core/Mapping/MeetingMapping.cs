@@ -43,5 +43,7 @@ public class MeetingMapping: Profile
         CreateMap<MeetingProblemFeedbackDto, MeetingProblemFeedback>();
 
         CreateMap<UserAccount, NoJoinMeetingUserSessionsDto>();
+
+        CreateMap<MeetingInvitationRecord, MeetingInvitationRecordDto>().ReverseMap();
     }
 }

@@ -378,6 +378,24 @@ public class MeetingController : ControllerBase
 
         return Ok(response);
     }
+    
+    [Route("invite/users"), HttpGet]
+    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(GetMeetingInvitationUsersResponse))]
+    public async Task<IActionResult> GetMeetingInvitationUsersAsync([FromQuery] GetMeetingInvitationUsersRequest request)
+    {
+        var response = await _mediator.RequestAsync<GetMeetingInvitationUsersRequest, GetMeetingInvitationUsersResponse>(request).ConfigureAwait(false);
+
+        return Ok(response);
+    }
+    
+    [Route("invite/create"), HttpPost]
+    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(GetMeetingInvitationUsersResponse))]
+    public async Task<IActionResult> CreateMeetingInvitationRecordsAsync([FromBody] CreateMeetingInvitationRecordsCommand command)
+    {
+        var response = await _mediator.SendAsync<CreateMeetingInvitationRecordsCommand, CreateMeetingInvitationRecordsResponse>(command).ConfigureAwait(false);
+
+        return Ok(response);
+    }
 
     #endregion
 
