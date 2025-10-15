@@ -150,6 +150,7 @@ namespace SugarTalk.Core.Services.Meetings
         private readonly FeedbackSettings _feedbackSettings;
         private readonly ISmartiesDataProvider _smartiesDataProvider;
         private readonly TencentCloudSetting _tencentCloudSetting;
+        private readonly IRedisSafeRunner _redisSafeRunner;
         
         public MeetingService(
             IClock clock,
@@ -178,7 +179,8 @@ namespace SugarTalk.Core.Services.Meetings
             ILiveKitServerUtilService liveKitServerUtilService,
             IAntMediaServerUtilService antMediaServerUtilService,
             ISugarTalkBackgroundJobClient sugarTalkBackgroundJobClient, 
-            MeetingInfoSettings meetingInfoSettings, ICacheManager cacheManager, FeedbackSettings feedbackSettings, ISmartiesDataProvider smartiesDataProvider, TencentCloudSetting tencentCloudSetting)
+            MeetingInfoSettings meetingInfoSettings, ICacheManager cacheManager, FeedbackSettings feedbackSettings,
+            ISmartiesDataProvider smartiesDataProvider, TencentCloudSetting tencentCloudSetting, IRedisSafeRunner redisSafeRunner)
         {
             _clock = clock;
             _mapper = mapper;
@@ -211,6 +213,7 @@ namespace SugarTalk.Core.Services.Meetings
             _feedbackSettings = feedbackSettings;
             _smartiesDataProvider = smartiesDataProvider;
             _tencentCloudSetting = tencentCloudSetting;
+            _redisSafeRunner = redisSafeRunner;
         }
         
         public async Task<MeetingScheduledEvent> ScheduleMeetingAsync(ScheduleMeetingCommand command, CancellationToken cancellationToken)

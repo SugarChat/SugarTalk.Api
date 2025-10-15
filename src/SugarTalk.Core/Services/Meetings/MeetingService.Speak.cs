@@ -57,19 +57,22 @@ public partial class MeetingService
 
     private async Task<MeetingSpeakDetail> StartRecordUserSpeakDetailAsync(RecordMeetingSpeakCommand command, CancellationToken cancellationToken)
     {
-        var speakDetail = new MeetingSpeakDetail
+        return await _redisSafeRunner.ExecuteWithLockAsync($"generate-speak-id-{command.MeetingRecordId}", async () =>
         {
-            TrackId = command.TrackId,
-            Username = _currentUser.Name,
-            UserId = _currentUser.Id.Value,
-            MeetingNumber = command.MeetingNumber,
-            MeetingRecordId = command.MeetingRecordId,
-            SpeakStartTime = command.SpeakStartTime.Value
-        };
-        
-        await _meetingDataProvider.AddMeetingSpeakDetailAsync(speakDetail, cancellationToken: cancellationToken).ConfigureAwait(false);
-        
-        return speakDetail;
+            var speakDetail = new MeetingSpeakDetail
+            {
+                TrackId = command.TrackId,
+                Username = _currentUser.Name,
+                UserId = _currentUser.Id.Value,
+                MeetingNumber = command.MeetingNumber,
+                MeetingRecordId = command.MeetingRecordId,
+                SpeakStartTime = command.SpeakStartTime.Value
+            };
+
+            await _meetingDataProvider.AddMeetingSpeakDetailAsync(speakDetail, cancellationToken: cancellationToken).ConfigureAwait(false);
+
+            return speakDetail;
+        }, wait: TimeSpan.FromSeconds(5), retry: TimeSpan.FromSeconds(1));
     }
     
     private async Task<MeetingSpeakDetail> EndRecordUserSpeakDetailAsync(RecordMeetingSpeakCommand command, CancellationToken cancellationToken)
