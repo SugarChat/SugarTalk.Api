@@ -58,7 +58,7 @@ public partial class MeetingService : IMeetingService
 
     public async Task<GetMeetingInvitationUsersResponse> GetMeetingInvitationUsersAsync(GetMeetingInvitationUsersRequest request, CancellationToken cancellationToken)
     {
-        var meetingUserSessions = await _meetingDataProvider.GetAllMeetingUserSessionsAsync(request.MeetingId, cancellationToken).ConfigureAwait(false);
+        var meetingUserSessions = await _meetingDataProvider.GetUserSessionsByMeetingIdAsync(meetingId: request.MeetingId, meetingSubId: request.MeetingSubId, includeUserName: true, onlineType: MeetingUserSessionOnlineType.Online, cancellationToken: cancellationToken).ConfigureAwait(false);
         
         var staffs = await _smartiesClient.GetStaffDepartmentHierarchyTreeAsync(new GetStaffDepartmentHierarchyTreeRequest
         {
@@ -67,6 +67,8 @@ public partial class MeetingService : IMeetingService
             HierarchyStaffRange = request.HierarchyStaffRange
         }, cancellationToken).ConfigureAwait(false);
 
+        Log.Information("Invitation meeting user session: {@meetingUserSessions}", meetingUserSessions);
+        
         UpdateStaffsAsync(staffs.Data.StaffDepartmentHierarchy, meetingUserSessions.Select(x => x.UserName).ToList());
         
         return new GetMeetingInvitationUsersResponse

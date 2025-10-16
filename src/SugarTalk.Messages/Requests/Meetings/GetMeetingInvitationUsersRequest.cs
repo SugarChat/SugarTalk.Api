@@ -9,6 +9,8 @@ namespace SugarTalk.Messages.Requests.Meetings;
 public class GetMeetingInvitationUsersRequest : IRequest
 {
     public Guid MeetingId { get; set; }
+
+    public Guid? MeetingSubId { get; set; }
     
     public StaffIdSource StaffIdSource { get; set; } = StaffIdSource.Self;
     
