@@ -193,7 +193,7 @@ public class TencentService : ITencentService
         
         try
         {
-            var participants = await _meetingDataProvider.GetUserSessionsByMeetingIdAsync(meeting.Id, record.MeetingSubId, true, true, true, cancellationToken).ConfigureAwait(false);
+            var participants = await _meetingDataProvider.GetUserSessionsByMeetingIdAsync(meeting.Id, record.MeetingSubId, true, true, true, cancellationToken: cancellationToken).ConfigureAwait(false);
         
             Log.Information("participants: {@participants}", participants);
             
