@@ -50,8 +50,7 @@ public partial class MeetingService
                 false => await StartRecordUserSpeakDetailAsync(command, cancellationToken).ConfigureAwait(false)
             };
 
-            var result = (await _meetingDataProvider.GetMeetingSpeakDetailsAsync(
-                new List<int>{ speakDetail.Id }, cancellationToken: cancellationToken).ConfigureAwait(false)).FirstOrDefault();
+            var result = (await _meetingDataProvider.GetMeetingSpeakDetailsAsync(new List<int>{ speakDetail.Id }, cancellationToken: cancellationToken).ConfigureAwait(false)).FirstOrDefault();
         
             return new MeetingSpeakRecordedEvent
             {
