@@ -52,7 +52,7 @@ public partial class MeetingService : IMeetingService
 
         return new CreateMeetingInvitationRecordsResponse
         {
-            Data = _mapper.Map<MeetingInvitationRecordDto>(records)
+            Data = _mapper.Map<List<MeetingInvitationRecordDto>>(records)
         };
     }
 

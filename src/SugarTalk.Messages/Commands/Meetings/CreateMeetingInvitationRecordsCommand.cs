@@ -15,6 +15,6 @@ public class CreateMeetingInvitationRecordsCommand : ICommand
     public List<string> Names { get; set; }
 }
 
-public class CreateMeetingInvitationRecordsResponse : SugarTalkResponse<MeetingInvitationRecordDto>
+public class CreateMeetingInvitationRecordsResponse : SugarTalkResponse<List<MeetingInvitationRecordDto>>
 {
 }
