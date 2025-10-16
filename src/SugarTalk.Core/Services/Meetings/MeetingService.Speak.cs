@@ -40,19 +40,24 @@ public partial class MeetingService
 {
     public async Task<MeetingSpeakRecordedEvent> RecordMeetingSpeakAsync(RecordMeetingSpeakCommand command, CancellationToken cancellationToken)
     {
-        var speakDetail = command.Id.HasValue switch
-        {
-            true => await EndRecordUserSpeakDetailAsync(command, cancellationToken).ConfigureAwait(false),
-            false => await StartRecordUserSpeakDetailAsync(command, cancellationToken).ConfigureAwait(false)
-        };
+        var key = command.Id.HasValue ? $"RecordMeetingSpeak-start-{_currentUser.Id}-{command.MeetingNumber}" : $"RecordMeetingSpeak-end-{_currentUser.Id}-{command.MeetingNumber}";
 
-        var result = (await _meetingDataProvider.GetMeetingSpeakDetailsAsync(
-            new List<int>{ speakDetail.Id }, cancellationToken: cancellationToken).ConfigureAwait(false)).FirstOrDefault();
-        
-        return new MeetingSpeakRecordedEvent
+        return await _redisSafeRunner.ExecuteWithLockAsync(key, async () =>
         {
-            MeetingSpeakDetail = _mapper.Map<MeetingSpeakDetailDto>(result)
-        };
+            var speakDetail = command.Id.HasValue switch
+            {
+                true => await EndRecordUserSpeakDetailAsync(command, cancellationToken).ConfigureAwait(false),
+                false => await StartRecordUserSpeakDetailAsync(command, cancellationToken).ConfigureAwait(false)
+            };
+
+            var result = (await _meetingDataProvider.GetMeetingSpeakDetailsAsync(
+                new List<int>{ speakDetail.Id }, cancellationToken: cancellationToken).ConfigureAwait(false)).FirstOrDefault();
+        
+            return new MeetingSpeakRecordedEvent
+            {
+                MeetingSpeakDetail = _mapper.Map<MeetingSpeakDetailDto>(result)
+            };
+        }, wait: TimeSpan.FromSeconds(10), retry: TimeSpan.FromSeconds(1));
     }
 
     private async Task<MeetingSpeakDetail> StartRecordUserSpeakDetailAsync(RecordMeetingSpeakCommand command, CancellationToken cancellationToken)
@@ -74,22 +79,19 @@ public partial class MeetingService
     
     private async Task<MeetingSpeakDetail> EndRecordUserSpeakDetailAsync(RecordMeetingSpeakCommand command, CancellationToken cancellationToken)
     {
-        return await _redisSafeRunner.ExecuteWithLockAsync($"End-speak-{command.Id}", async () =>
-        {
-            var speakDetail = (await _meetingDataProvider.GetMeetingSpeakDetailsAsync(
-                new List<int>{ command.Id.Value }, speakStatus: SpeakStatus.Speaking, cancellationToken: cancellationToken).ConfigureAwait(false)).FirstOrDefault();
+        var speakDetail = (await _meetingDataProvider.GetMeetingSpeakDetailsAsync(
+            new List<int>{ command.Id.Value }, speakStatus: SpeakStatus.Speaking, cancellationToken: cancellationToken).ConfigureAwait(false)).FirstOrDefault();
 
-            Log.Information("Ending record user Speak, speak detail: {@SpeakDetail}", speakDetail);
+        Log.Information("Ending record user Speak, speak detail: {@SpeakDetail}", speakDetail);
         
-            if (speakDetail == null) throw new SpeakNotFoundException();
+        if (speakDetail == null) throw new SpeakNotFoundException();
         
-            speakDetail.SpeakStatus = SpeakStatus.End;
-            speakDetail.SpeakEndTime = command.SpeakEndTime.Value;
+        speakDetail.SpeakStatus = SpeakStatus.End;
+        speakDetail.SpeakEndTime = command.SpeakEndTime.Value;
         
-            await _meetingDataProvider.UpdateMeetingSpeakDetailsAsync(new List<MeetingSpeakDetail>{ speakDetail }, cancellationToken: cancellationToken).ConfigureAwait(false);
+        await _meetingDataProvider.UpdateMeetingSpeakDetailsAsync(new List<MeetingSpeakDetail>{ speakDetail }, cancellationToken: cancellationToken).ConfigureAwait(false);
         
-            return speakDetail;
-        }, wait: TimeSpan.FromSeconds(10), retry: TimeSpan.FromSeconds(1));
+        return speakDetail;
     }
     
     private async Task TranscriptionMeetingAsync(List<MeetingSpeakDetail> speakDetails, MeetingRecord meetingRecord, CancellationToken cancellationToken)
