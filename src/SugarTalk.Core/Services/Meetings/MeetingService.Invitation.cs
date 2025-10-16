@@ -69,7 +69,7 @@ public partial class MeetingService : IMeetingService
 
         Log.Information("Invitation meeting user session: {@meetingUserSessions}", meetingUserSessions);
         
-        UpdateStaffsAsync(staffs.Data.StaffDepartmentHierarchy, meetingUserSessions.Select(x => x.UserName).ToList());
+        UpdateStaffs(staffs.Data.StaffDepartmentHierarchy, meetingUserSessions.Select(x => x.UserName).ToList());
         
         return new GetMeetingInvitationUsersResponse
         {
@@ -77,27 +77,24 @@ public partial class MeetingService : IMeetingService
         };
     }
 
-    public static void UpdateStaffsAsync(List<GetStaffDepartmentHierarchyTreeRequestDto> staffDepartmentHierarchy, List<string> userNames)
+    public static void UpdateStaffs(List<GetStaffDepartmentHierarchyTreeRequestDto> staffDepartmentHierarchy, List<string> userNames)
     {
         foreach (var staff in staffDepartmentHierarchy)
         {
-            if (staff.Staffs != null && staff.Staffs.Any())
+            if (staff.Staffs?.Any() == true)
             {
-                staff.Staffs = staff.Staffs.Select(x =>
+                foreach (var member in staff.Staffs)
                 {
-                    if (userNames.Contains(x.UserName))
-                    {
-                        x.MeetingStaffStatus = MeetingStaffStatus.Online;
-                    }
-
-                    x.MeetingStaffStatus = MeetingStaffStatus.NoJoin;
-
-                    return x;
-                }).ToList();
-            }else if (staff.Childrens != null && staff.Childrens.Any())
-                UpdateStaffsAsync(staff.Childrens, userNames);
+                    member.MeetingStaffStatus = userNames.Contains(member.UserName)
+                        ? MeetingStaffStatus.Online
+                        : MeetingStaffStatus.NoJoin;
+                }
+            }
             
-            return;
+            if (staff.Childrens?.Any() == true)
+            {
+                UpdateStaffs(staff.Childrens, userNames);
+            }
         }
     }
 
