@@ -71,6 +71,7 @@ public partial class BaseFixture
     private readonly ISmartiesDataProvider _smartiesDataProvider;
     private readonly PostBoySettings _postBoySettings;
     private readonly TencentCloudSetting _tencentCloudSetting;
+    private readonly IRedisSafeRunner _redisSafeRunner;
     
     public BaseFixture()
     {
@@ -94,7 +95,7 @@ public partial class BaseFixture
         _meetingService = MockMeetingService(_clock, _mapper, _unitOfWork, _currentUser, _ffmpegService, _cacheManager, _openAiService, _speechClient, _postBoyClient, _tencentClient,
             _liveKitClient, _fclubClient,  _awsS3Settings, _awsS3Service, _smartiesClient, _postBoySettings, _translationClient, _meetingUtilService,
             _meetingDataProvider, _accountDataProvider, _liveKitServerSetting, _httpClientFactory, _backgroundJobClient,
-            _liveKitServerUtilService, _antMediaServerUtilService, _sugarTalkBackgroundJobClient, _meetingInfoSettings, _feedbackSettings, _smartiesSettings, _smartiesDataProvider, _tencentCloudSetting); 
+            _liveKitServerUtilService, _antMediaServerUtilService, _sugarTalkBackgroundJobClient, _meetingInfoSettings, _feedbackSettings, _smartiesSettings, _smartiesDataProvider, _tencentCloudSetting, _redisSafeRunner); 
         _meetingProcessJobService = MockMeetingProcessJobService(_clock, _unitOfWork, _meetingDataProvider);
     }
 
@@ -139,12 +140,13 @@ public partial class BaseFixture
         FeedbackSettings feedbackSettings,
         SmartiesSettings smartiesSettings,
         ISmartiesDataProvider smartiesDataProvider,
-        TencentCloudSetting tencentCloudSetting)
+        TencentCloudSetting tencentCloudSetting,
+        IRedisSafeRunner redisSafeRunner)
     {
         return new MeetingService(
             clock, mapper, unitOfWork, currentUser, ffmpegService, openAiService, speechClient, postBoyClient, tencentClient, liveKitClient, fclubClient, awsS3Settings, awsS3Service, smartiesClient, postBoySettings, smartiesSettings,
             translationClient, meetingUtilService, meetingDataProvider, accountDataProvider, liveKitServerSetting, 
-            httpClientFactory, backgroundJobClient, liveKitServerUtilService, antMediaServerUtilService, sugarTalkBackgroundJobClient, null, cacheManager, feedbackSettings, smartiesDataProvider, tencentCloudSetting);
+            httpClientFactory, backgroundJobClient, liveKitServerUtilService, antMediaServerUtilService, sugarTalkBackgroundJobClient, null, cacheManager, feedbackSettings, smartiesDataProvider, tencentCloudSetting, redisSafeRunner);
     }
     
     protected IMeetingDataProvider MockMeetingDataProvider(

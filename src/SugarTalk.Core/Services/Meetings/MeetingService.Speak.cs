@@ -40,19 +40,24 @@ public partial class MeetingService
 {
     public async Task<MeetingSpeakRecordedEvent> RecordMeetingSpeakAsync(RecordMeetingSpeakCommand command, CancellationToken cancellationToken)
     {
-        var speakDetail = command.Id.HasValue switch
-        {
-            true => await EndRecordUserSpeakDetailAsync(command, cancellationToken).ConfigureAwait(false),
-            false => await StartRecordUserSpeakDetailAsync(command, cancellationToken).ConfigureAwait(false)
-        };
+        var key = command.Id.HasValue ? $"RecordMeetingSpeak-start-{_currentUser.Id}-{command.MeetingNumber}" : $"RecordMeetingSpeak-end-{_currentUser.Id}-{command.MeetingNumber}";
 
-        var result = (await _meetingDataProvider.GetMeetingSpeakDetailsAsync(
-            new List<int>{ speakDetail.Id }, cancellationToken: cancellationToken).ConfigureAwait(false)).FirstOrDefault();
-        
-        return new MeetingSpeakRecordedEvent
+        return await _redisSafeRunner.ExecuteWithLockAsync(key, async () =>
         {
-            MeetingSpeakDetail = _mapper.Map<MeetingSpeakDetailDto>(result)
-        };
+            var speakDetail = command.Id.HasValue switch
+            {
+                true => await EndRecordUserSpeakDetailAsync(command, cancellationToken).ConfigureAwait(false),
+                false => await StartRecordUserSpeakDetailAsync(command, cancellationToken).ConfigureAwait(false)
+            };
+
+            var result = (await _meetingDataProvider.GetMeetingSpeakDetailsAsync(
+                new List<int>{ speakDetail.Id }, cancellationToken: cancellationToken).ConfigureAwait(false)).FirstOrDefault();
+        
+            return new MeetingSpeakRecordedEvent
+            {
+                MeetingSpeakDetail = _mapper.Map<MeetingSpeakDetailDto>(result)
+            };
+        }, wait: TimeSpan.FromSeconds(10), retry: TimeSpan.FromSeconds(1));
     }
 
     private async Task<MeetingSpeakDetail> StartRecordUserSpeakDetailAsync(RecordMeetingSpeakCommand command, CancellationToken cancellationToken)
@@ -66,9 +71,9 @@ public partial class MeetingService
             MeetingRecordId = command.MeetingRecordId,
             SpeakStartTime = command.SpeakStartTime.Value
         };
-        
+
         await _meetingDataProvider.AddMeetingSpeakDetailAsync(speakDetail, cancellationToken: cancellationToken).ConfigureAwait(false);
-        
+
         return speakDetail;
     }
     
