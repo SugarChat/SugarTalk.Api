@@ -58,7 +58,7 @@ public partial class MeetingService : IMeetingService
 
     public async Task<GetMeetingInvitationUsersResponse> GetMeetingInvitationUsersAsync(GetMeetingInvitationUsersRequest request, CancellationToken cancellationToken)
     {
-        var meetingUserSessions = await _meetingDataProvider.GetUserSessionsByMeetingIdAsync(meetingId: request.MeetingId, meetingSubId: request.MeetingSubId, includeUserName: true, cancellationToken: cancellationToken).ConfigureAwait(false);
+        var meetingUserSessions = await _meetingDataProvider.GetUserSessionsByMeetingIdAsync(meetingId: request.MeetingId, meetingSubId: request.MeetingSubId, includeUserName: true, onlineType: MeetingUserSessionOnlineType.Online, cancellationToken: cancellationToken).ConfigureAwait(false);
         
         var staffs = await _smartiesClient.GetStaffDepartmentHierarchyTreeAsync(new GetStaffDepartmentHierarchyTreeRequest
         {
