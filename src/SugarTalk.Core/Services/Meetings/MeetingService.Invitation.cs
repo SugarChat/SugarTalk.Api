@@ -22,7 +22,10 @@ public partial interface IMeetingService
     Task<GetMeetingInvitationUsersResponse> GetMeetingInvitationUsersAsync(GetMeetingInvitationUsersRequest request, CancellationToken cancellationToken);
     
     //修改状态
-    Task UpdateMeetingInvitationRecordAsync();
+    Task<UpdateMeetingInvitationRecordsResponse> UpdateMeetingInvitationRecordAsync(UpdateMeetingInvitationRecordsCommand command, CancellationToken cancellationToken);
+    
+    //获取邀请信息
+    Task<GetMeetingInvitationRecordsResponse> GetMeetingInvitationRecordsAsync(GetMeetingInvitationRecordsRequest request, CancellationToken cancellationToken);
 }
 
 public partial class MeetingService : IMeetingService
@@ -100,5 +103,39 @@ public partial class MeetingService : IMeetingService
 
     public async Task UpdateMeetingInvitationRecordAsync()
     {
+    }
+
+    public async Task<GetMeetingInvitationRecordsResponse> GetMeetingInvitationRecordsAsync(GetMeetingInvitationRecordsRequest request, CancellationToken cancellationToken)
+    {
+        if (_currentUser.Id == null)
+            return null;
+
+        return new GetMeetingInvitationRecordsResponse
+        {
+            Data = await _meetingDataProvider.GetMeetingInvitationRecordsDtoAsync(_currentUser.Id.Value, cancellationToken).ConfigureAwait(false)
+        };
+    }
+
+    public async Task<UpdateMeetingInvitationRecordsResponse> UpdateMeetingInvitationRecordAsync(UpdateMeetingInvitationRecordsCommand command, CancellationToken cancellationToken)
+    {
+        var invitationRecordIds = command.MeetingInvitationRecordDtos.Select(x => x.Id).ToList();
+        
+        var meetingInvitationRecords = await _meetingDataProvider.GetMeetingInvitationRecordsAsync(invitationRecordIds, cancellationToken).ConfigureAwait(false);
+
+        foreach (var record in meetingInvitationRecords)
+        {
+            var status = command.MeetingInvitationRecordDtos.FirstOrDefault(x => x.Id == record.Id);
+
+            if (status == null) continue;
+            
+            record.InvitationStatus = status.InvitationStatus;
+        }
+
+        await _meetingDataProvider.UpdateMeetingInvitationRecordsAsync(meetingInvitationRecords, cancellationToken: cancellationToken).ConfigureAwait(false);
+
+        return new UpdateMeetingInvitationRecordsResponse
+        {
+            Data = _mapper.Map<List<MeetingInvitationRecordDto>>(meetingInvitationRecords)
+        };
     }
 }
