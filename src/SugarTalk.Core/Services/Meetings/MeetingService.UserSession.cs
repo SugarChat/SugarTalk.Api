@@ -245,18 +245,23 @@ public partial class MeetingService
 
         if (meetingInvitationRecords.Count > 0)
         {
-            foreach (var user in noJoinMeetingUsers)
+            if (noJoinMeetingUsers.Count > 0)
             {
-                var record = meetingInvitationRecords.FirstOrDefault(x => x.Id == user.Id);
+                foreach (var user in noJoinMeetingUsers)
+                {
+                    var record = meetingInvitationRecords.FirstOrDefault(x => x.Id == user.Id);
 
-                if (record == null) continue;
+                    if (record == null) continue;
 
-                user.InvitationStatus = record.InvitationStatus;
+                    user.InvitationStatus = record.InvitationStatus;
+                }
+                
+                var noJoinMeetingUserNames = noJoinMeetingUsers.Select(e => e.UserName).ToList();
+                var temporarilyInviteUsers = meetingInvitationRecords.Where(x => !meetingUserSessionUserNames.Contains(x.UserName) || !noJoinMeetingUserNames.Contains(x.UserName)).ToList();
+                noJoinMeetingUsers.AddRange(temporarilyInviteUsers);   
             }
-            
-            var noJoinMeetingUserNames = noJoinMeetingUsers.Select(e => e.UserName).ToList();
-            var temporarilyInviteUsers = meetingInvitationRecords.Where(x => meetingUserSessionUserNames.Contains(x.UserName) || noJoinMeetingUserNames.Contains(x.UserName)).ToList();
-            noJoinMeetingUsers.AddRange(temporarilyInviteUsers);
+            else
+                noJoinMeetingUsers.AddRange(meetingInvitationRecords.Where(x => !meetingUserSessionUserNames.Contains(x.UserName)));
         }
         
         return new GetAllMeetingUserSessionsForMeetingIdResponse
