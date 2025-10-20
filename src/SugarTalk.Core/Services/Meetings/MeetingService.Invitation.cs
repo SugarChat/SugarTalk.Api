@@ -118,13 +118,13 @@ public partial class MeetingService : IMeetingService
 
     public async Task<UpdateMeetingInvitationRecordsResponse> UpdateMeetingInvitationRecordAsync(UpdateMeetingInvitationRecordsCommand command, CancellationToken cancellationToken)
     {
-        var invitationRecordIds = command.MeetingInvitationRecordDtos.Select(x => x.Id).ToList();
+        var invitationRecordIds = command.MeetingInvitationRecords.Select(x => x.Id).ToList();
         
         var meetingInvitationRecords = await _meetingDataProvider.GetMeetingInvitationRecordsAsync(invitationRecordIds, cancellationToken).ConfigureAwait(false);
 
         foreach (var record in meetingInvitationRecords)
         {
-            var status = command.MeetingInvitationRecordDtos.FirstOrDefault(x => x.Id == record.Id);
+            var status = command.MeetingInvitationRecords.FirstOrDefault(x => x.Id == record.Id);
 
             if (status == null) continue;
             

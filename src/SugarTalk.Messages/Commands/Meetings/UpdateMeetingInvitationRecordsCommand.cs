@@ -8,7 +8,7 @@ namespace SugarTalk.Messages.Commands.Meetings;
 
 public class UpdateMeetingInvitationRecordsCommand : ICommand
 {
-    public List<UpdateMeetingInvitationRecordDto> MeetingInvitationRecordDtos { get; set; }
+    public List<UpdateMeetingInvitationRecordDto> MeetingInvitationRecords { get; set; }
 }
 
 public class UpdateMeetingInvitationRecordsResponse : SugarTalkResponse<List<MeetingInvitationRecordDto>>

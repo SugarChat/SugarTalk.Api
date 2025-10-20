@@ -409,7 +409,7 @@ public class MeetingController : ControllerBase
     
     [Route("invite/update"), HttpPost]
     [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(UpdateMeetingInvitationRecordsResponse))]
-    public async Task<IActionResult> UpdateMeetingInvitationRecordsAsync([FromQuery] UpdateMeetingInvitationRecordsCommand command)
+    public async Task<IActionResult> UpdateMeetingInvitationRecordsAsync([FromBody] UpdateMeetingInvitationRecordsCommand command)
     {
         var response = await _mediator.SendAsync<UpdateMeetingInvitationRecordsCommand, UpdateMeetingInvitationRecordsResponse>(command).ConfigureAwait(false);
 

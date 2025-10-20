@@ -15,7 +15,6 @@ public class UpdateMeetingInvitationRecordsCommandHandler : ICommandHandler<Upda
     {
         _meetingService = meetingService;
     }
-
     
     public async Task<UpdateMeetingInvitationRecordsResponse> Handle(IReceiveContext<UpdateMeetingInvitationRecordsCommand> context, CancellationToken cancellationToken)
     {
