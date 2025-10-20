@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using Mediator.Net.Contracts;
 using SugarTalk.Messages.Dto.Meetings;
-using SugarTalk.Messages.Dto.Users;
+using SugarTalk.Messages.Enums.Meeting;
 using SugarTalk.Messages.Responses;
 
 namespace SugarTalk.Messages.Requests.Meetings;
@@ -10,6 +10,8 @@ namespace SugarTalk.Messages.Requests.Meetings;
 public class GetAllMeetingUserSessionsForMeetingIdRequest : IRequest
 {
     public Guid MeetingId { get; set; }
+
+    public Guid? MeetingSubId { get; set; }
 }
 
 public class GetAllMeetingUserSessionsForMeetingIdResponse : SugarTalkResponse<GetAllMeetingUserSessionsForMeetingIdDto>
@@ -38,4 +40,6 @@ public class NoJoinMeetingUserSessionsDto
     public int Id { get; set; }
     
     public string UserName { get; set; }
+    
+    public MeetingInvitationStatus? InvitationStatus { get; set; }
 }
