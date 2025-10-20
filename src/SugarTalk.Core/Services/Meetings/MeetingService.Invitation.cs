@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -119,8 +120,11 @@ public partial class MeetingService : IMeetingService
     public async Task<UpdateMeetingInvitationRecordsResponse> UpdateMeetingInvitationRecordAsync(UpdateMeetingInvitationRecordsCommand command, CancellationToken cancellationToken)
     {
         var invitationRecordIds = command.MeetingInvitationRecords.Select(x => x.Id).ToList();
+
+        if (invitationRecordIds.Count < 1)
+            throw new Exception("Not meeting invitation record id");
         
-        var meetingInvitationRecords = await _meetingDataProvider.GetMeetingInvitationRecordsAsync(invitationRecordIds, cancellationToken).ConfigureAwait(false);
+        var meetingInvitationRecords = await _meetingDataProvider.GetMeetingInvitationRecordsAsync(invitationRecordIds, cancellationToken: cancellationToken).ConfigureAwait(false);
 
         foreach (var record in meetingInvitationRecords)
         {
