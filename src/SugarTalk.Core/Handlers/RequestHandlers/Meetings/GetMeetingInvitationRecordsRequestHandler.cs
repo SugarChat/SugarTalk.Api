@@ -3,7 +3,7 @@ using System.Threading.Tasks;
 using Mediator.Net.Context;
 using Mediator.Net.Contracts;
 using SugarTalk.Core.Services.Meetings;
-using SugarTalk.Messages.Requests;
+using SugarTalk.Messages.Requests.Meetings;
 
 namespace SugarTalk.Core.Handlers.RequestHandlers.Meetings;
 
