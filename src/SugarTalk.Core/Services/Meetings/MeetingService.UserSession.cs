@@ -239,7 +239,7 @@ public partial class MeetingService
         if (noEntryMeetingUsers.Any())
              userAccount = await _accountDataProvider.GetUserAccountsAsync(userNames: noEntryMeetingUsers.Select(x => x.UserName).ToList(), cancellationToken: cancellationToken).ConfigureAwait(false);
 
-        var meetingInvitationRecords = await _meetingDataProvider.GetMeetingInvitationUserInfoAsync(request.MeetingId, request.MeetingSubId, cancellationToken: cancellationToken).ConfigureAwait(false);
+        var meetingInvitationRecords = (await _meetingDataProvider.GetMeetingInvitationUserInfoAsync(request.MeetingId, request.MeetingSubId, cancellationToken: cancellationToken).ConfigureAwait(false)).DistinctBy(x => x.Id).ToList();
 
         var noJoinMeetingUsers = _mapper.Map<List<NoJoinMeetingUserSessionsDto>>(userAccount);
 
