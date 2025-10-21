@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using SugarTalk.Core.Domain.Account;
 using SugarTalk.Core.Domain.Meeting;
+using SugarTalk.Messages.Enums.Meeting;
 using SugarTalk.Messages.Requests.Meetings;
 
 namespace SugarTalk.Core.Services.Meetings;
@@ -35,7 +36,7 @@ public partial class MeetingDataProvider
 
     public async Task<List<GetMeetingInvitationRecordsDto>> GetMeetingInvitationRecordsDtoAsync(int userId, CancellationToken cancellationToken)
     {
-        var originalQuery = _repository.QueryNoTracking<MeetingInvitationRecord>(x => x.BeInviterUserId == userId);
+        var originalQuery = _repository.QueryNoTracking<MeetingInvitationRecord>().Where(x => x.BeInviterUserId == userId && x.InvitationStatus == MeetingInvitationStatus.InvitationPending);
 
         return await (from invitationRecord in originalQuery
             join meeting in _repository.QueryNoTracking<Meeting>() on invitationRecord.MeetingId equals meeting.Id
