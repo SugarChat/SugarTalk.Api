@@ -81,7 +81,7 @@ public partial class MeetingDataProvider
         if (meetingSubId.HasValue)
             query = query.Where(x => x.MeetingSubId == meetingSubId.Value);
         
-        return await query.Join(_repository.Query<UserAccount>(), x => x.BeInviterUserId, s => s.Id, (record, account) => new NoJoinMeetingUserSessionsDto
+        return await query.OrderByDescending(x => x.CreatedDate).DistinctBy(x => x.BeInviterUserId).Join(_repository.Query<UserAccount>(), x => x.BeInviterUserId, s => s.Id, (record, account) => new NoJoinMeetingUserSessionsDto
         {
             Id = record.BeInviterUserId,
             UserName = account.UserName,
