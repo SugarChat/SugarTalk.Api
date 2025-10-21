@@ -681,8 +681,7 @@ namespace SugarTalk.Core.Services.Meetings
             
             var attendingUserSessionIds = meeting.UserSessions.Select(x => x.Id).ToList();
             
-            var updateMeetingUserSessions =
-                await _meetingDataProvider.GetMeetingUserSessionsByIdsAndMeetingIdAsync(attendingUserSessionIds, meeting.Id, cancellationToken).ConfigureAwait(false);
+            var updateMeetingUserSessions = await _meetingDataProvider.GetMeetingUserSessionsByIdsAndMeetingIdAsync(attendingUserSessionIds, meeting.Id, cancellationToken).ConfigureAwait(false);
 
             await _meetingDataProvider.UpdateUserSessionsAtMeetingEndAsync(updateMeeting, updateMeetingUserSessions, cancellationToken).ConfigureAwait(false);
             
