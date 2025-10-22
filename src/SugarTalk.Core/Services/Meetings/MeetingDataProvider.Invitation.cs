@@ -47,7 +47,8 @@ public partial class MeetingDataProvider
                 InvitingPeople = invitationRecord.UserName,
                 MeetingTitle = meeting.Title,
                 MeetingId = invitationRecord.MeetingId,
-                MeetingSubId = invitationRecord.MeetingSubId 
+                MeetingSubId = invitationRecord.MeetingSubId,
+                MeetingNumber = meeting.MeetingNumber
             }).ToListAsync(cancellationToken);
     }
 
