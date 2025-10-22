@@ -243,6 +243,8 @@ public partial class MeetingService
 
         var noJoinMeetingUsers = _mapper.Map<List<NoJoinMeetingUserSessionsDto>>(userAccount);
 
+        Log.Information("No join meeting users: {@noJoinMeetingUsers}, meeting invitation records: {@meetingInvitationRecords}", noJoinMeetingUsers, meetingInvitationRecords);
+        
         if (meetingInvitationRecords.Count > 0)
         {
             if (noJoinMeetingUsers.Count > 0)
@@ -257,7 +259,7 @@ public partial class MeetingService
                 }
                 
                 var noJoinMeetingUserNames = noJoinMeetingUsers.Select(e => e.UserName).ToList();
-                var temporarilyInviteUsers = meetingInvitationRecords.Where(x => !meetingUserSessionUserNames.Contains(x.UserName) || !noJoinMeetingUserNames.Contains(x.UserName)).ToList();
+                var temporarilyInviteUsers = meetingInvitationRecords.Where(x => !meetingUserSessionUserNames.Contains(x.UserName) && !noJoinMeetingUserNames.Contains(x.UserName)).ToList();
                 noJoinMeetingUsers.AddRange(temporarilyInviteUsers);   
             }
             else
