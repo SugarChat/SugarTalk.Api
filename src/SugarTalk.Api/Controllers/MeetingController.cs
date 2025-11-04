@@ -6,6 +6,7 @@ using SugarTalk.Messages.Commands.Meetings;
 using SugarTalk.Messages.Requests.Meetings;
 using SugarTalk.Messages.Commands.Meetings.Speak;
 using SugarTalk.Messages.Commands.Meetings.Summary;
+using SugarTalk.Messages.Requests;
 
 namespace SugarTalk.Api.Controllers;
 
@@ -375,6 +376,42 @@ public class MeetingController : ControllerBase
     public async Task<IActionResult> GetMeetingInviteInfoAsync([FromQuery] GetMeetingInviteInfoRequest request)
     {
         var response = await _mediator.RequestAsync<GetMeetingInviteInfoRequest, GetMeetingInviteInfoResponse>(request).ConfigureAwait(false);
+
+        return Ok(response);
+    }
+    
+    [Route("invite/users"), HttpGet]
+    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(GetMeetingInvitationUsersResponse))]
+    public async Task<IActionResult> GetMeetingInvitationUsersAsync([FromQuery] GetMeetingInvitationUsersRequest request)
+    {
+        var response = await _mediator.RequestAsync<GetMeetingInvitationUsersRequest, GetMeetingInvitationUsersResponse>(request).ConfigureAwait(false);
+
+        return Ok(response);
+    }
+    
+    [Route("invite/create"), HttpPost]
+    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(GetMeetingInvitationUsersResponse))]
+    public async Task<IActionResult> CreateMeetingInvitationRecordsAsync([FromBody] CreateMeetingInvitationRecordsCommand command)
+    {
+        var response = await _mediator.SendAsync<CreateMeetingInvitationRecordsCommand, CreateMeetingInvitationRecordsResponse>(command).ConfigureAwait(false);
+
+        return Ok(response);
+    }
+    
+    [Route("invite/records"), HttpGet]
+    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(GetMeetingInvitationRecordsResponse))]
+    public async Task<IActionResult> GetMeetingInvitationRecordsAsync([FromQuery] GetMeetingInvitationRecordsRequest request)
+    {
+        var response = await _mediator.RequestAsync<GetMeetingInvitationRecordsRequest, GetMeetingInvitationRecordsResponse>(request).ConfigureAwait(false);
+
+        return Ok(response);
+    }
+    
+    [Route("invite/update"), HttpPost]
+    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(UpdateMeetingInvitationRecordsResponse))]
+    public async Task<IActionResult> UpdateMeetingInvitationRecordsAsync([FromBody] UpdateMeetingInvitationRecordsCommand command)
+    {
+        var response = await _mediator.SendAsync<UpdateMeetingInvitationRecordsCommand, UpdateMeetingInvitationRecordsResponse>(command).ConfigureAwait(false);
 
         return Ok(response);
     }

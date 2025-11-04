@@ -228,15 +228,44 @@ public partial class MeetingService
         var staffs = await GetMeetingParticipantsAsync(request.MeetingId, cancellationToken).ConfigureAwait(false);
         
         var noEntryMeetingUsers = new List<RmStaffDto>();
+
+        var meetingUserSessionUserNames = meetingUserSessions.Select(x => x.UserName).ToList();
         
         if (staffs.Any())
-            noEntryMeetingUsers = staffs.Where(x => !meetingUserSessions.Select(s => s.UserName).ToList().Contains(x.UserName)).ToList();    
+            noEntryMeetingUsers = staffs.Where(x => !meetingUserSessionUserNames.Contains(x.UserName)).ToList();    
         
         var userAccount = new List<UserAccount>();
         
         if (noEntryMeetingUsers.Any())
              userAccount = await _accountDataProvider.GetUserAccountsAsync(userNames: noEntryMeetingUsers.Select(x => x.UserName).ToList(), cancellationToken: cancellationToken).ConfigureAwait(false);
-            
+
+        var meetingInvitationRecords = (await _meetingDataProvider.GetMeetingInvitationUserInfoAsync(request.MeetingId, request.MeetingSubId, cancellationToken: cancellationToken).ConfigureAwait(false)).DistinctBy(x => x.Id).ToList();
+
+        var noJoinMeetingUsers = _mapper.Map<List<NoJoinMeetingUserSessionsDto>>(userAccount);
+
+        Log.Information("No join meeting users: {@noJoinMeetingUsers}, meeting invitation records: {@meetingInvitationRecords}", noJoinMeetingUsers, meetingInvitationRecords);
+        
+        if (meetingInvitationRecords.Count > 0)
+        {
+            if (noJoinMeetingUsers.Count > 0)
+            {
+                foreach (var user in noJoinMeetingUsers)
+                {
+                    var record = meetingInvitationRecords.FirstOrDefault(x => x.Id == user.Id);
+
+                    if (record == null) continue;
+
+                    user.InvitationStatus = record.InvitationStatus;
+                }
+                
+                var noJoinMeetingUserNames = noJoinMeetingUsers.Select(e => e.UserName).ToList();
+                var temporarilyInviteUsers = meetingInvitationRecords.Where(x => !meetingUserSessionUserNames.Contains(x.UserName) && !noJoinMeetingUserNames.Contains(x.UserName)).ToList();
+                noJoinMeetingUsers.AddRange(temporarilyInviteUsers);   
+            }
+            else
+                noJoinMeetingUsers.AddRange(meetingInvitationRecords.Where(x => !meetingUserSessionUserNames.Contains(x.UserName)));
+        }
+        
         return new GetAllMeetingUserSessionsForMeetingIdResponse
         {
             Data = new GetAllMeetingUserSessionsForMeetingIdDto
@@ -245,8 +274,8 @@ public partial class MeetingService
                 InMeetingCount = meetingUserSessions.Count(x => x.OnlineType == MeetingUserSessionOnlineType.Online),
                 WaitingRoomUserSessions = _mapper.Map<List<MeetingUserSessionDto>>(meetingUserSessions.Where(x => x.OnlineType == MeetingUserSessionOnlineType.Waiting).ToList()),
                 WaitingRoomCount = meetingUserSessions.Count(x => x.OnlineType == MeetingUserSessionOnlineType.Waiting),
-                NoJoinMeetingUsers = _mapper.Map<List<NoJoinMeetingUserSessionsDto>>(userAccount),
-                NoEntryMeetingCount = userAccount.Count,
+                NoJoinMeetingUsers = noJoinMeetingUsers,
+                NoEntryMeetingCount = noJoinMeetingUsers.Count,
                 Count = meetingUserSessions.Count(x => x.IsMeetingMaster || x.CoHost)
             }
         };
