@@ -64,4 +64,22 @@ public class TencentController : ControllerBase
 
         return Ok();
     }
+    
+    [Route("cloud/record"), HttpGet]
+    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(GetTencentVideoUsageResponse))]
+    public async Task<IActionResult> GetTencentVideoUsageAsync([FromQuery] GetTencentVideoUsageRequest request)
+    {
+        var response = await _mediator.RequestAsync<GetTencentVideoUsageRequest, GetTencentVideoUsageResponse>(request);
+
+        return Ok(response);
+    }
+    
+    [Route("broadcast"), HttpPost]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    public async Task<IActionResult> TencentUsageBroadcastAsync([FromBody] TencentUsageBroadcastCommand command)
+    {
+        await _mediator.SendAsync(command);
+
+        return Ok();
+    }
 }
