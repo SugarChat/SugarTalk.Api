@@ -541,8 +541,7 @@ namespace SugarTalk.Core.Services.Meetings
 
             var meetingIds = _repository.Query<MeetingParticipant>().Where(x => x.StaffId == staffId).Select(x => x.MeetingId);
                     
-            var query =
-                from meeting in _repository.Query<Meeting>()
+            var query = from meeting in _repository.Query<Meeting>()
                 where meeting.Status != MeetingStatus.Cancelled &&
                       (meeting.MeetingMasterUserId == _currentUser.Id || meeting.CreatedBy == _currentUser.Id || meetingIds.Contains(meeting.Id)) &&
                       meeting.AppointmentType == MeetingAppointmentType.Appointment
