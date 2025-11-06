@@ -21,7 +21,7 @@ public partial interface IMeetingDataProvider
     Task UpdateMeetingUserSessionAsync(List<MeetingUserSession> userSessions, CancellationToken cancellationToken);
 
     Task<List<MeetingUserSessionDto>> GetUserSessionsByMeetingIdAsync(
-        Guid meetingId, Guid? meetingSubId, bool isQueryKickedOut = false, bool? includeUserName = false, bool isEntryMeeting = false, MeetingUserSessionOnlineType? onlineType = null, CancellationToken cancellationToken = default);
+        Guid meetingId, Guid? meetingSubId, bool isQueryKickedOut = false, bool? includeUserName = false, bool isEntryMeeting = false, List<MeetingUserSessionOnlineType> onlineType = null, CancellationToken cancellationToken = default);
     
     Task RemoveMeetingUserSessionsIfRequiredAsync(int userId, Guid meetingId, CancellationToken cancellationToken);
     
@@ -71,7 +71,7 @@ public partial class MeetingDataProvider
     }
 
     public async Task<List<MeetingUserSessionDto>> GetUserSessionsByMeetingIdAsync(
-        Guid meetingId, Guid? meetingSubId, bool isQueryKickedOut = false, bool? includeUserName = false, bool isEntryMeeting = false, MeetingUserSessionOnlineType? onlineType = null, CancellationToken cancellationToken = default)
+        Guid meetingId, Guid? meetingSubId, bool isQueryKickedOut = false, bool? includeUserName = false, bool isEntryMeeting = false, List<MeetingUserSessionOnlineType> onlineType = null, CancellationToken cancellationToken = default)
     {
         var query = _repository.QueryNoTracking<MeetingUserSession>().AsNoTracking()
             .Where(x => x.MeetingId == meetingId && !x.IsDeleted);
@@ -85,8 +85,8 @@ public partial class MeetingDataProvider
         if (isEntryMeeting)
             query = query.Where(x => x.IsEntryMeeting);
 
-        if (onlineType.HasValue)
-            query = query.Where(x => x.OnlineType == onlineType);
+        if (onlineType is { Count: > 0 })
+            query = query.Where(x => onlineType.Contains(x.OnlineType));
 
         var userSessions = await query.ToListAsync(cancellationToken).ConfigureAwait(false);
         
