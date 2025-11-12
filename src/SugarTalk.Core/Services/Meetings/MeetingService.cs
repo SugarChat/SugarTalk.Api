@@ -809,7 +809,7 @@ namespace SugarTalk.Core.Services.Meetings
                 
                 Log.Information("Staffs: {@staffs}", staffs);
                 
-                if (meeting.IsWaitingRoomEnabled && (user.Id != meeting.MeetingMasterUserId || (staffs != null && !staffs.Data.Staffs.Select(x => x.UserName).Contains(user.UserName))))
+                if (meeting.IsWaitingRoomEnabled && user.Id != meeting.MeetingMasterUserId && staffs != null && !staffs.Data.Staffs.Select(x => x.UserName).Contains(user.UserName))
                 {
                     userSession.IsEntryMeeting = false;
                     userSession.AllowEntryMeeting = false;
