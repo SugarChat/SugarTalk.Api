@@ -406,9 +406,15 @@ namespace SugarTalk.Core.Services.Meetings
             
             var meetingRecord = (await _meetingDataProvider.GetMeetingRecordsAsync(meetingId: meeting.Id, cancellationToken: cancellationToken).ConfigureAwait(false)).FirstOrDefault();
             
+            var meetingCoHosts = await _meetingDataProvider.GetMeetingParticipantAsync(new List<Guid>{meeting.Id}, true, cancellationToken).ConfigureAwait(false);
+            
+            var staffs = await _smartiesClient.GetStaffsRequestAsync(new GetStaffsRequestDto{Ids = meetingCoHosts.Select(x => x.StaffId).ToList()}, cancellationToken).ConfigureAwait(false);
+            
             Log.Information("SugarTalk get meetingRecord from JoinMeetingAsync :{meetingRecord}", meetingRecord);
             
-            var isMeetingOwnerOrHost = meeting.CreatedBy == user.Id || meeting.MeetingMasterUserId == user.Id;
+            Log.Information("Staffs: {@staffs}", staffs);
+            
+            var isMeetingOwnerOrHost = meeting.CreatedBy == user.Id || meeting.MeetingMasterUserId == user.Id || staffs.Data.Staffs.Select(x => x.UserName).Contains(user.UserName);
             
             if (meeting.IsLocked && !isMeetingOwnerOrHost)
                 throw new InvalidOperationException("The meeting is locked and cannot be joined.");
