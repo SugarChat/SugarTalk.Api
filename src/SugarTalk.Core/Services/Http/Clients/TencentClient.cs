@@ -189,7 +189,7 @@ public class TencentClient : ITencentClient
 
     public async Task<GetTencentVideoUsageResponse> GetVideoUsageAsync(GetTencentVideoUsageRequest request, CancellationToken cancellationToken)
     {
-        var firstDay = new DateTimeOffset(request.CurrentDate.Year, request.CurrentDate.Month, 1, 0, 0, 0, request.CurrentDate.Offset);
+        var firstDay = new DateTimeOffset(request.CurrentDate.Year, request.CurrentDate.Month, 1, 0, 0, 0, TimeZoneInfo.FindSystemTimeZoneById("Asia/Shanghai").BaseUtcOffset);
         
         var client = CreateClient();
         
@@ -212,7 +212,7 @@ public class TencentClient : ITencentClient
         var usageCount = audio + SD*2 + HD *4 + fullHD*9;
         var percentage = usageCount/(_tencentCloudSetting.TotalMonthlyUsage + _tencentCloudSetting.AdditionalMonthlyUsage);
 
-        var week = GetWeekOfMonth(request.CurrentDate);
+        var week = GetNaturalWeekOfMonth(request.CurrentDate);
         
         var thresholds = new Dictionary<int, double>
         {
@@ -220,17 +220,33 @@ public class TencentClient : ITencentClient
             { 2, 0.50 },
             { 3, 0.75 },
             { 4, 1.00 },
-            { 5, 1.00 }
+            { 5, 1.00 },
+            { 6, 1.00 }
         };
         
         Log.Information($"It is currently the {week} week，used:{percentage}", week, percentage);
         
         if (thresholds.TryGetValue(week, out var threshold))
         {
+            var yesterdayUsage = await _cacheManager.GetAsync<string>($"tencent-usage-{request.CurrentDate.AddDays(-1):yyyy-MM-dd}", CachingType.RedisCache, cancellationToken: cancellationToken).ConfigureAwait(false);
+
+            Log.Information($"Yesterday usage:{yesterdayUsage}", yesterdayUsage);
+            
+            if (firstDay.DayOfWeek != DayOfWeek.Monday && week == 1)
+            {
+                if (yesterdayUsage == "Low")
+                {
+                    await _cacheManager.SetAsync($"tencent-usage-{request.CurrentDate:yyyy-MM-dd}", ScreenRecordingResolution.Low.ToString(), CachingType.RedisCache, expiry: TimeSpan.FromDays(7), cancellationToken: cancellationToken).ConfigureAwait(false);
+                    
+                    return new GetTencentVideoUsageResponse
+                    {
+                        Data = ScreenRecordingResolution.Low
+                    };
+                }
+            }
+            
             if (percentage >= threshold)
             {
-                var yesterdayUsage = await _cacheManager.GetAsync<string>($"tencent-usage-{request.CurrentDate.AddDays(-1):yyyy-MM-dd}", CachingType.RedisCache, cancellationToken: cancellationToken).ConfigureAwait(false);
-                
                 await _cacheManager.SetAsync($"tencent-usage-{request.CurrentDate:yyyy-MM-dd}", ScreenRecordingResolution.Low.ToString(), CachingType.RedisCache, expiry: TimeSpan.FromDays(7), cancellationToken: cancellationToken).ConfigureAwait(false);
 
                 Log.Information($"Yesterday usage:{yesterdayUsage}", yesterdayUsage);
@@ -270,9 +286,14 @@ public class TencentClient : ITencentClient
         return client.DescribeTrtcUsageSync(req);
     }
     
-    private static int GetWeekOfMonth(DateTimeOffset date)
+    private static int GetNaturalWeekOfMonth(DateTimeOffset date)
     {
+        var firstDayOfMonth = new DateTimeOffset(date.Year, date.Month, 1, 0, 0, 0, date.Offset);
+        var firstDayOfWeek = (int)firstDayOfMonth.DayOfWeek;
+        if (firstDayOfWeek == 0) firstDayOfWeek = 7;
+        
         var dayOfMonth = date.Day;
-        return (int)Math.Ceiling(dayOfMonth / 7.0);
+        
+        return (int)Math.Ceiling((dayOfMonth + firstDayOfWeek - 1) / 7.0);
     }
 }

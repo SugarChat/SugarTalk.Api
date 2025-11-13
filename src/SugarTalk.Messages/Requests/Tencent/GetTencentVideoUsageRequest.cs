@@ -9,7 +9,7 @@ namespace SugarTalk.Messages.Requests.Tencent;
 [AllowGuestAccess]
 public class GetTencentVideoUsageRequest : IRequest
 {
-    public DateTimeOffset CurrentDate { get; set; } = DateTimeOffset.Now;
+    public DateTimeOffset CurrentDate { get; set; } = TimeZoneInfo.ConvertTime(DateTimeOffset.UtcNow, TimeZoneInfo.FindSystemTimeZoneById("Asia/Shanghai"));
 }
 
 public class GetTencentVideoUsageResponse : SugarTalkResponse<ScreenRecordingResolution?>
