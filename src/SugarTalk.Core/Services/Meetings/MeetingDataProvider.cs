@@ -689,6 +689,7 @@ namespace SugarTalk.Core.Services.Meetings
         {
             return await _repository.QueryNoTracking<Meeting>()
                 .Where(x => x.AppointmentType == MeetingAppointmentType.Appointment)
+                .Where(x => x.Status != MeetingStatus.Cancelled)
                 .Join(_repository.QueryNoTracking<MeetingRepeatRule>(), meeting => meeting.Id, rule => rule.MeetingId,
                     (meeting, rule) => new { meeting, rule })
                 .Where(y => y.rule.RepeatType != MeetingRepeatType.None)
