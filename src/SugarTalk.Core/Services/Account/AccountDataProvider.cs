@@ -30,7 +30,7 @@ namespace SugarTalk.Core.Services.Account
         
         Task<UserAccountDto> GetUserAccountAsync(
             int? id = null, string username = null, string thirdPartyUserId = null, bool includeRoles = false,
-            UserAccountIssuer? issuer = null, CancellationToken cancellationToken = default);
+            UserAccountIssuer? issuer = null, bool includeProfile = false, CancellationToken cancellationToken = default);
 
         Task<UserAccount> CreateUserAccountAsync(string userName, string password, string thirdPartyUserId = null,
             UserAccountIssuer authType = UserAccountIssuer.Wiltechs, CancellationToken cancellationToken = default);
@@ -76,7 +76,7 @@ namespace SugarTalk.Core.Services.Account
         
         public async Task<UserAccountDto> GetUserAccountAsync(
             int? id = null, string username = null, string thirdPartyUserId = null, bool includeRoles = false,
-            UserAccountIssuer? issuer = null, CancellationToken cancellationToken = default)
+            UserAccountIssuer? issuer = null, bool includeProfile = false, CancellationToken cancellationToken = default)
         {
             var query = _repository.QueryNoTracking<UserAccount>();
 
@@ -111,6 +111,9 @@ namespace SugarTalk.Core.Services.Account
                         .ToListAsync(cancellationToken).ConfigureAwait(false);
                 }
             }
+
+            if (includeProfile)
+                account.Url = (await _repository.QueryNoTracking<UserAccountProfile>().FirstOrDefaultAsync(x => x.UserAccountId == account.Id, cancellationToken))?.Url;
 
             return account;
         }

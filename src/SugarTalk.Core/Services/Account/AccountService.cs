@@ -6,6 +6,9 @@ using System.Threading;
 using SugarTalk.Core.Ioc;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
+using SugarTalk.Core.Services.Aliyun;
+using SugarTalk.Core.Services.Identity;
+using SugarTalk.Messages.Commands.Account;
 using SugarTalk.Messages.Dto.Users;
 using SugarTalk.Core.Services.Caching;
 using SugarTalk.Core.Services.Identity;
@@ -28,6 +31,8 @@ namespace SugarTalk.Core.Services.Account
         Task<UserAccountDto> GetOrCreateUserAccountFromThirdPartyAsync(string userId, string userName, UserAccountIssuer issuer, CancellationToken cancellationToken);
 
         Task<UserAccountDto> GetOrCreateGuestUserAccountAsync(string userName, CancellationToken cancellationToken);
+
+        Task<UploadPhotoResponse> UploadPhotoAsync(UploadPhotoCommand command, CancellationToken cancellationToken);
     }
     
     public class AccountService : IAccountService
@@ -35,17 +40,20 @@ namespace SugarTalk.Core.Services.Account
         private readonly IMapper _mapper;
         private readonly ITokenProvider _tokenProvider;
         private readonly IIdentityService _identityService;
+        private readonly IAliYunOssService _aliYunOssService;
         private readonly IRedisSafeRunner _redisSafeRunner;
         private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly IAccountDataProvider _accountDataProvider;
 
-        public AccountService(IMapper mapper, IIdentityService identityService, IRedisSafeRunner redisSafeRunner, IHttpContextAccessor httpContextAccessor, IAccountDataProvider accountDataProvider, ITokenProvider tokenProvider)
+        public AccountService(IMapper mapper, IIdentityService identityService, IRedisSafeRunner redisSafeRunner,
+            IAccountDataProvider accountDataProvider, ITokenProvider tokenProvider, IAliYunOssService aliYunOssService)
+
         {
             _mapper = mapper;
             _tokenProvider = tokenProvider;
             _identityService = identityService;
+            _aliYunOssService = aliYunOssService;
             _accountDataProvider = accountDataProvider;
-            _httpContextAccessor = httpContextAccessor;
             _redisSafeRunner = redisSafeRunner;
         }
         
@@ -110,7 +118,20 @@ namespace SugarTalk.Core.Services.Account
 
             return new UserAccountRegisteredEvent();
         }
-        
+
+        public async Task<UploadPhotoResponse> UploadPhotoAsync(UploadPhotoCommand command, CancellationToken cancellationToken)
+        {
+            if (command.FileName == null || command.FileContent == null)
+                return null;
+            
+            _aliYunOssService.UploadFile(command.FileName, command.FileContent);
+
+            return new UploadPhotoResponse
+            {
+                Url = _aliYunOssService.GetFileUrl(command.FileName) 
+            };
+        }
+
         private async Task CheckCanRegisterAsync(RegisterCommand command, CancellationToken cancellationToken)
         {
             var userAccount = await _accountDataProvider

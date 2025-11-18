@@ -34,4 +34,25 @@ public class AccountController : ControllerBase
         
         return Ok(response);
     }
+    
+    [Authorize]
+    [Route("upload/photo"), HttpPost]
+    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(UploadPhotoResponse))]
+    public async Task<IActionResult> UploadPhotoAsync([FromForm] IFormFile file)
+    {
+        var ms = new MemoryStream();
+
+        await file.CopyToAsync(ms).ConfigureAwait(false);
+
+        var fileContent = ms.ToArray();
+
+        var request = new UploadPhotoCommand
+        {
+            FileName = file.FileName, FileContent = fileContent
+        };
+        
+        var response = await _mediator.SendAsync<UploadPhotoCommand, UploadPhotoResponse>(request);
+        
+        return Ok(response);
+    }
 }
