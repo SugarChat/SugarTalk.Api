@@ -46,6 +46,8 @@ namespace SugarTalk.Core.Services.Account
         Task<UserAccountDto> CheckCurrentLoggedInUser(CancellationToken cancellationToken);
         
         Task<UserAccountDto> GetUserAccountByApiKeyAsync(string apiKey, CancellationToken cancellationToken = default);
+
+        Task AddUserAccountProfileAsync(UserAccountProfile userAccountProfile, CancellationToken cancellationToken);
     }
     
     public partial class AccountDataProvider : IAccountDataProvider
@@ -219,6 +221,13 @@ namespace SugarTalk.Core.Services.Account
             var account = await GetUserAccountAsync(id: accountApiKey.UserAccountId, includeRoles: true, cancellationToken: cancellationToken).ConfigureAwait(false);
 
             return account != null ? _mapper.Map<UserAccountDto>(account) : null;
+        }
+
+        public async Task AddUserAccountProfileAsync(UserAccountProfile userAccountProfile, CancellationToken cancellationToken)
+        {
+            await _repository.InsertAsync(userAccountProfile, cancellationToken).ConfigureAwait(false);
+
+            await _unitOfWork.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
         }
     }
 }
