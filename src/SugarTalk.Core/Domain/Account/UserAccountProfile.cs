@@ -19,5 +19,5 @@ public class UserAccountProfile : IEntity
     public string Url { get; set; }
 
     [Column("created_date")]
-    public DateTimeOffset CreatedDate { get; set; } = new ();
+    public DateTimeOffset CreatedDate { get; set; } = DateTimeOffset.Now;
 }
