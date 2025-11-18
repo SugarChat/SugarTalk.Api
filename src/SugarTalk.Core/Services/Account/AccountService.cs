@@ -111,7 +111,7 @@ namespace SugarTalk.Core.Services.Account
 
         public async Task<UploadPhotoResponse> UploadPhotoAsync(UploadPhotoCommand command, CancellationToken cancellationToken)
         {
-            if (command.FileName == null || command.FileContent == null)
+            if (command.FileName == null || command.FileContent == null || _currentUser.Id == null)
                 return null;
 
             try
@@ -120,10 +120,15 @@ namespace SugarTalk.Core.Services.Account
 
                 var url = _aliYunOssService.GetFileUrl(command.FileName);
 
+                var userAccountProfile = await _accountDataProvider.GetUserAccountProfileAsync(_currentUser.Id.Value, cancellationToken).ConfigureAwait(false);
+
+                if (userAccountProfile != null)
+                    await _accountDataProvider.DeleteUserAccountProfileAsync(userAccountProfile, cancellationToken).ConfigureAwait(false);
+                        
                 await _accountDataProvider.AddUserAccountProfileAsync(new UserAccountProfile
                 {
                     Url = url,
-                    UserAccountId = _currentUser.Id ?? 0
+                    UserAccountId = _currentUser.Id.Value
                 }, cancellationToken).ConfigureAwait(false);
                 
                 return new UploadPhotoResponse { Url = url };

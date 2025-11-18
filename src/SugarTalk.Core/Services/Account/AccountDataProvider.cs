@@ -48,6 +48,10 @@ namespace SugarTalk.Core.Services.Account
         Task<UserAccountDto> GetUserAccountByApiKeyAsync(string apiKey, CancellationToken cancellationToken = default);
 
         Task AddUserAccountProfileAsync(UserAccountProfile userAccountProfile, CancellationToken cancellationToken);
+
+        Task<UserAccountProfile> GetUserAccountProfileAsync(int userAccountId, CancellationToken cancellationToken);
+
+        Task DeleteUserAccountProfileAsync(UserAccountProfile userAccountProfile, CancellationToken cancellationToken);
     }
     
     public partial class AccountDataProvider : IAccountDataProvider
@@ -226,6 +230,18 @@ namespace SugarTalk.Core.Services.Account
         public async Task AddUserAccountProfileAsync(UserAccountProfile userAccountProfile, CancellationToken cancellationToken)
         {
             await _repository.InsertAsync(userAccountProfile, cancellationToken).ConfigureAwait(false);
+
+            await _unitOfWork.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        }
+
+        public async Task<UserAccountProfile> GetUserAccountProfileAsync(int userAccountId, CancellationToken cancellationToken)
+        {
+            return await _repository.QueryNoTracking<UserAccountProfile>().FirstOrDefaultAsync(x => x.UserAccountId == userAccountId, cancellationToken).ConfigureAwait(false);
+        }
+
+        public async Task DeleteUserAccountProfileAsync(UserAccountProfile userAccountProfile, CancellationToken cancellationToken)
+        {
+            await _repository.DeleteAsync(userAccountProfile, cancellationToken).ConfigureAwait(false);
 
             await _unitOfWork.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
         }
