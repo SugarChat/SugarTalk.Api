@@ -45,7 +45,7 @@ public class IdentityService : IIdentityService
         var userId = _currentUser.Id;
 
         if (userId != null)
-            return await _accountDataProvider.GetUserAccountAsync(userId.Value, cancellationToken: cancellationToken).ConfigureAwait(false);
+            return await _accountDataProvider.GetUserAccountAsync(userId.Value, includeProfile: true, cancellationToken: cancellationToken).ConfigureAwait(false);
         
         if (throwWhenNotFound)
             throw new UnauthorizedAccessException();
