@@ -119,7 +119,7 @@ namespace SugarTalk.Core.Services.Account
             }
 
             if (includeProfile)
-                account.Url = (await _repository.QueryNoTracking<UserAccountProfile>().FirstOrDefaultAsync(x => x.UserAccountId == account.Id, cancellationToken))?.Url;
+                account.Url = (await _repository.QueryNoTracking<UserAccountProfile>().FirstOrDefaultAsync(x => x.UserAccountId == account.Id, cancellationToken).ConfigureAwait(false)).Url;
 
             return account;
         }
