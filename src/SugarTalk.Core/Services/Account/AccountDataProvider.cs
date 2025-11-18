@@ -102,7 +102,9 @@ namespace SugarTalk.Core.Services.Account
                 .ProjectTo<UserAccountDto>(_mapper.ConfigurationProvider)
                 .FirstOrDefaultAsync(cancellationToken).ConfigureAwait(false);
 
-            if (account == null || !includeRoles) return account;
+            if (account == null) return null;
+
+            if (includeRoles)
             {
                 var userRoleIds = await _repository
                     .QueryNoTracking<RoleUser>().Where(x => x.UserId == account.Id)
