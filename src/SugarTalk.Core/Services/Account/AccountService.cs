@@ -1,11 +1,12 @@
+using System;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 using AutoMapper;
-using Microsoft.AspNetCore.Http;
 using Serilog;
 using SugarTalk.Core.Domain.Account.Exceptions;
 using SugarTalk.Core.Ioc;
+using SugarTalk.Core.Domain.Account;
 using SugarTalk.Core.Services.Aliyun;
 using SugarTalk.Core.Services.Identity;
 using SugarTalk.Messages.Commands.Account;
@@ -38,14 +39,16 @@ namespace SugarTalk.Core.Services.Account
         private readonly IIdentityService _identityService;
         private readonly IAliYunOssService _aliYunOssService;
         private readonly IAccountDataProvider _accountDataProvider;
+        private readonly ICurrentUser _currentUser;
 
-        public AccountService(IMapper mapper, IIdentityService identityService, IAccountDataProvider accountDataProvider, ITokenProvider tokenProvider, IAliYunOssService aliYunOssService)
+        public AccountService(IMapper mapper, IIdentityService identityService, IAccountDataProvider accountDataProvider, ITokenProvider tokenProvider, IAliYunOssService aliYunOssService, ICurrentUser currentUser)
         {
             _mapper = mapper;
             _tokenProvider = tokenProvider;
             _identityService = identityService;
             _aliYunOssService = aliYunOssService;
             _accountDataProvider = accountDataProvider;
+            _currentUser = currentUser;
         }
         
         public async Task<LoginResponse> LoginAsync(LoginRequest request, CancellationToken cancellationToken)
@@ -110,13 +113,26 @@ namespace SugarTalk.Core.Services.Account
         {
             if (command.FileName == null || command.FileContent == null)
                 return null;
-            
-            _aliYunOssService.UploadFile(command.FileName, command.FileContent);
 
-            return new UploadPhotoResponse
+            try
             {
-                Url = _aliYunOssService.GetFileUrl(command.FileName) 
-            };
+                _aliYunOssService.UploadFile(command.FileName, command.FileContent);
+
+                var url = _aliYunOssService.GetFileUrl(command.FileName);
+
+                await _accountDataProvider.AddUserAccountProfileAsync(new UserAccountProfile
+                {
+                    Url = url,
+                    UserAccountId = _currentUser.Id ?? 0
+                }, cancellationToken).ConfigureAwait(false);
+                
+                return new UploadPhotoResponse { Url = url };
+            }
+            catch (Exception e)
+            {
+                Log.Information("Upload user photo failed: {@e}", e);
+                throw;
+            }
         }
 
         private async Task CheckCanRegisterAsync(RegisterCommand command, CancellationToken cancellationToken)
