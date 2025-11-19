@@ -52,7 +52,7 @@ public class WiltechsAuthenticationHandler : AuthenticationHandler<WiltechsAuthe
                     .GetAsync<WiltechsUserInfo>(Options.Authority, CancellationToken.None, headers: headers).ConfigureAwait(false);
             }, CachingType.RedisCache, TimeSpan.FromDays(30), CancellationToken.None).ConfigureAwait(false);
             
-            Log.Information("Get wiltechUser info :{wiltechUser}", wiltechUser);
+            Log.Information("Get wiltechUser info :{@wiltechUser}", wiltechUser);
 
             if (wiltechUser.UserId == Guid.Empty && string.IsNullOrWhiteSpace(wiltechUser.UserName))
             {
