@@ -44,7 +44,9 @@ public class ApiKeyAuthenticationHandler : AuthenticationHandler<ApiKeyAuthentic
             new Claim(ClaimTypes.NameIdentifier, userInfo.Id.ToString()),
         }, AuthenticationSchemeConstants.ApiKeyAuthenticationScheme);
 
-        userInfo.Roles.ForEach(x => identity.AddClaim(new Claim(ClaimTypes.Role, x.Name)));
+
+        if (userInfo.Roles is { Count: >0 })
+            userInfo.Roles.ForEach(x => identity.AddClaim(new Claim(ClaimTypes.Role, x.Name)));
         
         var claimsPrincipal = new ClaimsPrincipal(identity);
 

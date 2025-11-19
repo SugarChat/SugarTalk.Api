@@ -156,7 +156,10 @@ namespace SugarTalk.Core.Services.Account
                 new(ClaimTypes.NameIdentifier, account.Id.ToString()),
                 new(ClaimTypes.Authentication, AuthenticationSchemeConstants.SelfAuthenticationScheme)
             };
-            claims.AddRange(account.Roles.Select(r => new Claim(ClaimTypes.Role, r.Name)));
+
+            if (account.Roles is { Count: >0 })
+                claims.AddRange(account.Roles.Select(r => new Claim(ClaimTypes.Role, r.Name)));    
+            
             return claims;
         }
 
