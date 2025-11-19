@@ -24,16 +24,18 @@ public class IdentityService : IIdentityService
     
     public async Task<bool> IsInRolesAsync(int userId, string[] rolesArray, CancellationToken cancellationToken)
     {
-        var user = 
-            await _accountDataProvider.GetUserAccountAsync(userId, includeRoles: true, cancellationToken: cancellationToken).ConfigureAwait(false);
-        
-        var roles = user.Roles.Select(x => x.Name).ToList();
+        var user = await _accountDataProvider.GetUserAccountAsync(userId, includeRoles: true, cancellationToken: cancellationToken).ConfigureAwait(false);
 
-        foreach (var role in rolesArray)
+        if (user.Roles is { Count: > 0 })
         {
-            if (!roles.Contains(role))
+            var roles = user.Roles.Select(x => x.Name).ToList();
+
+            foreach (var role in rolesArray)
             {
-                return false;
+                if (!roles.Contains(role))
+                {
+                    return false;
+                }
             }
         }
         

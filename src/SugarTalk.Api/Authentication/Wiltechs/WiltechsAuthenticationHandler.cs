@@ -70,7 +70,7 @@ public class WiltechsAuthenticationHandler : AuthenticationHandler<WiltechsAuthe
                 new Claim(ClaimTypes.Authentication, UserAccountIssuer.Wiltechs.ToString())
             }, AuthenticationSchemeConstants.WiltechsAuthenticationScheme);
 
-            if (userAccount.Roles is { Count: >0})
+            if (userAccount.Roles is { Count: >0 })
                 userAccount.Roles.ForEach(x => identity.AddClaim(new Claim(ClaimTypes.Role, x.Name)));
             
             var claimsPrincipal = new ClaimsPrincipal(identity);
