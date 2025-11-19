@@ -110,7 +110,7 @@ namespace SugarTalk.Core.Services.Account
                     .QueryNoTracking<RoleUser>().Where(x => x.UserId == account.Id)
                     .Select(x => x.RoleId).ToListAsync(cancellationToken).ConfigureAwait(false);
 
-                if (userRoleIds.Any())
+                if (userRoleIds is { Count: > 0 })
                 {
                     account.Roles = await _repository
                         .QueryNoTracking<Role>()
