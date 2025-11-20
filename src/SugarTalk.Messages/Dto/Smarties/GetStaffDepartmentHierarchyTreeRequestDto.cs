@@ -48,4 +48,6 @@ public class StaffHierarchyUserDto
     public string UserName { get; set; }
 
     public MeetingStaffStatus? MeetingStaffStatus { get; set; }
+
+    public string Url { get; set; }
 }
