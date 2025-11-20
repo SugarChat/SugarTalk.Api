@@ -1376,6 +1376,10 @@ namespace SugarTalk.Core.Services.Meetings
                 HierarchyStaffRange = request.HierarchyStaffRange
             }, cancellationToken).ConfigureAwait(false);
 
+            var userAccountProfile = await _accountDataProvider.GetUserAccountProfilesAsync(cancellationToken).ConfigureAwait(false);
+            
+            UpdateStaffs(staffs.Data.StaffDepartmentHierarchy, null, userAccountProfile);
+            
             return new GetStaffsTreeResponse
             {
                 Data = staffs.Data

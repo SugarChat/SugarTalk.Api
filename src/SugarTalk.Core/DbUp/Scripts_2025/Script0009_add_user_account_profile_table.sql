@@ -5,3 +5,6 @@ create table if not exists `user_account_profile`
     `url` varchar(500) not null,
     `created_date` datetime(3) not null
 )charset=utf8mb4;
+
+create index idx_user_account_id
+    on user_account_profile (user_account_id);

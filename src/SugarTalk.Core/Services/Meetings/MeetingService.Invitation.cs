@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Mediator.Net;
 using Serilog;
+using SugarTalk.Core.Domain.Account;
 using SugarTalk.Core.Domain.Meeting;
 using SugarTalk.Messages.Commands.Meetings;
 using SugarTalk.Messages.Dto.Meetings;
@@ -77,7 +78,9 @@ public partial class MeetingService : IMeetingService
 
         Log.Information("Invitation meeting user session: {@meetingUserSessions}", meetingUserSessions);
         
-        UpdateStaffs(staffs.Data.StaffDepartmentHierarchy, meetingUserSessions.Select(x => x.UserName).ToList());
+        var userAccountProfile = await _accountDataProvider.GetUserAccountProfilesAsync(cancellationToken).ConfigureAwait(false);
+        
+        UpdateStaffs(staffs.Data.StaffDepartmentHierarchy, meetingUserSessions.Select(x => x.UserName).ToList(), userAccountProfile);
         
         return new GetMeetingInvitationUsersResponse
         {
@@ -85,7 +88,7 @@ public partial class MeetingService : IMeetingService
         };
     }
 
-    public static void UpdateStaffs(List<GetStaffDepartmentHierarchyTreeRequestDto> staffDepartmentHierarchy, List<string> userNames)
+    public static void UpdateStaffs(List<GetStaffDepartmentHierarchyTreeRequestDto> staffDepartmentHierarchy, List<string> userNames, Dictionary<string, string> userAccountProfile)
     {
         foreach (var staff in staffDepartmentHierarchy)
         {
@@ -93,15 +96,16 @@ public partial class MeetingService : IMeetingService
             {
                 foreach (var member in staff.Staffs)
                 {
-                    member.MeetingStaffStatus = userNames.Contains(member.UserName)
-                        ? MeetingStaffStatus.Online
-                        : MeetingStaffStatus.NoJoin;
+                    if (userNames != null)
+                        member.MeetingStaffStatus = userNames.Contains(member.UserName) ? MeetingStaffStatus.Online : MeetingStaffStatus.NoJoin;
+                    
+                    member.Url = userAccountProfile.TryGetValue(member.UserName, out var url) ? url : null;
                 }
             }
             
             if (staff.Childrens?.Any() == true)
             {
-                UpdateStaffs(staff.Childrens, userNames);
+                UpdateStaffs(staff.Childrens, userNames, userAccountProfile);
             }
         }
     }

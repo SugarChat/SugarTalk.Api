@@ -15,6 +15,7 @@ using SugarTalk.Core.Ioc;
 using SugarTalk.Core.Services.Identity;
 using SugarTalk.Messages.Dto.Users;
 using SugarTalk.Messages.Enums.Account;
+using SugarTalk.Messages.Requests.Meetings;
 using Role = SugarTalk.Core.Domain.Account.Role;
 
 namespace SugarTalk.Core.Services.Account
@@ -52,6 +53,10 @@ namespace SugarTalk.Core.Services.Account
         Task<UserAccountProfile> GetUserAccountProfileAsync(int userAccountId, CancellationToken cancellationToken);
 
         Task DeleteUserAccountProfileAsync(UserAccountProfile userAccountProfile, CancellationToken cancellationToken);
+
+        Task<Dictionary<string, string>> GetUserAccountProfilesAsync(CancellationToken cancellationToken);
+        
+        Task<List<NoJoinMeetingUserSessionsDto>> GetUserAccountAllInfosAsync(List<string> userNames, CancellationToken cancellationToken);
     }
     
     public partial class AccountDataProvider : IAccountDataProvider
@@ -249,6 +254,30 @@ namespace SugarTalk.Core.Services.Account
             await _repository.DeleteAsync(userAccountProfile, cancellationToken).ConfigureAwait(false);
 
             await _unitOfWork.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        }
+
+        public async Task<Dictionary<string, string>> GetUserAccountProfilesAsync(CancellationToken cancellationToken)
+        {
+            return await (from profile in _repository.QueryNoTracking<UserAccountProfile>()
+                join user in _repository.QueryNoTracking<UserAccount>() on profile.UserAccountId equals user.Id
+                select new
+                {
+                    user.UserName,
+                    profile.Url
+                }).ToDictionaryAsync(x => x.UserName, x => x.UserName, cancellationToken);
+        }
+
+        public async Task<List<NoJoinMeetingUserSessionsDto>> GetUserAccountAllInfosAsync(List<string> userNames, CancellationToken cancellationToken)
+        {
+            return await _repository.QueryNoTracking<UserAccount>()
+                .Where(x => userNames.Contains(x.UserName))
+                .Join(_repository.QueryNoTracking<UserAccountProfile>(), x => x.Id, s => s.UserAccountId,
+                   (x, s) => new NoJoinMeetingUserSessionsDto
+                    {
+                        Id = x.Id,
+                        UserName = x.UserName,
+                        Url = s.Url
+                    }).ToListAsync(cancellationToken).ConfigureAwait(false);
         }
     }
 }
