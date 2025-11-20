@@ -96,10 +96,9 @@ public partial class MeetingService : IMeetingService
             {
                 foreach (var member in staff.Staffs)
                 {
-                    member.MeetingStaffStatus = userNames.Contains(member.UserName)
-                        ? MeetingStaffStatus.Online
-                        : MeetingStaffStatus.NoJoin;
-
+                    if (userNames != null)
+                        member.MeetingStaffStatus = userNames.Contains(member.UserName) ? MeetingStaffStatus.Online : MeetingStaffStatus.NoJoin;
+                    
                     member.Url = userAccountProfile.TryGetValue(member.UserName, out var url) ? url : null;
                 }
             }
