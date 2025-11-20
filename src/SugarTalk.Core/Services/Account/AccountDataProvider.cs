@@ -264,7 +264,7 @@ namespace SugarTalk.Core.Services.Account
                 {
                     user.UserName,
                     profile.Url
-                }).ToDictionaryAsync(x => x.UserName, x => x.UserName, cancellationToken);
+                }).ToDictionaryAsync(x => x.UserName, x => x.Url, cancellationToken);
         }
 
         public async Task<List<NoJoinMeetingUserSessionsDto>> GetUserAccountAllInfosAsync(List<string> userNames, CancellationToken cancellationToken)
