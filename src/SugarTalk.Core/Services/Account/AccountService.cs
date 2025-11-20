@@ -5,7 +5,6 @@ using System.Threading.Tasks;
 using Serilog;
 using AutoMapper;
 using SugarTalk.Core.Ioc;
-using Microsoft.AspNetCore.Http;
 using SugarTalk.Core.Domain.Account;
 using SugarTalk.Core.Services.Aliyun;
 using SugarTalk.Core.Services.Identity;
@@ -41,11 +40,10 @@ namespace SugarTalk.Core.Services.Account
         private readonly IIdentityService _identityService;
         private readonly IAliYunOssService _aliYunOssService;
         private readonly IRedisSafeRunner _redisSafeRunner;
-        private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly IAccountDataProvider _accountDataProvider;
         private readonly ICurrentUser _currentUser;
         
-        public AccountService(IMapper mapper, IIdentityService identityService, IAccountDataProvider accountDataProvider, ITokenProvider tokenProvider, IAliYunOssService aliYunOssService, ICurrentUser currentUser)
+        public AccountService(IMapper mapper, IIdentityService identityService, IAccountDataProvider accountDataProvider, ITokenProvider tokenProvider, IAliYunOssService aliYunOssService, ICurrentUser currentUser, IRedisSafeRunner redisSafeRunner)
         {
             _mapper = mapper;
             _tokenProvider = tokenProvider;
@@ -53,6 +51,7 @@ namespace SugarTalk.Core.Services.Account
             _aliYunOssService = aliYunOssService;
             _accountDataProvider = accountDataProvider;
             _currentUser = currentUser;
+            _redisSafeRunner = redisSafeRunner;
         }
         
         public async Task<LoginResponse> LoginAsync(LoginRequest request, CancellationToken cancellationToken)
