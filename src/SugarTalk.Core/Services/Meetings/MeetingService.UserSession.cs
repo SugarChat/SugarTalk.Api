@@ -4,14 +4,12 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using Serilog;
-using SugarTalk.Core.Domain.Account;
 using SugarTalk.Core.Domain.Meeting;
 using SugarTalk.Core.Services.Exceptions;
 using SugarTalk.Messages.Dto.Meetings;
 using SugarTalk.Messages.Events.Meeting;
 using SugarTalk.Messages.Commands.Meetings;
 using SugarTalk.Messages.Dto.Smarties;
-using SugarTalk.Messages.Dto.UserAccount;
 using SugarTalk.Messages.Requests.Meetings;
 using SugarTalk.Messages.Enums.Meeting;
 
