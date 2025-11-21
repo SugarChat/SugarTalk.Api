@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using Mediator.Net.Contracts;
 using SugarTalk.Messages.Dto.Meetings;
+using SugarTalk.Messages.Enums.Account;
 using SugarTalk.Messages.Enums.Meeting;
 using SugarTalk.Messages.Responses;
 
@@ -43,5 +44,7 @@ public class NoJoinMeetingUserSessionsDto
     
     public MeetingInvitationStatus? InvitationStatus { get; set; }
 
+    public UserAccountIssuer Issuer { get; set; }
+    
     public string Url { get; set; }
 }

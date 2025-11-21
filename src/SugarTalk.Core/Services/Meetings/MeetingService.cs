@@ -309,13 +309,13 @@ namespace SugarTalk.Core.Services.Meetings
         public async Task<GetMeetingHistoriesByUserResponse> GetMeetingHistoriesByUserAsync(
             GetMeetingHistoriesByUserRequest request, CancellationToken cancellationToken)
         {
-            var user = await _accountDataProvider
-                .GetUserAccountAsync(_currentUser.Id.Value, cancellationToken: cancellationToken).ConfigureAwait(false);
+            if (_currentUser.Id == null) return null;
+            
+            var user = await _accountDataProvider.GetUserAccountAsync(_currentUser.Id.Value, cancellationToken: cancellationToken).ConfigureAwait(false);
 
             if (user is null) throw new UnauthorizedAccessException();
 
-            var (meetingHistoryList, totalCount) = await _meetingDataProvider
-                .GetMeetingHistoriesByUserIdAsync(user.Id, request.Keyword, request.PageSetting, cancellationToken).ConfigureAwait(false);
+            var (meetingHistoryList, totalCount) = await _meetingDataProvider.GetMeetingHistoriesByUserIdAsync(user.Id, request.Keyword, request.PageSetting, cancellationToken).ConfigureAwait(false);
 
             return new GetMeetingHistoriesByUserResponse
             {
