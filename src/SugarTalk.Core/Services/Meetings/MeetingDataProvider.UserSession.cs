@@ -215,7 +215,8 @@ public partial class MeetingDataProvider
     {
         return await (from session in _repository.Query<MeetingUserSession>().Where(x => x.MeetingId == meetingId && (x.OnlineType == MeetingUserSessionOnlineType.Online || x.OnlineType == MeetingUserSessionOnlineType.Waiting))
             join userAccount in _repository.Query<UserAccount>() on session.UserId equals userAccount.Id
-            join userAccountProfile in _repository.QueryNoTracking<UserAccountProfile>() on userAccount.Id equals userAccountProfile.UserAccountId
+            join userAccountProfile in _repository.QueryNoTracking<UserAccountProfile>() on userAccount.Id equals userAccountProfile.UserAccountId into profileGroup
+            from profile in profileGroup.DefaultIfEmpty() 
             join meeting in _repository.Query<Meeting>() on session.MeetingId equals meeting.Id
             orderby session.LastJoinTime
             select new MeetingUserSessionDto
@@ -237,7 +238,7 @@ public partial class MeetingDataProvider
                 IsMeetingCreator = session.UserId == meeting.CreatedBy,
                 AllowEntryMeeting = session.AllowEntryMeeting,
                 IsEntryMeeting = session.IsEntryMeeting,
-                Url = userAccountProfile.Url
+                Url = profile != null ? profile.Url : null
             }).ToListAsync(cancellationToken).ConfigureAwait(false);
     }
 }

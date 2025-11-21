@@ -85,14 +85,16 @@ public partial class MeetingDataProvider
         if (meetingSubId.HasValue)
             query = query.Where(x => x.MeetingSubId == meetingSubId.Value);
         
-        return await query.OrderByDescending(x => x.CreatedDate)
-            .Join(_repository.Query<UserAccount>(), x => x.BeInviterUserId, s => s.Id, (record, account) => new {record,account})
-            .Join(_repository.QueryNoTracking<UserAccountProfile>(), x => x.account.Id, s => s.UserAccountId, (arg1, profile) => new NoJoinMeetingUserSessionsDto
+        return await (from record in query.OrderByDescending(x => x.CreatedDate)
+            join account in _repository.Query<UserAccount>() on record.BeInviterUserId equals account.Id
+            join profile in _repository.QueryNoTracking<UserAccountProfile>() on account.Id equals profile.UserAccountId into profileGroup
+            from profile in profileGroup.DefaultIfEmpty()
+            select new NoJoinMeetingUserSessionsDto
             {
-                Id = arg1.record.BeInviterUserId,
-                UserName = arg1.account.UserName,
-                InvitationStatus = arg1.record.InvitationStatus,
-                Url = profile.Url
+                Id = record.BeInviterUserId,
+                UserName = account.UserName,
+                InvitationStatus = record.InvitationStatus,
+                Url = profile != null ? profile.Url : null
             }).ToListAsync(cancellationToken).ConfigureAwait(false);
     }
 }
