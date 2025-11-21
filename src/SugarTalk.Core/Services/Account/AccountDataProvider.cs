@@ -269,15 +269,17 @@ namespace SugarTalk.Core.Services.Account
 
         public async Task<List<NoJoinMeetingUserSessionsDto>> GetUserAccountAllInfosAsync(List<string> userNames, CancellationToken cancellationToken)
         {
-            return await _repository.QueryNoTracking<UserAccount>()
-                .Where(x => userNames.Contains(x.UserName))
-                .Join(_repository.QueryNoTracking<UserAccountProfile>(), x => x.Id, s => s.UserAccountId,
-                   (x, s) => new NoJoinMeetingUserSessionsDto
-                    {
-                        Id = x.Id,
-                        UserName = x.UserName,
-                        Url = s.Url
-                    }).ToListAsync(cancellationToken).ConfigureAwait(false);
+            return await (
+                from u in _repository.QueryNoTracking<UserAccount>().Where(x => userNames.Contains(x.UserName))
+                join p in _repository.QueryNoTracking<UserAccountProfile>() on u.Id equals p.UserAccountId into profileGroup
+                from profile in profileGroup.DefaultIfEmpty()
+                select new NoJoinMeetingUserSessionsDto
+                {
+                    Id = u.Id,
+                    UserName = u.UserName,
+                    Url = profile != null ? profile.Url : null
+                }
+            ).ToListAsync(cancellationToken).ConfigureAwait(false);
         }
     }
 }
