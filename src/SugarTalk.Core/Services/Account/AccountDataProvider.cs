@@ -56,7 +56,7 @@ namespace SugarTalk.Core.Services.Account
 
         Task<Dictionary<string, string>> GetUserAccountProfilesAsync(CancellationToken cancellationToken);
         
-        Task<List<NoJoinMeetingUserSessionsDto>> GetUserAccountAllInfosAsync(List<string> userNames, CancellationToken cancellationToken);
+        Task<List<NoJoinMeetingUserSessionsDto>> GetUserAccountAllInfosAsync(List<int> userIds = null, List<string> userNames = null, CancellationToken cancellationToken = default);
     }
     
     public partial class AccountDataProvider : IAccountDataProvider
@@ -267,10 +267,18 @@ namespace SugarTalk.Core.Services.Account
                 }).ToDictionaryAsync(x => x.UserName, x => x.Url, cancellationToken);
         }
 
-        public async Task<List<NoJoinMeetingUserSessionsDto>> GetUserAccountAllInfosAsync(List<string> userNames, CancellationToken cancellationToken)
+        public async Task<List<NoJoinMeetingUserSessionsDto>> GetUserAccountAllInfosAsync(List<int> userIds = null, List<string> userNames = null, CancellationToken cancellationToken = default)
         {
+            var query = _repository.QueryNoTracking<UserAccount>();
+
+            if (userIds != null && userIds.Any())
+                query = query.Where(x => userIds.Contains(x.Id));
+
+            if (userNames != null && userNames.Any())
+                query = query.Where(x => userNames.Contains(x.UserName));
+            
             return await (
-                from u in _repository.QueryNoTracking<UserAccount>().Where(x => userNames.Contains(x.UserName))
+                from u in query
                 join p in _repository.QueryNoTracking<UserAccountProfile>() on u.Id equals p.UserAccountId into profileGroup
                 from profile in profileGroup.DefaultIfEmpty()
                 select new NoJoinMeetingUserSessionsDto

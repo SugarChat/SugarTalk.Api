@@ -457,14 +457,13 @@ namespace SugarTalk.Core.Services.Meetings
             
             var userIds = userSessions.Select(x => x.UserId).Distinct().ToList();
             
-            var userAccounts = await _accountDataProvider.GetUserAccountsAsync(userIds, cancellationToken: cancellationToken).ConfigureAwait(false);
+            var userAccounts = await _accountDataProvider.GetUserAccountAllInfosAsync(userIds: userIds, cancellationToken: cancellationToken).ConfigureAwait(false);
             
             var attendeesByMeeting = userSessions
                 .GroupBy(x => (x.MeetingId, x.MeetingSubId))
                 .ToDictionary(group => group.Key, group =>
                 {
-                    var attendees = group
-                        .Select(x => GetAttendee(userAccounts, x)).ToList();
+                    var attendees = group.Select(x => GetAttendee(userAccounts, x)).ToList();
                     return attendees;
                 });
 
@@ -803,20 +802,14 @@ namespace SugarTalk.Core.Services.Meetings
             return appointmentMeetings.Where(x => !filteredMeetingId.Contains(x.Id)).ToList();
         }
         
-        private static string GetAttendee(List<UserAccount> userAccounts, MeetingUserSession meetingUserSession)
+        private static NoJoinMeetingUserSessionsDto GetAttendee(List<NoJoinMeetingUserSessionsDto> userAccounts, MeetingUserSession meetingUserSession)
         {
             var userAccount = userAccounts.FirstOrDefault(user => user.Id == meetingUserSession.UserId);
 
             if (userAccount == null)
                 throw new Exception("UserAccount not found");
 
-            return userAccount.Issuer switch
-            {
-                UserAccountIssuer.Self => userAccount.UserName,
-                UserAccountIssuer.Guest => meetingUserSession.GuestName,
-                UserAccountIssuer.Wiltechs => userAccount.UserName,
-                _ => throw new Exception("Issuer inexistence")
-            };
+            return userAccount;
         }
     }
 }
