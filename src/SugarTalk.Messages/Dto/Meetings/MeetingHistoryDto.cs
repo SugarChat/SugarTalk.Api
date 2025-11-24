@@ -30,6 +30,8 @@ public class MeetingHistoryDto
     public string MeetingCreator { get; set; }
     
     public List<AttendeesDto> Attendees { get; set; }
+
+    public int AttendeesCount { get; set; }
     
     public MeetingAppointmentType? AppointmentType { get; set; }
 }
