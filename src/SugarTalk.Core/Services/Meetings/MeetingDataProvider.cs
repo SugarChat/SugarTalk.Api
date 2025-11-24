@@ -478,6 +478,7 @@ namespace SugarTalk.Core.Services.Meetings
                 meetingHistory.StartDate = meeting?.StartDate ?? 0;
                 meetingHistory.EndDate = meeting?.EndDate ?? 0;
                 meetingHistory.Attendees = attendees;
+                meetingHistory.AttendeesCount = attendees?.Count ?? 0;
                 meetingHistory.MeetingCreator = userAccounts.FirstOrDefault(x => x.Id == meeting?.MeetingMasterUserId)?.UserName;
                 meetingHistory.AppointmentType = meeting?.AppointmentType;
             }
