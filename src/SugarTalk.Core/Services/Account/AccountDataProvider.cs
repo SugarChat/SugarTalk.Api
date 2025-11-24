@@ -10,9 +10,11 @@ using Microsoft.EntityFrameworkCore;
 using SugarTalk.Core.Constants;
 using SugarTalk.Core.Data;
 using SugarTalk.Core.Domain.Account;
+using SugarTalk.Core.Domain.Meeting;
 using SugarTalk.Core.Extensions;
 using SugarTalk.Core.Ioc;
 using SugarTalk.Core.Services.Identity;
+using SugarTalk.Messages.Dto.Meetings;
 using SugarTalk.Messages.Dto.Users;
 using SugarTalk.Messages.Enums.Account;
 using SugarTalk.Messages.Requests.Meetings;
@@ -57,6 +59,8 @@ namespace SugarTalk.Core.Services.Account
         Task<Dictionary<string, string>> GetUserAccountProfilesAsync(CancellationToken cancellationToken);
         
         Task<List<NoJoinMeetingUserSessionsDto>> GetUserAccountAllInfosAsync(List<int> userIds = null, List<string> userNames = null, CancellationToken cancellationToken = default);
+        
+        Task<List<AttendeesDto>> GetAccountAllInfosAsync(List<int> userIds = null, CancellationToken cancellationToken = default);
     }
     
     public partial class AccountDataProvider : IAccountDataProvider
@@ -282,6 +286,26 @@ namespace SugarTalk.Core.Services.Account
                 join p in _repository.QueryNoTracking<UserAccountProfile>() on u.Id equals p.UserAccountId into profileGroup
                 from profile in profileGroup.DefaultIfEmpty()
                 select new NoJoinMeetingUserSessionsDto
+                {
+                    Id = u.Id,
+                    UserName = u.UserName,
+                    Url = profile != null ? profile.Url : null
+                }
+            ).ToListAsync(cancellationToken).ConfigureAwait(false);
+        }
+        
+        public async Task<List<AttendeesDto>> GetAccountAllInfosAsync(List<int> userIds = null, CancellationToken cancellationToken = default)
+        {
+            var query = _repository.QueryNoTracking<UserAccount>();
+
+            if (userIds != null && userIds.Any())
+                query = query.Where(x => userIds.Contains(x.Id));
+            
+            return await (
+                from u in query
+                join p in _repository.QueryNoTracking<UserAccountProfile>() on u.Id equals p.UserAccountId into profileGroup
+                from profile in profileGroup.DefaultIfEmpty()
+                select new AttendeesDto
                 {
                     Id = u.Id,
                     UserName = u.UserName,

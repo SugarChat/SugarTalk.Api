@@ -29,7 +29,18 @@ public class MeetingHistoryDto
     
     public string MeetingCreator { get; set; }
     
-    public List<NoJoinMeetingUserSessionsDto> attendees { get; set; }
+    public List<AttendeesDto> Attendees { get; set; }
     
     public MeetingAppointmentType? AppointmentType { get; set; }
+}
+
+public class AttendeesDto
+{
+    public int Id { get; set; }
+    
+    public string UserName { get; set; }
+
+    public bool? IsHost { get; set; }
+    
+    public string Url { get; set; }
 }
