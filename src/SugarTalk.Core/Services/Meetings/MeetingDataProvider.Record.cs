@@ -66,6 +66,10 @@ public partial interface IMeetingDataProvider
     Task<List<GetMeetingDataUserDto>> GetMeetingDataUserAsync(DateTimeOffset? startTime, DateTimeOffset? endTime, CancellationToken cancellationToken);
     
     Task AddMeetingRestartRecordsAsync(List<MeetingRestartRecord> meetingRestartRecords, CancellationToken cancellationToken);
+
+    Task AddMeetingRecordAsync(MeetingRecord record, bool foreSave = true, CancellationToken cancellationToken = default);
+
+    Task<int> GetMeetingRecordCountAsync(Guid id, CancellationToken cancellationToken);
 }
 
 public partial class MeetingDataProvider
@@ -114,7 +118,7 @@ public partial class MeetingDataProvider
                 Record => new { Record.MeetingId, Record.MeetingSubId },
                 (temp, Record) => new { temp.Meeting, temp.session, temp.User, Record }
             )
-            .Where(x => !x.Record.IsDeleted);
+            .Where(x => !x.Record.IsDeleted && (x.Record.UserAccountId == null || x.Record.UserAccountId == currentUserId));
 
         query = string.IsNullOrEmpty(request.Keyword) ? query : query.Where(x =>
                 x.Meeting.Title.Contains(request.Keyword) ||
@@ -138,7 +142,7 @@ public partial class MeetingDataProvider
                 MeetingId = x.Meeting.Id,
                 MeetingNumber = x.Meeting.MeetingNumber,
                 RecordNumber = x.Record.RecordNumber,
-                Title = x.Meeting.Title,
+                Title = x.Record.DisplayTitle ?? x.Meeting.Title,
                 StartDate = x.Record.StartedAt.HasValue ? x.Record.StartedAt.Value.ToUnixTimeSeconds() : 0,
                 EndDate = x.Record.EndedAt.HasValue ? x.Record.EndedAt.Value.ToUnixTimeSeconds() : 0,
                 Timezone = x.Meeting.TimeZone,
@@ -436,5 +440,18 @@ public partial class MeetingDataProvider
         await _repository.InsertAllAsync(meetingRestartRecords, cancellationToken).ConfigureAwait(false);
 
         await _unitOfWork.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+    }
+
+    public async Task AddMeetingRecordAsync(MeetingRecord record, bool foreSave = true, CancellationToken cancellationToken = default)
+    {
+        await _repository.InsertAsync(record, cancellationToken).ConfigureAwait(false);
+
+        if (foreSave)
+            await _unitOfWork.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+    }
+
+    public async Task<int> GetMeetingRecordCountAsync(Guid id, CancellationToken cancellationToken)
+    {
+        return await _repository.QueryNoTracking<MeetingRecord>().Where(x => x.OriginalId == id).CountAsync(cancellationToken).ConfigureAwait(false);
     }
 }

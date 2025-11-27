@@ -620,7 +620,7 @@ namespace SugarTalk.Core.Services.Meetings
         
         private static long CalculateMeetingDuration(long startDate, long endDate)
         {
-            if (endDate <= 0 || startDate <= 0 || endDate <= startDate) return 0;
+            if (endDate <= 0 || startDate < 0 || endDate <= startDate) return 0;
 
             return endDate - startDate;
         }
