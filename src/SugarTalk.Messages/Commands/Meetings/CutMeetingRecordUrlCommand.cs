@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Mediator.Net.Contracts;
 using SugarTalk.Messages.Dto.Meetings;
 using SugarTalk.Messages.Responses;
@@ -19,11 +20,16 @@ public class CutMeetingRecordUrlCommand : ICommand
 
     public Guid? MeetingSubId { get; set; }
 
-    public long StartTime { get; set; }
-
-    public long EndTime { get; set; }
+    public List<CutTimeDto> Times { get; set; }
 }
 
 public class CutMeetingRecordUrlResponse : SugarTalkResponse<MeetingRecordDto>
 {
+}
+
+public class CutTimeDto
+{
+    public long StartTime { get; set; }
+
+    public long EndTime { get; set; }
 }

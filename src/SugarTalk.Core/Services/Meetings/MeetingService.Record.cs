@@ -848,12 +848,25 @@ public partial class MeetingService
     public async Task<CutMeetingRecordUrlResponse> CutMeetingRecordUrlAsync(CutMeetingRecordUrlCommand command, CancellationToken cancellationToken)
     {
         var audioByte = await _httpClientFactory.GetAsync<byte[]>(command.Url, cancellationToken);
-        
-        var splitAudio = await _ffmpegService.SplitVideoAsync(audioByte, command.StartTime, command.EndTime, cancellationToken).ConfigureAwait(false);
 
+        var splitVideos = new List<byte[]>();
+        
+        long videoDuration = 0;
+
+        foreach (var time in command.Times)
+        {
+            var splitVideo = await _ffmpegService.SplitVideoAsync(audioByte, time.StartTime, time.EndTime, cancellationToken).ConfigureAwait(false);
+
+            splitVideos.Add(splitVideo);
+
+            videoDuration += time.EndTime - time.StartTime;
+        }
+
+        var concatVideo = await _ffmpegService.ConcatVideosAsync(splitVideos, cancellationToken).ConfigureAwait(false);
+       
         var newMeetingName = await GetNextRecordingName(command.Title, command.RecordId, cancellationToken).ConfigureAwait(false);
         
-        _aliYunOssService.UploadFile($"{newMeetingName}.mp4", splitAudio);
+        _aliYunOssService.UploadFile($"{newMeetingName}.mp4", concatVideo);
 
         var url = _aliYunOssService.GetFileUrl($"{newMeetingName}.mp4");
 
@@ -862,8 +875,8 @@ public partial class MeetingService
             Id = Guid.NewGuid(),
             MeetingId = command.MeetingId,
             MeetingSubId = command.MeetingSubId,
-            StartedAt = DateTimeOffset.FromUnixTimeSeconds(command.StartTime),
-            EndedAt = DateTimeOffset.FromUnixTimeSeconds(command.EndTime),
+            StartedAt = DateTimeOffset.FromUnixTimeSeconds(0),
+            EndedAt = DateTimeOffset.FromUnixTimeSeconds(videoDuration),
             Url = url,
             UrlStatus = MeetingRecordUrlStatus.Completed,
             DisplayTitle = newMeetingName,
