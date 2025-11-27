@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
@@ -24,6 +25,8 @@ public interface IFfmpegService : IScopedDependency
     Task<string> GetAudioDurationAsync(string filePath, CancellationToken cancellationToken);
 
     Task<byte[]> SplitVideoAsync(byte[] videoBytes, long startTime, long endTime, CancellationToken cancellationToken);
+
+    Task<byte[]> ConcatVideosAsync(List<byte[]> videos, CancellationToken cancellationToken);
 }
 
 public class FfmpegService : IFfmpegService
@@ -486,6 +489,81 @@ public class FfmpegService : IFfmpegService
 
             if (File.Exists(outputFileName))
                 File.Delete(outputFileName);
+        }
+
+        return null;
+    }
+    
+    public async Task<byte[]> ConcatVideosAsync(List<byte[]> videos, CancellationToken cancellationToken)
+    {
+        var baseFile = Guid.NewGuid().ToString("N");
+        var folder = $"{baseFile}_parts";
+
+        Directory.CreateDirectory(folder);
+
+        var listFilePath = Path.Combine(folder, "list.txt");
+        var outputFile = $"{baseFile}_merged.mp4";
+
+        try
+        {
+            var sb = new StringBuilder();
+            for (var i = 0; i < videos.Count; i++)
+            {
+                var filePath = Path.GetFullPath(Path.Combine(folder, $"part{i}.mp4"));
+                await File.WriteAllBytesAsync(filePath, videos[i], cancellationToken);
+                
+                sb.AppendLine($"file '{filePath.Replace("\\", "/")}'");
+            }
+            
+            await File.WriteAllTextAsync(listFilePath, sb.ToString(), cancellationToken);
+            
+            var args = $"-f concat -safe 0 -i \"{listFilePath}\" -c copy \"{outputFile}\"";
+
+            using var proc = new Process();
+            proc.StartInfo = new ProcessStartInfo
+            {
+                FileName = "ffmpeg",
+                Arguments = args,
+                RedirectStandardError = true,
+                RedirectStandardOutput = true,
+                UseShellExecute = false,
+                CreateNoWindow = true
+            };
+
+            proc.OutputDataReceived += (_, e) =>
+            {
+                if (!string.IsNullOrEmpty(e.Data))
+                    Log.Information("[FFmpeg STDOUT] {Msg}", e.Data);
+            };
+
+            proc.ErrorDataReceived += (_, e) =>
+            {
+                if (!string.IsNullOrEmpty(e.Data))
+                    Log.Error("[FFmpeg STDERR] {Msg}", e.Data);
+            };
+
+            proc.Start();
+            proc.BeginErrorReadLine();
+            proc.BeginOutputReadLine();
+            
+            await proc.WaitForExitAsync(cancellationToken);
+            
+            if (File.Exists(outputFile))
+            {
+                return await File.ReadAllBytesAsync(outputFile, cancellationToken);
+            }
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Concat error");
+        }
+        finally
+        {
+            if (Directory.Exists(folder))
+                Directory.Delete(folder, true);
+
+            if (File.Exists(outputFile))
+                File.Delete(outputFile);
         }
 
         return null;
