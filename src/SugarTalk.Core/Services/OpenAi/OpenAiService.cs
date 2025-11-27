@@ -86,7 +86,7 @@ public class OpenAiService : IOpenAiService
     
         var splitAudios = await _ffmpegService.SpiltAudioAsync(audioBytes, speakStartTimeVideo, speakEndTimeVideo, cancellationToken).ConfigureAwait(false);
 
-        var reSplitAudios = await _ffmpegService.SplitAudioAsync(splitAudios.FirstOrDefault(), secondsPerAudio: 60 * 2, cancellationToken: cancellationToken).ConfigureAwait(false);
+        var reSplitAudios = await _ffmpegService.SplitAudioAsync(splitAudios, secondsPerAudio: 60 * 2, cancellationToken: cancellationToken).ConfigureAwait(false);
         
         var transcriptionResult = new StringBuilder();
     

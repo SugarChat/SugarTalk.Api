@@ -45,5 +45,7 @@ public class MeetingMapping: Profile
         CreateMap<UserAccount, NoJoinMeetingUserSessionsDto>();
 
         CreateMap<MeetingInvitationRecord, MeetingInvitationRecordDto>().ReverseMap();
+
+        CreateMap<MeetingRecord, MeetingRecordDto>();
     }
 }

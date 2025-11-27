@@ -52,4 +52,13 @@ public class MeetingRecord : IEntity
     
     [Column("meeting_record_job_id"), StringLength(128)]
     public string MeetingRecordJobId { get; set; }
+
+    [Column("display_title")]
+    public string DisplayTitle { get; set; }
+
+    [Column("original_id")]
+    public Guid? OriginalId { get; set; }
+
+    [Column("user_account_id")]
+    public int? UserAccountId { get; set; }
 }
