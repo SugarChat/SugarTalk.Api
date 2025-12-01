@@ -393,6 +393,15 @@ namespace SugarTalk.Core.Services.Meetings
                     IsDesignatedHost = participant.IsDesignatedHost 
                 });
             }
+
+            var userNames = participants.Select(x => x.UserName).ToList();
+            
+            var urls = await _accountDataProvider.GetUserAccountAllInfosAsync(null, userNames, cancellationToken).ConfigureAwait(false);
+
+            foreach (var participant in participants)
+            {
+                participant.Url = urls.FirstOrDefault(x => x.UserName == participant.UserName)?.Url;
+            }
             
             return (participants, participants.Count);
         }

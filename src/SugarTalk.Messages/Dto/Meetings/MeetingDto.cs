@@ -183,4 +183,6 @@ public class AppointmentMeetingDetailForParticipantDto
     public string UserName { get; set; }
 
     public bool IsDesignatedHost { get; set; }
+
+    public string Url { get; set; }
 }
