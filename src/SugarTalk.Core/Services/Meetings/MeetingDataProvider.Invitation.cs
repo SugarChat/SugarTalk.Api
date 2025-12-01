@@ -40,7 +40,7 @@ public partial class MeetingDataProvider
 
         return await (from invitationRecord in originalQuery
             join meeting in _repository.QueryNoTracking<Meeting>() on invitationRecord.MeetingId equals meeting.Id
-            join accountProfile in _repository.QueryNoTracking<UserAccountProfile>() on invitationRecord.BeInviterUserId equals accountProfile.UserAccountId
+            join accountProfile in _repository.QueryNoTracking<UserAccountProfile>() on invitationRecord.UserId equals accountProfile.UserAccountId
             orderby meeting.CreatedDate
             select new GetMeetingInvitationRecordsDto
             {
