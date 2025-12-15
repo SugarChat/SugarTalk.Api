@@ -138,6 +138,7 @@ public partial class MeetingDataProvider
             .Take(request.PageSetting.PageSize)
             .Select(x => new MeetingRecordDto
             {
+                MeetingSubId = x.Record.MeetingSubId,
                 MeetingRecordId = x.Record.Id,
                 MeetingId = x.Meeting.Id,
                 MeetingNumber = x.Meeting.MeetingNumber,
