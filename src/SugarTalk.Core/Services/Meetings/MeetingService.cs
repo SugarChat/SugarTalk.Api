@@ -704,7 +704,7 @@ namespace SugarTalk.Core.Services.Meetings
             
             var meetingUserSessions = await _meetingDataProvider.GetMeetingUserSessionsAsync(meetingId: meeting.Id, coHost: true, cancellationToken: cancellationToken).ConfigureAwait(false);
 
-            meetingUserSessions = meetingUserSessions.Select(x => { x.CoHost = false; return x; }).ToList();
+            meetingUserSessions = meetingUserSessions.Select(x => { x.CoHost = false; x.AllowEntryMeeting = false; return x; }).ToList();
             
             await _meetingDataProvider.UpdateMeetingUserSessionAsync(meetingUserSessions, cancellationToken).ConfigureAwait(false);
 
