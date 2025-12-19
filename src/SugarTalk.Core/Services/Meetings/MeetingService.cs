@@ -690,7 +690,7 @@ namespace SugarTalk.Core.Services.Meetings
             
             var meetingUserSessions = await _meetingDataProvider.GetMeetingUserSessionsAsync(meetingId: meeting.Id, coHost: true, cancellationToken: cancellationToken).ConfigureAwait(false);
 
-            meetingUserSessions = meetingUserSessions.Select(x => { x.CoHost = false; x.AllowEntryMeeting = false; return x; }).ToList();
+            meetingUserSessions = meetingUserSessions.Select(x => { x.CoHost = false; return x; }).ToList();
             
             await _meetingDataProvider.UpdateMeetingUserSessionAsync(meetingUserSessions, cancellationToken).ConfigureAwait(false);
 
@@ -801,17 +801,23 @@ namespace SugarTalk.Core.Services.Meetings
                 
                 if (user.Issuer == UserAccountIssuer.Guest) HandleGuestNameForUserSession(meeting, userSession);
 
-                if (meeting.IsWaitingRoomEnabled && user.Id != meeting.MeetingMasterUserId)
-                {
-                    userSession.IsEntryMeeting = false;
-                    userSession.AllowEntryMeeting = false;
-                    userSession.OnlineType = MeetingUserSessionOnlineType.Waiting;
-                }
-                else
+                var meetingCoHosts = await _meetingDataProvider.GetMeetingParticipantAsync(new List<Guid>{meeting.Id}, true, cancellationToken).ConfigureAwait(false);
+            
+                var staffs = meetingCoHosts is { Count: > 0 } ? await _smartiesClient.GetStaffsRequestAsync(new GetStaffsRequestDto{Ids = meetingCoHosts.Select(x => x.StaffId).ToList()}, cancellationToken).ConfigureAwait(false) : null;
+                
+                Log.Information("Staffs: {@staffs}", staffs);
+                
+                if (meeting.IsWaitingRoomEnabled && (user.Id == meeting.CreatedBy || user.Id == meeting.MeetingMasterUserId || (staffs != null && staffs.Data.Staffs.Select(x => x.UserName).Contains(user.UserName))))
                 {
                     userSession.IsEntryMeeting = true;
                     userSession.AllowEntryMeeting = true;
                     userSession.OnlineType = MeetingUserSessionOnlineType.Online;
+                }
+                else
+                {
+                    userSession.IsEntryMeeting = false;
+                    userSession.AllowEntryMeeting = false;
+                    userSession.OnlineType = MeetingUserSessionOnlineType.Waiting;
                 }
 
                 await _meetingDataProvider.AddMeetingUserSessionAsync(userSession, cancellationToken).ConfigureAwait(false);
