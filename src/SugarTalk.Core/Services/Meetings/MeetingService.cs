@@ -28,6 +28,7 @@ using SugarTalk.Messages.Dto.Meetings.User;
 using SugarTalk.Messages.Dto.Users;
 using SugarTalk.Messages.Enums.Account;
 using SugarTalk.Core.Domain.Meeting;
+using SugarTalk.Core.Services.Aliyun;
 using SugarTalk.Core.Services.Aws;
 using SugarTalk.Core.Services.Caching;
 using SugarTalk.Core.Services.Ffmpeg;
@@ -151,6 +152,7 @@ namespace SugarTalk.Core.Services.Meetings
         private readonly ISmartiesDataProvider _smartiesDataProvider;
         private readonly TencentCloudSetting _tencentCloudSetting;
         private readonly IRedisSafeRunner _redisSafeRunner;
+        private readonly IAliYunOssService _aliYunOssService;
         
         public MeetingService(
             IClock clock,
@@ -180,7 +182,7 @@ namespace SugarTalk.Core.Services.Meetings
             IAntMediaServerUtilService antMediaServerUtilService,
             ISugarTalkBackgroundJobClient sugarTalkBackgroundJobClient, 
             MeetingInfoSettings meetingInfoSettings, ICacheManager cacheManager, FeedbackSettings feedbackSettings,
-            ISmartiesDataProvider smartiesDataProvider, TencentCloudSetting tencentCloudSetting, IRedisSafeRunner redisSafeRunner)
+            ISmartiesDataProvider smartiesDataProvider, TencentCloudSetting tencentCloudSetting, IRedisSafeRunner redisSafeRunner, IAliYunOssService aliYunOssService)
         {
             _clock = clock;
             _mapper = mapper;
@@ -214,6 +216,7 @@ namespace SugarTalk.Core.Services.Meetings
             _smartiesDataProvider = smartiesDataProvider;
             _tencentCloudSetting = tencentCloudSetting;
             _redisSafeRunner = redisSafeRunner;
+            _aliYunOssService = aliYunOssService;
         }
         
         public async Task<MeetingScheduledEvent> ScheduleMeetingAsync(ScheduleMeetingCommand command, CancellationToken cancellationToken)

@@ -283,6 +283,15 @@ public class MeetingController : ControllerBase
         return Ok(response);
     }
     
+    [Route("record/cut"), HttpPost]
+    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(CutMeetingRecordUrlResponse))]
+    public async Task<IActionResult> CutMeetingRecordUrlAsync([FromBody] CutMeetingRecordUrlCommand command)
+    {
+        var response = await _mediator.SendAsync<CutMeetingRecordUrlCommand, CutMeetingRecordUrlResponse>(command).ConfigureAwait(false);
+
+        return Ok(response);
+    }
+
     #endregion
     
     #region MeetingUserSession
