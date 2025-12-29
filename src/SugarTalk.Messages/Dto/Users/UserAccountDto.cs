@@ -28,4 +28,6 @@ public class UserAccountDto
     public UserAccountIssuer Issuer { get; set; }
     
     public List<RoleDto> Roles { get; set; }
+
+    public string Url { get; set; }
 }

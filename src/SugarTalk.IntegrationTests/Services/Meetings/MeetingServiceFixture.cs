@@ -764,7 +764,7 @@ public partial class MeetingServiceFixture : MeetingFixtureBase
             response1.MeetingHistoryList.ShouldNotBeNull();
             response1.MeetingHistoryList.Count.ShouldBe(3);
             response1.TotalCount.ShouldBe(3);
-            response1.MeetingHistoryList.Single(x => x.MeetingId == meeting1Response?.Data.Id).attendees.Count.ShouldBe(1);
+            response1.MeetingHistoryList.Single(x => x.MeetingId == meeting1Response?.Data.Id).Attendees.Count.ShouldBe(1);
             response1.MeetingHistoryList.Single(x => x.MeetingId == meeting1Response?.Data.Id).MeetingSubId.ShouldNotBeNull();
 
             var response2 =

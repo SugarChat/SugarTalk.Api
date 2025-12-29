@@ -4,7 +4,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using Serilog;
-using SugarTalk.Core.Domain.Account;
 using SugarTalk.Core.Domain.Meeting;
 using SugarTalk.Core.Services.Exceptions;
 using SugarTalk.Messages.Dto.Meetings;
@@ -234,14 +233,12 @@ public partial class MeetingService
         if (staffs.Any())
             noEntryMeetingUsers = staffs.Where(x => !meetingUserSessionUserNames.Contains(x.UserName)).ToList();    
         
-        var userAccount = new List<UserAccount>();
+        var noJoinMeetingUsers = new List<NoJoinMeetingUserSessionsDto>();
         
         if (noEntryMeetingUsers.Any())
-             userAccount = await _accountDataProvider.GetUserAccountsAsync(userNames: noEntryMeetingUsers.Select(x => x.UserName).ToList(), cancellationToken: cancellationToken).ConfigureAwait(false);
+            noJoinMeetingUsers = await _accountDataProvider.GetUserAccountAllInfosAsync(userNames: noEntryMeetingUsers.Select(x => x.UserName).ToList(), cancellationToken: cancellationToken).ConfigureAwait(false);
 
         var meetingInvitationRecords = (await _meetingDataProvider.GetMeetingInvitationUserInfoAsync(request.MeetingId, request.MeetingSubId, cancellationToken: cancellationToken).ConfigureAwait(false)).DistinctBy(x => x.Id).ToList();
-
-        var noJoinMeetingUsers = _mapper.Map<List<NoJoinMeetingUserSessionsDto>>(userAccount);
 
         Log.Information("No join meeting users: {@noJoinMeetingUsers}, meeting invitation records: {@meetingInvitationRecords}", noJoinMeetingUsers, meetingInvitationRecords);
         

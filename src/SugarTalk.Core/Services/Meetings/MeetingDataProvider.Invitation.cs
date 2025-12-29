@@ -40,6 +40,7 @@ public partial class MeetingDataProvider
 
         return await (from invitationRecord in originalQuery
             join meeting in _repository.QueryNoTracking<Meeting>() on invitationRecord.MeetingId equals meeting.Id
+            join accountProfile in _repository.QueryNoTracking<UserAccountProfile>() on invitationRecord.UserId equals accountProfile.UserAccountId
             orderby meeting.CreatedDate
             select new GetMeetingInvitationRecordsDto
             {
@@ -48,7 +49,8 @@ public partial class MeetingDataProvider
                 MeetingTitle = meeting.Title,
                 MeetingId = invitationRecord.MeetingId,
                 MeetingSubId = invitationRecord.MeetingSubId,
-                MeetingNumber = meeting.MeetingNumber
+                MeetingNumber = meeting.MeetingNumber,
+                Url = accountProfile.Url
             }).ToListAsync(cancellationToken);
     }
 
@@ -83,11 +85,16 @@ public partial class MeetingDataProvider
         if (meetingSubId.HasValue)
             query = query.Where(x => x.MeetingSubId == meetingSubId.Value);
         
-        return await query.OrderByDescending(x => x.CreatedDate).Join(_repository.Query<UserAccount>(), x => x.BeInviterUserId, s => s.Id, (record, account) => new NoJoinMeetingUserSessionsDto
-        {
-            Id = record.BeInviterUserId,
-            UserName = account.UserName,
-            InvitationStatus = record.InvitationStatus
-        }).ToListAsync(cancellationToken).ConfigureAwait(false);
+        return await (from record in query.OrderByDescending(x => x.CreatedDate)
+            join account in _repository.Query<UserAccount>() on record.BeInviterUserId equals account.Id
+            join profile in _repository.QueryNoTracking<UserAccountProfile>() on account.Id equals profile.UserAccountId into profileGroup
+            from profile in profileGroup.DefaultIfEmpty()
+            select new NoJoinMeetingUserSessionsDto
+            {
+                Id = record.BeInviterUserId,
+                UserName = account.UserName,
+                InvitationStatus = record.InvitationStatus,
+                Url = profile != null ? profile.Url : null
+            }).ToListAsync(cancellationToken).ConfigureAwait(false);
     }
 }

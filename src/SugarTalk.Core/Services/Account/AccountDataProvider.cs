@@ -10,11 +10,14 @@ using Microsoft.EntityFrameworkCore;
 using SugarTalk.Core.Constants;
 using SugarTalk.Core.Data;
 using SugarTalk.Core.Domain.Account;
+using SugarTalk.Core.Domain.Meeting;
 using SugarTalk.Core.Extensions;
 using SugarTalk.Core.Ioc;
 using SugarTalk.Core.Services.Identity;
+using SugarTalk.Messages.Dto.Meetings;
 using SugarTalk.Messages.Dto.Users;
 using SugarTalk.Messages.Enums.Account;
+using SugarTalk.Messages.Requests.Meetings;
 using Role = SugarTalk.Core.Domain.Account.Role;
 
 namespace SugarTalk.Core.Services.Account
@@ -30,7 +33,7 @@ namespace SugarTalk.Core.Services.Account
         
         Task<UserAccountDto> GetUserAccountAsync(
             int? id = null, string username = null, string thirdPartyUserId = null, bool includeRoles = false,
-            UserAccountIssuer? issuer = null, CancellationToken cancellationToken = default);
+            UserAccountIssuer? issuer = null, bool includeProfile = false, CancellationToken cancellationToken = default);
 
         Task<UserAccount> CreateUserAccountAsync(string userName, string password, string thirdPartyUserId = null,
             UserAccountIssuer authType = UserAccountIssuer.Wiltechs, CancellationToken cancellationToken = default);
@@ -46,6 +49,18 @@ namespace SugarTalk.Core.Services.Account
         Task<UserAccountDto> CheckCurrentLoggedInUser(CancellationToken cancellationToken);
         
         Task<UserAccountDto> GetUserAccountByApiKeyAsync(string apiKey, CancellationToken cancellationToken = default);
+
+        Task AddUserAccountProfileAsync(UserAccountProfile userAccountProfile, CancellationToken cancellationToken);
+
+        Task<UserAccountProfile> GetUserAccountProfileAsync(int userAccountId, CancellationToken cancellationToken);
+
+        Task DeleteUserAccountProfileAsync(UserAccountProfile userAccountProfile, CancellationToken cancellationToken);
+
+        Task<Dictionary<string, string>> GetUserAccountProfilesAsync(CancellationToken cancellationToken);
+        
+        Task<List<NoJoinMeetingUserSessionsDto>> GetUserAccountAllInfosAsync(List<int> userIds = null, List<string> userNames = null, CancellationToken cancellationToken = default);
+        
+        Task<List<AttendeesDto>> GetAccountAllInfosAsync(List<int> userIds = null, CancellationToken cancellationToken = default);
     }
     
     public partial class AccountDataProvider : IAccountDataProvider
@@ -76,7 +91,7 @@ namespace SugarTalk.Core.Services.Account
         
         public async Task<UserAccountDto> GetUserAccountAsync(
             int? id = null, string username = null, string thirdPartyUserId = null, bool includeRoles = false,
-            UserAccountIssuer? issuer = null, CancellationToken cancellationToken = default)
+            UserAccountIssuer? issuer = null, bool includeProfile = false, CancellationToken cancellationToken = default)
         {
             var query = _repository.QueryNoTracking<UserAccount>();
 
@@ -96,13 +111,15 @@ namespace SugarTalk.Core.Services.Account
                 .ProjectTo<UserAccountDto>(_mapper.ConfigurationProvider)
                 .FirstOrDefaultAsync(cancellationToken).ConfigureAwait(false);
 
-            if (account == null || !includeRoles) return account;
+            if (account == null) return null;
+
+            if (includeRoles)
             {
                 var userRoleIds = await _repository
                     .QueryNoTracking<RoleUser>().Where(x => x.UserId == account.Id)
                     .Select(x => x.RoleId).ToListAsync(cancellationToken).ConfigureAwait(false);
 
-                if (userRoleIds.Any())
+                if (userRoleIds is { Count: > 0 })
                 {
                     account.Roles = await _repository
                         .QueryNoTracking<Role>()
@@ -111,6 +128,9 @@ namespace SugarTalk.Core.Services.Account
                         .ToListAsync(cancellationToken).ConfigureAwait(false);
                 }
             }
+
+            if (includeProfile)
+                account.Url = (await _repository.QueryNoTracking<UserAccountProfile>().FirstOrDefaultAsync(x => x.UserAccountId == account.Id, cancellationToken).ConfigureAwait(false))?.Url;
 
             return account;
         }
@@ -145,7 +165,10 @@ namespace SugarTalk.Core.Services.Account
                 new(ClaimTypes.NameIdentifier, account.Id.ToString()),
                 new(ClaimTypes.Authentication, AuthenticationSchemeConstants.SelfAuthenticationScheme)
             };
-            claims.AddRange(account.Roles.Select(r => new Claim(ClaimTypes.Role, r.Name)));
+
+            if (account.Roles is { Count: >0 })
+                claims.AddRange(account.Roles.Select(r => new Claim(ClaimTypes.Role, r.Name)));    
+            
             return claims;
         }
 
@@ -216,6 +239,79 @@ namespace SugarTalk.Core.Services.Account
             var account = await GetUserAccountAsync(id: accountApiKey.UserAccountId, includeRoles: true, cancellationToken: cancellationToken).ConfigureAwait(false);
 
             return account != null ? _mapper.Map<UserAccountDto>(account) : null;
+        }
+
+        public async Task AddUserAccountProfileAsync(UserAccountProfile userAccountProfile, CancellationToken cancellationToken)
+        {
+            await _repository.InsertAsync(userAccountProfile, cancellationToken).ConfigureAwait(false);
+
+            await _unitOfWork.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        }
+
+        public async Task<UserAccountProfile> GetUserAccountProfileAsync(int userAccountId, CancellationToken cancellationToken)
+        {
+            return await _repository.QueryNoTracking<UserAccountProfile>().FirstOrDefaultAsync(x => x.UserAccountId == userAccountId, cancellationToken).ConfigureAwait(false);
+        }
+
+        public async Task DeleteUserAccountProfileAsync(UserAccountProfile userAccountProfile, CancellationToken cancellationToken)
+        {
+            await _repository.DeleteAsync(userAccountProfile, cancellationToken).ConfigureAwait(false);
+
+            await _unitOfWork.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        }
+
+        public async Task<Dictionary<string, string>> GetUserAccountProfilesAsync(CancellationToken cancellationToken)
+        {
+            return await (from profile in _repository.QueryNoTracking<UserAccountProfile>()
+                join user in _repository.QueryNoTracking<UserAccount>() on profile.UserAccountId equals user.Id
+                select new
+                {
+                    user.UserName,
+                    profile.Url
+                }).ToDictionaryAsync(x => x.UserName, x => x.Url, cancellationToken);
+        }
+
+        public async Task<List<NoJoinMeetingUserSessionsDto>> GetUserAccountAllInfosAsync(List<int> userIds = null, List<string> userNames = null, CancellationToken cancellationToken = default)
+        {
+            var query = _repository.QueryNoTracking<UserAccount>();
+
+            if (userIds != null && userIds.Any())
+                query = query.Where(x => userIds.Contains(x.Id));
+
+            if (userNames != null && userNames.Any())
+                query = query.Where(x => userNames.Contains(x.UserName));
+            
+            return await (
+                from u in query
+                join p in _repository.QueryNoTracking<UserAccountProfile>() on u.Id equals p.UserAccountId into profileGroup
+                from profile in profileGroup.DefaultIfEmpty()
+                select new NoJoinMeetingUserSessionsDto
+                {
+                    Id = u.Id,
+                    UserName = u.UserName,
+                    Url = profile != null ? profile.Url : null
+                }
+            ).ToListAsync(cancellationToken).ConfigureAwait(false);
+        }
+        
+        public async Task<List<AttendeesDto>> GetAccountAllInfosAsync(List<int> userIds = null, CancellationToken cancellationToken = default)
+        {
+            var query = _repository.QueryNoTracking<UserAccount>();
+
+            if (userIds != null && userIds.Any())
+                query = query.Where(x => userIds.Contains(x.Id));
+            
+            return await (
+                from u in query
+                join p in _repository.QueryNoTracking<UserAccountProfile>() on u.Id equals p.UserAccountId into profileGroup
+                from profile in profileGroup.DefaultIfEmpty()
+                select new AttendeesDto
+                {
+                    Id = u.Id,
+                    UserName = u.UserName,
+                    Url = profile != null ? profile.Url : null
+                }
+            ).ToListAsync(cancellationToken).ConfigureAwait(false);
         }
     }
 }

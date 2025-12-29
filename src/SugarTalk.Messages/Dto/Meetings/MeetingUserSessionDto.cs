@@ -41,4 +41,6 @@ public class MeetingUserSessionDto
     public bool IsEntryMeeting { get; set; }
     
     public bool AllowEntryMeeting { get; set; }
+
+    public string Url { get; set; }
 }

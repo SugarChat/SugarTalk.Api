@@ -1,11 +1,13 @@
+using System;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 using AutoMapper;
-using Microsoft.AspNetCore.Http;
 using Serilog;
 using SugarTalk.Core.Domain.Account.Exceptions;
 using SugarTalk.Core.Ioc;
+using SugarTalk.Core.Domain.Account;
+using SugarTalk.Core.Services.Aliyun;
 using SugarTalk.Core.Services.Identity;
 using SugarTalk.Messages.Commands.Account;
 using SugarTalk.Messages.Dto.Users;
@@ -26,6 +28,8 @@ namespace SugarTalk.Core.Services.Account
         Task<UserAccountDto> GetOrCreateUserAccountFromThirdPartyAsync(string userId, string userName, UserAccountIssuer issuer, CancellationToken cancellationToken);
 
         Task<UserAccountDto> GetOrCreateGuestUserAccountAsync(string userName, CancellationToken cancellationToken);
+
+        Task<UploadPhotoResponse> UploadPhotoAsync(UploadPhotoCommand command, CancellationToken cancellationToken);
     }
     
     public class AccountService : IAccountService
@@ -33,17 +37,18 @@ namespace SugarTalk.Core.Services.Account
         private readonly IMapper _mapper;
         private readonly ITokenProvider _tokenProvider;
         private readonly IIdentityService _identityService;
-        private readonly IHttpContextAccessor _httpContextAccessor;
-        
+        private readonly IAliYunOssService _aliYunOssService;
         private readonly IAccountDataProvider _accountDataProvider;
+        private readonly ICurrentUser _currentUser;
 
-        public AccountService(IMapper mapper, IIdentityService identityService, IHttpContextAccessor httpContextAccessor, IAccountDataProvider accountDataProvider, ITokenProvider tokenProvider)
+        public AccountService(IMapper mapper, IIdentityService identityService, IAccountDataProvider accountDataProvider, ITokenProvider tokenProvider, IAliYunOssService aliYunOssService, ICurrentUser currentUser)
         {
             _mapper = mapper;
             _tokenProvider = tokenProvider;
             _identityService = identityService;
+            _aliYunOssService = aliYunOssService;
             _accountDataProvider = accountDataProvider;
-            _httpContextAccessor = httpContextAccessor;
+            _currentUser = currentUser;
         }
         
         public async Task<LoginResponse> LoginAsync(LoginRequest request, CancellationToken cancellationToken)
@@ -103,7 +108,38 @@ namespace SugarTalk.Core.Services.Account
 
             return new UserAccountRegisteredEvent();
         }
-        
+
+        public async Task<UploadPhotoResponse> UploadPhotoAsync(UploadPhotoCommand command, CancellationToken cancellationToken)
+        {
+            if (command.FileName == null || command.FileContent == null || _currentUser.Id == null)
+                return null;
+
+            try
+            {
+                _aliYunOssService.UploadFile(command.FileName, command.FileContent);
+
+                var url = _aliYunOssService.GetFileUrl(command.FileName);
+
+                var userAccountProfile = await _accountDataProvider.GetUserAccountProfileAsync(_currentUser.Id.Value, cancellationToken).ConfigureAwait(false);
+
+                if (userAccountProfile != null)
+                    await _accountDataProvider.DeleteUserAccountProfileAsync(userAccountProfile, cancellationToken).ConfigureAwait(false);
+                        
+                await _accountDataProvider.AddUserAccountProfileAsync(new UserAccountProfile
+                {
+                    Url = url,
+                    UserAccountId = _currentUser.Id.Value
+                }, cancellationToken).ConfigureAwait(false);
+                
+                return new UploadPhotoResponse { Url = url };
+            }
+            catch (Exception e)
+            {
+                Log.Information("Upload user photo failed: {@e}", e);
+                throw;
+            }
+        }
+
         private async Task CheckCanRegisterAsync(RegisterCommand command, CancellationToken cancellationToken)
         {
             var userAccount = await _accountDataProvider

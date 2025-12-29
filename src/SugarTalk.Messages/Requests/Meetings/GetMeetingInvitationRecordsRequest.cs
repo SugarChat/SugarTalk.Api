@@ -26,4 +26,6 @@ public class GetMeetingInvitationRecordsDto
     public string MeetingTitle { get; set; }
 
     public string MeetingNumber { get; set; }
+
+    public string Url { get; set; }
 }

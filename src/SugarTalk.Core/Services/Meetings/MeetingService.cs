@@ -310,13 +310,13 @@ namespace SugarTalk.Core.Services.Meetings
         public async Task<GetMeetingHistoriesByUserResponse> GetMeetingHistoriesByUserAsync(
             GetMeetingHistoriesByUserRequest request, CancellationToken cancellationToken)
         {
-            var user = await _accountDataProvider
-                .GetUserAccountAsync(_currentUser.Id.Value, cancellationToken: cancellationToken).ConfigureAwait(false);
+            if (_currentUser.Id == null) return null;
+            
+            var user = await _accountDataProvider.GetUserAccountAsync(_currentUser.Id.Value, cancellationToken: cancellationToken).ConfigureAwait(false);
 
             if (user is null) throw new UnauthorizedAccessException();
 
-            var (meetingHistoryList, totalCount) = await _meetingDataProvider
-                .GetMeetingHistoriesByUserIdAsync(user.Id, request.Keyword, request.PageSetting, cancellationToken).ConfigureAwait(false);
+            var (meetingHistoryList, totalCount) = await _meetingDataProvider.GetMeetingHistoriesByUserIdAsync(user.Id, request.Keyword, request.PageSetting, cancellationToken).ConfigureAwait(false);
 
             return new GetMeetingHistoriesByUserResponse
             {
@@ -390,6 +390,15 @@ namespace SugarTalk.Core.Services.Meetings
                     UserName = staff.UserName,
                     IsDesignatedHost = participant.IsDesignatedHost 
                 });
+            }
+
+            var userNames = participants.Select(x => x.UserName).ToList();
+            
+            var urls = await _accountDataProvider.GetUserAccountAllInfosAsync(null, userNames, cancellationToken).ConfigureAwait(false);
+
+            foreach (var participant in participants)
+            {
+                participant.Url = urls.FirstOrDefault(x => x.UserName == participant.UserName)?.Url;
             }
             
             return (participants, participants.Count);
@@ -1371,6 +1380,10 @@ namespace SugarTalk.Core.Services.Meetings
                 HierarchyStaffRange = request.HierarchyStaffRange
             }, cancellationToken).ConfigureAwait(false);
 
+            var userAccountProfile = await _accountDataProvider.GetUserAccountProfilesAsync(cancellationToken).ConfigureAwait(false);
+            
+            UpdateStaffs(staffs.Data.StaffDepartmentHierarchy, null, userAccountProfile);
+            
             return new GetStaffsTreeResponse
             {
                 Data = staffs.Data
