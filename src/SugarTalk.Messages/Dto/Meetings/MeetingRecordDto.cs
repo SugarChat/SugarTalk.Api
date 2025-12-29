@@ -9,6 +9,8 @@ public class MeetingRecordDto
     
     public Guid MeetingId { get; set; }
 
+    public Guid? MeetingSubId { get; set; }
+
     public string MeetingNumber { get; set; }
 
     public string RecordNumber { get; set; }

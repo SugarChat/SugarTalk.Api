@@ -126,6 +126,7 @@
         <EmbeddedResource Include="DbUp\Scripts_2025\Script0007_add_meeting_waiting_room.sql" />
         <EmbeddedResource Include="DbUp\Scripts_2025\Script0008_add_meeting_invitation_record_table.sql" />
         <EmbeddedResource Include="DbUp\Scripts_2025\Script0009_add_user_account_profile_table.sql" />
+        <EmbeddedResource Include="DbUp\Scripts_2025\Script0010_add_cut_field_for_record_table.sql" />
     </ItemGroup>
     
     <ItemGroup>

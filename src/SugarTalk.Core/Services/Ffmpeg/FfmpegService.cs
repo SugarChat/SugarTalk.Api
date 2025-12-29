@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
@@ -15,13 +16,17 @@ public interface IFfmpegService : IScopedDependency
 {
     Task<List<byte[]>> SplitAudioAsync(byte[] audioBytes, long secondsPerAudio, CancellationToken cancellationToken);
     
-    Task<List<byte[]>> SpiltAudioAsync(byte[] audioBytes, long startTime, long endTime, CancellationToken cancellationToken);
+    Task<byte[]> SpiltAudioAsync(byte[] audioBytes, long startTime, long endTime, CancellationToken cancellationToken);
 
     Task<byte[]> ConvertFileFormatAsync(byte[] file, TranscriptionFileType fileType, CancellationToken cancellationToken);
 
     Task<byte[]> VideoToAudioConverterAsync(string url, CancellationToken cancellationToken);
 
     Task<string> GetAudioDurationAsync(string filePath, CancellationToken cancellationToken);
+
+    Task<byte[]> SplitVideoAsync(byte[] videoBytes, long startTime, long endTime, CancellationToken cancellationToken);
+
+    Task<byte[]> ConcatVideosAsync(List<byte[]> videos, CancellationToken cancellationToken);
 }
 
 public class FfmpegService : IFfmpegService
@@ -224,9 +229,8 @@ public class FfmpegService : IFfmpegService
         return audioDataList;
     }
 
-    public async Task<List<byte[]>> SpiltAudioAsync(byte[] audioBytes, long startTime, long endTime, CancellationToken cancellationToken)
+    public async Task<byte[]> SpiltAudioAsync(byte[] audioBytes, long startTime, long endTime, CancellationToken cancellationToken)
     {
-        var audioDataList = new List<byte[]>();
         var baseFileName = Guid.NewGuid().ToString();
         var inputFileName = $"{baseFileName}.wav";
         var outputFileName = $"{baseFileName}-spilt.wav";
@@ -246,7 +250,7 @@ public class FfmpegService : IFfmpegService
             if (!File.Exists(inputFileName))
             {
                 Log.Error("Splitting audio, persisted failed");
-                return audioDataList;
+                return null;
             }
 
             var spiltArguments =
@@ -274,10 +278,9 @@ public class FfmpegService : IFfmpegService
 
             if (File.Exists(outputFileName))
             {
-                audioDataList.Add(await File.ReadAllBytesAsync(outputFileName, cancellationToken)
-                    .ConfigureAwait(false));
+                return await File.ReadAllBytesAsync(outputFileName, cancellationToken).ConfigureAwait(false);
 
-                File.Delete(outputFileName);
+              
             }
         }
         catch (Exception ex)
@@ -290,9 +293,12 @@ public class FfmpegService : IFfmpegService
 
             if (File.Exists(inputFileName))
                 File.Delete(inputFileName);
+
+            if (File.Exists(outputFileName))
+                File.Delete(outputFileName);
         }
 
-        return audioDataList;
+        return null;
     }
 
     public async Task<byte[]> ConvertFileFormatAsync(byte[] file, TranscriptionFileType fileType,
@@ -403,5 +409,163 @@ public class FfmpegService : IFfmpegService
         }
 
         return string.Empty;
+    }
+    
+    public async Task<byte[]> SplitVideoAsync(byte[] videoBytes, long startTime, long endTime, CancellationToken cancellationToken)
+    {
+        var baseFileName = Guid.NewGuid().ToString();
+        var inputFileName = $"{baseFileName}.mp4";
+        var outputFileName = $"{baseFileName}-split.mp4";
+
+        var startTimeSpan = TimeSpan.FromSeconds(startTime);
+        var endTimeSpan = TimeSpan.FromSeconds(endTime);
+
+        var startTimeFormatted = startTimeSpan.ToString(@"hh\:mm\:ss");
+        var endTimeFormatted = endTimeSpan.ToString(@"hh\:mm\:ss");
+
+        try
+        {
+            Log.Information("Splitting video, input length = {Length}", videoBytes.Length);
+            
+            await File.WriteAllBytesAsync(inputFileName, videoBytes, cancellationToken).ConfigureAwait(false);
+
+            if (!File.Exists(inputFileName))
+            {
+                Log.Error("Splitting video failed: input file not saved.");
+                return null;
+            }
+            
+            var splitArguments =
+                $"-ss {startTimeFormatted} -to {endTimeFormatted} -i {inputFileName} " +
+                $"-map 0:v -map 0:a -c copy {outputFileName}";
+
+            Log.Information("Video split command: {Args}", splitArguments);
+
+            using (var proc = new Process())
+            {
+                proc.StartInfo = new ProcessStartInfo
+                {
+                    FileName = "ffmpeg",
+                    RedirectStandardError = true,
+                    RedirectStandardOutput = true,
+                    UseShellExecute = false,
+                    Arguments = splitArguments
+                };
+
+                proc.OutputDataReceived += (_, e) =>
+                {
+                    if (e.Data != null)
+                        Log.Information("FFmpeg output: {Output}", e.Data);
+                };
+
+                proc.ErrorDataReceived += (_, e) =>
+                {
+                    if (e.Data != null)
+                        Log.Warning("FFmpeg error: {Error}", e.Data);
+                };
+
+                proc.Start();
+                proc.BeginErrorReadLine();
+                proc.BeginOutputReadLine();
+
+                await proc.WaitForExitAsync(cancellationToken).ConfigureAwait(false);
+            }
+
+            if (File.Exists(outputFileName))
+            {
+                return await File.ReadAllBytesAsync(outputFileName, cancellationToken).ConfigureAwait(false);
+            }
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Video splitting error.");
+        }
+        finally
+        {
+            Log.Information("Cleaning temporary video files.");
+
+            if (File.Exists(inputFileName))
+                File.Delete(inputFileName);
+
+            if (File.Exists(outputFileName))
+                File.Delete(outputFileName);
+        }
+
+        return null;
+    }
+    
+    public async Task<byte[]> ConcatVideosAsync(List<byte[]> videos, CancellationToken cancellationToken)
+    {
+        var baseFile = Guid.NewGuid().ToString("N");
+        var folder = $"{baseFile}_parts";
+
+        Directory.CreateDirectory(folder);
+
+        var listFilePath = Path.Combine(folder, "list.txt");
+        var outputFile = $"{baseFile}_merged.mp4";
+
+        try
+        {
+            var sb = new StringBuilder();
+            for (var i = 0; i < videos.Count; i++)
+            {
+                var filePath = Path.GetFullPath(Path.Combine(folder, $"part{i}.mp4"));
+                await File.WriteAllBytesAsync(filePath, videos[i], cancellationToken);
+                
+                sb.AppendLine($"file '{filePath.Replace("\\", "/")}'");
+            }
+            
+            await File.WriteAllTextAsync(listFilePath, sb.ToString(), cancellationToken);
+            
+            var args = $"-f concat -safe 0 -i \"{listFilePath}\" -c copy \"{outputFile}\"";
+
+            using var proc = new Process();
+            proc.StartInfo = new ProcessStartInfo
+            {
+                FileName = "ffmpeg",
+                Arguments = args,
+                RedirectStandardError = true,
+                RedirectStandardOutput = true,
+                UseShellExecute = false,
+                CreateNoWindow = true
+            };
+
+            proc.OutputDataReceived += (_, e) =>
+            {
+                if (!string.IsNullOrEmpty(e.Data))
+                    Log.Information("[FFmpeg STDOUT] {Msg}", e.Data);
+            };
+
+            proc.ErrorDataReceived += (_, e) =>
+            {
+                if (!string.IsNullOrEmpty(e.Data))
+                    Log.Error("[FFmpeg STDERR] {Msg}", e.Data);
+            };
+
+            proc.Start();
+            proc.BeginErrorReadLine();
+            proc.BeginOutputReadLine();
+            
+            await proc.WaitForExitAsync(cancellationToken);
+            
+            if (File.Exists(outputFile))
+            {
+                return await File.ReadAllBytesAsync(outputFile, cancellationToken);
+            }
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Concat error");
+        }
+        finally
+        {
+            if (Directory.Exists(folder))
+                Directory.Delete(folder, true);
+
+            if (File.Exists(outputFile))
+                File.Delete(outputFile);
+        }
+
+        return null;
     }
 }

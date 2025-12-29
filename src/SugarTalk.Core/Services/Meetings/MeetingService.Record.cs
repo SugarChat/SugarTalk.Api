@@ -7,6 +7,7 @@ using Newtonsoft.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using System.Text.RegularExpressions;
 using SugarTalk.Messages.Dto.Users;
 using SugarTalk.Messages.Dto.FClub;
 using SugarTalk.Messages.Extensions;
@@ -66,6 +67,8 @@ public partial interface IMeetingService
     Task<GetMeetingDataResponse> GetMeetingDataAsync(GetMeetingDataRequest request, CancellationToken cancellationToken);
     
     Task<GetMeetingDataUserResponse> GetMeetingDataUserAsync(GetMeetingDataUserRequest request, CancellationToken cancellationToken);
+
+    Task<CutMeetingRecordUrlResponse> CutMeetingRecordUrlAsync(CutMeetingRecordUrlCommand command, CancellationToken cancellationToken);
 }
 
 public partial class MeetingService
@@ -842,6 +845,65 @@ public partial class MeetingService
         };
     }
 
+    public async Task<CutMeetingRecordUrlResponse> CutMeetingRecordUrlAsync(CutMeetingRecordUrlCommand command, CancellationToken cancellationToken)
+    {
+        var audioByte = await _httpClientFactory.GetAsync<byte[]>(command.Url, cancellationToken);
+
+        var splitVideos = new List<byte[]>();
+        
+        long videoDuration = 0;
+
+        foreach (var time in command.Times)
+        {
+            var splitVideo = await _ffmpegService.SplitVideoAsync(audioByte, time.StartTime, time.EndTime, cancellationToken).ConfigureAwait(false);
+
+            splitVideos.Add(splitVideo);
+
+            videoDuration += time.EndTime - time.StartTime;
+        }
+
+        var concatVideo = await _ffmpegService.ConcatVideosAsync(splitVideos, cancellationToken).ConfigureAwait(false);
+       
+        var newMeetingName = await GetNextRecordingName(command.Title, command.RecordId, cancellationToken).ConfigureAwait(false);
+        
+        _aliYunOssService.UploadFile($"{newMeetingName}.mp4", concatVideo);
+
+        var url = _aliYunOssService.GetFileUrl($"{newMeetingName}.mp4");
+
+        var record = new MeetingRecord
+        {
+            Id = Guid.NewGuid(),
+            MeetingId = command.MeetingId,
+            MeetingSubId = command.MeetingSubId,
+            StartedAt = DateTimeOffset.FromUnixTimeSeconds(0),
+            EndedAt = DateTimeOffset.FromUnixTimeSeconds(videoDuration),
+            Url = url,
+            UrlStatus = MeetingRecordUrlStatus.Completed,
+            DisplayTitle = newMeetingName,
+            RecordType = MeetingRecordType.EndRecord,
+            UserAccountId = _currentUser.Id,
+            OriginalId = command.RecordId
+        };
+        
+        await _meetingDataProvider.AddMeetingRecordAsync(record, cancellationToken: cancellationToken).ConfigureAwait(false);
+
+         return new CutMeetingRecordUrlResponse
+        {
+            Data = _mapper.Map<MeetingRecordDto>(record)
+        };
+    }
+
+    private async Task<string> GetNextRecordingName(string originalName, Guid recordId, CancellationToken cancellationToken)
+    {
+        var count = await _meetingDataProvider.GetMeetingRecordCountAsync(recordId, cancellationToken).ConfigureAwait(false);
+
+        if (count == 0) return originalName + "(1)";
+
+        var match = MyRegex1().Match(originalName);
+        
+        return !match.Success ? $"{originalName}({count})" : MyRegex().Replace(originalName, $"({count + 1})");
+    }
+    
     private async Task<List<RmStaffDto>> GetStaffsAsync(List<string> userIds, CancellationToken cancellationToken)
     {
         var batchSize = 30;
@@ -882,4 +944,10 @@ public partial class MeetingService
 
         return allResults;
     }
+
+    [GeneratedRegex(@"\(\d+\)$")]
+    private static partial Regex MyRegex();
+    
+    [GeneratedRegex(@"\((\d+)\)$")]
+    private static partial Regex MyRegex1();
 }
