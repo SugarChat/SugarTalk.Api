@@ -730,7 +730,9 @@ public partial class MeetingService
         
         var meetingSituationDay = await _meetingDataProvider.GetMeetingSituationDaysAsync(utcStart, utcEnd, cancellationToken).ConfigureAwait(false);
 
-        var userIds = meetingSituationDay.Select(x => x.FundationId).ToList();
+        Log.Information("Get meeting situation days:{@meetingSituationDay}", meetingSituationDay);
+        
+        var userIds = meetingSituationDay.Select(x => x.UserId).ToList();
         
         Log.Information("Get meeting data user ids: {@userIds}", userIds);
         
