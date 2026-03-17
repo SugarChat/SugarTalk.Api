@@ -777,8 +777,20 @@ public partial class MeetingService
 
         Log.Information("Meeting staffs: {@staffs}", staffResults);
         
+        var pstZone = TimeZoneInfo.FindSystemTimeZoneById("America/Los_Angeles");
+
         foreach (var getMeetingData in meetingSituationDay)
         {
+            var startTimeUtc = DateTimeOffset.FromUnixTimeSeconds(getMeetingData.MeetingStartTime);
+            var endTimeUtc = DateTimeOffset.FromUnixTimeSeconds(getMeetingData.MeetingEndTime);
+
+            getMeetingData.ActMeetingStartTimePst = TimeZoneInfo.ConvertTime(startTimeUtc, pstZone);
+            getMeetingData.ActMeetingEndTimePst = TimeZoneInfo.ConvertTime(endTimeUtc, pstZone);
+            getMeetingData.MeetingEndTimePst = getMeetingData.MeetingEndTimePst.HasValue
+                ? TimeZoneInfo.ConvertTime(getMeetingData.MeetingEndTimePst.Value, pstZone)
+                : null;
+            getMeetingData.MeetingDuration = (int)Math.Max(0, getMeetingData.MeetingEndTime - getMeetingData.MeetingStartTime);
+
             foreach (var staff in staffResults)
             {
                 if (!participantDict.TryGetValue(staff.Id, out var participant))

@@ -404,6 +404,8 @@ public partial class MeetingDataProvider
         return await (from meetingSituationDay in _repository.QueryNoTracking<MeetingSituationDay>()
             where meetingSituationDay.CreatedDate >= startTime && meetingSituationDay.CreatedDate < endTime
             join meeting in _repository.QueryNoTracking<Meeting>() on meetingSituationDay.MeetingId equals meeting.Id
+            join repeatRule in _repository.QueryNoTracking<MeetingRepeatRule>() on meeting.Id equals repeatRule.MeetingId into repeatRuleJoin
+            from repeatRule in repeatRuleJoin.DefaultIfEmpty()
             join userAccount in _repository.QueryNoTracking<UserAccount>() on meeting.CreatedBy equals userAccount.Id
             select new GetMeetingDataDto
             {
@@ -413,6 +415,8 @@ public partial class MeetingDataProvider
                 UserId = userAccount.ThirdPartyUserId,
                 MeetingCreator = userAccount.UserName,
                 MeetingStartTime = meeting.StartDate,
+                MeetingEndTime = meeting.EndDate,
+                MeetingEndTimePst = repeatRule.RepeatUntilDate,
                 TimeRange = meetingSituationDay.TimePeriod,
                 MeetingUseCount = meetingSituationDay.UseCount,
                 MeetingDate = meetingSituationDay.CreatedDate
