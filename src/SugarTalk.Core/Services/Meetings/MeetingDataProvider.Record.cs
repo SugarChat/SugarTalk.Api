@@ -9,6 +9,7 @@ using Microsoft.EntityFrameworkCore.Internal;
 using SugarTalk.Messages.Dto.Translation;
 using SugarTalk.Core.Domain.Meeting;
 using SugarTalk.Core.Domain.Account;
+using SugarTalk.Core.Domain.Foundation;
 using SugarTalk.Messages.Dto.Meetings;
 using SugarTalk.Messages.Dto.Meetings.Speak;
 using SugarTalk.Messages.Dto.Meetings.Summary;
@@ -64,6 +65,8 @@ public partial interface IMeetingDataProvider
     Task<List<GetMeetingDataDto>> GetMeetingSituationDaysAsync(DateTimeOffset? startTime, DateTimeOffset? endTime, CancellationToken cancellationToken);
 
     Task<List<GetMeetingDataUserDto>> GetMeetingDataUserAsync(DateTimeOffset? startTime, DateTimeOffset? endTime, CancellationToken cancellationToken);
+
+    Task<List<GetMeetingParticipantsItemDto>> GetMeetingParticipantsAsync(long startDateUnixFrom, CancellationToken cancellationToken);
     
     Task AddMeetingRestartRecordsAsync(List<MeetingRestartRecord> meetingRestartRecords, CancellationToken cancellationToken);
 
@@ -404,8 +407,6 @@ public partial class MeetingDataProvider
         return await (from meetingSituationDay in _repository.QueryNoTracking<MeetingSituationDay>()
             where meetingSituationDay.CreatedDate >= startTime && meetingSituationDay.CreatedDate < endTime
             join meeting in _repository.QueryNoTracking<Meeting>() on meetingSituationDay.MeetingId equals meeting.Id
-            join repeatRule in _repository.QueryNoTracking<MeetingRepeatRule>() on meeting.Id equals repeatRule.MeetingId into repeatRuleJoin
-            from repeatRule in repeatRuleJoin.DefaultIfEmpty()
             join userAccount in _repository.QueryNoTracking<UserAccount>() on meeting.CreatedBy equals userAccount.Id
             select new GetMeetingDataDto
             {
@@ -415,8 +416,6 @@ public partial class MeetingDataProvider
                 UserId = userAccount.ThirdPartyUserId,
                 MeetingCreator = userAccount.UserName,
                 MeetingStartTime = meeting.StartDate,
-                MeetingEndTime = meeting.EndDate,
-                MeetingEndTimePst = repeatRule.RepeatUntilDate,
                 TimeRange = meetingSituationDay.TimePeriod,
                 MeetingUseCount = meetingSituationDay.UseCount,
                 MeetingDate = meetingSituationDay.CreatedDate
@@ -438,6 +437,61 @@ public partial class MeetingDataProvider
                 MeetingStartTime = meeting.StartDate,
                 Date = userSession.CreatedDate,
             }).OrderBy(x => x.MeetingStartTime).ToListAsync(cancellationToken);
+    }
+
+    public async Task<List<GetMeetingParticipantsItemDto>> GetMeetingParticipantsAsync(long startDateUnixFrom, CancellationToken cancellationToken)
+    {
+        var rows = await (
+            from meeting in _repository.QueryNoTracking<Meeting>()
+            where meeting.StartDate >= startDateUnixFrom
+            join repeatRule in _repository.QueryNoTracking<MeetingRepeatRule>() on meeting.Id equals repeatRule.MeetingId into repeatRuleJoin
+            from repeatRule in repeatRuleJoin.DefaultIfEmpty()
+            join meetingParticipant in _repository.QueryNoTracking<MeetingParticipant>() on meeting.Id equals meetingParticipant.MeetingId into participantJoin
+            from meetingParticipant in participantJoin.DefaultIfEmpty()
+            join staff in _repository.QueryNoTracking<RmStaff>() on meetingParticipant.StaffId equals staff.Id into staffJoin
+            from staff in staffJoin.DefaultIfEmpty()
+            select new
+            {
+                MeetingId = meeting.Id,
+                meeting.StartDate,
+                meeting.EndDate,
+                repeatRule.RepeatUntilDate,
+                StaffId = meetingParticipant != null ? meetingParticipant.StaffId : (Guid?)null,
+                StaffName = staff.NameCNLong ?? staff.NameENLong ?? staff.UserName
+            }).ToListAsync(cancellationToken).ConfigureAwait(false);
+
+        if (!rows.Any())
+            return new List<GetMeetingParticipantsItemDto>();
+
+        var result = rows
+            .GroupBy(x => new { x.MeetingId, x.StartDate, x.EndDate })
+            .Select(x =>
+            {
+                var first = x.First();
+                var repeatUntilDate = x.Select(y => y.RepeatUntilDate).FirstOrDefault(y => y.HasValue);
+                var meetingParticipants = x
+                    .Where(y => y.StaffId.HasValue)
+                    .GroupBy(y => y.StaffId.Value)
+                    .Select(y => y.First())
+                    .Select(y => new GetMeetingParticipantDto
+                    {
+                        StaffId = y.StaffId!.Value,
+                        StaffName = y.StaffName
+                    }).ToList();
+
+                return new GetMeetingParticipantsItemDto
+                {
+                    MeetingId = first.MeetingId,
+                    StartDateUnix = first.StartDate,
+                    EndDateUnix = first.EndDate,
+                    RepeatUntilDate = repeatUntilDate,
+                    MeetingParticipants = meetingParticipants
+                };
+            })
+            .OrderByDescending(x => x.StartDateUnix)
+            .ToList();
+
+        return result;
     }
 
     public async Task AddMeetingRestartRecordsAsync(List<MeetingRestartRecord> meetingRestartRecords, CancellationToken cancellationToken)
