@@ -70,6 +70,8 @@ public partial interface IMeetingService
     
     Task<GetMeetingDataUserResponse> GetMeetingDataUserAsync(GetMeetingDataUserRequest request, CancellationToken cancellationToken);
 
+    Task<GetMeetingParticipantsResponse> GetMeetingParticipantsAsync(GetMeetingParticipantsRequest request, CancellationToken cancellationToken);
+
     Task<CutMeetingRecordUrlResponse> CutMeetingRecordUrlAsync(CutMeetingRecordUrlCommand command, CancellationToken cancellationToken);
 }
 
@@ -855,6 +857,35 @@ public partial class MeetingService
         return new GetMeetingDataUserResponse
         {
             Data = users
+        };
+    }
+
+    public async Task<GetMeetingParticipantsResponse> GetMeetingParticipantsAsync(GetMeetingParticipantsRequest request, CancellationToken cancellationToken)
+    {
+        var pacificZone = TimeZoneInfo.FindSystemTimeZoneById("America/Los_Angeles");
+        var pstCutoff = new DateTimeOffset(new DateTime(2026, 1, 1, 0, 0, 0), pacificZone.GetUtcOffset(new DateTime(2026, 1, 1)));
+        var cutoffUnix = pstCutoff.ToUnixTimeSeconds();
+
+        var meetingParticipants = await _meetingDataProvider.GetMeetingParticipantsAsync(cutoffUnix, cancellationToken).ConfigureAwait(false);
+
+        meetingParticipants = meetingParticipants.Select(x => new GetMeetingParticipantsItemDto
+        {
+            MeetingId = x.MeetingId,
+            StartDateUnix = x.StartDateUnix,
+            EndDateUnix = x.EndDateUnix,
+            RepeatUntilDate = x.RepeatUntilDate,
+            ActMeetingStartTimePst = TimeZoneInfo.ConvertTime(DateTimeOffset.FromUnixTimeSeconds(x.StartDateUnix), pacificZone),
+            ActMeetingEndTimePst = TimeZoneInfo.ConvertTime(DateTimeOffset.FromUnixTimeSeconds(x.EndDateUnix), pacificZone),
+            MeetingEndTimePst = x.RepeatUntilDate.HasValue
+                ? TimeZoneInfo.ConvertTime(x.RepeatUntilDate.Value, pacificZone)
+                : null,
+            MeetingDuration = (int)Math.Max(0, x.EndDateUnix - x.StartDateUnix),
+            MeetingParticipants = x.MeetingParticipants
+        }).ToList();
+
+        return new GetMeetingParticipantsResponse
+        {
+            Data = meetingParticipants
         };
     }
 

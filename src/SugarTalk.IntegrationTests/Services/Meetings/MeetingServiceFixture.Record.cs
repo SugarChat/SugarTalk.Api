@@ -14,6 +14,7 @@ using System.Threading.Tasks;
 using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
 using SugarTalk.Core.Domain.Meeting;
+using SugarTalk.Core.Domain.Foundation;
 using SugarTalk.Core.Services.Aliyun;
 using SugarTalk.Core.Services.Http;
 using SugarTalk.Core.Services.Utils;
@@ -867,6 +868,117 @@ public partial class MeetingServiceFixture
             afterGetMeetingDetail.FirstOrDefault(x => x.Id == 2)?.SpeakEndTime.ShouldNotBeNull();
             afterGetMeetingDetail.FirstOrDefault(x => x.Id == 1)?.SpeakStatus.ShouldBe(SpeakStatus.End);
             /*afterGetMeetingDetail.FirstOrDefault(x => x.Id == 1)?.SmartContent.ShouldBe("I'm smart content");*/
+        });
+    }
+    
+    [Fact]
+    public async Task CanGetMeetingParticipants()
+    {
+        var includedMeetingId = Guid.NewGuid();
+        var excludedMeetingId = Guid.NewGuid();
+        var includedStaffId1 = Guid.NewGuid();
+        var includedStaffId2 = Guid.NewGuid();
+        var excludedStaffId = Guid.NewGuid();
+
+        var includedStartUtc = new DateTimeOffset(2026, 1, 1, 9, 0, 0, TimeSpan.Zero);
+        var includedEndUtc = includedStartUtc.AddMinutes(90);
+        var excludedStartUtc = new DateTimeOffset(2026, 1, 1, 7, 0, 0, TimeSpan.Zero);
+        var excludedEndUtc = excludedStartUtc.AddMinutes(30);
+        var repeatUntilUtc = new DateTimeOffset(2026, 1, 31, 0, 0, 0, TimeSpan.Zero);
+
+        await RunWithUnitOfWork<IRepository>(async repository =>
+        {
+            await repository.InsertAsync(new Meeting
+            {
+                Id = includedMeetingId,
+                MeetingNumber = "p-202601010900",
+                MeetingMasterUserId = 1,
+                CreatedBy = 1,
+                StartDate = includedStartUtc.ToUnixTimeSeconds(),
+                EndDate = includedEndUtc.ToUnixTimeSeconds(),
+                TimeZone = "UTC",
+                Title = "included meeting"
+            });
+
+            await repository.InsertAsync(new Meeting
+            {
+                Id = excludedMeetingId,
+                MeetingNumber = "p-202601010700",
+                MeetingMasterUserId = 1,
+                CreatedBy = 1,
+                StartDate = excludedStartUtc.ToUnixTimeSeconds(),
+                EndDate = excludedEndUtc.ToUnixTimeSeconds(),
+                TimeZone = "UTC",
+                Title = "excluded meeting"
+            });
+
+            await repository.InsertAsync(new MeetingRepeatRule
+            {
+                Id = Guid.NewGuid(),
+                MeetingId = includedMeetingId,
+                RepeatType = MeetingRepeatType.Weekly,
+                RepeatUntilDate = repeatUntilUtc
+            });
+
+            await repository.InsertAsync(new RmStaff
+            {
+                Id = includedStaffId1,
+                NameCNLong = "张三",
+                UserName = "zhangsan"
+            });
+            await repository.InsertAsync(new RmStaff
+            {
+                Id = includedStaffId2,
+                NameENLong = "Alice"
+            });
+            await repository.InsertAsync(new RmStaff
+            {
+                Id = excludedStaffId,
+                NameENLong = "ShouldBeFiltered"
+            });
+
+            var nextParticipantId = (await repository.QueryNoTracking<MeetingParticipant>()
+                .MaxAsync(x => (int?)x.Id) ?? 0) + 1;
+
+            await repository.InsertAsync(new MeetingParticipant
+            {
+                Id = nextParticipantId++,
+                MeetingId = includedMeetingId,
+                StaffId = includedStaffId1
+            });
+            await repository.InsertAsync(new MeetingParticipant
+            {
+                Id = nextParticipantId++,
+                MeetingId = includedMeetingId,
+                StaffId = includedStaffId2
+            });
+            await repository.InsertAsync(new MeetingParticipant
+            {
+                Id = nextParticipantId,
+                MeetingId = excludedMeetingId,
+                StaffId = excludedStaffId
+            });
+        });
+
+        await RunWithUnitOfWork<IMediator>(async mediator =>
+        {
+            var response = await mediator.RequestAsync<GetMeetingParticipantsRequest, GetMeetingParticipantsResponse>(
+                new GetMeetingParticipantsRequest());
+
+            response.Data.ShouldNotBeNull();
+            response.Data.Any(x => x.MeetingId == excludedMeetingId).ShouldBeFalse();
+
+            var meetingData = response.Data.Single(x => x.MeetingId == includedMeetingId);
+            var pacificZone = TimeZoneInfo.FindSystemTimeZoneById("America/Los_Angeles");
+
+            meetingData.ActMeetingStartTimePst.ShouldBe(TimeZoneInfo.ConvertTime(includedStartUtc, pacificZone));
+            meetingData.ActMeetingEndTimePst.ShouldBe(TimeZoneInfo.ConvertTime(includedEndUtc, pacificZone));
+            meetingData.MeetingEndTimePst.ShouldBe(TimeZoneInfo.ConvertTime(repeatUntilUtc, pacificZone));
+            meetingData.MeetingDuration.ShouldBe((int)(includedEndUtc.ToUnixTimeSeconds() - includedStartUtc.ToUnixTimeSeconds()));
+
+            meetingData.MeetingParticipants.Count.ShouldBe(2);
+            meetingData.MeetingParticipants.Any(x => x.StaffId == includedStaffId1 && x.StaffName == "张三").ShouldBeTrue();
+            meetingData.MeetingParticipants.Any(x => x.StaffId == includedStaffId2 && x.StaffName == "Alice").ShouldBeTrue();
         });
     }
 }

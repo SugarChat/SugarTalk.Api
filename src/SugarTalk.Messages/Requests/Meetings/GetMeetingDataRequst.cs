@@ -31,7 +31,7 @@ public class GetMeetingDataDto
 
     [JsonIgnore]
     public long MeetingStartTime { get; set; }
-        
+    
     public string MeetingStartTimePst => 
         TimeZoneInfo.ConvertTime(DateTimeOffset.FromUnixTimeSeconds(MeetingStartTime), 
             TimeZoneInfo.FindSystemTimeZoneById("America/Los_Angeles")).ToString("HH:mm");
