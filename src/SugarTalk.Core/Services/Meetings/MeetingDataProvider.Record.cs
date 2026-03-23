@@ -472,7 +472,7 @@ public partial class MeetingDataProvider
             .Select(x => new
             {
                 UserId = x.UserId.Value,
-                Name = x.NameCNLong ?? x.NameENLong ?? x.UserName
+                Name = x.UserName
             })
             .ToListAsync(cancellationToken).ConfigureAwait(false);
 
