@@ -64,9 +64,9 @@ public partial interface IMeetingDataProvider
 
     Task<List<GetMeetingDataDto>> GetMeetingSituationDaysAsync(DateTimeOffset? startTime, DateTimeOffset? endTime, CancellationToken cancellationToken);
 
-    Task<List<GetMeetingDataUserDto>> GetMeetingDataUserAsync(DateTimeOffset? startTime, DateTimeOffset? endTime, CancellationToken cancellationToken);
+    Task<Dictionary<Guid, List<string>>> GetMeetingActualParticipantNamesAsync(List<Guid> meetingIds, CancellationToken cancellationToken);
 
-    Task<List<GetMeetingParticipantsItemDto>> GetMeetingParticipantsAsync(long startDateUnixFrom, CancellationToken cancellationToken);
+    Task<List<GetMeetingDataUserDto>> GetMeetingDataUserAsync(DateTimeOffset? startTime, DateTimeOffset? endTime, CancellationToken cancellationToken);
     
     Task AddMeetingRestartRecordsAsync(List<MeetingRestartRecord> meetingRestartRecords, CancellationToken cancellationToken);
 
@@ -408,6 +408,8 @@ public partial class MeetingDataProvider
             where meetingSituationDay.CreatedDate >= startTime && meetingSituationDay.CreatedDate < endTime
             join meeting in _repository.QueryNoTracking<Meeting>() on meetingSituationDay.MeetingId equals meeting.Id
             join userAccount in _repository.QueryNoTracking<UserAccount>() on meeting.CreatedBy equals userAccount.Id
+            join repeatRule in _repository.QueryNoTracking<MeetingRepeatRule>() on meeting.Id equals repeatRule.MeetingId into repeatRuleJoin
+            from repeatRule in repeatRuleJoin.DefaultIfEmpty()
             select new GetMeetingDataDto
             {
                 MeetingName = meeting.Title,
@@ -416,10 +418,78 @@ public partial class MeetingDataProvider
                 UserId = userAccount.ThirdPartyUserId,
                 MeetingCreator = userAccount.UserName,
                 MeetingStartTime = meeting.StartDate,
+                MeetingEndTime = meeting.EndDate,
+                RepeatUntilDate = repeatRule.RepeatUntilDate,
                 TimeRange = meetingSituationDay.TimePeriod,
                 MeetingUseCount = meetingSituationDay.UseCount,
                 MeetingDate = meetingSituationDay.CreatedDate
             }).OrderByDescending(x => x.MeetingStartTime).ToListAsync(cancellationToken);
+    }
+
+    public async Task<Dictionary<Guid, List<string>>> GetMeetingActualParticipantNamesAsync(List<Guid> meetingIds, CancellationToken cancellationToken)
+    {
+        if (meetingIds is not { Count: > 0 })
+            return new Dictionary<Guid, List<string>>();
+
+        var meetingHistoryUsers = await (
+            from meetingHistory in _repository.QueryNoTracking<MeetingHistory>()
+            where meetingIds.Contains(meetingHistory.MeetingId) && !meetingHistory.IsDeleted
+            join userAccount in _repository.QueryNoTracking<UserAccount>() on meetingHistory.UserId equals userAccount.Id
+            where !string.IsNullOrEmpty(userAccount.ThirdPartyUserId)
+            select new
+            {
+                meetingHistory.MeetingId,
+                userAccount.ThirdPartyUserId
+            }).Distinct().ToListAsync(cancellationToken).ConfigureAwait(false);
+
+        var userMeetingPairs = meetingHistoryUsers
+            .Select(x =>
+            {
+                var isParsed = Guid.TryParse(x.ThirdPartyUserId, out var staffUserId);
+
+                return new
+                {
+                    x.MeetingId,
+                    IsParsed = isParsed,
+                    StaffUserId = staffUserId
+                };
+            })
+            .Where(x => x.IsParsed)
+            .Select(x => new
+            {
+                x.MeetingId,
+                x.StaffUserId
+            })
+            .ToList();
+
+        if (userMeetingPairs.Count == 0)
+            return new Dictionary<Guid, List<string>>();
+
+        var staffUserIds = userMeetingPairs.Select(x => x.StaffUserId).Distinct().ToList();
+
+        var staffNameRows = await _repository.QueryNoTracking<RmStaff>()
+            .Where(x => x.UserId.HasValue && staffUserIds.Contains(x.UserId.Value))
+            .Select(x => new
+            {
+                UserId = x.UserId.Value,
+                Name = x.NameCNLong ?? x.NameENLong ?? x.UserName
+            })
+            .ToListAsync(cancellationToken).ConfigureAwait(false);
+
+        var staffNameByUserId = staffNameRows
+            .Where(x => !string.IsNullOrWhiteSpace(x.Name))
+            .GroupBy(x => x.UserId)
+            .ToDictionary(x => x.Key, x => x.First().Name);
+
+        return userMeetingPairs
+            .GroupBy(x => x.MeetingId)
+            .ToDictionary(
+                x => x.Key,
+                x => x
+                    .Select(y => staffNameByUserId.TryGetValue(y.StaffUserId, out var name) ? name : null)
+                    .Where(y => !string.IsNullOrWhiteSpace(y))
+                    .Distinct()
+                    .ToList());
     }
 
     public async Task<List<GetMeetingDataUserDto>> GetMeetingDataUserAsync(DateTimeOffset? startTime, DateTimeOffset? endTime, CancellationToken cancellationToken)
@@ -437,61 +507,6 @@ public partial class MeetingDataProvider
                 MeetingStartTime = meeting.StartDate,
                 Date = userSession.CreatedDate,
             }).OrderBy(x => x.MeetingStartTime).ToListAsync(cancellationToken);
-    }
-
-    public async Task<List<GetMeetingParticipantsItemDto>> GetMeetingParticipantsAsync(long startDateUnixFrom, CancellationToken cancellationToken)
-    {
-        var rows = await (
-            from meeting in _repository.QueryNoTracking<Meeting>()
-            where meeting.StartDate >= startDateUnixFrom
-            join repeatRule in _repository.QueryNoTracking<MeetingRepeatRule>() on meeting.Id equals repeatRule.MeetingId into repeatRuleJoin
-            from repeatRule in repeatRuleJoin.DefaultIfEmpty()
-            join meetingParticipant in _repository.QueryNoTracking<MeetingParticipant>() on meeting.Id equals meetingParticipant.MeetingId into participantJoin
-            from meetingParticipant in participantJoin.DefaultIfEmpty()
-            join staff in _repository.QueryNoTracking<RmStaff>() on meetingParticipant.StaffId equals staff.Id into staffJoin
-            from staff in staffJoin.DefaultIfEmpty()
-            select new
-            {
-                MeetingId = meeting.Id,
-                meeting.StartDate,
-                meeting.EndDate,
-                repeatRule.RepeatUntilDate,
-                StaffId = meetingParticipant != null ? meetingParticipant.StaffId : (Guid?)null,
-                StaffName = staff.NameCNLong ?? staff.NameENLong ?? staff.UserName
-            }).ToListAsync(cancellationToken).ConfigureAwait(false);
-
-        if (!rows.Any())
-            return new List<GetMeetingParticipantsItemDto>();
-
-        var result = rows
-            .GroupBy(x => new { x.MeetingId, x.StartDate, x.EndDate })
-            .Select(x =>
-            {
-                var first = x.First();
-                var repeatUntilDate = x.Select(y => y.RepeatUntilDate).FirstOrDefault(y => y.HasValue);
-                var meetingParticipants = x
-                    .Where(y => y.StaffId.HasValue)
-                    .GroupBy(y => y.StaffId.Value)
-                    .Select(y => y.First())
-                    .Select(y => new GetMeetingParticipantDto
-                    {
-                        StaffId = y.StaffId!.Value,
-                        StaffName = y.StaffName
-                    }).ToList();
-
-                return new GetMeetingParticipantsItemDto
-                {
-                    MeetingId = first.MeetingId,
-                    StartDateUnix = first.StartDate,
-                    EndDateUnix = first.EndDate,
-                    RepeatUntilDate = repeatUntilDate,
-                    MeetingParticipants = meetingParticipants
-                };
-            })
-            .OrderByDescending(x => x.StartDateUnix)
-            .ToList();
-
-        return result;
     }
 
     public async Task AddMeetingRestartRecordsAsync(List<MeetingRestartRecord> meetingRestartRecords, CancellationToken cancellationToken)

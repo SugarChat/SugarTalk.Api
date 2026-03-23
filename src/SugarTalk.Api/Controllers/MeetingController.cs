@@ -505,14 +505,5 @@ public class MeetingController : ControllerBase
         return Ok(response);
     }
 
-    [Route("data/participants"), HttpGet]
-    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(GetMeetingParticipantsResponse))]
-    public async Task<IActionResult> GetMeetingParticipantsUtcAsync([FromQuery] GetMeetingParticipantsRequest request)
-    {
-        var response = await _mediator.RequestAsync<GetMeetingParticipantsRequest, GetMeetingParticipantsResponse>(request).ConfigureAwait(false);
-        
-        return Ok(response);
-    }
-
     #endregion
 }           
