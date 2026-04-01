@@ -794,6 +794,7 @@ public partial class MeetingService
         Log.Information("Meeting staffs: {@staffs}", staffResults);
 
         var actMeetingParticesByMeetingId = await _meetingDataProvider.GetMeetingActualParticipantNamesAsync(meetingIds, cancellationToken).ConfigureAwait(false);
+        var meetingLastQuitTimes = await _meetingDataProvider.GetMeetingLastQuitTimesAsync( meetingIds, utcStart, utcEnd, cancellationToken).ConfigureAwait(false);
         
         foreach (var getMeetingData in meetingSituationDay)
         {
@@ -809,16 +810,18 @@ public partial class MeetingService
             if (actMeetingParticesByMeetingId.TryGetValue(getMeetingData.MeetingId, out var actMeetingPartices))
                 getMeetingData.ActMeetingPartices = actMeetingPartices;
 
-            var actMeetingStartUnix = Math.Max(0, getMeetingData.MeetingStartTime);
-            var actMeetingEndUnix = getMeetingData.MeetingEndTime > 0 ? getMeetingData.MeetingEndTime : actMeetingStartUnix;
-
-            getMeetingData.ActMeetingStartTimePst = TimeZoneInfo.ConvertTime(
-                DateTimeOffset.FromUnixTimeSeconds(actMeetingStartUnix), pacificZone);
-            getMeetingData.ActMeetingEndTimePst = TimeZoneInfo.ConvertTime(
-                DateTimeOffset.FromUnixTimeSeconds(actMeetingEndUnix), pacificZone);
+            var actMeetingStartTime = TimeZoneInfo.ConvertTime(getMeetingData.MeetingDate, pacificZone);
+            var actMeetingStartUnix = Math.Max(0, getMeetingData.MeetingDate.ToUnixTimeSeconds());
+            var actMeetingEndUnix = (meetingLastQuitTimes.TryGetValue(getMeetingData.MeetingId, out var lastQuitTime) && lastQuitTime > 0)
+                ? lastQuitTime
+                : actMeetingStartUnix;
+            
+            getMeetingData.ActMeetingStartTimePst = actMeetingStartTime;
+            getMeetingData.ActMeetingEndTimePst = TimeZoneInfo.ConvertTime(DateTimeOffset.FromUnixTimeSeconds(actMeetingEndUnix), pacificZone);
             getMeetingData.MeetingEndTimePst = getMeetingData.RepeatUntilDate.HasValue
                 ? TimeZoneInfo.ConvertTime(getMeetingData.RepeatUntilDate.Value, pacificZone)
                 : null;
+            
             getMeetingData.MeetingDuration = (int)Math.Max(0, actMeetingEndUnix - actMeetingStartUnix);
         }
         
