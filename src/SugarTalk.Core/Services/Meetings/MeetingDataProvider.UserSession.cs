@@ -41,6 +41,8 @@ public partial interface IMeetingDataProvider
     Task<MeetingOnlineLongestDurationUserDto> GetMeetingMinJoinUserByMeetingIdAsync(Guid meetingId, CancellationToken cancellationToken);
 
     Task<List<MeetingUserSessionDto>> GetAllMeetingUserSessionsAsync(Guid meetingId, CancellationToken cancellationToken);
+
+    Task<Dictionary<Guid, long>> GetMeetingLastQuitTimesAsync(List<Guid> meetingIds, DateTimeOffset? startTime, DateTimeOffset? endTime, CancellationToken cancellationToken);
 }
 
 public partial class MeetingDataProvider
@@ -240,5 +242,25 @@ public partial class MeetingDataProvider
                 IsEntryMeeting = session.IsEntryMeeting,
                 Url = profile != null ? profile.Url : null
             }).ToListAsync(cancellationToken).ConfigureAwait(false);
+    }
+
+    public async Task<Dictionary<Guid, long>> GetMeetingLastQuitTimesAsync(List<Guid> meetingIds, DateTimeOffset? startTime, DateTimeOffset? endTime, CancellationToken cancellationToken)
+    {
+        if (meetingIds is not { Count: > 0 })
+            return new Dictionary<Guid, long>();
+
+        return await _repository.QueryNoTracking<MeetingUserSession>()
+            .Where(x => meetingIds.Contains(x.MeetingId))
+            .Where(x => !x.IsDeleted)
+            .Where(x => x.CreatedDate >= startTime && x.CreatedDate < endTime)
+            .Where(x => x.LastQuitTime.HasValue && x.LastQuitTime.Value > 0)
+            .GroupBy(x => x.MeetingId)
+            .Select(x => new
+            {
+                MeetingId = x.Key,
+                LastQuitTime = x.Max(y => y.LastQuitTime.Value)
+            })
+            .ToDictionaryAsync(x => x.MeetingId, x => x.LastQuitTime, cancellationToken)
+            .ConfigureAwait(false);
     }
 }
