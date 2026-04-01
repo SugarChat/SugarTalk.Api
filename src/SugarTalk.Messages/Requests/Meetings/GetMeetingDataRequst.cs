@@ -39,10 +39,10 @@ public class GetMeetingDataDto
 
     [JsonIgnore]
     public DateTimeOffset? RepeatUntilDate { get; set; }
-    
-    public string MeetingStartTimePst => 
-        TimeZoneInfo.ConvertTime(DateTimeOffset.FromUnixTimeSeconds(MeetingStartTime), 
-            TimeZoneInfo.FindSystemTimeZoneById("America/Los_Angeles")).ToString("HH:mm");
+
+    public string MeetingStartTimePst =>
+        TimeZoneInfo.ConvertTime(DateTimeOffset.FromUnixTimeSeconds(MeetingStartTime),
+            TimeZoneInfo.FindSystemTimeZoneById("America/Los_Angeles")).ToString("yyyy-MM-dd HH:mm:ss");
 
     public DateTimeOffset ActMeetingStartTimePst { get; set; }
 
