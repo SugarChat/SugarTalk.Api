@@ -6,4 +6,5 @@ public static class AuthenticationSchemeConstants
     public const string ApiKeyAuthenticationScheme = "ApiKey";
     public const string WiltechsAuthenticationScheme = "Wiltechs";
     public const string GuestAuthenticationScheme = "Guest";
+    public const string OMEAuthenticationScheme = "OME";
 }

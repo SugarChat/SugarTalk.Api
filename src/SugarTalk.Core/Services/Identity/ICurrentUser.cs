@@ -56,7 +56,8 @@ public class CurrentUser : ICurrentUser
             return _httpContextAccessor.HttpContext.User.Claims.SingleOrDefault(x => x.Type == ClaimTypes.Authentication)?.Value switch
             {
                 AuthenticationSchemeConstants.SelfAuthenticationScheme => UserAccountIssuer.Self,
-                AuthenticationSchemeConstants.WiltechsAuthenticationScheme => UserAccountIssuer.Wiltechs
+                AuthenticationSchemeConstants.WiltechsAuthenticationScheme => UserAccountIssuer.Wiltechs,
+                AuthenticationSchemeConstants.OMEAuthenticationScheme => UserAccountIssuer.OME,
             };
         }
     }
