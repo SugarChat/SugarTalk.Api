@@ -74,4 +74,13 @@ public class MeetingUserController : ControllerBase
         
         return Ok(response);
     }
+    
+    [Route("test"), HttpPost]
+    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(AddOrUpdateMeetingUserSettingResponse))]
+    public async Task<IActionResult> TestAsync(AddOrUpdateMeetingUserSettingCommand command)
+    {
+        var response = await _mediator.SendAsync<AddOrUpdateMeetingUserSettingCommand, AddOrUpdateMeetingUserSettingResponse>(command);
+        
+        return Ok(response);
+    }
 }

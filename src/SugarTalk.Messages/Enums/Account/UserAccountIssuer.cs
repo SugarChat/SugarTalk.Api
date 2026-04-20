@@ -4,5 +4,6 @@ public enum UserAccountIssuer
 {
     Self,
     Wiltechs,
-    Guest
+    Guest,
+    OME
 }
