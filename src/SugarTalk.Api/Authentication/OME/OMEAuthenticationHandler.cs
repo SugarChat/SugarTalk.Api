@@ -33,6 +33,8 @@ public class OMEAuthenticationHandler: AuthenticationHandler<OMEAuthenticationOp
 
     protected override async Task<AuthenticateResult> HandleAuthenticateAsync()
     {
+        Log.Information("OME Authentication start");
+        
         if (!Request.Headers.ContainsKey("Authorization"))
             return AuthenticateResult.NoResult();
 
