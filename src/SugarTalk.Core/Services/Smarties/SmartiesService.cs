@@ -68,6 +68,8 @@ public class SmartiesService : ISmartiesService
         Log.Information("SpeechMatics meetingRecord: {@meetingRecord}", meetingRecord);
         
         var speakDetails = new List<MeetingSpeakDetail>();
+
+        var originalSpeakInfosCopy = originalSpeakInfos;
         
         foreach (var speakDetail in originalSpeakDetails)
         {
@@ -77,7 +79,7 @@ public class SmartiesService : ISmartiesService
             
             if (speakDetails.Any(x => x.UserId == speakDetail.UserId)) continue;
             
-            var speakInfo = originalSpeakInfos.OrderBy(
+            var speakInfo = originalSpeakInfos.Where(x => x.EndTime - x.StartTime > 1.5).OrderBy(
                 x => Math.Abs(speakDetail.SpeakStartTime - meetingRecord.CreatedDate.ToUnixTimeMilliseconds() - x.StartTime * 1000)).FirstOrDefault();
 
             if (speakInfo == null) continue;
@@ -106,7 +108,94 @@ public class SmartiesService : ISmartiesService
             
             originalSpeakInfos.RemoveAll(x => x.Speaker == speakInfo.Speaker);
         }
+        
+        var lastSpeakDetail = new SpeechMaticsSpeakInfoDto();
+        var newSpeakDetails = new List<SpeechMaticsSpeakInfoDto>();
+        var lastIsNotAssignedSpeak = false;
+        
+        //todo 判断originalSpeakInfos是否存在为分配的speaker，存在的话提取speaker查看有几个，然后循环originalSpeakInfosCopy，将speaker融合到前一个speaker中
+        if (originalSpeakInfos.Count > 0)
+        {
+            var speaks = originalSpeakInfos.DistinctBy(x => x.Speaker).Select(x => x.Speaker).ToList();
+            
+            foreach (var speakInfo in originalSpeakInfosCopy)
+            {
+                if (speaks.Contains(speakInfo.Speaker) && newSpeakDetails.Any())
+                {
+                    //未分配，且不是第一位
+                    newSpeakDetails.Remove(lastSpeakDetail);
+                    
+                    lastSpeakDetail.EndTime = speakInfo.EndTime;
+                    
+                    newSpeakDetails.Add(lastSpeakDetail);
+                    lastSpeakDetail = speakInfo;
+                }else if (speaks.Contains(speakInfo.Speaker) && !newSpeakDetails.Any())
+                {
+                    //未分配，且是第一位
+                    newSpeakDetails.Add(speakInfo);
+                    lastSpeakDetail = speakInfo;
+                    
+                    lastIsNotAssignedSpeak = true;
+                }else if (!speaks.Contains(speakInfo.Speaker) && newSpeakDetails.Any() && lastIsNotAssignedSpeak)
+                {
+                    //已分配且不是第一位
+                    newSpeakDetails.Remove(lastSpeakDetail);
+                    
+                    lastSpeakDetail.EndTime = speakInfo.EndTime;
+                    lastSpeakDetail.Speaker = speakInfo.Speaker;
+                    
+                    newSpeakDetails.Add(lastSpeakDetail);
+                    lastSpeakDetail = speakInfo;
+                    
+                    lastIsNotAssignedSpeak = false;
+                }
+                else
+                {
+                    //已分配且是第一位或已分配且上一位不是未分配
+                    newSpeakDetails.Add(speakInfo);
+                    lastSpeakDetail = speakInfo;
+                }
+            }
+        }
+        
+        foreach (var speakDetail in originalSpeakDetails)
+        {
+            Log.Information("Matched speak detail: {@speakDetail}", speakDetail);
+            
+            if(meetingRecord == null) break;
+            
+            if (speakDetails.Any(x => x.UserId == speakDetail.UserId)) continue;
+            
+            var speakInfo = newSpeakDetails.OrderBy(
+                x => Math.Abs(speakDetail.SpeakStartTime - meetingRecord.CreatedDate.ToUnixTimeMilliseconds() - x.StartTime * 1000)).FirstOrDefault();
 
+            if (speakInfo == null) continue;
+            
+            var replaceSameSpeaker = newSpeakDetails
+                .Where(x => x.Speaker == speakInfo.Speaker)
+                .Select(x => new MeetingSpeakDetail
+                {
+                    UserId = speakDetail.UserId,
+                    TrackId = speakDetail.TrackId,
+                    Username = speakDetail.Username,
+                    CreatedDate = speakDetail.CreatedDate,
+                    SpeakStatus = speakDetail.SpeakStatus,
+                    SpeakEndTime = Convert.ToInt64(x.EndTime * 1000),
+                    MeetingNumber = speakDetail.MeetingNumber,
+                    MeetingRecordId = speakDetail.MeetingRecordId,
+                    SpeakStartTime = Convert.ToInt64(x.StartTime * 1000),
+                    FileTranscriptionStatus = speakDetail.FileTranscriptionStatus,
+                })
+                .ToList();
+
+            if (replaceSameSpeaker.Any())
+                Log.Information("Updated speaker details: {@replaceSameSpeaker}", replaceSameSpeaker);
+
+            speakDetails.AddRange(replaceSameSpeaker);
+            
+            newSpeakDetails.RemoveAll(x => x.Speaker == speakInfo.Speaker);
+        }
+        
         Log.Information("New speak details: {@speakDetails}", speakDetails);
         
         speakDetails = await TranscriptionSpeakInfoAsync(speakDetails, meetingRecord, cancellationToken).ConfigureAwait(false);
