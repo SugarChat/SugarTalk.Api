@@ -29,12 +29,28 @@ public class GetMeetingDataDto
 
     public List<string> MeetingPartices { get; set; } = new();
 
+    public List<string> ActMeetingPartices { get; set; } = new();
+
     [JsonIgnore]
     public long MeetingStartTime { get; set; }
-        
-    public string MeetingStartTimePst => 
-        TimeZoneInfo.ConvertTime(DateTimeOffset.FromUnixTimeSeconds(MeetingStartTime), 
-            TimeZoneInfo.FindSystemTimeZoneById("America/Los_Angeles")).ToString("HH:mm");
+
+    [JsonIgnore]
+    public long MeetingEndTime { get; set; }
+
+    [JsonIgnore]
+    public DateTimeOffset? RepeatUntilDate { get; set; }
+
+    public string MeetingStartTimePst =>
+        TimeZoneInfo.ConvertTime(DateTimeOffset.FromUnixTimeSeconds(MeetingStartTime),
+            TimeZoneInfo.FindSystemTimeZoneById("America/Los_Angeles")).ToString("yyyy-MM-dd HH:mm:ss");
+
+    public DateTimeOffset ActMeetingStartTimePst { get; set; }
+
+    public DateTimeOffset ActMeetingEndTimePst { get; set; }
+
+    public DateTimeOffset? MeetingEndTimePst { get; set; }
+
+    public int MeetingDuration { get; set; }
 
     public string TimeRange { get; set; }
 

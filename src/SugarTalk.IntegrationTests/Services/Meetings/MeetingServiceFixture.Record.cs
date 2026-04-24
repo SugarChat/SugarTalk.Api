@@ -14,6 +14,7 @@ using System.Threading.Tasks;
 using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
 using SugarTalk.Core.Domain.Meeting;
+using SugarTalk.Core.Domain.Foundation;
 using SugarTalk.Core.Services.Aliyun;
 using SugarTalk.Core.Services.Http;
 using SugarTalk.Core.Services.Utils;

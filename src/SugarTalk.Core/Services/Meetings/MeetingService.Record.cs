@@ -730,7 +730,7 @@ public partial class MeetingService
         
         var meetingSituationDay = await _meetingDataProvider.GetMeetingSituationDaysAsync(utcStart, utcEnd, cancellationToken).ConfigureAwait(false);
 
-        var userIds = meetingSituationDay.Select(x => x.FundationId).ToList();
+        var userIds = meetingSituationDay.Select(x => x.UserId).Where(x => !string.IsNullOrWhiteSpace(x)).ToList();
         
         Log.Information("Get meeting data user ids: {@userIds}", userIds);
         
@@ -738,7 +738,10 @@ public partial class MeetingService
 
         meetingSituationDay = meetingSituationDay.Select(x =>
         {
-            var staff = allStaffs.FirstOrDefault(s => s.UserId == Guid.Parse(x.UserId));
+            if (!Guid.TryParse(x.UserId, out var userId))
+                return x;
+            
+            var staff = allStaffs.FirstOrDefault(s => s.UserId == userId);
 
             if (staff != null)
                 x.FundationId = staff.Id.ToString();
@@ -746,7 +749,7 @@ public partial class MeetingService
             return x;
         }).ToList();
         
-        var meetingIds = meetingSituationDay.Select(x => x.MeetingId).ToList();
+        var meetingIds = meetingSituationDay.Select(x => x.MeetingId).Distinct().ToList();
         
         var meetingParticipants  = await _meetingDataProvider.GetMeetingParticipantAsync(meetingIds, cancellationToken: cancellationToken).ConfigureAwait(false);
             
@@ -776,6 +779,9 @@ public partial class MeetingService
         }
 
         Log.Information("Meeting staffs: {@staffs}", staffResults);
+
+        var actMeetingParticesByMeetingId = await _meetingDataProvider.GetMeetingActualParticipantNamesAsync(meetingIds, cancellationToken).ConfigureAwait(false);
+        var meetingLastQuitTimes = await _meetingDataProvider.GetMeetingLastQuitTimesAsync( meetingIds, utcStart, utcEnd, cancellationToken).ConfigureAwait(false);
         
         foreach (var getMeetingData in meetingSituationDay)
         {
@@ -787,6 +793,23 @@ public partial class MeetingService
                 if (meetingParticipants.Any(x => x.MeetingId == getMeetingData.MeetingId && x.StaffId == staff.Id))
                     getMeetingData.MeetingPartices.Add(staff.UserName);
             }
+
+            if (actMeetingParticesByMeetingId.TryGetValue(getMeetingData.MeetingId, out var actMeetingPartices))
+                getMeetingData.ActMeetingPartices = actMeetingPartices;
+
+            var actMeetingStartTime = TimeZoneInfo.ConvertTime(getMeetingData.MeetingDate, pacificZone);
+            var actMeetingStartUnix = Math.Max(0, getMeetingData.MeetingDate.ToUnixTimeSeconds());
+            var actMeetingEndUnix = (meetingLastQuitTimes.TryGetValue(getMeetingData.MeetingId, out var lastQuitTime) && lastQuitTime > 0)
+                ? lastQuitTime
+                : actMeetingStartUnix;
+            
+            getMeetingData.ActMeetingStartTimePst = actMeetingStartTime;
+            getMeetingData.ActMeetingEndTimePst = TimeZoneInfo.ConvertTime(DateTimeOffset.FromUnixTimeSeconds(actMeetingEndUnix), pacificZone);
+            getMeetingData.MeetingEndTimePst = getMeetingData.RepeatUntilDate.HasValue
+                ? TimeZoneInfo.ConvertTime(getMeetingData.RepeatUntilDate.Value, pacificZone)
+                : null;
+            
+            getMeetingData.MeetingDuration = (int)Math.Max(0, actMeetingEndUnix - actMeetingStartUnix);
         }
         
         return new GetMeetingDataResponse
@@ -844,6 +867,7 @@ public partial class MeetingService
             Data = users
         };
     }
+    
 
     public async Task<CutMeetingRecordUrlResponse> CutMeetingRecordUrlAsync(CutMeetingRecordUrlCommand command, CancellationToken cancellationToken)
     {
