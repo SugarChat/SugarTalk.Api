@@ -2,6 +2,7 @@
 using System.Text.Encodings.Web;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.Extensions.Options;
+using Serilog;
 using SugarTalk.Core.Constants;
 using SugarTalk.Core.Services.Account;
 using SugarTalk.Core.Services.Caching;
@@ -23,6 +24,8 @@ public class ApiKeyAuthenticationHandler : AuthenticationHandler<ApiKeyAuthentic
     
     protected override async Task<AuthenticateResult> HandleAuthenticateAsync()
     {
+        Log.Information("Authentication start");
+        
         if (!Request.Headers.ContainsKey("X-API-KEY"))
             return AuthenticateResult.NoResult();
         
@@ -34,6 +37,8 @@ public class ApiKeyAuthenticationHandler : AuthenticationHandler<ApiKeyAuthentic
         var userInfo = await _cacheManager.GetOrAddAsync(apiKey,
             async _ => await _accountDataProvider.GetUserAccountByApiKeyAsync(apiKey).ConfigureAwait(false),
             CachingType.RedisCache, TimeSpan.FromHours(24), CancellationToken.None);
+        
+        Log.Information("userInfo: {@userInfo}", userInfo);
         
         if (userInfo == null)
             return AuthenticateResult.NoResult();
