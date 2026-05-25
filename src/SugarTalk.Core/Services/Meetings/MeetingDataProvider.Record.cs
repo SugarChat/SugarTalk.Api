@@ -422,7 +422,7 @@ public partial class MeetingDataProvider
                 MeetingStartTime = meeting.StartDate,
                 MeetingEndTime = meeting.EndDate,
                 RepeatUntilDate = repeatRule.RepeatUntilDate,
-                TimeRange = FormatMeetingTimeRange(meeting.StartDate, meeting.EndDate),
+                TimeRange = meetingSituationDay.TimePeriod,
                 AppointmentType = meeting.AppointmentType,
                 MeetingUseCount = meetingSituationDay.UseCount,
                 MeetingDate = meetingSituationDay.CreatedDate
