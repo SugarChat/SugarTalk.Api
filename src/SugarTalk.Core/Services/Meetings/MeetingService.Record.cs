@@ -814,15 +814,19 @@ public partial class MeetingService
 
             var actMeetingStartTime = TimeZoneInfo.ConvertTime(getMeetingData.MeetingDate, pacificZone);
             var actMeetingStartUnix = Math.Max(0, getMeetingData.MeetingDate.ToUnixTimeSeconds());
-            var actMeetingEndUnix = (meetingLastQuitTimes.TryGetValue(getMeetingData.MeetingId, out var lastQuitTime) && lastQuitTime > 0)
-                ? lastQuitTime
-                : actMeetingStartUnix;
+            var actMeetingEndUnix = getMeetingData.AppointmentType == MeetingAppointmentType.Quick
+                ? getMeetingData.MeetingEndTime
+                : (meetingLastQuitTimes.TryGetValue(getMeetingData.MeetingId, out var lastQuitTime) && lastQuitTime > 0)
+                    ? lastQuitTime
+                    : actMeetingStartUnix;
             
             getMeetingData.ActMeetingStartTimePst = actMeetingStartTime;
             getMeetingData.ActMeetingEndTimePst = TimeZoneInfo.ConvertTime(DateTimeOffset.FromUnixTimeSeconds(actMeetingEndUnix), pacificZone);
-            getMeetingData.MeetingEndTimePst = getMeetingData.RepeatUntilDate.HasValue
-                ? TimeZoneInfo.ConvertTime(getMeetingData.RepeatUntilDate.Value, pacificZone)
-                : null;
+            getMeetingData.MeetingEndTimePst = getMeetingData.AppointmentType == MeetingAppointmentType.Quick
+                ? TimeZoneInfo.ConvertTime(DateTimeOffset.FromUnixTimeSeconds(getMeetingData.MeetingEndTime), pacificZone)
+                : getMeetingData.RepeatUntilDate.HasValue
+                    ? TimeZoneInfo.ConvertTime(getMeetingData.RepeatUntilDate.Value, pacificZone)
+                    : null;
             
             getMeetingData.MeetingDuration = (int)Math.Max(0, actMeetingEndUnix - actMeetingStartUnix);
         }
