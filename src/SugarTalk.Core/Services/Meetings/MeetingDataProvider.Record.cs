@@ -64,6 +64,8 @@ public partial interface IMeetingDataProvider
 
     Task<List<GetMeetingDataDto>> GetMeetingSituationDaysAsync(DateTimeOffset? startTime, DateTimeOffset? endTime, CancellationToken cancellationToken);
 
+    Task<List<GetMeetingDataDto>> GetQuickMeetingDataAsync(DateTimeOffset? startTime, DateTimeOffset? endTime, CancellationToken cancellationToken);
+
     Task<Dictionary<Guid, List<string>>> GetMeetingActualParticipantNamesAsync(List<Guid> meetingIds, CancellationToken cancellationToken);
 
     Task<List<GetMeetingDataUserDto>> GetMeetingDataUserAsync(DateTimeOffset? startTime, DateTimeOffset? endTime, CancellationToken cancellationToken);
@@ -420,10 +422,62 @@ public partial class MeetingDataProvider
                 MeetingStartTime = meeting.StartDate,
                 MeetingEndTime = meeting.EndDate,
                 RepeatUntilDate = repeatRule.RepeatUntilDate,
-                TimeRange = meetingSituationDay.TimePeriod,
+                TimeRange = FormatMeetingTimeRange(meeting.StartDate, meeting.EndDate),
+                AppointmentType = meeting.AppointmentType,
                 MeetingUseCount = meetingSituationDay.UseCount,
                 MeetingDate = meetingSituationDay.CreatedDate
             }).OrderByDescending(x => x.MeetingStartTime).ToListAsync(cancellationToken);
+    }
+
+    public async Task<List<GetMeetingDataDto>> GetQuickMeetingDataAsync(DateTimeOffset? startTime, DateTimeOffset? endTime, CancellationToken cancellationToken)
+    {
+        var meetingIds = await _repository.QueryNoTracking<MeetingHistory>()
+            .Where(x => !x.IsDeleted)
+            .Where(x => !startTime.HasValue || x.CreatedDate >= startTime.Value)
+            .Where(x => !endTime.HasValue || x.CreatedDate < endTime.Value)
+            .Select(x => x.MeetingId).Distinct().ToListAsync(cancellationToken);
+
+        var quickMeetings = await (
+            from meeting in _repository.QueryNoTracking<Meeting>()
+            where meetingIds.Contains(meeting.Id)
+            where meeting.AppointmentType == MeetingAppointmentType.Quick && meeting.Status == MeetingStatus.Completed
+            join userAccount in _repository.QueryNoTracking<UserAccount>() on meeting.CreatedBy equals userAccount.Id
+            select new
+            {
+                meeting.Id,
+                meeting.Title,
+                meeting.MeetingNumber,
+                meeting.StartDate,
+                meeting.EndDate,
+                UserId = userAccount.ThirdPartyUserId,
+                MeetingCreator = userAccount.UserName
+            }).ToListAsync(cancellationToken);
+
+        var quickMeetingDtos = quickMeetings.Select(x => new GetMeetingDataDto
+        {
+            MeetingName = x.Title,
+            MeetingId = x.Id,
+            MeetingNumber = x.MeetingNumber,
+            UserId = x.UserId,
+            MeetingCreator = x.MeetingCreator,
+            MeetingStartTime = x.StartDate,
+            MeetingEndTime = x.EndDate,
+            TimeRange = FormatMeetingTimeRange(x.StartDate, x.EndDate),
+            AppointmentType = MeetingAppointmentType.Quick,
+            MeetingUseCount = 1,
+            MeetingDate = DateTimeOffset.FromUnixTimeSeconds(x.StartDate)
+        });
+
+        return quickMeetingDtos.OrderByDescending(x => x.MeetingStartTime).ToList();
+    }
+
+    private static string FormatMeetingTimeRange(long startDate, long endDate)
+    {
+        var pacificZone = TimeZoneInfo.FindSystemTimeZoneById("America/Los_Angeles");
+        var startTime = TimeZoneInfo.ConvertTime(DateTimeOffset.FromUnixTimeSeconds(startDate), pacificZone);
+        var endTime = TimeZoneInfo.ConvertTime(DateTimeOffset.FromUnixTimeSeconds(endDate), pacificZone);
+
+        return $"{startTime:HH:mm}-{endTime:HH:mm}";
     }
 
     public async Task<Dictionary<Guid, List<string>>> GetMeetingActualParticipantNamesAsync(List<Guid> meetingIds, CancellationToken cancellationToken)
