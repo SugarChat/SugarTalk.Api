@@ -729,7 +729,8 @@ public partial class MeetingService
         Log.Information("Get meeting data start: {@utcStart} end: {@utcEnd}", utcStart, utcEnd);
         
         var appointmentMeetings = await _meetingDataProvider.GetMeetingSituationDaysAsync(utcStart, utcEnd, cancellationToken).ConfigureAwait(false);
-        var quickMeetings = await _meetingDataProvider.GetQuickMeetingDataAsync(utcStart, utcEnd, cancellationToken).ConfigureAwait(false);
+        var appointmentMeetingIds = appointmentMeetings.Select(x => x.MeetingId).ToHashSet();
+        var quickMeetings = (await _meetingDataProvider.GetQuickMeetingDataAsync(utcStart, utcEnd, cancellationToken).ConfigureAwait(false)).Where(x => !appointmentMeetingIds.Contains(x.MeetingId)).ToList();
         var meetingSituationDay = appointmentMeetings.Concat(quickMeetings).OrderByDescending(x => x.MeetingStartTime).ToList();
 
         var userIds = meetingSituationDay.Select(x => x.UserId).Where(x => !string.IsNullOrWhiteSpace(x)).ToList();
