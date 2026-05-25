@@ -249,11 +249,15 @@ public partial class MeetingDataProvider
         if (meetingIds is not { Count: > 0 })
             return new Dictionary<Guid, long>();
 
+        var startUnixTime = startTime?.ToUnixTimeSeconds();
+        var endUnixTime = endTime?.ToUnixTimeSeconds();
+
         return await _repository.QueryNoTracking<MeetingUserSession>()
             .Where(x => meetingIds.Contains(x.MeetingId))
             .Where(x => !x.IsDeleted)
-            .Where(x => x.CreatedDate >= startTime && x.CreatedDate < endTime)
             .Where(x => x.LastQuitTime.HasValue && x.LastQuitTime.Value > 0)
+            .Where(x => !startUnixTime.HasValue || x.LastQuitTime.Value >= startUnixTime.Value)
+            .Where(x => !endUnixTime.HasValue || x.LastQuitTime.Value < endUnixTime.Value)
             .GroupBy(x => x.MeetingId)
             .Select(x => new
             {
