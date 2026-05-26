@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using Mediator.Net.Contracts;
 using Newtonsoft.Json;
+using SugarTalk.Messages.Enums.Meeting;
 using SugarTalk.Messages.Responses;
 
 namespace SugarTalk.Messages.Requests.Meetings;
@@ -53,6 +54,8 @@ public class GetMeetingDataDto
     public int MeetingDuration { get; set; }
 
     public string TimeRange { get; set; }
+
+    public MeetingAppointmentType AppointmentType { get; set; }
 
     public int MeetingUseCount { get; set; }
     

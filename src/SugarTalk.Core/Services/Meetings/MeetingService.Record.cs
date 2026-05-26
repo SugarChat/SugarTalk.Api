@@ -707,7 +707,7 @@ public partial class MeetingService
         DateTimeOffset startPst;
         DateTimeOffset endPst;
 
-        if (request.Day.HasValue)
+        if (request.Day.HasValue) 
         {
             var specifiedDate = request.Day.Value.Date;
             var pstOffset = pacificZone.GetUtcOffset(specifiedDate);
@@ -728,7 +728,10 @@ public partial class MeetingService
         
         Log.Information("Get meeting data start: {@utcStart} end: {@utcEnd}", utcStart, utcEnd);
         
-        var meetingSituationDay = await _meetingDataProvider.GetMeetingSituationDaysAsync(utcStart, utcEnd, cancellationToken).ConfigureAwait(false);
+        var appointmentMeetings = await _meetingDataProvider.GetMeetingSituationDaysAsync(utcStart, utcEnd, cancellationToken).ConfigureAwait(false);
+        var appointmentMeetingIds = appointmentMeetings.Select(x => x.MeetingId).ToHashSet();
+        var quickMeetings = (await _meetingDataProvider.GetQuickMeetingDataAsync(utcStart, utcEnd, cancellationToken).ConfigureAwait(false)).Where(x => !appointmentMeetingIds.Contains(x.MeetingId)).ToList();
+        var meetingSituationDay = appointmentMeetings.Concat(quickMeetings).OrderByDescending(x => x.MeetingStartTime).ToList();
 
         var userIds = meetingSituationDay.Select(x => x.UserId).Where(x => !string.IsNullOrWhiteSpace(x)).ToList();
         
@@ -799,15 +802,19 @@ public partial class MeetingService
 
             var actMeetingStartTime = TimeZoneInfo.ConvertTime(getMeetingData.MeetingDate, pacificZone);
             var actMeetingStartUnix = Math.Max(0, getMeetingData.MeetingDate.ToUnixTimeSeconds());
-            var actMeetingEndUnix = (meetingLastQuitTimes.TryGetValue(getMeetingData.MeetingId, out var lastQuitTime) && lastQuitTime > 0)
-                ? lastQuitTime
-                : actMeetingStartUnix;
+            var actMeetingEndUnix = getMeetingData.AppointmentType == MeetingAppointmentType.Quick
+                ? getMeetingData.MeetingEndTime
+                : (meetingLastQuitTimes.TryGetValue(getMeetingData.MeetingId, out var lastQuitTime) && lastQuitTime > 0)
+                    ? lastQuitTime
+                    : actMeetingStartUnix;
             
             getMeetingData.ActMeetingStartTimePst = actMeetingStartTime;
             getMeetingData.ActMeetingEndTimePst = TimeZoneInfo.ConvertTime(DateTimeOffset.FromUnixTimeSeconds(actMeetingEndUnix), pacificZone);
-            getMeetingData.MeetingEndTimePst = getMeetingData.RepeatUntilDate.HasValue
-                ? TimeZoneInfo.ConvertTime(getMeetingData.RepeatUntilDate.Value, pacificZone)
-                : null;
+            getMeetingData.MeetingEndTimePst = getMeetingData.AppointmentType == MeetingAppointmentType.Quick
+                ? TimeZoneInfo.ConvertTime(DateTimeOffset.FromUnixTimeSeconds(getMeetingData.MeetingEndTime), pacificZone)
+                : getMeetingData.RepeatUntilDate.HasValue
+                    ? TimeZoneInfo.ConvertTime(getMeetingData.RepeatUntilDate.Value, pacificZone)
+                    : null;
             
             getMeetingData.MeetingDuration = (int)Math.Max(0, actMeetingEndUnix - actMeetingStartUnix);
         }

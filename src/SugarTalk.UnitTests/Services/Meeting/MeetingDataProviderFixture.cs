@@ -203,6 +203,55 @@ public class MeetingDataProviderFixture : BaseFixture
     }
 
     [Fact]
+    public async Task CanGetQuickMeetingDataByMeetingHistoryDate()
+    {
+        const int creatorUserId = 1;
+        var creatorStaffId = Guid.NewGuid();
+        var quickMeetingId = Guid.NewGuid();
+        var historyId1 = Guid.NewGuid();
+        var historyId2 = Guid.NewGuid();
+        var targetDay = new DateTimeOffset(2026, 5, 25, 0, 0, 0, TimeSpan.Zero);
+
+        MockUserAccountsDb(_repository, new List<UserAccount>
+        {
+            CreateUserAccountEvent(creatorUserId, creatorStaffId, "creator")
+        });
+
+        var quickMeeting = CreateMeetingEvent(
+            quickMeetingId,
+            startDate: targetDay.AddHours(1).ToUnixTimeSeconds(),
+            endDate: targetDay.AddHours(2).ToUnixTimeSeconds(),
+            meetingNumber: "quick-123",
+            title: "Quick Meeting",
+            appointmentType: MeetingAppointmentType.Quick,
+            status: MeetingStatus.Completed,
+            meetingMasterUserId: creatorUserId);
+        quickMeeting.CreatedBy = creatorUserId;
+
+        MockMeetingDb(_repository, new List<Core.Domain.Meeting.Meeting>
+        {
+            quickMeeting
+        });
+
+        MockMeetingHistoriesDb(_repository, new List<MeetingHistory>
+        {
+            CreateMeetingHistoryEvent(historyId1, quickMeetingId, creatorUserId, null),
+            CreateMeetingHistoryEvent(historyId2, quickMeetingId, creatorUserId, null)
+        });
+
+        var histories = _repository.Query<MeetingHistory>().ToList();
+        histories[0].CreatedDate = targetDay.AddHours(3);
+        histories[1].CreatedDate = targetDay.AddHours(4);
+
+        var response = await _meetingDataProvider.GetQuickMeetingDataAsync(targetDay, targetDay.AddDays(1), CancellationToken.None);
+
+        response.Count.ShouldBe(1);
+        response[0].MeetingId.ShouldBe(quickMeetingId);
+        response[0].MeetingDate.ShouldBe(DateTimeOffset.FromUnixTimeSeconds(quickMeeting.StartDate));
+        response[0].MeetingUseCount.ShouldBe(1);
+    }
+
+    [Fact]
     public async Task CanUpdateMeetingStatusWhenOutMeeting()
     {
         const int userId1 = 1;
