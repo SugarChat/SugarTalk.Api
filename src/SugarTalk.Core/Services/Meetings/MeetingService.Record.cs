@@ -720,7 +720,7 @@ public partial class MeetingService
         DateTimeOffset startPst;
         DateTimeOffset endPst;
 
-        if (request.Day.HasValue)
+        if (request.Day.HasValue) 
         {
             var specifiedDate = request.Day.Value.Date;
             var pstOffset = pacificZone.GetUtcOffset(specifiedDate);
