@@ -70,6 +70,8 @@ public partial interface IMeetingDataProvider
 
     Task<List<GetMeetingDataUserDto>> GetMeetingDataUserAsync(DateTimeOffset? startTime, DateTimeOffset? endTime, CancellationToken cancellationToken);
 
+    Task<List<MeetingUserSession>> GetMeetingUserSessionsByMeetingIdsAsync(List<Guid> meetingIds, CancellationToken cancellationToken);
+
     Task<List<MeetingSituationDay>> GetMeetingSituationDaysByMeetingIdsAsync(List<Guid> meetingIds, DateTimeOffset? startTime, DateTimeOffset? endTime, CancellationToken cancellationToken);
 
     Task<List<MeetingHistory>> GetMeetingHistoriesByMeetingIdsAsync(List<Guid> meetingIds, CancellationToken cancellationToken);
@@ -567,6 +569,16 @@ public partial class MeetingDataProvider
                 Date = userSession.CreatedDate,
                 AppointmentType = meeting.AppointmentType
             }).OrderBy(x => x.MeetingStartTime).ToListAsync(cancellationToken);
+    }
+
+    public async Task<List<MeetingUserSession>> GetMeetingUserSessionsByMeetingIdsAsync(List<Guid> meetingIds, CancellationToken cancellationToken)
+    {
+        if (meetingIds is not { Count: > 0 })
+            return new List<MeetingUserSession>();
+
+        return await _repository.QueryNoTracking<MeetingUserSession>()
+            .Where(x => meetingIds.Contains(x.MeetingId) && !x.IsDeleted)
+            .ToListAsync(cancellationToken).ConfigureAwait(false);
     }
 
     public async Task<List<MeetingSituationDay>> GetMeetingSituationDaysByMeetingIdsAsync(List<Guid> meetingIds, DateTimeOffset? startTime, DateTimeOffset? endTime, CancellationToken cancellationToken)
