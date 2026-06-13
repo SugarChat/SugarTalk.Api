@@ -509,10 +509,9 @@ public partial class MeetingDataProvider
                 UserName = account.UserName,
                 MeetingNumber = meeting.MeetingNumber,
                 MeetingStartTime = meeting.StartDate,
+                MeetingEndTime = meeting.EndDate,
                 Date = userSession.CreatedDate,
-                AppointmentType = meeting.AppointmentType,
-                ActStartTime = DateTimeOffset.FromUnixTimeSeconds(meeting.StartDate),
-                ActEndTime = DateTimeOffset.FromUnixTimeSeconds(meeting.EndDate)
+                AppointmentType = meeting.AppointmentType
             }).OrderBy(x => x.MeetingStartTime).ToListAsync(cancellationToken);
     }
 

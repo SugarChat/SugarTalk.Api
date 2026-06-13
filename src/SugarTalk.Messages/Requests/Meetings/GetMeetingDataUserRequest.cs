@@ -28,6 +28,9 @@ public class GetMeetingDataUserDto
 
     [JsonIgnore]
     public long MeetingStartTime { get; set; }
+
+    [JsonIgnore]
+    public long MeetingEndTime { get; set; }
     
     public string MeetingStartTimePst => 
         TimeZoneInfo.ConvertTime(DateTimeOffset.FromUnixTimeSeconds(MeetingStartTime), 
@@ -47,16 +50,20 @@ public class GetMeetingDataUserDto
             .ToString("yyyy/MM/dd");
 
     [JsonIgnore]
-    public DateTimeOffset ActStartTime { get; set; }
+    public DateTimeOffset? ActStartTime { get; set; }
 
     public string ActStartTimePst =>
-        TimeZoneInfo.ConvertTime(ActStartTime, TimeZoneInfo.FindSystemTimeZoneById("America/Los_Angeles"))
-            .ToString("yyyy-MM-dd HH:mm:ss");
+        ActStartTime.HasValue
+            ? TimeZoneInfo.ConvertTime(ActStartTime.Value, TimeZoneInfo.FindSystemTimeZoneById("America/Los_Angeles"))
+                .ToString("yyyy-MM-dd HH:mm:ss")
+            : null;
 
     [JsonIgnore]
-    public DateTimeOffset ActEndTime { get; set; }
+    public DateTimeOffset? ActEndTime { get; set; }
 
     public string ActEndTimePst =>
-        TimeZoneInfo.ConvertTime(ActEndTime, TimeZoneInfo.FindSystemTimeZoneById("America/Los_Angeles"))
-            .ToString("yyyy-MM-dd HH:mm:ss");
+        ActEndTime.HasValue
+            ? TimeZoneInfo.ConvertTime(ActEndTime.Value, TimeZoneInfo.FindSystemTimeZoneById("America/Los_Angeles"))
+                .ToString("yyyy-MM-dd HH:mm:ss")
+            : null;
 }
