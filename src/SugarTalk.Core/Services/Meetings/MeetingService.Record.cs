@@ -865,6 +865,34 @@ public partial class MeetingService
         var utcEnd = endPst.UtcDateTime;
         
         var users = await _meetingDataProvider.GetMeetingDataUserAsync(utcStart, utcEnd, cancellationToken).ConfigureAwait(false);
+
+        var appointmentMeetingIds = users
+            .Where(x => x.AppointmentType == MeetingAppointmentType.Appointment)
+            .Select(x => x.MeetingId)
+            .Distinct()
+            .ToList();
+
+        var actStartTimeByMeetingId = new Dictionary<Guid, DateTimeOffset>();
+        var actEndTimeByMeetingId = new Dictionary<Guid, DateTimeOffset>();
+
+        if (appointmentMeetingIds.Count > 0)
+        {
+            var meetingSituationDays = await _meetingDataProvider
+                .GetMeetingSituationDaysByMeetingIdsAsync(appointmentMeetingIds, utcStart, utcEnd, cancellationToken)
+                .ConfigureAwait(false);
+
+            var meetingHistories = await _meetingDataProvider
+                .GetMeetingHistoriesByMeetingIdsAsync(appointmentMeetingIds, cancellationToken)
+                .ConfigureAwait(false);
+
+            actStartTimeByMeetingId = meetingSituationDays
+                .GroupBy(x => x.MeetingId)
+                .ToDictionary(x => x.Key, x => x.Min(y => y.CreatedDate));
+
+            actEndTimeByMeetingId = meetingHistories
+                .GroupBy(x => x.MeetingId)
+                .ToDictionary(x => x.Key, x => x.Max(y => y.CreatedDate));
+        }
         
         var userIds = users.Select(x => x.UserId).ToList();
 
@@ -872,6 +900,15 @@ public partial class MeetingService
 
         users = users.Select(x =>
         {
+            if (x.AppointmentType == MeetingAppointmentType.Appointment)
+            {
+                if (actStartTimeByMeetingId.TryGetValue(x.MeetingId, out var actStartTime))
+                    x.ActStartTime = actStartTime;
+
+                if (actEndTimeByMeetingId.TryGetValue(x.MeetingId, out var actEndTime))
+                    x.ActEndTime = actEndTime;
+            }
+
             if (string.IsNullOrEmpty(x.UserId)) return x;
             
             var staff = staffs.FirstOrDefault(s => s.UserId == Guid.Parse(x.UserId));
