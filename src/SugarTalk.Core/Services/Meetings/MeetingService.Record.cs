@@ -900,7 +900,12 @@ public partial class MeetingService
 
         users = users.Select(x =>
         {
-            if (x.AppointmentType == MeetingAppointmentType.Appointment)
+            if (x.AppointmentType == MeetingAppointmentType.Quick)
+            {
+                x.ActStartTime = DateTimeOffset.FromUnixTimeSeconds(x.MeetingStartTime);
+                x.ActEndTime = DateTimeOffset.FromUnixTimeSeconds(x.MeetingEndTime);
+            }
+            else if (x.AppointmentType == MeetingAppointmentType.Appointment)
             {
                 if (actStartTimeByMeetingId.TryGetValue(x.MeetingId, out var actStartTime))
                     x.ActStartTime = actStartTime;
