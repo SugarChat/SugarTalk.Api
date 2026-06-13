@@ -45,8 +45,18 @@ public class GetMeetingDataUserDto
     public string MeetingDatePst =>
         TimeZoneInfo.ConvertTime(Date, TimeZoneInfo.FindSystemTimeZoneById("America/Los_Angeles"))
             .ToString("yyyy/MM/dd");
-    
+
+    [JsonIgnore]
     public DateTimeOffset ActStartTime { get; set; }
-    
+
+    public string ActStartTimePst =>
+        TimeZoneInfo.ConvertTime(ActStartTime, TimeZoneInfo.FindSystemTimeZoneById("America/Los_Angeles"))
+            .ToString("yyyy-MM-dd HH:mm:ss");
+
+    [JsonIgnore]
     public DateTimeOffset ActEndTime { get; set; }
+
+    public string ActEndTimePst =>
+        TimeZoneInfo.ConvertTime(ActEndTime, TimeZoneInfo.FindSystemTimeZoneById("America/Los_Angeles"))
+            .ToString("yyyy-MM-dd HH:mm:ss");
 }
