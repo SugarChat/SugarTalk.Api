@@ -36,6 +36,12 @@ public class GetMeetingDataUserDto
         TimeZoneInfo.ConvertTime(DateTimeOffset.FromUnixTimeSeconds(MeetingStartTime), 
             TimeZoneInfo.FindSystemTimeZoneById("America/Los_Angeles")).ToString("HH:mm");
 
+    public string MeetingEndTimePst =>
+        MeetingEndTime > 0
+            ? TimeZoneInfo.ConvertTime(DateTimeOffset.FromUnixTimeSeconds(MeetingEndTime),
+                TimeZoneInfo.FindSystemTimeZoneById("America/Los_Angeles")).ToString("HH:mm")
+            : null;
+
     [JsonIgnore]
     public string UserId { get; set; }
     

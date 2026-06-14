@@ -510,8 +510,10 @@ public partial class MeetingDataProvider
                 UserId = account.ThirdPartyUserId,
                 UserName = account.UserName,
                 MeetingNumber = meeting.MeetingNumber,
-                MeetingStartTime = meeting.StartDate,
-                MeetingEndTime = meeting.EndDate,
+                MeetingStartTime = userSession.LastJoinTime.HasValue && userSession.LastJoinTime.Value > 0
+                    ? userSession.LastJoinTime.Value
+                    : userSession.CreatedDate.ToUnixTimeSeconds(),
+                MeetingEndTime = userSession.LastQuitTime ?? 0,
                 Date = userSession.CreatedDate,
                 AppointmentType = meeting.AppointmentType
             }).OrderBy(x => x.MeetingStartTime).ToListAsync(cancellationToken);
