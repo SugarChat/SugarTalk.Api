@@ -867,28 +867,29 @@ public partial class MeetingService
         var users = await _meetingDataProvider.GetMeetingDataUserAsync(utcStart, utcEnd, cancellationToken).ConfigureAwait(false);
         var meetingIds = users.Select(x => x.MeetingId).Distinct().ToList();
 
-        var meetingUserSessions = await _meetingDataProvider
-            .GetMeetingUserSessionsByMeetingIdsAsync(meetingIds, cancellationToken)
-            .ConfigureAwait(false);
-
         var meetingHistories = await _meetingDataProvider
             .GetMeetingHistoriesByMeetingIdsAsync(meetingIds, cancellationToken)
             .ConfigureAwait(false);
 
-        var actStartTimeByMeetingId = meetingUserSessions
-            .GroupBy(x => x.MeetingId)
-            .ToDictionary(
-                x => x.Key,
-                x => x.Min(y => y.LastJoinTime.HasValue && y.LastJoinTime.Value > 0
-                    ? DateTimeOffset.FromUnixTimeSeconds(y.LastJoinTime.Value)
-                    : y.CreatedDate));
+        var appointmentMeetingIds = users
+            .Where(x => x.AppointmentType == MeetingAppointmentType.Appointment)
+            .Select(x => x.MeetingId)
+            .Distinct()
+            .ToList();
 
-        var actEndTimeByMeetingId = meetingUserSessions
-            .Where(x => x.LastQuitTime.HasValue && x.LastQuitTime.Value > 0)
+        var meetingSituationDays = await _meetingDataProvider
+            .GetMeetingSituationDaysByMeetingIdsAsync(appointmentMeetingIds, utcStart, utcEnd, cancellationToken)
+            .ConfigureAwait(false);
+
+        var meetingLastQuitTimes = await _meetingDataProvider
+            .GetMeetingLastQuitTimesAsync(meetingIds, utcStart, utcEnd, cancellationToken)
+            .ConfigureAwait(false);
+
+        var actStartTimeByMeetingId = meetingSituationDays
             .GroupBy(x => x.MeetingId)
             .ToDictionary(
                 x => x.Key,
-                x => x.Max(y => DateTimeOffset.FromUnixTimeSeconds(y.LastQuitTime!.Value)));
+                x => x.Min(y => y.CreatedDate));
 
         var historyEndTimeByMeetingId = meetingHistories
             .GroupBy(x => x.MeetingId)
@@ -900,17 +901,32 @@ public partial class MeetingService
 
         users = users.Select(x =>
         {
-            if (actStartTimeByMeetingId.TryGetValue(x.MeetingId, out var actStartTime))
+            if (x.AppointmentType == MeetingAppointmentType.Appointment &&
+                actStartTimeByMeetingId.TryGetValue(x.MeetingId, out var actStartTime))
+            {
                 x.ActStartTime = actStartTime;
+            }
             else
+            {
                 x.ActStartTime = DateTimeOffset.FromUnixTimeSeconds(x.MeetingStartTime);
+            }
 
-            if (actEndTimeByMeetingId.TryGetValue(x.MeetingId, out var actEndTime))
-                x.ActEndTime = actEndTime;
-            else if (historyEndTimeByMeetingId.TryGetValue(x.MeetingId, out var historyEndTime))
-                x.ActEndTime = historyEndTime;
-            else
+            if (x.AppointmentType == MeetingAppointmentType.Quick)
+            {
                 x.ActEndTime = DateTimeOffset.FromUnixTimeSeconds(x.MeetingEndTime);
+            }
+            else if (meetingLastQuitTimes.TryGetValue(x.MeetingId, out var lastQuitTime) && lastQuitTime > 0)
+            {
+                x.ActEndTime = DateTimeOffset.FromUnixTimeSeconds(lastQuitTime);
+            }
+            else if (historyEndTimeByMeetingId.TryGetValue(x.MeetingId, out var historyEndTime))
+            {
+                x.ActEndTime = historyEndTime;
+            }
+            else
+            {
+                x.ActEndTime = DateTimeOffset.FromUnixTimeSeconds(x.MeetingEndTime);
+            }
 
             if (string.IsNullOrEmpty(x.UserId)) return x;
             
