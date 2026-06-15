@@ -512,6 +512,7 @@ public partial class MeetingDataProvider
                 meeting.MeetingNumber,
                 userSession.LastJoinTime,
                 userSession.LastQuitTime,
+                meeting.StartDate,
                 Date = userSession.CreatedDate,
                 meeting.AppointmentType
             }).ToListAsync(cancellationToken).ConfigureAwait(false);
@@ -522,10 +523,9 @@ public partial class MeetingDataProvider
             UserId = x.ThirdPartyUserId,
             UserName = x.UserName,
             MeetingNumber = x.MeetingNumber,
-            MeetingStartTime = x.LastJoinTime.HasValue && x.LastJoinTime.Value > 0
-                ? x.LastJoinTime.Value
-                : x.Date.ToUnixTimeSeconds(),
-            MeetingEndTime = x.LastQuitTime ?? 0,
+            MeetingStartTime = x.StartDate,
+            ActStartTime = x.LastJoinTime.HasValue ? DateTimeOffset.FromUnixTimeSeconds(x.LastJoinTime.Value) : null,
+            ActEndTime = x.LastQuitTime.HasValue ? DateTimeOffset.FromUnixTimeSeconds(x.LastQuitTime.Value) : null,
             Date = x.Date,
             AppointmentType = x.AppointmentType
         }).OrderBy(x => x.MeetingStartTime).ToList();
