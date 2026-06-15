@@ -867,13 +867,9 @@ public partial class MeetingService
         var users = await _meetingDataProvider.GetMeetingDataUserAsync(utcStart, utcEnd, cancellationToken).ConfigureAwait(false);
         var meetingIds = users.Select(x => x.MeetingId).Distinct().ToList();
 
-        var meetingUserSessions = await _meetingDataProvider
-            .GetMeetingUserSessionsByMeetingIdsAsync(meetingIds, cancellationToken)
-            .ConfigureAwait(false);
+        var meetingUserSessions = await _meetingDataProvider.GetMeetingUserSessionsByMeetingIdsAsync(meetingIds, cancellationToken).ConfigureAwait(false);
 
-        var meetingHistories = await _meetingDataProvider
-            .GetMeetingHistoriesByMeetingIdsAsync(meetingIds, cancellationToken)
-            .ConfigureAwait(false);
+        var meetingHistories = await _meetingDataProvider.GetMeetingHistoriesByMeetingIdsAsync(meetingIds, cancellationToken).ConfigureAwait(false);
 
         var actStartTimeByMeetingId = meetingUserSessions
             .GroupBy(x => x.MeetingId)

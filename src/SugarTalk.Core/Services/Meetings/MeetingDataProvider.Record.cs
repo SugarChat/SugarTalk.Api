@@ -554,23 +554,35 @@ public partial class MeetingDataProvider
 
     public async Task<List<GetMeetingDataUserDto>> GetMeetingDataUserAsync(DateTimeOffset? startTime, DateTimeOffset? endTime, CancellationToken cancellationToken)
     {
-        return await (from userSession in _repository.QueryNoTracking<MeetingUserSession>()
+        var meetingDataUsers = await (from userSession in _repository.QueryNoTracking<MeetingUserSession>()
             where userSession.CreatedDate >= startTime && userSession.CreatedDate < endTime
             join meeting in _repository.QueryNoTracking<Meeting>() on userSession.MeetingId equals meeting.Id
             join account in _repository.QueryNoTracking<UserAccount>() on userSession.UserId equals account.Id
-            select new GetMeetingDataUserDto
+            select new
             {
-                MeetingId = meeting.Id,
-                UserId = account.ThirdPartyUserId,
-                UserName = account.UserName,
-                MeetingNumber = meeting.MeetingNumber,
-                MeetingStartTime = userSession.LastJoinTime.HasValue && userSession.LastJoinTime.Value > 0
-                    ? userSession.LastJoinTime.Value
-                    : userSession.CreatedDate.ToUnixTimeSeconds(),
-                MeetingEndTime = userSession.LastQuitTime ?? 0,
+                meeting.Id,
+                account.ThirdPartyUserId,
+                account.UserName,
+                meeting.MeetingNumber,
+                userSession.LastJoinTime,
+                userSession.LastQuitTime,
                 Date = userSession.CreatedDate,
-                AppointmentType = meeting.AppointmentType
-            }).OrderBy(x => x.MeetingStartTime).ToListAsync(cancellationToken);
+                meeting.AppointmentType
+            }).ToListAsync(cancellationToken).ConfigureAwait(false);
+
+        return meetingDataUsers.Select(x => new GetMeetingDataUserDto
+        {
+            MeetingId = x.Id,
+            UserId = x.ThirdPartyUserId,
+            UserName = x.UserName,
+            MeetingNumber = x.MeetingNumber,
+            MeetingStartTime = x.LastJoinTime.HasValue && x.LastJoinTime.Value > 0
+                ? x.LastJoinTime.Value
+                : x.Date.ToUnixTimeSeconds(),
+            MeetingEndTime = x.LastQuitTime ?? 0,
+            Date = x.Date,
+            AppointmentType = x.AppointmentType
+        }).OrderBy(x => x.MeetingStartTime).ToList();
     }
 
     public async Task<List<MeetingUserSession>> GetMeetingUserSessionsByMeetingIdsAsync(List<Guid> meetingIds, CancellationToken cancellationToken)
