@@ -865,30 +865,6 @@ public partial class MeetingService
         var utcEnd = endPst.UtcDateTime;
         
         var users = await _meetingDataProvider.GetMeetingDataUserAsync(utcStart, utcEnd, cancellationToken).ConfigureAwait(false);
-        var meetingIds = users.Select(x => x.MeetingId).Distinct().ToList();
-
-        var meetingUserSessions = await _meetingDataProvider.GetMeetingUserSessionsByMeetingIdsAsync(meetingIds, cancellationToken).ConfigureAwait(false);
-
-        var meetingHistories = await _meetingDataProvider.GetMeetingHistoriesByMeetingIdsAsync(meetingIds, cancellationToken).ConfigureAwait(false);
-
-        var actStartTimeByMeetingId = meetingUserSessions
-            .GroupBy(x => x.MeetingId)
-            .ToDictionary(
-                x => x.Key,
-                x => x.Min(y => y.LastJoinTime.HasValue && y.LastJoinTime.Value > 0
-                    ? DateTimeOffset.FromUnixTimeSeconds(y.LastJoinTime.Value)
-                    : y.CreatedDate));
-
-        var actEndTimeByMeetingId = meetingUserSessions
-            .Where(x => x.LastQuitTime.HasValue && x.LastQuitTime.Value > 0)
-            .GroupBy(x => x.MeetingId)
-            .ToDictionary(
-                x => x.Key,
-                x => x.Max(y => DateTimeOffset.FromUnixTimeSeconds(y.LastQuitTime!.Value)));
-
-        var historyEndTimeByMeetingId = meetingHistories
-            .GroupBy(x => x.MeetingId)
-            .ToDictionary(x => x.Key, x => x.Max(y => y.CreatedDate));
         
         var userIds = users.Select(x => x.UserId).ToList();
 
@@ -896,18 +872,6 @@ public partial class MeetingService
 
         users = users.Select(x =>
         {
-            if (actStartTimeByMeetingId.TryGetValue(x.MeetingId, out var actStartTime))
-                x.ActStartTime = actStartTime;
-            else
-                x.ActStartTime = DateTimeOffset.FromUnixTimeSeconds(x.MeetingStartTime);
-
-            if (actEndTimeByMeetingId.TryGetValue(x.MeetingId, out var actEndTime))
-                x.ActEndTime = actEndTime;
-            else if (historyEndTimeByMeetingId.TryGetValue(x.MeetingId, out var historyEndTime))
-                x.ActEndTime = historyEndTime;
-            else
-                x.ActEndTime = DateTimeOffset.FromUnixTimeSeconds(x.MeetingEndTime);
-
             if (string.IsNullOrEmpty(x.UserId)) return x;
             
             var staff = staffs.FirstOrDefault(s => s.UserId == Guid.Parse(x.UserId));
