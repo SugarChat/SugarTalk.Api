@@ -38,6 +38,9 @@ public class GetMeetingDataUserDto
 
     [JsonIgnore]
     public string UserId { get; set; }
+
+    [JsonIgnore]
+    public int InternalUserId { get; set; }
     
     [JsonIgnore]
     public DateTimeOffset Date { get; set; }
