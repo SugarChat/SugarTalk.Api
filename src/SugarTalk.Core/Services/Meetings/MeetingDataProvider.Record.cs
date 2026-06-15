@@ -528,7 +528,7 @@ public partial class MeetingDataProvider
             AppointmentType = x.AppointmentType
         }).OrderBy(x => x.MeetingStartTime).ToList();
 
-        foreach (var result in results.Where(x => !x.ActStartTime.HasValue && x.AppointmentType == MeetingAppointmentType.Quick))
+        foreach (var result in results.Where(x => !x.ActEndTime.HasValue && x.AppointmentType == MeetingAppointmentType.Quick))
         {
             result.ActEndTime = DateTimeOffset.FromUnixTimeSeconds(result.MeetingEndTime);
         }
