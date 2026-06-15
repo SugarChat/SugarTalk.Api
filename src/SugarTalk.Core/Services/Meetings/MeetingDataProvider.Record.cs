@@ -507,6 +507,7 @@ public partial class MeetingDataProvider
             select new
             {
                 meeting.Id,
+                userSession.UserId,
                 account.ThirdPartyUserId,
                 account.UserName,
                 meeting.MeetingNumber,
@@ -517,9 +518,10 @@ public partial class MeetingDataProvider
                 meeting.AppointmentType
             }).ToListAsync(cancellationToken).ConfigureAwait(false);
 
-        return meetingDataUsers.Select(x => new GetMeetingDataUserDto
+        var results = meetingDataUsers.Select(x => new GetMeetingDataUserDto
         {
             MeetingId = x.Id,
+            InternalUserId = x.UserId,
             UserId = x.ThirdPartyUserId,
             UserName = x.UserName,
             MeetingNumber = x.MeetingNumber,
@@ -529,6 +531,46 @@ public partial class MeetingDataProvider
             Date = x.Date,
             AppointmentType = x.AppointmentType
         }).OrderBy(x => x.MeetingStartTime).ToList();
+
+        var pendingResults = results
+            .Where(x => !x.ActEndTime.HasValue)
+            .ToList();
+
+        if (pendingResults.Count == 0)
+            return results;
+
+        var userIds = pendingResults
+            .Select(x => x.InternalUserId)
+            .Distinct()
+            .ToList();
+
+        var meetingIds = pendingResults
+            .Select(x => x.MeetingId)
+            .Distinct()
+            .ToList();
+
+        var historyEndTimes = await _repository.QueryNoTracking<MeetingHistory>()
+            .Where(x => meetingIds.Contains(x.MeetingId) && userIds.Contains(x.UserId) && !x.IsDeleted)
+            .Where(x => x.CreatedDate >= startTime && x.CreatedDate < endTime)
+            .GroupBy(x => new { x.MeetingId, x.UserId })
+            .Select(x => new
+            {
+                x.Key.MeetingId,
+                x.Key.UserId,
+                CreatedDate = x.Max(y => y.CreatedDate)
+            })
+            .ToListAsync(cancellationToken).ConfigureAwait(false);
+
+        var historyEndTimeByMeetingAndUser = historyEndTimes
+            .ToDictionary(x => (x.MeetingId, x.UserId), x => x.CreatedDate);
+
+        foreach (var result in pendingResults)
+        {
+            if (historyEndTimeByMeetingAndUser.TryGetValue((result.MeetingId, result.InternalUserId), out var actEndTime))
+                result.ActEndTime = actEndTime;
+        }
+
+        return results;
     }
 
     public async Task<List<MeetingUserSession>> GetMeetingUserSessionsByMeetingIdsAsync(List<Guid> meetingIds, CancellationToken cancellationToken)
