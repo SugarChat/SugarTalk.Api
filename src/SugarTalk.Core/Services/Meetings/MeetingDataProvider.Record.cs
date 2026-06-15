@@ -494,21 +494,86 @@ public partial class MeetingDataProvider
 
     public async Task<List<GetMeetingDataUserDto>> GetMeetingDataUserAsync(DateTimeOffset? startTime, DateTimeOffset? endTime, CancellationToken cancellationToken)
     {
-        return await (from userSession in _repository.QueryNoTracking<MeetingUserSession>()
+        var meetingDataUsers = await (from userSession in _repository.QueryNoTracking<MeetingUserSession>()
             where userSession.CreatedDate >= startTime && userSession.CreatedDate < endTime
             join meeting in _repository.QueryNoTracking<Meeting>() on userSession.MeetingId equals meeting.Id
             join account in _repository.QueryNoTracking<UserAccount>() on userSession.UserId equals account.Id
-            select new GetMeetingDataUserDto
+            select new
             {
-                MeetingId = meeting.Id,
-                UserId = account.ThirdPartyUserId,
-                UserName = account.UserName,
-                MeetingNumber = meeting.MeetingNumber,
-                MeetingStartTime = meeting.StartDate,
+                meeting.Id,
+                userSession.UserId,
+                account.ThirdPartyUserId,
+                account.UserName,
+                meeting.MeetingNumber,
+                userSession.LastJoinTime,
+                userSession.LastQuitTime,
+                meeting.StartDate,
+                meeting.EndDate,
                 Date = userSession.CreatedDate,
-            }).OrderBy(x => x.MeetingStartTime).ToListAsync(cancellationToken);
-    }
+                meeting.AppointmentType
+            }).ToListAsync(cancellationToken).ConfigureAwait(false);
 
+        var results = meetingDataUsers.Select(x => new GetMeetingDataUserDto
+        {
+            MeetingId = x.Id,
+            InternalUserId = x.UserId,
+            UserId = x.ThirdPartyUserId,
+            UserName = x.UserName,
+            MeetingNumber = x.MeetingNumber,
+            MeetingStartTime = x.StartDate,
+            MeetingEndTime = x.EndDate,
+            ActStartTime = x.LastJoinTime.HasValue ? DateTimeOffset.FromUnixTimeSeconds(x.LastJoinTime.Value) : null,
+            ActEndTime = x.LastQuitTime.HasValue ? DateTimeOffset.FromUnixTimeSeconds(x.LastQuitTime.Value) : null,
+            Date = x.Date,
+            AppointmentType = x.AppointmentType
+        }).OrderBy(x => x.MeetingStartTime).ToList();
+
+        foreach (var result in results.Where(x => !x.ActEndTime.HasValue && x.AppointmentType == MeetingAppointmentType.Quick))
+        {
+            result.ActEndTime = DateTimeOffset.FromUnixTimeSeconds(result.MeetingEndTime);
+        }
+
+        var pendingResults = results
+            .Where(x => !x.ActEndTime.HasValue)
+            .ToList();
+
+        if (pendingResults.Count == 0)
+            return results;
+
+        var userIds = pendingResults
+            .Select(x => x.InternalUserId)
+            .Distinct()
+            .ToList();
+
+        var meetingIds = pendingResults
+            .Select(x => x.MeetingId)
+            .Distinct()
+            .ToList();
+
+        var historyEndTimes = await _repository.QueryNoTracking<MeetingHistory>()
+            .Where(x => meetingIds.Contains(x.MeetingId) && userIds.Contains(x.UserId) && !x.IsDeleted)
+            .Where(x => x.CreatedDate >= startTime && x.CreatedDate < endTime)
+            .GroupBy(x => new { x.MeetingId, x.UserId })
+            .Select(x => new
+            {
+                x.Key.MeetingId,
+                x.Key.UserId,
+                CreatedDate = x.Max(y => y.CreatedDate)
+            })
+            .ToListAsync(cancellationToken).ConfigureAwait(false);
+
+        var historyEndTimeByMeetingAndUser = historyEndTimes
+            .ToDictionary(x => (x.MeetingId, x.UserId), x => x.CreatedDate);
+
+        foreach (var result in pendingResults)
+        {
+            if (historyEndTimeByMeetingAndUser.TryGetValue((result.MeetingId, result.InternalUserId), out var actEndTime))
+                result.ActEndTime = actEndTime;
+        }
+
+        return results;
+    }
+    
     public async Task AddMeetingRestartRecordsAsync(List<MeetingRestartRecord> meetingRestartRecords, CancellationToken cancellationToken)
     {
         await _repository.InsertAllAsync(meetingRestartRecords, cancellationToken).ConfigureAwait(false);
