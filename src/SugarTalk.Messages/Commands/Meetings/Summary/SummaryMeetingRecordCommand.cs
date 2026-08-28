@@ -1,6 +1,8 @@
 using System;
 using Mediator.Net.Contracts;
 using System.Collections.Generic;
+using SugarTalk.Messages.Attributes;
+using SugarTalk.Messages.Constants;
 using SugarTalk.Messages.Responses;
 using SugarTalk.Messages.Dto.Translation;
 using SugarTalk.Messages.Dto.Meetings.Speak;
@@ -8,6 +10,7 @@ using SugarTalk.Messages.Dto.Meetings.Summary;
 
 namespace SugarTalk.Messages.Commands.Meetings.Summary;
 
+[SugarTalkAuthorize(new string[] { }, new[] { SecurityStore.Permissions.CanGetMeetingRelatedData })]
 public class SummaryMeetingRecordCommand : ICommand
 {
     public Guid MeetingRecordId { get; set; }

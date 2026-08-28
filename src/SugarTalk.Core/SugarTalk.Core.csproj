@@ -127,6 +127,7 @@
         <EmbeddedResource Include="DbUp\Scripts_2025\Script0008_add_meeting_invitation_record_table.sql" />
         <EmbeddedResource Include="DbUp\Scripts_2025\Script0009_add_user_account_profile_table.sql" />
         <EmbeddedResource Include="DbUp\Scripts_2025\Script0010_add_cut_field_for_record_table.sql" />
+        <EmbeddedResource Include="DbUp\Scripts_2025\Script0011_add_user_account_api_key_permission_table.sql" />
     </ItemGroup>
     
     <ItemGroup>

@@ -50,6 +50,10 @@ namespace SugarTalk.Core.Services.Account
         
         Task<UserAccountDto> GetUserAccountByApiKeyAsync(string apiKey, CancellationToken cancellationToken = default);
 
+        Task<List<string>> GetApiKeyPermissionsAsync(string apiKey, CancellationToken cancellationToken = default);
+
+        Task<bool> AddApiKeyPermissionAsync(string apiKey, string permissionName, CancellationToken cancellationToken = default);
+
         Task AddUserAccountProfileAsync(UserAccountProfile userAccountProfile, CancellationToken cancellationToken);
 
         Task<UserAccountProfile> GetUserAccountProfileAsync(int userAccountId, CancellationToken cancellationToken);
@@ -239,6 +243,55 @@ namespace SugarTalk.Core.Services.Account
             var account = await GetUserAccountAsync(id: accountApiKey.UserAccountId, includeRoles: true, cancellationToken: cancellationToken).ConfigureAwait(false);
 
             return account != null ? _mapper.Map<UserAccountDto>(account) : null;
+        }
+
+        public async Task<List<string>> GetApiKeyPermissionsAsync(string apiKey, CancellationToken cancellationToken = default)
+        {
+            var apiKeyId = await _repository.QueryNoTracking<UserAccountApiKey>()
+                .Where(x => x.ApiKey == apiKey)
+                .Select(x => (int?)x.Id)
+                .SingleOrDefaultAsync(cancellationToken)
+                .ConfigureAwait(false);
+
+            if (!apiKeyId.HasValue)
+                return new List<string>();
+
+            return await _repository.QueryNoTracking<UserAccountApiKeyPermission>()
+                .Where(x => x.UserAccountApiKeyId == apiKeyId.Value)
+                .Select(x => x.PermissionName)
+                .ToListAsync(cancellationToken)
+                .ConfigureAwait(false);
+        }
+
+        public async Task<bool> AddApiKeyPermissionAsync(
+            string apiKey, string permissionName, CancellationToken cancellationToken = default)
+        {
+            var apiKeyId = await _repository.QueryNoTracking<UserAccountApiKey>()
+                .Where(x => x.ApiKey == apiKey)
+                .Select(x => (int?)x.Id)
+                .SingleOrDefaultAsync(cancellationToken)
+                .ConfigureAwait(false);
+
+            if (!apiKeyId.HasValue)
+                return false;
+
+            var exists = await _repository.QueryNoTracking<UserAccountApiKeyPermission>()
+                .AnyAsync(x => x.UserAccountApiKeyId == apiKeyId.Value &&
+                               x.PermissionName == permissionName, cancellationToken)
+                .ConfigureAwait(false);
+
+            if (!exists)
+            {
+                await _repository.InsertAsync(new UserAccountApiKeyPermission
+                {
+                    UserAccountApiKeyId = apiKeyId.Value,
+                    PermissionName = permissionName
+                }, cancellationToken).ConfigureAwait(false);
+
+                await _unitOfWork.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+            }
+
+            return true;
         }
 
         public async Task AddUserAccountProfileAsync(UserAccountProfile userAccountProfile, CancellationToken cancellationToken)

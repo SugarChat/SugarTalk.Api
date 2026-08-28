@@ -47,6 +47,13 @@ public class ApiKeyAuthenticationHandler : AuthenticationHandler<ApiKeyAuthentic
 
         if (userInfo.Roles is { Count: >0 })
             userInfo.Roles.ForEach(x => identity.AddClaim(new Claim(ClaimTypes.Role, x.Name)));
+
+        var permissions = await _accountDataProvider
+            .GetApiKeyPermissionsAsync(apiKey)
+            .ConfigureAwait(false);
+
+        foreach (var permission in permissions)
+            identity.AddClaim(new Claim("permission", permission));
         
         var claimsPrincipal = new ClaimsPrincipal(identity);
 
