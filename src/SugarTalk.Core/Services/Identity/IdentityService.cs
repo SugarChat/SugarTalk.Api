@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -6,6 +7,7 @@ using SugarTalk.Core.Data;
 using SugarTalk.Core.Domain.Account;
 using SugarTalk.Core.Services.Account;
 using SugarTalk.Messages.Dto.Users;
+using SugarTalk.Messages.Attributes;
 
 namespace SugarTalk.Core.Services.Identity;
 
@@ -40,6 +42,18 @@ public class IdentityService : IIdentityService
         }
         
         return true;
+    }
+
+    public (List<string> RequiredRoles, List<string> RequiredPermissions) GetRolesAndPermissionsFromAttributes(Type messageType)
+    {
+        var attributes = messageType
+            .GetCustomAttributes(typeof(SugarTalkAuthorizeAttribute), inherit: true)
+            .Cast<SugarTalkAuthorizeAttribute>()
+            .ToList();
+
+        return (
+            attributes.Where(x => x.Roles?.Any() == true).SelectMany(x => x.Roles).ToList(),
+            attributes.Where(x => x.Permissions?.Any() == true).SelectMany(x => x.Permissions).ToList());
     }
 
     public async Task<UserAccountDto> GetCurrentUserAsync(bool throwWhenNotFound = false, CancellationToken cancellationToken = default)

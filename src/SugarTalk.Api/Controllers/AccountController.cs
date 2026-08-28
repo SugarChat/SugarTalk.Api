@@ -2,6 +2,8 @@ using Mediator.Net;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using SugarTalk.Messages.Requests.Account;
+using SugarTalk.Messages.Commands.Account;
+using SugarTalk.Messages.Constants;
 
 namespace SugarTalk.Api.Controllers;
 
@@ -54,5 +56,20 @@ public class AccountController : ControllerBase
         var response = await _mediator.SendAsync<UploadPhotoCommand, UploadPhotoResponse>(request);
         
         return Ok(response);
+    }
+
+    [Authorize]
+    [Route("apikey/permission"), HttpPost]
+    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(AddApiKeyPermissionResponse))]
+    public async Task<IActionResult> AddApiKeyPermissionAsync([FromBody] AddApiKeyPermissionCommand command)
+    {
+        if (!SecurityStore.Permissions.AllPermissions.Contains(command.PermissionName))
+            return BadRequest("Unknown permission.");
+
+        var response = await _mediator
+            .SendAsync<AddApiKeyPermissionCommand, AddApiKeyPermissionResponse>(command)
+            .ConfigureAwait(false);
+
+        return StatusCode((int)response.Code, response);
     }
 }
