@@ -3,10 +3,13 @@ using System.Collections.Generic;
 using Mediator.Net.Contracts;
 using Newtonsoft.Json;
 using SugarTalk.Messages.Enums.Meeting;
+using SugarTalk.Messages.Attributes;
+using SugarTalk.Messages.Constants;
 using SugarTalk.Messages.Responses;
 
 namespace SugarTalk.Messages.Requests.Meetings;
 
+[SugarTalkAuthorize(new string[] { }, new[] { SecurityStore.Permissions.CanGetMeetingRelatedData })]
 public class GetMeetingDataRequest : IRequest
 {
     public DateTimeOffset? Day { get; set; }
